@@ -9,14 +9,6 @@ chrKey <- function(dfData, chrCols) {
   do.call(paste, c(unname(as.list(dfData[chrCols])), sep = "\r"))
 }
 
-# One value per participant, in the participant table's order.
-nResultAt <- function(strBiomarker, strVisit) {
-  dfRows <- Synthetic_Results[
-    Synthetic_Results$TEST == strBiomarker & Synthetic_Results$VISIT == strVisit,
-  ]
-  dfRows$STRESN[match(Synthetic_Participants$USUBJID, dfRows$USUBJID)]
-}
-
 strHelpText <- function(strTopic) {
   lRd <- if (bSourceTree()) {
     tools::Rd_db(dir = strSourceRoot())
