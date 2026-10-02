@@ -4,11 +4,8 @@
 # None of these but NEWS.md is in the built package. In the source tree, where
 # devtools::test() runs, a missing file is a failure; under R CMD check, where
 # the tests run against the installed package, there is no source tree and the
-# tests skip. A file that is merely absent must never read as a pass.
-
-bSourceTree <- function() {
-  file.exists(testthat::test_path("..", "..", "DESCRIPTION"))
-}
+# tests skip (bSourceTree() is in helper-source-tree.R). A file that is merely
+# absent must never read as a pass.
 
 chrRepositoryFile <- function(...) {
   skip_if_not(bSourceTree(), paste(file.path(...), "is not part of the built package"))

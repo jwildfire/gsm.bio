@@ -29,9 +29,12 @@ test_that("testthat and the standardised-difference comparison package are sugge
   expect_identical(utils::packageDescription("gsm.bio")[["Config/testthat/edition"]], "3")
 })
 
-test_that("the package ships no statistics function and no data yet (#1)", {
+test_that("the package exports no function yet and ships the synthetic study as its only data (#1, #2)", {
   expect_identical(getNamespaceExports("gsm.bio"), character(0))
-  expect_identical(nrow(utils::data(package = "gsm.bio")$results), 0L)
+  expect_setequal(
+    utils::data(package = "gsm.bio")$results[, "Item"],
+    c("Synthetic_Results", "Synthetic_Participants", "Synthetic_Outcomes", "Synthetic_Truth")
+  )
 })
 
 test_that("the package-level help page exists (#1)", {
