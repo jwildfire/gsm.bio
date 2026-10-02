@@ -1,0 +1,15 @@
+url: https://jwildfire.github.io/gsm.bio
+
+template:
+  bootstrap: 5
+
+navbar:
+  structure:
+    left: [reference, news]
+    right: [search, github]
+
+reference:
+  - title: Package
+    desc: What gsm.bio is for and how its statistics are built.
+    contents:
+      - gsm.bio-package
