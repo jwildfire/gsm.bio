@@ -188,8 +188,16 @@ test_that("a result is written in the shape the chart's connection reads it in (
   expect_match(strJson, '"status":"ok","reason":null,"test":"kruskal"', fixed = TRUE)
   expect_match(strJson, '"statistic":[{"name":"Kruskal-Wallis chi-squared","value":', fixed = TRUE)
   expect_match(strJson, '"counts":{"Placebo F":', fixed = TRUE)
-  expect_match(strJson, '"dropped":[],"warnings":["cannot compute exact p-value with ties"],"notes":["', fixed = TRUE)
-  expect_match(strJson, '"status":"ok","reason":null,"warning":null}', fixed = TRUE)
+  # A table of no rows and a list are arrays. Which warnings R raises here is
+  # the R version's own (with tied values R 4.3 warns and R 4.6 does not), so
+  # the list is held to what this R returned and not to a sentence.
+  expect_match(strJson, '"dropped":[],"warnings":[', fixed = TRUE)
+  expect_match(strJson, '],"notes":["Pairwise: each pair is compared with wilcox.test()', fixed = TRUE)
+  expect_identical(lStored$warnings, lResult$warnings)
+  expect_identical(
+    jsonlite::fromJSON(strJson, simplifyVector = FALSE)$warnings, lResult$warnings
+  )
+  expect_match(strJson, '"status":"ok","reason":null,"warning":', fixed = TRUE)
 
   # The rules, on values a result could hold.
   expect_identical(StoredValue(c(a = 1L, b = 2L)), list(a = 1L, b = 2L))
