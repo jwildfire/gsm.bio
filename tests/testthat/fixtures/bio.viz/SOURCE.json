@@ -3,7 +3,7 @@
   "copied_by": "data-raw/vendor-bio-viz.R",
   "repository": "https://github.com/jwildfire/bio.viz",
   "ref": "dev",
-  "commit": "ac9ea6f21ab965db7a8b4e41442d96ada373c49d",
+  "commit": "6f8e62a2697e44016bfe58b76dc78104116cc13c",
   "files": [
     {
       "file": "group-statistics/SOURCE.json",
@@ -292,6 +292,84 @@
       "source": "tests/fixtures/association-statistics-r.json",
       "sha256": "5b51a0923476ec9b01180e55d68e15e8b4e23ede84f9343c4271c1cd85b9566e",
       "bytes": 272923
+    },
+    {
+      "file": "matrix-statistics/SOURCE.json",
+      "source": "tests/fixtures/matrix-statistics/SOURCE.json",
+      "sha256": "c0da6659586cc69f369fa8ef3da425b828b88d85fa51719452a4d5f6646d4add",
+      "bytes": 4154
+    },
+    {
+      "file": "matrix-statistics/biomarkers-baseline.csv",
+      "source": "tests/fixtures/matrix-statistics/biomarkers-baseline.csv",
+      "sha256": "b873b2050fff9ab8aa2acca2a44da55a5c3da71c66d569fe63559d6738735b22",
+      "bytes": 17201
+    },
+    {
+      "file": "matrix-statistics/biomarkers-baseline-spearman.csv",
+      "source": "tests/fixtures/matrix-statistics/biomarkers-baseline-spearman.csv",
+      "sha256": "b873b2050fff9ab8aa2acca2a44da55a5c3da71c66d569fe63559d6738735b22",
+      "bytes": 17201
+    },
+    {
+      "file": "matrix-statistics/biomarkers-week-4-change.csv",
+      "source": "tests/fixtures/matrix-statistics/biomarkers-week-4-change.csv",
+      "sha256": "95cfe4a6f20c4234c3c518a6feac159f80850e01a6f6221bc2a949ef765ac2ea",
+      "bytes": 39041
+    },
+    {
+      "file": "matrix-statistics/biomarkers-women.csv",
+      "source": "tests/fixtures/matrix-statistics/biomarkers-women.csv",
+      "sha256": "e7543bedd242008c1e4ecb2a56a4a637fe082c623656fafe47061d55e33df8d7",
+      "bytes": 7846
+    },
+    {
+      "file": "matrix-statistics/six-biomarkers.csv",
+      "source": "tests/fixtures/matrix-statistics/six-biomarkers.csv",
+      "sha256": "3abaac49d9173a8ce6619b1270bd306990041ab46d6e0a528a07e7fd00b2d44f",
+      "bytes": 8840
+    },
+    {
+      "file": "matrix-statistics/visits-il-6.csv",
+      "source": "tests/fixtures/matrix-statistics/visits-il-6.csv",
+      "sha256": "7defb0594e68a97b3496e7bd6df514591380093bb1fd5161f890b579cfb92d67",
+      "bytes": 7279
+    },
+    {
+      "file": "matrix-statistics/visits-il-6-change.csv",
+      "source": "tests/fixtures/matrix-statistics/visits-il-6-change.csv",
+      "sha256": "a9528f2b375d85641b24fae050e988835e0857dc5eb7f9561541facc7f13cfa7",
+      "bytes": 14918
+    },
+    {
+      "file": "matrix-statistics/visits-tnf-alpha-spearman.csv",
+      "source": "tests/fixtures/matrix-statistics/visits-tnf-alpha-spearman.csv",
+      "sha256": "26b72af1c1366e04802cba447eb095f9bdfd8a99206908449625d31a376926b2",
+      "bytes": 7901
+    },
+    {
+      "file": "matrix-statistics/week-12-minimum-183.csv",
+      "source": "tests/fixtures/matrix-statistics/week-12-minimum-183.csv",
+      "sha256": "0f59062565817356849416bad15785a95cd4cd35f7d190f2ab3ba2e9953f0c1c",
+      "bytes": 15979
+    },
+    {
+      "file": "matrix-statistics/age-35.csv",
+      "source": "tests/fixtures/matrix-statistics/age-35.csv",
+      "sha256": "b08be38377b8f0d8b9e81608e30c9cebf434ad1100cd7522ee31fcfc0524badb",
+      "bytes": 392
+    },
+    {
+      "file": "matrix-statistics/cases.csv",
+      "source": "tests/fixtures/matrix-statistics/cases.csv",
+      "sha256": "4623fefd3c274db0cee191be64c8c77ca58df9bb3858a20c762cac19802b6ed8",
+      "bytes": 1910
+    },
+    {
+      "file": "matrix-statistics-r.json",
+      "source": "tests/fixtures/matrix-statistics-r.json",
+      "sha256": "40a60d7242f23a751d6d4be5f5cab86303088e9afb3248d69002456b083124ba",
+      "bytes": 95874
     }
   ]
 }

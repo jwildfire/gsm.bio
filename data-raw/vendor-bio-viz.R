@@ -143,7 +143,7 @@ WriteJson(list(
 # own, so a page holding widgets of both packages loads one copy of safety.viz.
 # Last, the package's own script, which every binding is made with
 # (inst/htmlwidgets/shared/, not copied from anywhere).
-chrWidgets <- c("Widget_GroupComparison", "Widget_AssociationScatter")
+chrWidgets <- c("Widget_GroupComparison", "Widget_AssociationScatter", "Widget_CorrelationMatrix")
 strPackageVersion <- read.dcf("DESCRIPTION", fields = "Version")[[1]]
 for (strWidget in chrWidgets) {
   writeLines(c(
@@ -172,7 +172,7 @@ unlink(strFixtures, recursive = TRUE)
 # One set per chart: the rows the chart's own code wrote for panels of its demo
 # (a folder, with its own record), and beside it the request the chart makes for
 # each with what desktop R answered.
-chrFixtureSets <- c("group-statistics", "association-statistics")
+chrFixtureSets <- c("group-statistics", "association-statistics", "matrix-statistics")
 lFixtures <- list()
 for (strSet in chrFixtureSets) {
   strFrames <- paste0("tests/fixtures/", strSet)
