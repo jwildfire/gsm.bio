@@ -40,7 +40,7 @@ local({
 #' | `dropped` | A data frame of `reason` and `n`: the rows left out and why. No rows when nothing was dropped. |
 #' | `warnings` | An unnamed list of the warnings R raised inside the wrapped call, as text. They are captured here and never printed. |
 #' | `notes` | An unnamed list of remarks of the package's own, as text. |
-#' | `rows` | A data frame for a function's many-row results: pairwise comparisons, per-group correlations, the pairs of a matrix, the cells of a table, the groups of a survival comparison, the biomarkers of a screen. Its columns are given on each function's page. No rows when there are none. |
+#' | `rows` | A data frame for a function's many-row results: pairwise comparisons, per-group correlations, the pairs of a matrix, the points of a fitted line, the cells of a table, the groups of a survival comparison, the biomarkers of a screen. Its columns are given on each function's page. No rows when there are none. |
 #'
 #' When `status` is not `"ok"`, `reason` says why and the numbers are withheld:
 #' `p_value` is `NA` and `estimates` and `statistic` have no rows. `counts` and
@@ -105,7 +105,7 @@ local({
 #' @name StatisticsResult
 #' @aliases statistics-result
 #' @seealso [Analyze_GroupDifference()], [Analyze_Correlation()],
-#'   [Analyze_CorrelationMatrix()], [Analyze_Contingency()],
+#'   [Analyze_CorrelationMatrix()], [Analyze_Fit()], [Analyze_Contingency()],
 #'   [Analyze_Survival()], [Analyze_Screen()]
 NULL
 
@@ -273,6 +273,97 @@ Analyze_Correlation <- Analyze_Correlation
 #' @family statistics
 #' @export
 Analyze_CorrelationMatrix <- Analyze_CorrelationMatrix
+
+#' Fit a line or a smooth to two numeric variables
+#'
+#' Fits one numeric variable to another on the participants who have both,
+#' overall and, when a group column is named, within each group, and returns
+#' the fitted line with its band as points a chart can draw as they are.
+#'
+#' Each method is the base R function, called with R's defaults:
+#'
+#' | `strMethod` | R function | What is returned |
+#' |---|---|---|
+#' | `"linear"` | [stats::lm()], `y ~ x` | The intercept and the slope, each with its interval from [stats::confint()]; the slope's t value and the p-value of the test that the slope is zero; R-squared and the residual degrees of freedom; the line and its confidence band from [stats::predict()] with `interval = "confidence"`. |
+#' | `"smooth"` | [stats::loess()], `y ~ x` | The curve and its band from [stats::predict()] with `se = TRUE`. No slope, no intercept and no test. |
+#'
+#' The line is given at `nPoints` x values, equally spaced from the least to the
+#' greatest x among the pairs the fit used, so each group's line spans that
+#' group's own values. Nothing is left for a chart to work out.
+#'
+#' The band of the linear fit is the confidence band of the fitted mean at
+#' `nConfLevel`, as `predict()` gives it; it is not a prediction band. The band
+#' of the smooth is the conventional pointwise band, formed here from what
+#' `predict()` returns: the fit, give or take
+#' `qt((1 + nConfLevel) / 2, df) * se.fit`, with the degrees of freedom
+#' `predict()` reports.
+#'
+#' A logarithmic axis is the chart's business: the values are fitted as they
+#' are given.
+#'
+#' @inheritParams Analyze_Correlation
+#' @param strXCol,strYCol `character` Names of the two numeric columns: y is
+#'   fitted to x.
+#' @param strMethod `character` The fit: `"linear"` or `"smooth"`. Default:
+#'   `"linear"`.
+#' @param strGroupCol `character` Name of a column holding each participant's
+#'   group, to add a fit per group. Default: `NULL`, the overall fit only.
+#' @param chrGroups `character` The groups to fit, in order. Default: `NULL`,
+#'   every group present, in sorted order.
+#' @param nMinGroup `numeric` The smallest number of complete pairs a fit is
+#'   computed for, overall and in each group. Default: `nMinGroupDefault`,
+#'   which is 5. See [StatisticsResult].
+#' @param nPoints `numeric` How many x values the line is given at, a whole
+#'   number from 2 to 1000. Default: `50`, which draws a smooth band at the
+#'   width of a chart.
+#'
+#' @return The fixed result described in [StatisticsResult]. Here:
+#'
+#' * `counts` is the number of complete pairs.
+#' * `estimates`, for the linear fit, has a row named `"Intercept"` and a row
+#'   named `"Slope"` for the overall fit, with `group` `NA`, and then the same
+#'   two rows for each group that was fitted, with `group` its name. For the
+#'   smooth it has no rows.
+#' * `statistic`, for the linear fit, holds `t` (the slope's t value), `df`
+#'   (the residual degrees of freedom) and `r.squared`; for the smooth, `enp`
+#'   (the equivalent number of parameters), `df` (the degrees of freedom of the
+#'   band) and `residual.scale` (the residual standard error), as `loess()` and
+#'   `predict()` report them.
+#' * `p_value`, for the linear fit, is the p-value of the t-test that the slope
+#'   is zero, from `summary(lm())`. For the smooth it is `NA`.
+#' * `rows` holds the lines: one row per point, the overall line first, with
+#'   `group` `NA`, and then each group's. Its columns are `group`, `x`, `fit`,
+#'   `lower`, `upper` and `level` (the point and its band), and then the answer
+#'   of the fit the point belongs to, repeated on each of its rows: `counts`,
+#'   `method`, `statistic` (the slope's t value), `df`, `r_squared`, `p_value`,
+#'   `adjustment`, `status`, `reason` and `warning`. A fit that could not be
+#'   made, because it has too few pairs or R stopped, is one row with its
+#'   `status` and `reason` and no point: `x` is `NA`.
+#'
+#' When every x value is the same there is no line to fit: `status` is
+#' `"error"` and `reason` says so.
+#'
+#' @examples
+#' # IL-10 against TNF-alpha at Baseline, the pair the synthetic study plants
+#' # a correlation in
+#' dfBaseline <- Synthetic_Results[Synthetic_Results$VISIT == "Baseline", ]
+#' dfTNF <- dfBaseline[dfBaseline$TEST == "TNF-alpha", ]
+#' dfIL10 <- dfBaseline[dfBaseline$TEST == "IL-10", ]
+#' dfFrame <- Synthetic_Participants
+#' dfFrame$TNF <- dfTNF$STRESN[match(dfFrame$USUBJID, dfTNF$USUBJID)]
+#' dfFrame$IL10 <- dfIL10$STRESN[match(dfFrame$USUBJID, dfIL10$USUBJID)]
+#'
+#' lLine <- Analyze_Fit(dfFrame, "TNF", "IL10", strGroupCol = "ARM", nPoints = 5)
+#' lLine$estimates
+#' lLine$statistic
+#' lLine$rows[c("group", "x", "fit", "lower", "upper")]
+#'
+#' lSmooth <- Analyze_Fit(dfFrame, "TNF", "IL10", strMethod = "smooth", nPoints = 5)
+#' lSmooth$rows[c("x", "fit", "lower", "upper")]
+#'
+#' @family statistics
+#' @export
+Analyze_Fit <- Analyze_Fit
 
 #' Test the association between two categories
 #'
