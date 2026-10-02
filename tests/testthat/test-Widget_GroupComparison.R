@@ -38,7 +38,7 @@ test_that("Widget_GroupComparison returns an htmlwidget carrying the tables, the
   lWidget <- lSyntheticWidget()
 
   expect_s3_class(lWidget, c("Widget_GroupComparison", "htmlwidget"))
-  expect_named(lWidget$x, c("dfResults", "dfParticipants", "lSettings", "bDebug", "bAutoHeight", "lStatistics"))
+  expect_named(lWidget$x, c("dfResults", "dfParticipants", "lSettings", "bDebug", "bAutoWidth", "bAutoHeight", "lStatistics"))
   expect_identical(lWidget$x$dfResults, Synthetic_Results)
   expect_identical(lWidget$x$dfParticipants, Synthetic_Participants)
   expect_identical(lWidget$x$lSettings, lSettings)
@@ -62,9 +62,10 @@ test_that("Widget_GroupComparison passes width, height, and elementId through (#
   expect_identical(lWidget$height, "600px")
   expect_identical(lWidget$elementId, "group-comparison-widget")
   expect_true(lWidget$x$bDebug)
-  # With no height asked for the widget is as tall as its chart.
-  expect_false(lWidget$x$bAutoHeight)
-  expect_true(lSyntheticWidget()$x$bAutoHeight)
+  # With no size asked for the widget is as wide as its container and as tall
+  # as its chart, whatever size the page it is shown in gives a widget.
+  expect_false(lWidget$x$bAutoWidth || lWidget$x$bAutoHeight)
+  expect_true(lSyntheticWidget()$x$bAutoWidth && lSyntheticWidget()$x$bAutoHeight)
   expect_identical(lWidget$sizingPolicy$defaultWidth, "100%")
   expect_identical(lWidget$sizingPolicy$browser$defaultWidth, "100%")
 })

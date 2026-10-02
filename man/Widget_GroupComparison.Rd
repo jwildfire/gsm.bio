@@ -33,7 +33,8 @@ are needed. For example \code{start_value}, \code{visits}, \code{value_type},
 given, and \code{statistic} can only be \code{"Analyze_GroupDifference"} or \code{NULL}
 for no statistics line. Default: \code{list()}.}
 
-\item{width}{\code{character} Width of the widget as a CSS unit. Default: \code{NULL}.}
+\item{width}{\code{character} Width of the widget as a CSS unit. Default: \code{NULL},
+as wide as its container.}
 
 \item{height}{\code{character} Height of the widget as a CSS unit. Default:
 \code{NULL}, as tall as the chart.}
@@ -46,7 +47,8 @@ Default: \code{FALSE}.}
 }
 \value{
 An \code{htmlwidget}. Its payload \code{x} carries \code{dfResults},
-\code{dfParticipants}, \code{lSettings}, \code{bDebug} and \code{lStatistics}: the stored
+\code{dfParticipants}, \code{lSettings}, \code{bDebug}, whether a width and a height were
+left to the widget (\code{bAutoWidth}, \code{bAutoHeight}), and \code{lStatistics}: the stored
 results, each with \code{name}, \code{args}, \code{dataId}, \code{rows} and \code{value}, and
 \code{computed_by}, the R version, gsm.bio version and time that computed them.
 }
@@ -96,6 +98,14 @@ with the kit the chart is built from; the record says where it came from.
 \examples{
 # Change from Baseline, by arm, on the synthetic study. Open IL-6, the
 # biomarker the study plants a difference in, to see R's test under it.
+# Moving a filter or the Test control leaves the views that were computed:
+# the line then says that statistics are unavailable for the view.
+lColumns <- list(
+  list(value_col = "ARM", label = "Arm"),
+  list(value_col = "SEX", label = "Sex"),
+  list(value_col = "RESPONSE", label = "Response")
+)
+
 Widget_GroupComparison(
   Synthetic_Results,
   Synthetic_Participants,
@@ -104,11 +114,8 @@ Widget_GroupComparison(
     value_type = "change",
     baseline_visits = "Baseline",
     group_by = "ARM",
-    groups = list(
-      list(value_col = "ARM", label = "Arm"),
-      list(value_col = "SEX", label = "Sex"),
-      list(value_col = "RESPONSE", label = "Response")
-    )
+    groups = lColumns,
+    filters = lColumns
   )
 )
 

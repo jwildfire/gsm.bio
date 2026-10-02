@@ -20,12 +20,10 @@ HTMLWidgets.widget({
         // result is the answer of the R that built the widget.
         const provenance = function(statistics) {
             const by = statistics.computed_by || {};
-            const count = statistics.results.length;
             const when = String(by.computed_at || '').replace('T', ' ').replace(/:\d\dZ$/, ' UTC');
-            return 'Statistics on this page were computed by R ' + by.r_version +
-                ' with gsm.bio ' + by.gsm_bio_version + ' on ' + when + ' and stored with it: ' +
-                count + ' stored result' + (count === 1 ? '' : 's') + '. No R runs in this page, ' +
-                'so a view that was not computed prints that statistics are unavailable for it.';
+            return 'Statistics: computed by R ' + by.r_version + ' with gsm.bio ' +
+                by.gsm_bio_version + ' on ' + when + ' and stored with this page. No R runs ' +
+                'here, so a view that was not computed says that statistics are unavailable.';
         };
 
         return {
@@ -43,9 +41,17 @@ HTMLWidgets.widget({
                     instance.destroy();
                 instance = null;
                 el.innerHTML = '';
-                // As tall as the chart, unless a height was asked for.
+                // As wide as its container and as tall as the chart, unless a
+                // size was asked for: a page that gives every widget a fixed
+                // size in pixels would cut the chart off on a narrow screen.
+                if (x.bAutoWidth)
+                    el.style.width = '100%';
                 if (x.bAutoHeight)
                     el.style.height = 'auto';
+                // A page that shows the widget as the output of code (a
+                // reference page, a notebook) keeps lines unbroken around
+                // it; the chart's sentences wrap.
+                el.style.whiteSpace = 'normal';
 
                 const chart = document.createElement('div');
                 chart.className = 'gsm-bio-chart';
@@ -76,7 +82,9 @@ HTMLWidgets.widget({
                 if (settings.statistic !== null) {
                     const note = document.createElement('p');
                     note.className = 'gsm-bio-provenance';
-                    note.style.cssText = 'margin:.75rem 0 0;font-size:.8rem;color:#52616f;';
+                    note.style.cssText = 'margin:.75rem 0 0;font:.8rem/1.4 system-ui,-apple-system,' +
+                        '"Segoe UI",sans-serif;color:#52616f;';
+                    note.dataset.storedResults = String(statistics.results.length);
                     note.textContent = provenance(statistics);
                     el.appendChild(note);
                 }

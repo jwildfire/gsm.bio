@@ -53,7 +53,8 @@
 #'   `pairwise`. The setting `connection` is the widget's to make and cannot be
 #'   given, and `statistic` can only be `"Analyze_GroupDifference"` or `NULL`
 #'   for no statistics line. Default: `list()`.
-#' @param width `character` Width of the widget as a CSS unit. Default: `NULL`.
+#' @param width `character` Width of the widget as a CSS unit. Default: `NULL`,
+#'   as wide as its container.
 #' @param height `character` Height of the widget as a CSS unit. Default:
 #'   `NULL`, as tall as the chart.
 #' @param elementId `character` ID of the widget's HTML element. Default:
@@ -62,13 +63,22 @@
 #'   Default: `FALSE`.
 #'
 #' @return An `htmlwidget`. Its payload `x` carries `dfResults`,
-#'   `dfParticipants`, `lSettings`, `bDebug` and `lStatistics`: the stored
+#'   `dfParticipants`, `lSettings`, `bDebug`, whether a width and a height were
+#'   left to the widget (`bAutoWidth`, `bAutoHeight`), and `lStatistics`: the stored
 #'   results, each with `name`, `args`, `dataId`, `rows` and `value`, and
 #'   `computed_by`, the R version, gsm.bio version and time that computed them.
 #'
 #' @examples
 #' # Change from Baseline, by arm, on the synthetic study. Open IL-6, the
 #' # biomarker the study plants a difference in, to see R's test under it.
+#' # Moving a filter or the Test control leaves the views that were computed:
+#' # the line then says that statistics are unavailable for the view.
+#' lColumns <- list(
+#'   list(value_col = "ARM", label = "Arm"),
+#'   list(value_col = "SEX", label = "Sex"),
+#'   list(value_col = "RESPONSE", label = "Response")
+#' )
+#'
 #' Widget_GroupComparison(
 #'   Synthetic_Results,
 #'   Synthetic_Participants,
@@ -77,11 +87,8 @@
 #'     value_type = "change",
 #'     baseline_visits = "Baseline",
 #'     group_by = "ARM",
-#'     groups = list(
-#'       list(value_col = "ARM", label = "Arm"),
-#'       list(value_col = "SEX", label = "Sex"),
-#'       list(value_col = "RESPONSE", label = "Response")
-#'     )
+#'     groups = lColumns,
+#'     filters = lColumns
 #'   )
 #' )
 #'
@@ -152,6 +159,7 @@ Widget_GroupComparison <- function(
     dfParticipants = dfParticipants,
     lSettings = lSettings,
     bDebug = bDebug,
+    bAutoWidth = is.null(width),
     bAutoHeight = is.null(height),
     lStatistics = list(
       computed_by = StoredResultsProvenance(),
