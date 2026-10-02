@@ -3,13 +3,13 @@
   "copied_by": "data-raw/vendor-bio-viz.R",
   "repository": "https://github.com/jwildfire/bio.viz",
   "ref": "dev",
-  "commit": "f3890ce9f1f37d51c159f69b15cc95726a0fd297",
+  "commit": "1dba79810813d44354c605c5d3f5573fb331a61e",
   "files": [
     {
       "file": "group-statistics/SOURCE.json",
       "source": "tests/fixtures/group-statistics/SOURCE.json",
-      "sha256": "5399b87f3842613b163c4b79e9f587609b389d184157a34b6a8cf1addf64d71b",
-      "bytes": 4450
+      "sha256": "93851f32c2837e038aebc9459b50e51d94dc217567f0e58fd8474083ac64f457",
+      "bytes": 5849
     },
     {
       "file": "group-statistics/welch.csv",
@@ -84,6 +84,36 @@
       "bytes": 4998
     },
     {
+      "file": "group-statistics/result-baseline.csv",
+      "source": "tests/fixtures/group-statistics/result-baseline.csv",
+      "sha256": "f7dd2f178491c75a7674df0b33571044d65baf560dc29fd383e0998c31f66a71",
+      "bytes": 4598
+    },
+    {
+      "file": "group-statistics/result-week-2.csv",
+      "source": "tests/fixtures/group-statistics/result-week-2.csv",
+      "sha256": "6788604ed11951f6456d0875b68a56dd7f5bbb9e55aebfaaa65500ba921c2ce8",
+      "bytes": 4258
+    },
+    {
+      "file": "group-statistics/result-week-4.csv",
+      "source": "tests/fixtures/group-statistics/result-week-4.csv",
+      "sha256": "00a157d9cad5f7c3efe1236f6a10c39eea519521a98f94f594d920c251b8aed0",
+      "bytes": 4272
+    },
+    {
+      "file": "group-statistics/result-week-8.csv",
+      "source": "tests/fixtures/group-statistics/result-week-8.csv",
+      "sha256": "66078edee14465e0d2fa88b20549babd767bc83ca6c7c951145b9cc99c670509",
+      "bytes": 4325
+    },
+    {
+      "file": "group-statistics/result-week-12.csv",
+      "source": "tests/fixtures/group-statistics/result-week-12.csv",
+      "sha256": "3ec94e52edd2044153ca4d0b3d6568874bd882a1edd5cab00fddd4e075dc4fd0",
+      "bytes": 4236
+    },
+    {
       "file": "group-statistics/welch-panel-women.csv",
       "source": "tests/fixtures/group-statistics/welch-panel-women.csv",
       "sha256": "bab591eaccc58f61e3d5695e551c23f6ad330b31d647386f556ba2196a82068c",
@@ -92,14 +122,14 @@
     {
       "file": "group-statistics/cases.csv",
       "source": "tests/fixtures/group-statistics/cases.csv",
-      "sha256": "d67735ca5b5c9497363cac8d8abeb2ae21448edfc71d7b8b047c29bd37dc55a9",
-      "bytes": 1613
+      "sha256": "d8806b4c04b9ba994a88a70cde2b156c224348de953348fb6cf8ec9bf01c194f",
+      "bytes": 2167
     },
     {
       "file": "group-statistics-r.json",
       "source": "tests/fixtures/group-statistics-r.json",
-      "sha256": "c32e29b0f5d1349263c4fb1b18e22658e5076e6a1ebe473f43659ede852e48d2",
-      "bytes": 20132
+      "sha256": "8f80cbba44e6df2934e860fc8c281abd753fce9d753230ee4b7031036c3704d1",
+      "bytes": 25560
     }
   ]
 }
