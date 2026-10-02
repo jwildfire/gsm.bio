@@ -22,6 +22,8 @@ reference:
       - Analyze_Correlation
       - Analyze_CorrelationMatrix
       - Analyze_Contingency
+      - Analyze_Survival
+      - Analyze_Screen
       - StatisticsResult
   - title: Synthetic study
     desc: >
