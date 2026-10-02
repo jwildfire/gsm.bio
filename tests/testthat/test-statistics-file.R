@@ -34,6 +34,7 @@ lStatisticsCalls <- function() {
     matrix_too_small = list("Analyze_CorrelationMatrix", list(chrCols = c(strX, strY), nMinPairs = 201)),
     chisq = list("Analyze_Contingency", list(strRowCol = "ARM", strColCol = "RESPONSE", strMethod = "chisq")),
     chisq_larger = list("Analyze_Contingency", list(strRowCol = "ARM_SEX", strColCol = "RESPONSE")),
+    chisq_sparse = list("Analyze_Contingency", list(strRowCol = "AGE_DECADE", strColCol = "RESPONSE", nMinGroup = 1)),
     fisher = list("Analyze_Contingency", list(strRowCol = "ARM", strColCol = "RESPONSE", strMethod = "fisher")),
     fisher_larger = list("Analyze_Contingency", list(strRowCol = "ARM_SEX", strColCol = "RESPONSE", strMethod = "fisher")),
     contingency_too_small = list("Analyze_Contingency", list(strRowCol = "ARM", strColCol = "RESPONSE", nMinGroup = 101))
@@ -64,6 +65,17 @@ chrCalledFunctions <- function(xCode) {
   character(0)
 }
 
+# The same object, whatever environment it was defined in and whether or not
+# its source references were kept: a package installed with its source keeps
+# them on every function, the outer ones and the ones written inside them.
+bSameDefinition <- function(xPackage, xFile) {
+  if (is.function(xPackage) && is.function(xFile)) {
+    xPackage <- utils::removeSource(xPackage)
+    xFile <- utils::removeSource(xFile)
+  }
+  identical(xPackage, xFile, ignore.environment = TRUE, ignore.bytecode = TRUE, ignore.srcref = TRUE)
+}
+
 test_that("the statistics file ships in the installed package where system.file() finds it (#3)", {
   expect_true(nzchar(strStatisticsFile()))
   expect_true(file.exists(strStatisticsFile()))
@@ -83,9 +95,11 @@ test_that("each exported function is identical to its definition in the statisti
     # Same arguments, same defaults and same body. Only the environment the
     # function was defined in differs, which is the point.
     expect_true(
-      identical(fnPackage, fnFile, ignore.environment = TRUE, ignore.bytecode = TRUE, ignore.srcref = TRUE),
+      bSameDefinition(fnPackage, fnFile),
       label = paste(strName, "in the package is identical to its definition in the file")
     )
+    # The comparison can fail: a function is not identical to a different one.
+    expect_false(bSameDefinition(fnPackage, get("Stat_Result", envir = envFile)))
     expect_identical(environment(fnPackage), asNamespace("gsm.bio"))
   }
 
@@ -93,10 +107,7 @@ test_that("each exported function is identical to its definition in the statisti
   # exported: there is no second copy of a helper or a constant either.
   for (strName in setdiff(ls(envFile), chrExports)) {
     expect_true(
-      identical(
-        get(strName, envir = asNamespace("gsm.bio")), get(strName, envir = envFile),
-        ignore.environment = TRUE, ignore.bytecode = TRUE, ignore.srcref = TRUE
-      ),
+      bSameDefinition(get(strName, envir = asNamespace("gsm.bio")), get(strName, envir = envFile)),
       label = paste(strName, "in the namespace is identical to its definition in the file")
     )
   }
@@ -148,7 +159,8 @@ test_that("no result on the synthetic study holds a factor, a matrix, a classed 
   expect_gt(nrow(lResults$anova$rows), 0)
   expect_gt(nrow(lResults$pearson$rows), 0)
   expect_identical(nrow(lResults$matrix_spearman$rows), 1L)
-  expect_gt(length(lResults$kruskal$warnings), 0)
+  # A warning every version of R raises, so the list is exercised non-empty.
+  expect_identical(lResults$chisq_sparse$warnings, list("Chi-squared approximation may be incorrect"))
   expect_gt(length(lResults$spearman$notes), 0)
   expect_true(is.list(lResults$t$counts) && is.integer(lResults$chisq$counts))
 })

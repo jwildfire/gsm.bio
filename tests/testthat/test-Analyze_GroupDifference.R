@@ -165,7 +165,8 @@ test_that("Kruskal-Wallis equals kruskal.test(), and its pairwise comparisons eq
   expect_identical(dfRows$p_unadjusted, nRaw)
   expect_identical(dfRows$p_value, stats::p.adjust(nRaw, method = "BH"))
   expect_identical(dfRows$adjustment, rep("BH", 6))
-  expect_gt(length(chrAll), 0)
+  # Whatever this version of R warns about, ties for one, is kept; newer
+  # versions compute the exact p-value with ties and have nothing to say.
   expect_identical(lResult$warnings, as.list(unique(chrAll)))
 
   mPairwise <- suppressWarnings(

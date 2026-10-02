@@ -52,22 +52,30 @@ test_that("the chi-squared test equals chisq.test() on a larger table (#3)", {
 })
 
 test_that("small expected counts are flagged from chisq.test()'s own expected counts, and R's warning is kept (#3)", {
-  dfFew <- dfFrame[1:30, ]
-  expect_silent(lResult <- Analyze_Contingency(dfFew, "ARM_SEX", "RESPONSE", nMinGroup = 1))
-  lBase <- lWithWarnings(function() stats::chisq.test(table(dfFew$ARM_SEX, dfFew$RESPONSE)))
+  # Age by decade against response: the youngest and oldest decades are sparse.
+  expect_silent(lResult <- Analyze_Contingency(dfFrame, "AGE_DECADE", "RESPONSE", nMinGroup = 1))
+  lBase <- lWithWarnings(function() stats::chisq.test(table(dfFrame$AGE_DECADE, dfFrame$RESPONSE)))
 
   ExpectResultShape(lResult)
   expect_identical(lResult$status, "ok")
   expect_identical(lResult$p_value, lBase$value$p.value)
+  expect_identical(lResult$rows$expected, as.numeric(lBase$value$expected))
   expect_identical(lResult$rows$small_expected, as.logical(lBase$value$expected < 5))
   expect_gt(sum(lResult$rows$small_expected), 0)
+  expect_lt(sum(lResult$rows$small_expected), nrow(lResult$rows))
   expect_identical(lResult$warnings, list("Chi-squared approximation may be incorrect"))
   expect_identical(lResult$warnings, lBase$warnings)
-  expect_match(
+  expect_identical(
     lResult$notes[[1]],
-    sprintf("%d of 8 expected counts are below 5", sum(lBase$value$expected < 5)),
-    fixed = TRUE
+    sprintf(
+      "%d of %d expected counts are below 5, so the chi-squared approximation may be poor. Fisher's exact test does not rely on it.",
+      sum(lBase$value$expected < 5), length(lBase$value$expected)
+    )
   )
+
+  # With the default minimum the sparse decades stop the test instead.
+  lDefault <- Analyze_Contingency(dfFrame, "AGE_DECADE", "RESPONSE")
+  expect_identical(lDefault$status, "too_small")
 })
 
 test_that("Fisher's exact test equals fisher.test() on a two-by-two table, with the odds ratio and its interval (#3)", {

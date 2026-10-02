@@ -11,7 +11,7 @@ nResultAt <- function(strBiomarker, strVisit) {
 # The one-row-per-participant frame a chart hands to a statistics function: the
 # participant table, every biomarker at Baseline and at Week 4 as a column
 # named "<biomarker> @ <visit>", the change the planted group difference is
-# stated in, and a four-level group.
+# stated in, a four-level group, and age by decade, whose ends are sparse.
 dfSyntheticFrame <- function() {
   dfFrame <- Synthetic_Participants
   for (strBiomarker in unique(Synthetic_Results$TEST)) {
@@ -23,6 +23,7 @@ dfSyntheticFrame <- function() {
   dfFrame$Change <- nResultAt(lGroup$Biomarker, lGroup$Visit) -
     nResultAt(lGroup$Biomarker, lGroup$BaselineVisit)
   dfFrame$ARM_SEX <- paste(dfFrame$ARM, dfFrame$SEX)
+  dfFrame$AGE_DECADE <- paste0(dfFrame$AGE %/% 10L * 10L, "s")
   dfFrame
 }
 
