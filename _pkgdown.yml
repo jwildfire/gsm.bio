@@ -13,6 +13,16 @@ reference:
     desc: What gsm.bio is for and how its statistics are built.
     contents:
       - gsm.bio-package
+  - title: Statistics
+    desc: >
+      One function per family of tests, each a thin wrapper around the base R
+      function the design names, and all returning the same result.
+    contents:
+      - Analyze_GroupDifference
+      - Analyze_Correlation
+      - Analyze_CorrelationMatrix
+      - Analyze_Contingency
+      - StatisticsResult
   - title: Synthetic study
     desc: >
       A made-up biomarker study with three planted effects of known size, for
