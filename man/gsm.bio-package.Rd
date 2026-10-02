@@ -31,14 +31,14 @@ wrap them: \code{\link[stats:t.test]{stats::t.test()}}, \code{\link[stats:wilcox
 A widget draws a bio.viz chart from R. It computes the chart's statistics
 with the functions above when it is made and stores them in the page, so a
 saved page shows them with no R and no network: see
-\code{\link[=Widget_GroupComparison]{Widget_GroupComparison()}}. The widgets are the only part of the package
+\code{\link[=Widget_GroupComparison]{Widget_GroupComparison()}} and \code{\link[=Widget_AssociationScatter]{Widget_AssociationScatter()}}. The widgets are the only part of the package
 that uses htmlwidgets.
 }
 
 \section{Status}{
 
 Version 0.1.0 is in development: the statistics functions, a synthetic
-biomarker study with known planted effects, and the first widget.
+biomarker study with known planted effects, and the first widgets.
 }
 
 \seealso{

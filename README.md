@@ -57,7 +57,24 @@ It takes the results table, optionally the participant table, and the chart's se
 
 The tests are computed in R when the widget is made, by `Analyze_GroupDifference()`, for each biomarker at each visit panel the chart draws at the widget's settings, and are stored in the page. Saved with `htmlwidgets::saveWidget()`, the page is one file that shows them with no R and no network, and says under the chart which R version and gsm.bio version computed them. A view that was not computed, such as another test or a filter, says that statistics are unavailable for it; it never shows another view's numbers.
 
-The widget carries two JavaScript bundles, both copied from bio.viz with the commit and a checksum per file recorded in `inst/htmlwidgets/lib/SOURCE.json`: bio.viz's own, and the copy of safety.viz's bundle bio.viz builds its chart from. The safety.viz copy is a stand-in. It comes from a safety.viz branch that is not merged yet, and is to be replaced by gsm.safety's bundle once gsm.safety carries one with the kit.
+`Widget_AssociationScatter()` draws bio.viz's association scatter the same way: one point per participant with a variable on each axis, a correlation coefficient under each panel and, when asked for, a fitted line.
+
+```r
+Widget_AssociationScatter(
+  Synthetic_Results,
+  Synthetic_Participants,
+  lSettings = list(
+    x = list(measure = "TNF-alpha", visit = "Baseline"),
+    y = list(measure = "IL-10", visit = "Baseline"),
+    color_by = "ARM",
+    fit = "linear"
+  )
+)
+```
+
+For the pair the settings open on it stores `Analyze_Correlation()`'s answer for Pearson's and for Spearman's coefficient and `Analyze_Fit()`'s for the linear fit and for the smooth, four results for each panel, so the Method and Fitted line controls of a saved page are answered. The fitted line is drawn from R's stored points. Another variable, colour, filter or scale is a view that was not computed, and says so.
+
+Every widget carries two JavaScript bundles, both copied from bio.viz with the commit and a checksum per file recorded in `inst/htmlwidgets/lib/SOURCE.json`: bio.viz's own, and the copy of safety.viz's bundle bio.viz builds its chart from. The safety.viz copy is a stand-in. It comes from a safety.viz branch that is not merged yet, and is to be replaced by gsm.safety's bundle once gsm.safety carries one with the kit.
 
 ## Synthetic study
 
@@ -65,7 +82,7 @@ The package ships a made-up biomarker study, so that a test can assert an answer
 
 ## Status
 
-Version 0.1.0 is in development on `dev`: seven statistics functions, the synthetic study and the first widget, for the group comparison chart. Widgets for the other charts and static figures come in later versions. [NEWS.md](https://github.com/jwildfire/gsm.bio/blob/dev/NEWS.md) lists what has landed, and the reference site is at <https://jwildfire.github.io/gsm.bio/>.
+Version 0.1.0 is in development on `dev`: seven statistics functions, the synthetic study and two widgets, for the group comparison chart and the association scatter. Widgets for the other charts and static figures come in later versions. [NEWS.md](https://github.com/jwildfire/gsm.bio/blob/dev/NEWS.md) lists what has landed, and the reference site is at <https://jwildfire.github.io/gsm.bio/>.
 
 The design is on the obot roadmap: [bio.viz and gsm.bio](https://jwildfire.github.io/obot.roadmap/requirements/design/353_design.html).
 
