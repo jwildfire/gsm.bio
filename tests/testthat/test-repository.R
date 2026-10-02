@@ -98,3 +98,26 @@ test_that("the pkgdown workflow may write, and deploys to gh-pages on pushes onl
   expect_match(strText, "branch: gh-pages", fixed = TRUE)
   expect_match(strText, "build_site_github_pages", fixed = TRUE)
 })
+
+test_that("the check job has pandoc, which the proof of the saved page needs (#9)", {
+  chrLines <- chrRepositoryFile(".github", "workflows", "R-CMD-check.yaml")
+  # Before R is set up, so both the check and the source-tree step have it.
+  iPandoc <- grep("uses: r-lib/actions/setup-pandoc@v2", chrLines, fixed = TRUE)
+  iCheck <- grep("uses: r-lib/actions/check-r-package@v2", chrLines, fixed = TRUE)
+  expect_identical(length(iPandoc), 1L)
+  expect_true(length(iCheck) == 1L && iPandoc < iCheck)
+})
+
+test_that("CLAUDE.md gives the one command that copies bio.viz's files again, and the script is there (#9)", {
+  strText <- paste(chrRepositoryFile("CLAUDE.md"), collapse = "\n")
+  expect_match(strText, "Rscript data-raw/vendor-bio-viz.R", fixed = TRUE)
+  for (strScript in c("vendor-bio-viz.R", "core-frames.mjs")) {
+    chrScript <- chrRepositoryFile("data-raw", strScript)
+    expect_gt(length(chrScript), 0)
+  }
+  # The script writes the three things the tests read.
+  strScript <- paste(chrRepositoryFile("data-raw", "vendor-bio-viz.R"), collapse = "\n")
+  for (strWritten in c('file.path("inst", "htmlwidgets", "lib")', 'file.path("tests", "testthat", "fixtures", "bio.viz")', "core-frames.mjs")) {
+    expect_match(strScript, strWritten, fixed = TRUE)
+  }
+})

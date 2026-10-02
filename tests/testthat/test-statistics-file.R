@@ -119,7 +119,9 @@ test_that("each exported function is identical to its definition in the statisti
   sys.source(strStatisticsFile(), envir = envFile)
   chrExports <- chrStatisticsExports
 
-  expect_setequal(getNamespaceExports("gsm.bio"), chrExports)
+  # Every statistics function the package exports is one of the file's. The
+  # widgets (#9) are exported too, and are not statistics.
+  expect_setequal(grep("^Analyze_", getNamespaceExports("gsm.bio"), value = TRUE), chrExports)
   expect_true(all(chrExports %in% ls(envFile)))
   for (strName in chrExports) {
     fnPackage <- getExportedValue("gsm.bio", strName)
@@ -254,7 +256,7 @@ test_that("the statistics file runs in a bare R session with only stats and surv
     "survival", "splines", "Matrix", "lattice", "grid"
   )), label = paste("the bare session loaded only:", paste(lBare$namespaces, collapse = " ")))
   expect_false(any(c("gsm.bio", "testthat", "effectsize") %in% lBare$namespaces))
-  expect_true(all(getNamespaceExports("gsm.bio") %in% lBare$defined))
+  expect_true(all(chrStatisticsExports %in% lBare$defined))
 
   # The same answers as the package, to the last bit, for every method.
   lPackage <- lRunCalls(lStatisticsCalls(), dfSyntheticFrame(), asNamespace("gsm.bio"))

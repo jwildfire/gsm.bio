@@ -25,6 +25,13 @@ reference:
       - Analyze_Survival
       - Analyze_Screen
       - StatisticsResult
+  - title: Widgets
+    desc: >
+      A bio.viz chart drawn from R, with its statistics computed by the
+      functions above when the widget is made and stored in the page, so a
+      saved page shows them with no R and no network.
+    contents:
+      - Widget_GroupComparison
   - title: Synthetic study
     desc: >
       A made-up biomarker study with three planted effects of known size, for

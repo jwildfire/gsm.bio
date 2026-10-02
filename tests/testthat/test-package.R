@@ -1,7 +1,9 @@
 # The package itself (#1): it loads, it is the version the milestone ships, and
-# its dependencies are the two the design allows. The statistics functions run
-# unchanged in a desktop session, in the browser and on a server, so anything
-# beyond stats and survival under Imports would break one of the three.
+# its dependencies are the ones the design allows. The statistics functions run
+# unchanged in a desktop session, in the browser and on a server, so they use
+# stats and survival and nothing else (test-statistics-file.R holds the file to
+# that). The widgets (#9) add htmlwidgets, which only a desktop session or a
+# server loads.
 
 chrDependencies <- function(strField) {
   strValue <- utils::packageDescription("gsm.bio")[[strField]]
@@ -18,23 +20,25 @@ test_that("the package loads and reports the version its milestone ships (#1)", 
   expect_identical(as.character(utils::packageVersion("gsm.bio")), "0.1.0")
 })
 
-test_that("the package imports only stats and survival (#1)", {
-  expect_identical(chrDependencies("Imports"), c("stats", "survival"))
+test_that("the package imports stats and survival for the statistics, and htmlwidgets for the widgets (#1, #9)", {
+  expect_identical(chrDependencies("Imports"), c("htmlwidgets", "stats", "survival"))
   expect_identical(chrDependencies("Depends"), "R")
   expect_identical(chrDependencies("Remotes"), character(0))
 })
 
-test_that("testthat and the standardised-difference comparison package are suggested, not imported (#1)", {
-  expect_identical(chrDependencies("Suggests"), c("effectsize", "testthat"))
+test_that("what only a test needs is suggested, not imported (#1, #9)", {
+  # effectsize checks the standardised difference; digest, jsonlite and
+  # rmarkdown check the vendored files and read a saved page back.
+  expect_identical(chrDependencies("Suggests"), c("digest", "effectsize", "jsonlite", "rmarkdown", "testthat"))
   expect_identical(utils::packageDescription("gsm.bio")[["Config/testthat/edition"]], "3")
 })
 
-test_that("the package exports the six statistics functions and ships the synthetic study as its only data (#1, #2, #3, #4)", {
+test_that("the package exports the six statistics functions and the widget, and ships the synthetic study as its only data (#1, #2, #3, #4, #9)", {
   expect_setequal(
     getNamespaceExports("gsm.bio"),
     c(
       "Analyze_GroupDifference", "Analyze_Correlation", "Analyze_CorrelationMatrix", "Analyze_Contingency",
-      "Analyze_Survival", "Analyze_Screen"
+      "Analyze_Survival", "Analyze_Screen", "Widget_GroupComparison"
     )
   )
   expect_setequal(
