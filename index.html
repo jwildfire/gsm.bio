@@ -95,6 +95,16 @@
 <code><a href="https://rdrr.io/r/stats/chisq.test.html" class="external-link">chisq.test()</a></code>, with small expected counts flagged, and <code><a href="https://rdrr.io/r/stats/fisher.test.html" class="external-link">fisher.test()</a></code>
 </td>
 </tr>
+<tr>
+<td><code><a href="reference/Analyze_Survival.html">Analyze_Survival()</a></code></td>
+<td>
+<code>survdiff()</code> for the log-rank test, <code>survfit()</code> for median survival with its log-log interval, <code>coxph()</code> for the hazard ratio between two groups</td>
+</tr>
+<tr>
+<td><code><a href="reference/Analyze_Screen.html">Analyze_Screen()</a></code></td>
+<td>One row per biomarker for one comparison: a standardised difference between two groups, a correlation with one variable, or a hazard ratio for high against low; p-values adjusted across the rows by <code><a href="https://rdrr.io/r/stats/p.adjust.html" class="external-link">p.adjust()</a></code>
+</td>
+</tr>
 </tbody>
 </table>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
@@ -102,7 +112,9 @@
 <span><span class="va">lResult</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/Analyze_Contingency.html">Analyze_Contingency</a></span><span class="op">(</span><span class="va">Synthetic_Participants</span>, <span class="st">"ARM"</span>, <span class="st">"RESPONSE"</span><span class="op">)</span></span>
 <span><span class="va">lResult</span><span class="op">$</span><span class="va">method</span></span>
 <span><span class="va">lResult</span><span class="op">$</span><span class="va">p_value</span></span></code></pre></div>
-<p>The functions are defined once, in one file that needs nothing but the stats package: <code>system.file("statistics", "statistics.R", package = "gsm.bio")</code>. The package is built from that file, and a chart can hand the same file to R in the browser.</p>
+<p>Nothing is reimplemented, with one exception: the standardised difference in the screen is a few lines of the package’s own, checked against <code><a href="https://easystats.github.io/effectsize/reference/cohens_d.html" class="external-link">effectsize::hedges_g()</a></code>.</p>
+<p>The functions are defined once, in one file that needs nothing but the stats and survival packages: <code>system.file("statistics", "statistics.R", package = "gsm.bio")</code>. The package is built from that file, and a chart can hand the same file to R in the browser.</p>
+<p>A result is the answer of the R that computed it. R’s own defaults can differ between versions, so a chart and a report agree when they run the same version of R.</p>
 </div>
 <div class="section level2">
 <h2 id="synthetic-study">Synthetic study<a class="anchor" aria-label="anchor" href="#synthetic-study"></a>
@@ -112,7 +124,7 @@
 <div class="section level2">
 <h2 id="status">Status<a class="anchor" aria-label="anchor" href="#status"></a>
 </h2>
-<p>Version 0.1.0 is in development. The group, correlation and contingency statistics and the synthetic study are in; the survival statistics and the biomarker screen arrive next, in the same version. <a href="https://github.com/jwildfire/gsm.bio/blob/dev/NEWS.md" class="external-link">NEWS.md</a> lists what has landed, and the reference site is at <a href="https://jwildfire.github.io/gsm.bio/" class="uri">https://jwildfire.github.io/gsm.bio/</a>.</p>
+<p>Version 0.1.0 is in development on <code>dev</code>, and its content is complete: six statistics functions and the synthetic study. The widgets and static figures for the charts come in later versions. <a href="https://github.com/jwildfire/gsm.bio/blob/dev/NEWS.md" class="external-link">NEWS.md</a> lists what has landed, and the reference site is at <a href="https://jwildfire.github.io/gsm.bio/" class="uri">https://jwildfire.github.io/gsm.bio/</a>.</p>
 <p>The design is on the obot roadmap: <a href="https://jwildfire.github.io/obot.roadmap/requirements/design/353_design.html" class="external-link">bio.viz and gsm.bio</a>.</p>
 </div>
 <div class="section level2">

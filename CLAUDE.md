@@ -47,8 +47,8 @@ runs one requirement per session
   `R/statistics.R` evaluates that file into the namespace and holds only
   the documentation, so edit the functions in the file under `inst/`,
   never copy them into `R/`. The file must run in a bare session with
-  only stats attached (survival joins it with the survival functions):
-  call `stats::` by name, attach nothing, evaluate no text.
+  only stats and survival attached: call `stats::` and `survival::` by
+  name, attach nothing, evaluate no text.
 - Every `Analyze_*` function returns the one result shape documented in
   [`?StatisticsResult`](https://jwildfire.github.io/gsm.bio/reference/StatisticsResult.md)
   and built by `Stat_Result()`; `tests/testthat/helper-result-shape.R`

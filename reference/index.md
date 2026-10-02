@@ -21,6 +21,10 @@ function the design names, and all returning the same result.
   : Correlate every pair of several numeric variables
 - [`Analyze_Contingency()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_Contingency.md)
   : Test the association between two categories
+- [`Analyze_Survival()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_Survival.md)
+  : Compare survival between groups
+- [`Analyze_Screen()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_Screen.md)
+  : Screen many biomarkers with one comparison
 - [`StatisticsResult`](https://jwildfire.github.io/gsm.bio/reference/StatisticsResult.md)
   [`statistics-result`](https://jwildfire.github.io/gsm.bio/reference/StatisticsResult.md)
   : The result every statistics function returns

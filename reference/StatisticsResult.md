@@ -23,7 +23,7 @@ Always all of these, always in this order, all in lower snake case.
 | `dropped` | A data frame of `reason` and `n`: the rows left out and why. No rows when nothing was dropped. |
 | `warnings` | An unnamed list of the warnings R raised inside the wrapped call, as text. They are captured here and never printed. |
 | `notes` | An unnamed list of remarks of the package's own, as text. |
-| `rows` | A data frame for a function's many-row results: pairwise comparisons, per-group correlations, the pairs of a matrix, the cells of a table. Its columns are given on each function's page. No rows when there are none. |
+| `rows` | A data frame for a function's many-row results: pairwise comparisons, per-group correlations, the pairs of a matrix, the cells of a table, the groups of a survival comparison, the biomarkers of a screen. Its columns are given on each function's page. No rows when there are none. |
 
 When `status` is not `"ok"`, `reason` says why and the numbers are
 withheld: `p_value` is `NA` and `estimates` and `statistic` have no
@@ -33,6 +33,19 @@ because they are the explanation.
 Wherever `p_value` and `adjustment` appear together, at the top level or
 in a row of `rows`, `adjustment` describes that `p_value`. A row whose
 p-value was adjusted also carries the unadjusted one as `p_unadjusted`.
+
+## R's answer
+
+A result is the answer of the R that computed it. Every statistic is the
+R function called with R's own defaults, and those defaults are R's to
+change. A few have changed between versions, so the same call on the
+same data can give a different number in an older R and a newer one. One
+case is known: with tied values,
+[`wilcox.test()`](https://rdrr.io/r/stats/wilcox.test.html) in R 4.3.3
+warns that it cannot compute an exact p-value and uses the normal
+approximation, where R 4.6.1 computes the exact p-value and does not
+warn. A chart computing in the browser and a report computed at a desk
+agree when they run the same version of R.
 
 ## Crossing into JavaScript
 
@@ -81,11 +94,14 @@ conventional floor for an expected count in a chi-squared test.
 The functions are defined once, in the file
 `system.file("statistics", "statistics.R", package = "gsm.bio")`. The
 package's exported functions are built from that file, and the same file
-runs as it is in a bare R session with only the stats package attached.
+runs as it is in a bare R session with only the stats and survival
+packages attached.
 
 ## See also
 
 [`Analyze_GroupDifference()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_GroupDifference.md),
 [`Analyze_Correlation()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_Correlation.md),
 [`Analyze_CorrelationMatrix()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_CorrelationMatrix.md),
-[`Analyze_Contingency()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_Contingency.md)
+[`Analyze_Contingency()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_Contingency.md),
+[`Analyze_Survival()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_Survival.md),
+[`Analyze_Screen()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_Screen.md)

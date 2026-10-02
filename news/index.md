@@ -54,11 +54,37 @@ prepared.
   [\#7](https://github.com/jwildfire/gsm.bio/pull/7))
 - **One source file a chart can hand to R in the browser.** The
   statistics are defined once, in a file that needs nothing but the
-  stats package and ships in the installed package. The package’s
-  functions are built from it, so the number a chart prints in the
-  browser and the number R gives at a desk come from the same lines.
+  stats and survival packages and ships in the installed package. The
+  package’s functions are built from it, so the number a chart prints in
+  the browser and the number R gives at a desk come from the same lines.
   ([\#3](https://github.com/jwildfire/gsm.bio/issues/3),
   [\#7](https://github.com/jwildfire/gsm.bio/pull/7))
+- **Survival between groups, with the test, the medians and the hazard
+  ratio.**
+  [`Analyze_Survival()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_Survival.md)
+  compares the time to an event between groups with the log-rank test,
+  gives each group’s median survival with the same log-log interval
+  safety.viz draws as its band, and, for two groups, the hazard ratio
+  with its interval. The censor flag can be given either way round, as
+  ADaM’s `CNSR` or as an event flag, and the result says which value it
+  read as an event.
+  ([obot.roadmap#364](https://github.com/jwildfire/obot.roadmap/issues/364),
+  [\#4](https://github.com/jwildfire/gsm.bio/issues/4),
+  [\#8](https://github.com/jwildfire/gsm.bio/pull/8))
+- **A screen across every biomarker.**
+  [`Analyze_Screen()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_Screen.md)
+  runs one comparison on every biomarker and returns a row for each: a
+  standardised difference between two groups, a correlation with one
+  variable, or a hazard ratio for high against low, with its interval,
+  its p-value and that p-value adjusted across the rows
+  (Benjamini-Hochberg by default, Holm on request). Each row is the
+  single function’s own answer, so the screen and the single chart never
+  disagree, and a biomarker that cannot be computed says why without
+  stopping the others. On the synthetic study the planted biomarker is
+  the top row of each comparison.
+  ([obot.roadmap#364](https://github.com/jwildfire/obot.roadmap/issues/364),
+  [\#4](https://github.com/jwildfire/gsm.bio/issues/4),
+  [\#8](https://github.com/jwildfire/gsm.bio/pull/8))
 
 ### Also in this release
 
@@ -75,6 +101,13 @@ prepared.
   job runs the tests a second time where they can, and fails if any is
   skipped. ([\#2](https://github.com/jwildfire/gsm.bio/issues/2),
   [\#6](https://github.com/jwildfire/gsm.bio/pull/6))
+- **A result is R’s answer for the R that ran it.** R’s defaults can
+  differ between versions: with tied values,
+  [`wilcox.test()`](https://rdrr.io/r/stats/wilcox.test.html) in R 4.3.3
+  approximates the p-value and warns, where R 4.6.1 computes it exactly.
+  The help page for the result says so.
+  ([\#4](https://github.com/jwildfire/gsm.bio/issues/4),
+  [\#8](https://github.com/jwildfire/gsm.bio/pull/8))
 - **Tests name the issue they prove.** Every test name ends with its
   issue number, and a guard test fails the suite when one does not.
   ([\#1](https://github.com/jwildfire/gsm.bio/issues/1),

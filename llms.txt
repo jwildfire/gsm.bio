@@ -35,6 +35,8 @@ and a reason in place of the numbers when a group is too small.
 | [`Analyze_Correlation()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_Correlation.md) | [`cor.test()`](https://rdrr.io/r/stats/cor.test.html), Pearson or Spearman, overall and per group |
 | [`Analyze_CorrelationMatrix()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_CorrelationMatrix.md) | [`cor.test()`](https://rdrr.io/r/stats/cor.test.html) on every pair of columns, with the pair count per cell |
 | [`Analyze_Contingency()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_Contingency.md) | [`chisq.test()`](https://rdrr.io/r/stats/chisq.test.html), with small expected counts flagged, and [`fisher.test()`](https://rdrr.io/r/stats/fisher.test.html) |
+| [`Analyze_Survival()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_Survival.md) | `survdiff()` for the log-rank test, `survfit()` for median survival with its log-log interval, `coxph()` for the hazard ratio between two groups |
+| [`Analyze_Screen()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_Screen.md) | One row per biomarker for one comparison: a standardised difference between two groups, a correlation with one variable, or a hazard ratio for high against low; p-values adjusted across the rows by [`p.adjust()`](https://rdrr.io/r/stats/p.adjust.html) |
 
 ``` r
 
@@ -44,11 +46,20 @@ lResult$method
 lResult$p_value
 ```
 
+Nothing is reimplemented, with one exception: the standardised
+difference in the screen is a few lines of the package’s own, checked
+against
+[`effectsize::hedges_g()`](https://easystats.github.io/effectsize/reference/cohens_d.html).
+
 The functions are defined once, in one file that needs nothing but the
-stats package:
+stats and survival packages:
 `system.file("statistics", "statistics.R", package = "gsm.bio")`. The
 package is built from that file, and a chart can hand the same file to R
 in the browser.
+
+A result is the answer of the R that computed it. R’s own defaults can
+differ between versions, so a chart and a report agree when they run the
+same version of R.
 
 ## Synthetic study
 
@@ -64,9 +75,9 @@ is used.
 
 ## Status
 
-Version 0.1.0 is in development. The group, correlation and contingency
-statistics and the synthetic study are in; the survival statistics and
-the biomarker screen arrive next, in the same version.
+Version 0.1.0 is in development on `dev`, and its content is complete:
+six statistics functions and the synthetic study. The widgets and static
+figures for the charts come in later versions.
 [NEWS.md](https://github.com/jwildfire/gsm.bio/blob/dev/NEWS.md) lists
 what has landed, and the reference site is at
 <https://jwildfire.github.io/gsm.bio/>.
@@ -102,6 +113,10 @@ function the design names, and all returning the same result.
   : Correlate every pair of several numeric variables
 - [`Analyze_Contingency()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_Contingency.md)
   : Test the association between two categories
+- [`Analyze_Survival()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_Survival.md)
+  : Compare survival between groups
+- [`Analyze_Screen()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_Screen.md)
+  : Screen many biomarkers with one comparison
 - [`StatisticsResult`](https://jwildfire.github.io/gsm.bio/reference/StatisticsResult.md)
   [`statistics-result`](https://jwildfire.github.io/gsm.bio/reference/StatisticsResult.md)
   : The result every statistics function returns
