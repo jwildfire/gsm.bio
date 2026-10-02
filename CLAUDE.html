@@ -46,9 +46,11 @@
 <ul><li>
 <code>devtools::document()</code> — regenerate <code>man/</code> and <code>NAMESPACE</code> after any roxygen change; it must leave no diff.</li>
 <li>
-<code>devtools::test()</code> — the testthat suite (edition 3). The guards in <code>tests/testthat/test-repository.R</code> read files outside the built package, so they run here and skip under check.</li>
+<code>devtools::test()</code> — the testthat suite (edition 3). Tests that read files outside the built package (the repository guards, the rerun of the data script) run here and skip under check; CI runs the suite a second time from the source tree, where a skip fails the run.</li>
 <li>
 <code>devtools::check()</code> — must be clean (no errors, warnings or notes) before a PR opens; CI runs the same check as <code>R-CMD-check</code> and fails on a note. Where R cannot reach its time service the check adds one note, <code>unable to verify current time</code>, which is about the machine and not the package: run it with <code>_R_CHECK_SYSTEM_CLOCK_=0</code> set, as CI does.</li>
+<li>
+<code>Rscript data-raw/synthetic-study.R</code> — regenerates the synthetic study: <code>data/Synthetic_*.rda</code> and <code>inst/extdata/synthetic_*.csv</code>. It is seeded, so it must leave no diff unless the model changed.</li>
 <li>
 <code><a href="https://pkgdown.r-lib.org/reference/build_site.html" class="external-link">pkgdown::build_site()</a></code> — builds the reference site into <code>docs/</code> (not committed); CI deploys it from <code>dev</code> to the <code>gh-pages</code> branch.</li>
 </ul></div>
@@ -59,6 +61,8 @@
 <li>A statistic is a thin wrapper around the base R function the design names. Nothing is reimplemented except the standardised difference.</li>
 <li>Argument and variable prefixes follow gsm.core: <code>df</code> data frame, <code>l</code> list, <code>str</code> character scalar, <code>chr</code> character vector, <code>n</code> numeric, <code>b</code> logical.</li>
 <li>Public or synthetic data only.</li>
+<li>
+<code>Synthetic_Truth</code> is the data generator’s own parameter list. A test of a planted effect reads the truth from it and never types the number again.</li>
 <li>
 <code>NEWS.md</code> is always current on <code>dev</code>: unreleased work goes under the <code>vX.Y.Z (Upcoming)</code> heading as it lands, one user-facing bullet per feature linking its hub requirement and PR.</li>
 <li>One branch per task, <code>&lt;task-number&gt;-&lt;slug&gt;</code>, off <code>dev</code>; the PR body carries <code>Closes #&lt;task&gt;</code> and the definition-of-done evidence.</li>

@@ -60,9 +60,14 @@
 <span><span class="fu">remotes</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"jwildfire/gsm.bio@dev"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
+<h2 id="synthetic-study">Synthetic study<a class="anchor" aria-label="anchor" href="#synthetic-study"></a>
+</h2>
+<p>The package ships a made-up biomarker study, so that a test can assert an answer known in advance: <code>Synthetic_Results</code> (one row per participant, biomarker and visit), <code>Synthetic_Participants</code> and <code>Synthetic_Outcomes</code>. Three effects are planted in it and every other biomarker is null. <code>Synthetic_Truth</code> holds the true size of each: a difference between arms in change from baseline, a correlation between two biomarkers, and a hazard ratio between high and low baseline levels. The same tables are CSV files under <code>inst/extdata/</code>. No real study data is used.</p>
+</div>
+<div class="section level2">
 <h2 id="status">Status<a class="anchor" aria-label="anchor" href="#status"></a>
 </h2>
-<p>The package is set up and installs; the statistics functions and a seeded synthetic biomarker study arrive next, in the same version. <a href="https://github.com/jwildfire/gsm.bio/blob/dev/NEWS.md" class="external-link">NEWS.md</a> lists what has landed, and the reference site is at <a href="https://jwildfire.github.io/gsm.bio/" class="uri">https://jwildfire.github.io/gsm.bio/</a>.</p>
+<p>The package is set up and the synthetic study is in; the statistics functions arrive next, in the same version. <a href="https://github.com/jwildfire/gsm.bio/blob/dev/NEWS.md" class="external-link">NEWS.md</a> lists what has landed, and the reference site is at <a href="https://jwildfire.github.io/gsm.bio/" class="uri">https://jwildfire.github.io/gsm.bio/</a>.</p>
 <p>The design is on the obot roadmap: <a href="https://jwildfire.github.io/obot.roadmap/requirements/design/353_design.html" class="external-link">bio.viz and gsm.bio</a>.</p>
 </div>
 <div class="section level2">
