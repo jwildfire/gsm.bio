@@ -22,7 +22,8 @@
 #' A widget draws a bio.viz chart from R. It computes the chart's statistics
 #' with the functions above when it is made and stores them in the page, so a
 #' saved page shows them with no R and no network: see
-#' [Widget_GroupComparison()] and [Widget_AssociationScatter()]. The widgets are the only part of the package
+#' [Widget_GroupComparison()], [Widget_AssociationScatter()] and
+#' [Widget_CorrelationMatrix()]. The widgets are the only part of the package
 #' that uses htmlwidgets.
 #'
 #' @section Status:

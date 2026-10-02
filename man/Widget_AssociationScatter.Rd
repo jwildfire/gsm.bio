@@ -146,6 +146,7 @@ Widget_AssociationScatter(
 stored result.
 
 Other widgets: 
+\code{\link{Widget_CorrelationMatrix}()},
 \code{\link{Widget_GroupComparison}()}
 }
 \concept{widgets}

@@ -140,6 +140,7 @@ Widget_GroupComparison(
 \code{\link[=Analyze_GroupDifference]{Analyze_GroupDifference()}}, which computes every stored result.
 
 Other widgets: 
-\code{\link{Widget_AssociationScatter}()}
+\code{\link{Widget_AssociationScatter}()},
+\code{\link{Widget_CorrelationMatrix}()}
 }
 \concept{widgets}
