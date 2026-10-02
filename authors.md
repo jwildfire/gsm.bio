@@ -9,11 +9,11 @@
 Source:
 [`DESCRIPTION`](https://github.com/jwildfire/gsm.bio/blob/dev/DESCRIPTION)
 
-obot (2026). *gsm.bio: Statistics for Biomarker Charts*. R package
-version 0.1.0, <https://github.com/jwildfire/gsm.bio>.
+obot (2026). *gsm.bio: Statistics and Widgets for Biomarker Charts*. R
+package version 0.1.0, <https://github.com/jwildfire/gsm.bio>.
 
     @Manual{,
-      title = {gsm.bio: Statistics for Biomarker Charts},
+      title = {gsm.bio: Statistics and Widgets for Biomarker Charts},
       author = {{obot}},
       year = {2026},
       note = {R package version 0.1.0},

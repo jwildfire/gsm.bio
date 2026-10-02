@@ -7,9 +7,10 @@ participant, and R returns the estimates, intervals, p-value, method
 name and counts the chart prints.
 
 Each statistic is a thin wrapper around a function from the stats or
-survival package, so the number on the chart is R’s own. The package
-imports nothing else, which lets the same functions run in a desktop
-session, in R in the browser and on a server.
+survival package, so the number on the chart is R’s own. The statistics
+use nothing else, which lets the same functions run in a desktop
+session, in R in the browser and on a server. The package also draws the
+charts from R, as widgets that carry R’s answers in the page.
 
 ## Installation
 
@@ -61,6 +62,49 @@ A result is the answer of the R that computed it. R’s own defaults can
 differ between versions, so a chart and a report agree when they run the
 same version of R.
 
+## Widgets
+
+[`Widget_GroupComparison()`](https://jwildfire.github.io/gsm.bio/reference/Widget_GroupComparison.md)
+draws bio.viz’s group comparison chart from R: one biomarker value
+across the levels of a category, as boxes, violins or points, with a
+test of the groups under each panel.
+
+``` r
+
+library(gsm.bio)
+Widget_GroupComparison(
+  Synthetic_Results,
+  Synthetic_Participants,
+  lSettings = list(value_type = "change", baseline_visits = "Baseline", group_by = "ARM")
+)
+```
+
+It takes the results table, optionally the participant table, and the
+chart’s settings as a list under bio.viz’s own names. The chart opens on
+an overview of every biomarker at every visit, which prints no test; a
+click on a biomarker opens it alone, with a panel for each visit and a
+test under each. `start_value = "IL-6"` opens that biomarker straight
+away.
+
+The tests are computed in R when the widget is made, by
+[`Analyze_GroupDifference()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_GroupDifference.md),
+for each biomarker at each visit panel the chart draws at the widget’s
+settings, and are stored in the page. Saved with
+[`htmlwidgets::saveWidget()`](https://rdrr.io/pkg/htmlwidgets/man/saveWidget.html),
+the page is one file that shows them with no R and no network, and says
+under the chart which R version and gsm.bio version computed them. A
+view that was not computed, such as another test or a filter, says that
+statistics are unavailable for it; it never shows another view’s
+numbers.
+
+The widget carries two JavaScript bundles, both copied from bio.viz with
+the commit and a checksum per file recorded in
+`inst/htmlwidgets/lib/SOURCE.json`: bio.viz’s own, and the copy of
+safety.viz’s bundle bio.viz builds its chart from. The safety.viz copy
+is a stand-in. It comes from a safety.viz branch that is not merged yet,
+and is to be replaced by gsm.safety’s bundle once gsm.safety carries one
+with the kit.
+
 ## Synthetic study
 
 The package ships a made-up biomarker study, so that a test can assert
@@ -75,9 +119,9 @@ is used.
 
 ## Status
 
-Version 0.1.0 is in development on `dev`, and its content is complete:
-six statistics functions and the synthetic study. The widgets and static
-figures for the charts come in later versions.
+Version 0.1.0 is in development on `dev`: six statistics functions, the
+synthetic study and the first widget, for the group comparison chart.
+Widgets for the other charts and static figures come in later versions.
 [NEWS.md](https://github.com/jwildfire/gsm.bio/blob/dev/NEWS.md) lists
 what has landed, and the reference site is at
 <https://jwildfire.github.io/gsm.bio/>.

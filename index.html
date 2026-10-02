@@ -5,14 +5,14 @@
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<title>Statistics for Biomarker Charts • gsm.bio</title>
+<title>Statistics and Widgets for Biomarker Charts • gsm.bio</title>
 <script src="deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
 <script src="deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
-<script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><meta property="og:title" content="Statistics for Biomarker Charts">
-<meta name="description" content="The statistics behind the bio.viz biomarker charts. Each function fixes the inputs and the shape of the answer around a test from the stats or survival package, so every number a chart prints is computed by R, and the same function serves a desktop session, R in the browser and a server.">
-<meta property="og:description" content="The statistics behind the bio.viz biomarker charts. Each function fixes the inputs and the shape of the answer around a test from the stats or survival package, so every number a chart prints is computed by R, and the same function serves a desktop session, R in the browser and a server.">
+<script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><meta property="og:title" content="Statistics and Widgets for Biomarker Charts">
+<meta name="description" content="The statistics behind the bio.viz biomarker charts. Each function fixes the inputs and the shape of the answer around a test from the stats or survival package, so every number a chart prints is computed by R, and the same function serves a desktop session, R in the browser and a server. HTML widget bindings draw the charts from R with those statistics computed ahead of time and stored in the page.">
+<meta property="og:description" content="The statistics behind the bio.viz biomarker charts. Each function fixes the inputs and the shape of the answer around a test from the stats or survival package, so every number a chart prints is computed by R, and the same function serves a desktop session, R in the browser and a server. HTML widget bindings draw the charts from R with those statistics computed ahead of time and stored in the page.">
 </head>
 <body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -50,7 +50,7 @@
 <div class="page-header"><h1 id="gsmbio">gsm.bio<a class="anchor" aria-label="anchor" href="#gsmbio"></a>
 </h1></div>
 <p><code>gsm.bio</code> holds the statistics behind the <a href="https://github.com/jwildfire/bio.viz" class="external-link">bio.viz</a> biomarker charts. A chart never computes a test: it hands over a table with one row per participant, and R returns the estimates, intervals, p-value, method name and counts the chart prints.</p>
-<p>Each statistic is a thin wrapper around a function from the stats or survival package, so the number on the chart is R’s own. The package imports nothing else, which lets the same functions run in a desktop session, in R in the browser and on a server.</p>
+<p>Each statistic is a thin wrapper around a function from the stats or survival package, so the number on the chart is R’s own. The statistics use nothing else, which lets the same functions run in a desktop session, in R in the browser and on a server. The package also draws the charts from R, as widgets that carry R’s answers in the page.</p>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
@@ -117,6 +117,21 @@
 <p>A result is the answer of the R that computed it. R’s own defaults can differ between versions, so a chart and a report agree when they run the same version of R.</p>
 </div>
 <div class="section level2">
+<h2 id="widgets">Widgets<a class="anchor" aria-label="anchor" href="#widgets"></a>
+</h2>
+<p><code><a href="reference/Widget_GroupComparison.html">Widget_GroupComparison()</a></code> draws bio.viz’s group comparison chart from R: one biomarker value across the levels of a category, as boxes, violins or points, with a test of the groups under each panel.</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/jwildfire/gsm.bio" class="external-link">gsm.bio</a></span><span class="op">)</span></span>
+<span><span class="fu"><a href="reference/Widget_GroupComparison.html">Widget_GroupComparison</a></span><span class="op">(</span></span>
+<span>  <span class="va">Synthetic_Results</span>,</span>
+<span>  <span class="va">Synthetic_Participants</span>,</span>
+<span>  lSettings <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>value_type <span class="op">=</span> <span class="st">"change"</span>, baseline_visits <span class="op">=</span> <span class="st">"Baseline"</span>, group_by <span class="op">=</span> <span class="st">"ARM"</span><span class="op">)</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>It takes the results table, optionally the participant table, and the chart’s settings as a list under bio.viz’s own names. The chart opens on an overview of every biomarker at every visit, which prints no test; a click on a biomarker opens it alone, with a panel for each visit and a test under each. <code>start_value = "IL-6"</code> opens that biomarker straight away.</p>
+<p>The tests are computed in R when the widget is made, by <code><a href="reference/Analyze_GroupDifference.html">Analyze_GroupDifference()</a></code>, for each biomarker at each visit panel the chart draws at the widget’s settings, and are stored in the page. Saved with <code><a href="https://rdrr.io/pkg/htmlwidgets/man/saveWidget.html" class="external-link">htmlwidgets::saveWidget()</a></code>, the page is one file that shows them with no R and no network, and says under the chart which R version and gsm.bio version computed them. A view that was not computed, such as another test or a filter, says that statistics are unavailable for it; it never shows another view’s numbers.</p>
+<p>The widget carries two JavaScript bundles, both copied from bio.viz with the commit and a checksum per file recorded in <code>inst/htmlwidgets/lib/SOURCE.json</code>: bio.viz’s own, and the copy of safety.viz’s bundle bio.viz builds its chart from. The safety.viz copy is a stand-in. It comes from a safety.viz branch that is not merged yet, and is to be replaced by gsm.safety’s bundle once gsm.safety carries one with the kit.</p>
+</div>
+<div class="section level2">
 <h2 id="synthetic-study">Synthetic study<a class="anchor" aria-label="anchor" href="#synthetic-study"></a>
 </h2>
 <p>The package ships a made-up biomarker study, so that a test can assert an answer known in advance: <code>Synthetic_Results</code> (one row per participant, biomarker and visit), <code>Synthetic_Participants</code> and <code>Synthetic_Outcomes</code>. Three effects are planted in it and every other biomarker is null. <code>Synthetic_Truth</code> holds the true size of each: a difference between arms in change from baseline, a correlation between two biomarkers, and a hazard ratio between high and low baseline levels. The same tables are CSV files under <code>inst/extdata/</code>. No real study data is used.</p>
@@ -124,7 +139,7 @@
 <div class="section level2">
 <h2 id="status">Status<a class="anchor" aria-label="anchor" href="#status"></a>
 </h2>
-<p>Version 0.1.0 is in development on <code>dev</code>, and its content is complete: six statistics functions and the synthetic study. The widgets and static figures for the charts come in later versions. <a href="https://github.com/jwildfire/gsm.bio/blob/dev/NEWS.md" class="external-link">NEWS.md</a> lists what has landed, and the reference site is at <a href="https://jwildfire.github.io/gsm.bio/" class="uri">https://jwildfire.github.io/gsm.bio/</a>.</p>
+<p>Version 0.1.0 is in development on <code>dev</code>: six statistics functions, the synthetic study and the first widget, for the group comparison chart. Widgets for the other charts and static figures come in later versions. <a href="https://github.com/jwildfire/gsm.bio/blob/dev/NEWS.md" class="external-link">NEWS.md</a> lists what has landed, and the reference site is at <a href="https://jwildfire.github.io/gsm.bio/" class="uri">https://jwildfire.github.io/gsm.bio/</a>.</p>
 <p>The design is on the obot roadmap: <a href="https://jwildfire.github.io/obot.roadmap/requirements/design/353_design.html" class="external-link">bio.viz and gsm.bio</a>.</p>
 </div>
 <div class="section level2">

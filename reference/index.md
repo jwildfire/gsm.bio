@@ -6,7 +6,7 @@ What gsm.bio is for and how its statistics are built.
 
 - [`gsm.bio`](https://jwildfire.github.io/gsm.bio/reference/gsm.bio-package.md)
   [`gsm.bio-package`](https://jwildfire.github.io/gsm.bio/reference/gsm.bio-package.md)
-  : gsm.bio: statistics for biomarker charts
+  : gsm.bio: statistics and widgets for biomarker charts
 
 ## Statistics
 
@@ -28,6 +28,15 @@ function the design names, and all returning the same result.
 - [`StatisticsResult`](https://jwildfire.github.io/gsm.bio/reference/StatisticsResult.md)
   [`statistics-result`](https://jwildfire.github.io/gsm.bio/reference/StatisticsResult.md)
   : The result every statistics function returns
+
+## Widgets
+
+A bio.viz chart drawn from R, with its statistics computed by the
+functions above when the widget is made and stored in the page, so a
+saved page shows them with no R and no network.
+
+- [`Widget_GroupComparison()`](https://jwildfire.github.io/gsm.bio/reference/Widget_GroupComparison.md)
+  : Group Comparison Widget
 
 ## Synthetic study
 

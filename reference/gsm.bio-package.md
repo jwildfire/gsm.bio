@@ -1,4 +1,4 @@
-# gsm.bio: statistics for biomarker charts
+# gsm.bio: statistics and widgets for biomarker charts
 
 The statistics behind the bio.viz biomarker charts. A chart never
 computes a test: it hands over a table with one row per participant and
@@ -9,9 +9,9 @@ R worked out.
 
 Each statistic is a thin wrapper that fixes the inputs and the shape of
 the answer around a function from the stats or survival package. Nothing
-is reimplemented, and nothing from any other package is used, so the
-same source runs in a desktop session, in R in the browser and on a
-server.
+is reimplemented, and the statistics use nothing from any other package,
+so the same source runs in a desktop session, in R in the browser and on
+a server.
 
 The tests the design names are imported here, once, for the functions
 that wrap them:
@@ -29,11 +29,18 @@ that wrap them:
 and [`survival::coxph()`](https://rdrr.io/pkg/survival/man/coxph.html)
 from survival.
 
+## Widgets
+
+A widget draws a bio.viz chart from R. It computes the chart's
+statistics with the functions above when it is made and stores them in
+the page, so a saved page shows them with no R and no network: see
+[`Widget_GroupComparison()`](https://jwildfire.github.io/gsm.bio/reference/Widget_GroupComparison.md).
+The widgets are the only part of the package that uses htmlwidgets.
+
 ## Status
 
-Version 0.1.0 is in development. This first step sets up the package;
-the statistics functions and a synthetic biomarker study with known
-planted effects follow in the same version.
+Version 0.1.0 is in development: the statistics functions, a synthetic
+biomarker study with known planted effects, and the first widget.
 
 ## See also
 

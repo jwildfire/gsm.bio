@@ -12,8 +12,8 @@ prepared.
 
 - **gsm.bio installs from GitHub.**
   `remotes::install_github("jwildfire/gsm.bio@dev")` installs a package
-  that loads and depends on nothing but the stats and survival packages.
-  It depends on those two packages and on nothing else.
+  that loads. Its statistics depend on nothing but the stats and
+  survival packages; the widget below adds htmlwidgets.
   ([obot.roadmap#364](https://github.com/jwildfire/obot.roadmap/issues/364),
   [\#1](https://github.com/jwildfire/gsm.bio/issues/1),
   [\#5](https://github.com/jwildfire/gsm.bio/pull/5))
@@ -85,6 +85,31 @@ prepared.
   ([obot.roadmap#364](https://github.com/jwildfire/obot.roadmap/issues/364),
   [\#4](https://github.com/jwildfire/gsm.bio/issues/4),
   [\#8](https://github.com/jwildfire/gsm.bio/pull/8))
+- **The group comparison chart from R, with R’s tests stored in the
+  page.**
+  [`Widget_GroupComparison()`](https://jwildfire.github.io/gsm.bio/reference/Widget_GroupComparison.md)
+  draws bio.viz’s group comparison chart from a results table, an
+  optional participant table and the chart’s own settings. The chart
+  opens on an overview of every biomarker at every visit, and a click on
+  a biomarker opens it alone with a test under each visit. When the
+  widget is made, R computes those tests, for each biomarker at each
+  visit panel the chart draws, with
+  [`Analyze_GroupDifference()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_GroupDifference.md),
+  and stores the answers in the page. A page saved with
+  [`htmlwidgets::saveWidget()`](https://rdrr.io/pkg/htmlwidgets/man/saveWidget.html)
+  is one file that shows each result with its method and counts with no
+  R and no network. A reader who moves a control to a view that was not
+  computed, such as another test or a filter, is told that statistics
+  are unavailable for that view; the page never shows one view’s numbers
+  under another. Under the chart the page says which R version and
+  gsm.bio version computed the results, and when. The widget carries
+  bio.viz’s bundle and, as a stand-in until gsm.safety carries one with
+  the kit the chart is built from, the copy of safety.viz’s bundle that
+  bio.viz uses, which comes from a safety.viz branch that is not merged
+  yet.
+  ([obot.roadmap#356](https://github.com/jwildfire/obot.roadmap/issues/356),
+  [\#9](https://github.com/jwildfire/gsm.bio/issues/9),
+  [\#10](https://github.com/jwildfire/gsm.bio/pull/10))
 
 ### Also in this release
 
@@ -112,3 +137,18 @@ prepared.
   issue number, and a guard test fails the suite when one does not.
   ([\#1](https://github.com/jwildfire/gsm.bio/issues/1),
   [\#5](https://github.com/jwildfire/gsm.bio/pull/5))
+- **What is copied from bio.viz is recorded and checked.** The two
+  JavaScript bundles the widget loads, and the fixtures the tests hold R
+  to, are copied from bio.viz by one script, with the bio.viz commit and
+  a checksum per file recorded beside them. The suite fails when a file
+  and its record disagree.
+  ([\#9](https://github.com/jwildfire/gsm.bio/issues/9),
+  [\#10](https://github.com/jwildfire/gsm.bio/pull/10))
+- **R and the chart resolve the same rows.** The widget works out in R
+  which participants the chart will draw in each panel, so that R tests
+  the rows the chart shows. That rule is written twice, once in bio.viz
+  and once here, and the tests hold the two together: R’s rows equal the
+  rows bio.viz’s own code writes, for every value type, with and without
+  a participant table.
+  ([\#9](https://github.com/jwildfire/gsm.bio/issues/9),
+  [\#10](https://github.com/jwildfire/gsm.bio/pull/10))
