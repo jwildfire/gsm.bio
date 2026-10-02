@@ -21,6 +21,7 @@ reference:
       - Analyze_GroupDifference
       - Analyze_Correlation
       - Analyze_CorrelationMatrix
+      - Analyze_Fit
       - Analyze_Contingency
       - Analyze_Survival
       - Analyze_Screen

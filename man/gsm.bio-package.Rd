@@ -20,7 +20,8 @@ same source runs in a desktop session, in R in the browser and on a server.
 The tests the design names are imported here, once, for the functions that
 wrap them: \code{\link[stats:t.test]{stats::t.test()}}, \code{\link[stats:wilcox.test]{stats::wilcox.test()}}, \code{\link[stats:aov]{stats::aov()}},
 \code{\link[stats:kruskal.test]{stats::kruskal.test()}}, \code{\link[stats:cor.test]{stats::cor.test()}}, \code{\link[stats:chisq.test]{stats::chisq.test()}},
-\code{\link[stats:fisher.test]{stats::fisher.test()}} and \code{\link[stats:p.adjust]{stats::p.adjust()}} from stats;
+\code{\link[stats:fisher.test]{stats::fisher.test()}}, \code{\link[stats:p.adjust]{stats::p.adjust()}}, \code{\link[stats:lm]{stats::lm()}} and
+\code{\link[stats:loess]{stats::loess()}} from stats;
 \code{\link[survival:Surv]{survival::Surv()}}, \code{\link[survival:survdiff]{survival::survdiff()}}, \code{\link[survival:survfit]{survival::survfit()}} and
 \code{\link[survival:coxph]{survival::coxph()}} from survival.
 }

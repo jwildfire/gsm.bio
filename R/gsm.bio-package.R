@@ -13,7 +13,8 @@
 #' The tests the design names are imported here, once, for the functions that
 #' wrap them: [stats::t.test()], [stats::wilcox.test()], [stats::aov()],
 #' [stats::kruskal.test()], [stats::cor.test()], [stats::chisq.test()],
-#' [stats::fisher.test()] and [stats::p.adjust()] from stats;
+#' [stats::fisher.test()], [stats::p.adjust()], [stats::lm()] and
+#' [stats::loess()] from stats;
 #' [survival::Surv()], [survival::survdiff()], [survival::survfit()] and
 #' [survival::coxph()] from survival.
 #'
@@ -29,6 +30,6 @@
 #' biomarker study with known planted effects, and the first widget.
 #'
 #' @importFrom stats aov chisq.test cor.test fisher.test kruskal.test p.adjust
-#' @importFrom stats t.test wilcox.test
+#' @importFrom stats lm loess t.test wilcox.test
 #' @importFrom survival Surv coxph survdiff survfit
 "_PACKAGE"

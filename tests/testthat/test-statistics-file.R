@@ -4,8 +4,8 @@
 # it is in a bare R session with only stats and survival attached.
 
 chrStatisticsExports <- c(
-  "Analyze_GroupDifference", "Analyze_Correlation", "Analyze_CorrelationMatrix", "Analyze_Contingency",
-  "Analyze_Survival", "Analyze_Screen"
+  "Analyze_GroupDifference", "Analyze_Correlation", "Analyze_CorrelationMatrix", "Analyze_Fit",
+  "Analyze_Contingency", "Analyze_Survival", "Analyze_Screen"
 )
 
 strStatisticsFile <- function() {
@@ -37,6 +37,13 @@ lStatisticsCalls <- function() {
     matrix_pearson = list("Analyze_CorrelationMatrix", list(chrCols = list(strX, strY, "Change", "AGE"))),
     matrix_spearman = list("Analyze_CorrelationMatrix", list(chrCols = c(strX, strY), strMethod = "spearman")),
     matrix_too_small = list("Analyze_CorrelationMatrix", list(chrCols = c(strX, strY), nMinPairs = 201)),
+    fit_linear = list("Analyze_Fit", list(strXCol = strX, strYCol = strY, strMethod = "linear", strGroupCol = "ARM")),
+    fit_smooth = list("Analyze_Fit", list(
+      strXCol = strX, strYCol = strY, strMethod = "smooth", strGroupCol = "ARM_SEX",
+      chrGroups = list("Placebo F", "Treatment M"), nPoints = 20
+    )),
+    fit_too_small = list("Analyze_Fit", list(strXCol = strX, strYCol = strY, nMinGroup = 201)),
+    fit_error = list("Analyze_Fit", list(strXCol = strX, strYCol = "ARM", strMethod = "smooth")),
     chisq = list("Analyze_Contingency", list(strRowCol = "ARM", strColCol = "RESPONSE", strMethod = "chisq")),
     chisq_larger = list("Analyze_Contingency", list(strRowCol = "ARM_SEX", strColCol = "RESPONSE")),
     chisq_sparse = list("Analyze_Contingency", list(strRowCol = "AGE_DECADE", strColCol = "RESPONSE", nMinGroup = 1)),
@@ -114,7 +121,7 @@ test_that("the statistics file ships in the installed package where system.file(
   expect_identical(basename(dirname(strStatisticsFile())), "statistics")
 })
 
-test_that("each exported function is identical to its definition in the statistics file (#3, #4)", {
+test_that("each exported function is identical to its definition in the statistics file (#3, #4, #12)", {
   envFile <- new.env(parent = globalenv())
   sys.source(strStatisticsFile(), envir = envFile)
   chrExports <- chrStatisticsExports
@@ -148,7 +155,7 @@ test_that("each exported function is identical to its definition in the statisti
   expect_identical(get("nMinGroupDefault", envir = envFile), 5L)
 })
 
-test_that("the statistics file calls base R, stats and survival and nothing else, and never evaluates text (#3, #4)", {
+test_that("the statistics file calls base R, stats and survival and nothing else, and never evaluates text (#3, #4, #12)", {
   exprFile <- parse(strStatisticsFile(), keep.source = FALSE)
   envFile <- new.env(parent = globalenv())
   sys.source(strStatisticsFile(), envir = envFile)
@@ -187,7 +194,7 @@ test_that("the statistics file calls base R, stats and survival and nothing else
   expect_identical(intersect(all.names(exprFile), chrForbidden), character(0))
 })
 
-test_that("no result on the synthetic study holds a factor, a matrix, a classed object or a bare vector for a collection (#3, #4)", {
+test_that("no result on the synthetic study holds a factor, a matrix, a classed object or a bare vector for a collection (#3, #4, #12)", {
   lResults <- lRunCalls(lStatisticsCalls(), dfSyntheticFrame(), asNamespace("gsm.bio"))
 
   for (strCall in names(lResults)) {
@@ -198,6 +205,8 @@ test_that("no result on the synthetic study holds a factor, a matrix, a classed 
   expect_gt(nrow(lResults$anova$rows), 0)
   expect_gt(nrow(lResults$pearson$rows), 0)
   expect_identical(nrow(lResults$matrix_spearman$rows), 1L)
+  expect_identical(nrow(lResults$fit_linear$rows), 150L)
+  expect_identical(nrow(lResults$fit_smooth$rows), 60L)
   # A warning every version of R raises, so the list is exercised non-empty.
   expect_identical(lResults$chisq_sparse$warnings, list("Chi-squared approximation may be incorrect"))
   expect_gt(length(lResults$spearman$notes), 0)
@@ -208,7 +217,7 @@ test_that("no result on the synthetic study holds a factor, a matrix, a classed 
   expect_identical(lResults$screen_too_small$status, "too_small")
 })
 
-test_that("the statistics file runs in a bare R session with only stats and survival attached, and gives the same results (#3, #4)", {
+test_that("the statistics file runs in a bare R session with only stats and survival attached, and gives the same results (#3, #4, #12)", {
   strFrame <- tempfile(fileext = ".rds")
   strCalls <- tempfile(fileext = ".rds")
   strOut <- tempfile(fileext = ".rds")
@@ -266,7 +275,7 @@ test_that("the statistics file runs in a bare R session with only stats and surv
   }
 })
 
-test_that("the help pages state the minimum group size the file defines, and never call it agreed or validated (#3, #4)", {
+test_that("the help pages state the minimum group size the file defines, and never call it agreed or validated (#3, #4, #12)", {
   lRd <- if (bSourceTree()) tools::Rd_db(dir = strSourceRoot()) else tools::Rd_db("gsm.bio")
   nDefault <- get("nMinGroupDefault", envir = asNamespace("gsm.bio"))
   for (strTopic in chrStatisticsExports) {
