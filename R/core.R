@@ -184,16 +184,28 @@ Core_Levels <- function(xValue) {
   Core_SortWith(chrText, Core_NaturalCompare)
 }
 
-# The core's settings in full: the caller's over the defaults, checked.
+# The core's settings in full: the caller's over the defaults, checked. Beside
+# the settings a chart maps (lCoreDefaults), the frame takes `required`: the
+# names of the variables a participant must have to be in the frame, NULL for
+# all of them. A chart sets it, not a page: the correlation matrix keeps a
+# participant who has only some of its variables.
 Core_Settings <- function(lSettings = list()) {
   if (!is.list(lSettings) || is.data.frame(lSettings)) {
     Core_Stop("settings must be a list")
   }
-  chrUnknown <- setdiff(names(lSettings), names(lCoreDefaults))
+  lDefaults <- c(lCoreDefaults, list(required = NULL))
+  chrUnknown <- setdiff(names(lSettings), names(lDefaults))
   if (length(chrUnknown) > 0L) {
-    Core_Stop("`", chrUnknown[1], "` is not a setting of the frame. Its settings are ", paste(names(lCoreDefaults), collapse = ", "), ".")
+    Core_Stop("`", chrUnknown[1], "` is not a setting of the frame. Its settings are ", paste(names(lDefaults), collapse = ", "), ".")
   }
-  lConfig <- Core_Overlay(lCoreDefaults, lSettings)
+  lConfig <- Core_Overlay(lDefaults, lSettings)
+  if (!is.null(lConfig$required)) {
+    chrRequired <- as.character(unlist(lConfig$required))
+    if (anyNA(chrRequired) || !all(nzchar(trimws(chrRequired)))) {
+      Core_Stop("`required` must be a list of the names of variables, or NULL for all of them.")
+    }
+    lConfig$required <- unique(chrRequired)
+  }
   IsName <- function(xValue) is.character(xValue) && length(xValue) == 1L && !is.na(xValue) && nzchar(trimws(xValue))
   for (strKey in c("id_col", "measure_col", "value_col", "visit_col")) {
     if (!IsName(lConfig[[strKey]])) {
@@ -339,6 +351,12 @@ Core_Frame <- function(dfResults, dfParticipants = NULL, lVariables, lSettings =
     Core_Stop("a variable cannot be named `", strIdCol, "`: that column holds the participant's id.")
   }
   lNamed <- lapply(lVariables, Core_Variable)
+  chrRequired <- if (is.null(lConfig$required)) names(lNamed) else lConfig$required
+  for (strName in chrRequired) {
+    if (!strName %in% names(lNamed)) {
+      Core_Stop("`required` names `", strName, "`, which is not one of the variables.")
+    }
+  }
   bMeasure <- vapply(lNamed, function(lVariable) lVariable$kind == "measure", logical(1))
   bNeedsBaseline <- any(vapply(lNamed[bMeasure], function(lVariable) lVariable$value != "raw", logical(1)))
 
@@ -520,11 +538,12 @@ Core_Frame <- function(dfResults, dfParticipants = NULL, lVariables, lSettings =
     if (lVariable$kind == "measure") MeasureValue(lVariable) else ColumnValue(lVariable)
   })
 
-  # The first variable that cannot be worked out, in the order the variables
-  # were given, is the reason the participant is left out.
+  # The first required variable that cannot be worked out, in the order the
+  # variables were given, is the reason the participant is left out. A variable
+  # that is not required is left as NA, which R reads as missing.
   chrLeftOutBy <- rep(NA_character_, length(chrIds))
   chrLeftOutFor <- rep(NA_character_, length(chrIds))
-  for (strName in names(lFound)) {
+  for (strName in intersect(names(lFound), chrRequired)) {
     bNow <- is.na(chrLeftOutBy) & !is.na(lFound[[strName]]$reason)
     chrLeftOutBy[bNow] <- strName
     chrLeftOutFor[bNow] <- lFound[[strName]]$reason[bNow]
