@@ -21,8 +21,11 @@ HTMLWidgets.widget({
         const provenance = function(statistics) {
             const by = statistics.computed_by || {};
             const when = String(by.computed_at || '').replace('T', ' ').replace(/:\d\dZ$/, ' UTC');
-            return 'Statistics: computed by R ' + by.r_version + ' with gsm.bio ' +
-                by.gsm_bio_version + ' on ' + when + ' and stored with this page. No R runs ' +
+            const who = 'R ' + by.r_version + ' with gsm.bio ' + by.gsm_bio_version + ' on ' + when;
+            if (!statistics.results.length)
+                return 'Statistics: none was computed for the view this page opens on (' + who +
+                    '). No R runs here, so a test chosen in it says that statistics are unavailable.';
+            return 'Statistics: computed by ' + who + ' and stored with this page. No R runs ' +
                 'here, so a view that was not computed says that statistics are unavailable.';
         };
 
