@@ -56,9 +56,11 @@ test_that("the R CMD check workflow has one job named R-CMD-check that fails on 
 
   # The dev ruleset requires a check called exactly "R-CMD-check": one job, no
   # matrix, so nothing is appended to the name.
-  expect_identical(grep("^  [A-Za-z0-9_-]+:$", chrLines, value = TRUE), "  R-CMD-check:")
-  expect_true(any(grepl("^    name: R-CMD-check$", chrLines)))
-  expect_false(any(grepl("matrix", chrLines, fixed = TRUE)))
+  chrYaml <- grep("^\\s*#", chrLines, value = TRUE, invert = TRUE)
+  chrJobs <- chrYaml[seq_along(chrYaml) > match("jobs:", chrYaml)]
+  expect_identical(grep("^  [A-Za-z0-9_-]+:$", chrJobs, value = TRUE), "  R-CMD-check:")
+  expect_true(any(grepl("^    name: R-CMD-check$", chrJobs)))
+  expect_false(any(grepl("strategy:|matrix", chrJobs)))
   expect_true(any(grepl("^    runs-on: ubuntu-latest$", chrLines)))
   expect_true(any(grepl("error-on: '\"note\"'", chrLines, fixed = TRUE)))
 })
