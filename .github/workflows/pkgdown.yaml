@@ -14,6 +14,9 @@ on:
     branches: [dev]
   pull_request:
     branches: [dev]
+    # A draft marked ready is checked again, which is what lets auto-merge be
+    # switched on: GitHub allows it only while a required check is pending.
+    types: [opened, synchronize, reopened, ready_for_review]
   workflow_dispatch:
 
 # The deploy step pushes to gh-pages; a new repository's token is read-only
