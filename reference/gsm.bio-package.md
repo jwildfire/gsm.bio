@@ -21,8 +21,10 @@ that wrap them:
 [`stats::kruskal.test()`](https://rdrr.io/r/stats/kruskal.test.html),
 [`stats::cor.test()`](https://rdrr.io/r/stats/cor.test.html),
 [`stats::chisq.test()`](https://rdrr.io/r/stats/chisq.test.html),
-[`stats::fisher.test()`](https://rdrr.io/r/stats/fisher.test.html) and
-[`stats::p.adjust()`](https://rdrr.io/r/stats/p.adjust.html) from stats;
+[`stats::fisher.test()`](https://rdrr.io/r/stats/fisher.test.html),
+[`stats::p.adjust()`](https://rdrr.io/r/stats/p.adjust.html),
+[`stats::lm()`](https://rdrr.io/r/stats/lm.html) and
+[`stats::loess()`](https://rdrr.io/r/stats/loess.html) from stats;
 [`survival::Surv()`](https://rdrr.io/pkg/survival/man/Surv.html),
 [`survival::survdiff()`](https://rdrr.io/pkg/survival/man/survdiff.html),
 [`survival::survfit()`](https://rdrr.io/pkg/survival/man/survfit.html)

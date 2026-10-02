@@ -110,6 +110,20 @@ prepared.
   ([obot.roadmap#356](https://github.com/jwildfire/obot.roadmap/issues/356),
   [\#9](https://github.com/jwildfire/gsm.bio/issues/9),
   [\#10](https://github.com/jwildfire/gsm.bio/pull/10))
+- **A fitted line that is R’s, for a scatter of two variables.**
+  [`Analyze_Fit()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_Fit.md)
+  fits one variable to another with
+  [`lm()`](https://rdrr.io/r/stats/lm.html) or, as a smooth, with
+  [`loess()`](https://rdrr.io/r/stats/loess.html), overall and per
+  group. For the line it returns the slope and the intercept, each with
+  its interval, the test that the slope is zero, R-squared, and the line
+  with its confidence band as points a chart draws as they are, so a
+  chart works nothing out. For the smooth it returns the curve and its
+  pointwise band, and no slope, because a smooth has none. Too few
+  complete pairs, or one x value, get a reason in place of the numbers.
+  ([obot.roadmap#357](https://github.com/jwildfire/obot.roadmap/issues/357),
+  [\#12](https://github.com/jwildfire/gsm.bio/issues/12),
+  [\#14](https://github.com/jwildfire/gsm.bio/pull/14))
 
 ### Also in this release
 

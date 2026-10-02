@@ -19,6 +19,8 @@ function the design names, and all returning the same result.
   : Correlate two numeric variables
 - [`Analyze_CorrelationMatrix()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_CorrelationMatrix.md)
   : Correlate every pair of several numeric variables
+- [`Analyze_Fit()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_Fit.md)
+  : Fit a line or a smooth to two numeric variables
 - [`Analyze_Contingency()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_Contingency.md)
   : Test the association between two categories
 - [`Analyze_Survival()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_Survival.md)
