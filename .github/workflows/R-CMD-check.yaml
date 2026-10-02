@@ -39,9 +39,23 @@ jobs:
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          extra-packages: any::rcmdcheck
+          extra-packages: any::rcmdcheck, any::pkgload
           needs: check
 
       - uses: r-lib/actions/check-r-package@v2
         with:
           error-on: '"note"'
+
+      # R CMD check tests the built package, which leaves out data-raw/ and the
+      # repository's own files, so the tests that read them skip there. This
+      # runs the suite again from the source tree, on the same R, where nothing
+      # may skip: a test that did not run must not read as a pass.
+      - name: Test from the source tree
+        run: |
+          dfTests <- as.data.frame(testthat::test_local(stop_on_failure = TRUE))
+          options(width = 220)
+          print(dfTests[c("file", "test", "nb", "failed", "skipped")], right = FALSE)
+          if (any(dfTests$skipped)) {
+            stop("Skipped in the source tree: ", paste(dfTests$test[dfTests$skipped], collapse = "; "))
+          }
+        shell: Rscript {0}

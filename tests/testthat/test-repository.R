@@ -62,6 +62,15 @@ test_that("the R CMD check workflow has one job named R-CMD-check that fails on 
   expect_true(any(grepl("error-on: '\"note\"'", chrLines, fixed = TRUE)))
 })
 
+test_that("the R CMD check job also runs the suite from the source tree, where nothing may skip (#2)", {
+  strText <- paste(chrRepositoryFile(".github", "workflows", "R-CMD-check.yaml"), collapse = "\n")
+
+  # R CMD check cannot see data-raw/, so the test that reruns the data script
+  # would never run on CI's R version without this step.
+  expect_match(strText, "testthat::test_local(stop_on_failure = TRUE)", fixed = TRUE)
+  expect_match(strText, "if (any(dfTests$skipped))", fixed = TRUE)
+})
+
 test_that("the pkgdown workflow may write, and deploys to gh-pages on pushes only (#1)", {
   chrLines <- chrRepositoryFile(".github", "workflows", "pkgdown.yaml")
   strText <- paste(chrLines, collapse = "\n")
