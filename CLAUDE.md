@@ -20,6 +20,8 @@ in a cloud environment). Work runs one requirement per session (`/requirement-se
 - Every `test_that()` name ends with the issue it proves, `(#N)`; `tests/testthat/test-qcthat-convention.R` fails the suite otherwise.
 - Imports are stats and survival and nothing else; `tests/testthat/test-package.R` fails the suite otherwise. A package needed only to check a result goes under Suggests.
 - A statistic is a thin wrapper around the base R function the design names. Nothing is reimplemented except the standardised difference.
+- The statistics have one definition: `inst/statistics/statistics.R`. `R/statistics.R` evaluates that file into the namespace and holds only the documentation, so edit the functions in the file under `inst/`, never copy them into `R/`. The file must run in a bare session with only stats attached (survival joins it with the survival functions): call `stats::` by name, attach nothing, evaluate no text.
+- Every `Analyze_*` function returns the one result shape documented in `?StatisticsResult` and built by `Stat_Result()`; `tests/testthat/helper-result-shape.R` checks it. It never raises an error or a warning: both go into the result.
 - Argument and variable prefixes follow gsm.core: `df` data frame, `l` list, `str` character scalar, `chr` character vector, `n` numeric, `b` logical.
 - Public or synthetic data only.
 - `Synthetic_Truth` is the data generator's own parameter list. A test of a planted effect reads the truth from it and never types the number again.
