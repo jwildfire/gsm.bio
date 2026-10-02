@@ -164,21 +164,25 @@ GroupComparison_Measures <- function(dfResults, lConfig) {
 }
 
 # The visits the Visit control offers, and the ones it opens on: the visits in
-# the setting `visits` that the table has, or the first visit after the
-# baseline visits, or the first visit when there is no later one.
+# the setting `visits` that the table has, or, when the setting names none,
+# every visit.
 GroupComparison_Visits <- function(dfResults, lConfig) {
   chrAll <- Core_Visits(dfResults, GroupComparison_CoreSettings(lConfig))
-  chrBaseline <- if (is.null(lConfig$baseline_visits)) Core_First(chrAll) else lConfig$baseline_visits
   chrAsked <- lConfig$visits[lConfig$visits %in% chrAll]
-  chrLater <- chrAll[!chrAll %in% chrBaseline]
-  chrStart <- if (length(chrAsked) > 0L) {
-    chrAsked
-  } else if (length(chrLater) > 0L) {
-    chrLater[1L]
-  } else {
-    Core_First(chrAll)
+  list(all = chrAll, start = if (length(chrAsked) > 0L) chrAsked else chrAll)
+}
+
+# The visits that are drawn, of the visits chosen. For a change, a fold change
+# or a percent change from baseline, the baseline visit itself is left out when
+# it is the only baseline visit: there every participant's value is the same by
+# definition, and there is nothing to compare. With several baseline visits
+# every visit is drawn.
+GroupComparison_VisitsDrawn <- function(chrVisits, strValueType, chrBaselineVisits) {
+  bRelative <- strValueType %in% c("change", "fold_change", "percent_change")
+  if (!bRelative || length(chrBaselineVisits) != 1L) {
+    return(chrVisits)
   }
-  list(all = chrAll, start = chrStart)
+  chrVisits[chrVisits != chrBaselineVisits]
 }
 
 # The columns that can make a group, a colour or a panel: columns that hold a
@@ -262,21 +266,16 @@ GroupComparison_Filters <- function(dfParticipants, lConfig, dfCategories) {
 }
 
 # What the chart opens on: the settings, where the tables have what they name.
-# `strMeasure` and `chrVisits` say which biomarker and which visits the view is
-# of, in place of the ones the settings open on.
-GroupComparison_State <- function(dfResults, dfParticipants, lConfig, strMeasure = NULL, chrVisits = NULL) {
+# The biomarker is the one `start_value` names when the table has it, and
+# otherwise NULL, which is the overview of every biomarker: the overview prints
+# no test and asks R for nothing.
+GroupComparison_State <- function(dfResults, dfParticipants, lConfig) {
   dfCategories <- GroupComparison_Categories(dfResults, dfParticipants, lConfig)
   chrMeasures <- GroupComparison_Measures(dfResults, lConfig)
   Has <- function(strColumn) !is.null(strColumn) && strColumn %in% dfCategories$value_col
-  if (is.null(strMeasure)) {
-    strMeasure <- if (!is.null(lConfig$start_value) && lConfig$start_value %in% chrMeasures) lConfig$start_value else chrMeasures[1L]
-  }
-  if (is.null(chrVisits)) {
-    chrVisits <- GroupComparison_Visits(dfResults, lConfig)$start
-  }
   list(
-    measure = strMeasure,
-    visits = chrVisits,
+    measure = if (!is.null(lConfig$start_value) && lConfig$start_value %in% chrMeasures) lConfig$start_value else NULL,
+    visits = GroupComparison_Visits(dfResults, lConfig)$start,
     value_type = lConfig$value_type,
     group_by = if (Has(lConfig$group_by)) {
       lConfig$group_by
@@ -355,7 +354,15 @@ GroupComparison_Panels <- function(dfResults, dfParticipants, lConfig, lState) {
   }
 
   bNeedsVisit <- lState$value_type != "baseline"
-  lVisits <- if (bNeedsVisit) as.list(lState$visits) else list(NULL)
+  # A change at the one baseline visit is the same for everyone, so that visit
+  # is not drawn: there is nothing in it to compare.
+  chrBaselineVisits <- if (lState$value_type %in% c("change", "fold_change", "percent_change")) {
+    if (is.null(lCore$baseline_visits)) Core_First(Core_Visits(dfRows, lCore)) else lCore$baseline_visits
+  } else {
+    character(0)
+  }
+  chrDrawn <- GroupComparison_VisitsDrawn(lState$visits, lState$value_type, chrBaselineVisits)
+  lVisits <- if (bNeedsVisit) as.list(chrDrawn) else list(NULL)
   lFramed <- lapply(lVisits, function(strVisit) {
     lVariables <- list(y = if (bNeedsVisit) {
       list(measure = lState$measure, visit = strVisit, value = lState$value_type)
@@ -485,32 +492,29 @@ GroupComparison_KeyText <- function(xValue) {
 }
 
 # The stored results a page ships: for each biomarker the Biomarker control
-# offers, R's answer for each panel of that biomarker's view at the widget's
-# settings, and for each visit the Visit control offers. Each is the request the
-# chart makes for the panel with `value`, what Analyze_GroupDifference()
-# returned for the panel's rows, and `data`, those rows.
+# offers, R's answer for each panel the chart draws when that biomarker is
+# opened at the widget's settings. Each is the request the chart makes for the
+# panel with `value`, what Analyze_GroupDifference() returned for the panel's
+# rows, and `data`, those rows.
+#
+# The chart opens on an overview of every biomarker unless `start_value` names
+# one; the overview prints no test, and a reader opens a biomarker from it. So
+# the results are stored for every biomarker, whichever the page opens on.
 GroupComparison_StoredResults <- function(dfResults, dfParticipants, lConfig) {
   if (is.null(lConfig$statistic) || nrow(dfResults) == 0L) {
     return(list())
   }
-  lVisits <- GroupComparison_Visits(dfResults, lConfig)
-  # The view the settings open on, and the view of every visit. Where the two
-  # ask the same of R for a panel, the panel is stored once.
-  lViews <- if (lConfig$value_type == "baseline") list(character(0)) else unique(list(lVisits$start, lVisits$all))
   # What the controls open on is the same for every biomarker but the biomarker.
   lOpening <- GroupComparison_State(dfResults, dfParticipants, lConfig)
   lStored <- list()
   for (strMeasure in GroupComparison_Measures(dfResults, lConfig)) {
-    for (chrVisits in lViews) {
-      lState <- lOpening
-      lState$measure <- strMeasure
-      lState$visits <- chrVisits
-      for (lRequest in GroupComparison_Requests(dfResults, dfParticipants, lConfig, lState)) {
-        strKey <- GroupComparison_KeyText(lRequest[c("name", "args", "dataId")])
-        if (is.null(lStored[[strKey]])) {
-          lRequest$value <- do.call(Analyze_GroupDifference, c(list(lRequest$data), lRequest$args))
-          lStored[[strKey]] <- lRequest
-        }
+    lState <- lOpening
+    lState$measure <- strMeasure
+    for (lRequest in GroupComparison_Requests(dfResults, dfParticipants, lConfig, lState)) {
+      strKey <- GroupComparison_KeyText(lRequest[c("name", "args", "dataId")])
+      if (is.null(lStored[[strKey]])) {
+        lRequest$value <- do.call(Analyze_GroupDifference, c(list(lRequest$data), lRequest$args))
+        lStored[[strKey]] <- lRequest
       }
     }
   }

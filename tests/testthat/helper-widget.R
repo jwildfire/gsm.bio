@@ -60,7 +60,8 @@ lDemo <- function() {
   )
 }
 
-# The settings most widget tests open on: change from Baseline, by arm.
+# The settings most widget tests open on: IL-6 open, change from Baseline, by
+# arm, with no visit named, so every visit is chosen.
 lWidgetSettings <- function() {
   list(start_value = "IL-6", value_type = "change", baseline_visits = "Baseline", group_by = "ARM")
 }

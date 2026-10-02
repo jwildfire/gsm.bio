@@ -197,17 +197,17 @@ test_that("the controls open on what the chart's open on: biomarkers, visits, gr
     GroupComparison_Measures(Synthetic_Results, GroupComparison_Settings(list(measures = c("IL-6", "NOPE", "CRP")))),
     c("IL-6", "CRP")
   )
-  # The first visit after the baseline, or the visits asked for that the table has.
+  # Every visit, or the visits asked for that the table has, in the order asked.
   lVisits <- GroupComparison_Visits(Synthetic_Results, lPlain)
   expect_identical(lVisits$all, c("Baseline", "Week 2", "Week 4", "Week 8", "Week 12"))
-  expect_identical(lVisits$start, "Week 2")
+  expect_identical(lVisits$start, lVisits$all)
   expect_identical(
     GroupComparison_Visits(Synthetic_Results, GroupComparison_Settings(list(visits = c("Week 12", "Week 99", "Week 4"))))$start,
     c("Week 12", "Week 4")
   )
   expect_identical(
-    GroupComparison_Visits(Synthetic_Results, GroupComparison_Settings(list(baseline_visits = c("Baseline", "Week 2"))))$start,
-    "Week 4"
+    GroupComparison_Visits(Synthetic_Results, GroupComparison_Settings(list(visits = "Week 99")))$start,
+    lVisits$all
   )
 
   # The participant table's category columns, and no column with too many values.
@@ -215,7 +215,16 @@ test_that("the controls open on what the chart's open on: biomarkers, visits, gr
   expect_identical(dfCategories$value_col, c("ARM", "SEX", "RESPONSE"))
   expect_identical(unique(dfCategories$table), "participants")
   lState <- GroupComparison_State(Synthetic_Results, Synthetic_Participants, lPlain)
-  expect_identical(lState$measure, "CRP")
+  # No biomarker named, or one the table does not have: the overview of every
+  # biomarker, which is a biomarker of NULL. A biomarker named is the one opened.
+  expect_null(lState$measure)
+  expect_true("measure" %in% names(lState))
+  expect_null(GroupComparison_State(Synthetic_Results, Synthetic_Participants, GroupComparison_Settings(list(start_value = "NOPE")))$measure)
+  expect_identical(
+    GroupComparison_State(Synthetic_Results, Synthetic_Participants, GroupComparison_Settings(list(start_value = "IL-6")))$measure,
+    "IL-6"
+  )
+  expect_identical(lState$visits, lVisits$all)
   expect_identical(lState$group_by, "ARM")
   expect_null(lState$color_by)
   expect_identical(names(lState$filters), c("ARM", "SEX", "RESPONSE"))
@@ -247,6 +256,41 @@ test_that("the controls open on what the chart's open on: biomarkers, visits, gr
   )
 })
 
+test_that("the baseline visit of a change is not a panel, and the overview asks R for nothing (#9)", {
+  chrAll <- c("Baseline", "Week 2", "Week 4", "Week 8", "Week 12")
+  # At the one baseline visit a change is the same for everyone: not drawn.
+  for (strValueType in c("change", "fold_change", "percent_change")) {
+    expect_identical(GroupComparison_VisitsDrawn(chrAll, strValueType, "Baseline"), chrAll[-1], label = strValueType)
+  }
+  expect_identical(GroupComparison_VisitsDrawn("Baseline", "change", "Baseline"), character(0))
+  # A result or a baseline value is drawn at every visit, and so is a change
+  # measured against several baseline visits.
+  expect_identical(GroupComparison_VisitsDrawn(chrAll, "raw", character(0)), chrAll)
+  expect_identical(GroupComparison_VisitsDrawn(chrAll, "change", c("Baseline", "Week 2")), chrAll)
+
+  lTables <- lDemo()
+  Visits <- function(lMore, strMeasure = "IL-6") {
+    lConfig <- GroupComparison_Settings(c(lTables$settings[setdiff(names(lTables$settings), c("visits", names(lMore)))], lMore))
+    lState <- GroupComparison_State(lTables$results, lTables$participants, lConfig)
+    lState["measure"] <- list(strMeasure)
+    lRequests <- GroupComparison_Requests(lTables$results, lTables$participants, lConfig, lState)
+    unlist(lapply(lRequests, function(lRequest) lRequest$dataId$visit))
+  }
+  # One biomarker open, every visit chosen: a request per panel drawn.
+  expect_identical(Visits(list()), chrAll[-1])
+  expect_identical(Visits(list(value_type = "percent_change")), chrAll[-1])
+  expect_identical(Visits(list(value_type = "raw")), chrAll)
+  expect_identical(Visits(list(baseline_visits = c("Baseline", "Week 2"))), chrAll)
+  # With no baseline visit named the baseline is the first visit, and it is not drawn.
+  expect_identical(Visits(list(baseline_visits = NULL)), chrAll[-1])
+  expect_identical(Visits(list(visits = "Baseline")), NULL)
+  expect_identical(Visits(list(visits = c("Week 8", "Baseline", "Week 2"))), c("Week 8", "Week 2"))
+  # A baseline value has no visit: one request, with no visit in its identity.
+  expect_null(Visits(list(value_type = "baseline")))
+  # The overview, where no biomarker is open, prints no test.
+  expect_null(Visits(list(), NULL))
+})
+
 test_that("a test that does not fit the number of groups gives way to its counterpart, and none asks nothing (#9)", {
   expect_identical(GroupComparison_FitTest("t", 2L), "t")
   expect_identical(GroupComparison_FitTest("t", 4L), "anova")
@@ -256,7 +300,10 @@ test_that("a test that does not fit the number of groups gives way to its counte
   expect_identical(GroupComparison_FitTest("none", 2L), "none")
   expect_null(GroupComparison_FitTest("t", 1L))
 
+  # The view these requests are of: IL-6 open, change from Baseline, at Week 4
+  # alone, which the demo's settings name (`start_value`, `visits`).
   lTables <- lDemo()
+  expect_identical(lTables$settings[c("start_value", "visits")], list(start_value = "IL-6", visits = "Week 4"))
   Requests <- function(lMore) {
     lConfig <- GroupComparison_Settings(c(lTables$settings[setdiff(names(lTables$settings), names(lMore))], lMore))
     GroupComparison_Requests(lTables$results, lTables$participants, lConfig, GroupComparison_State(lTables$results, lTables$participants, lConfig))

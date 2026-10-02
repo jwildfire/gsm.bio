@@ -52,7 +52,9 @@ Widget_GroupComparison(
 )
 ```
 
-It takes the results table, optionally the participant table, and the chart's settings as a list under bio.viz's own names. The tests are computed in R when the widget is made, by `Analyze_GroupDifference()`, for each biomarker at each visit at the widget's settings, and are stored in the page. Saved with `htmlwidgets::saveWidget()`, the page is one file that shows them with no R and no network, and says under the chart which R version and gsm.bio version computed them. A view that was not computed, such as another test or a filter, says that statistics are unavailable for it; it never shows another view's numbers.
+It takes the results table, optionally the participant table, and the chart's settings as a list under bio.viz's own names. The chart opens on an overview of every biomarker at every visit, which prints no test; a click on a biomarker opens it alone, with a panel for each visit and a test under each. `start_value = "IL-6"` opens that biomarker straight away.
+
+The tests are computed in R when the widget is made, by `Analyze_GroupDifference()`, for each biomarker at each visit panel the chart draws at the widget's settings, and are stored in the page. Saved with `htmlwidgets::saveWidget()`, the page is one file that shows them with no R and no network, and says under the chart which R version and gsm.bio version computed them. A view that was not computed, such as another test or a filter, says that statistics are unavailable for it; it never shows another view's numbers.
 
 The widget carries two JavaScript bundles, both copied from bio.viz with the commit and a checksum per file recorded in `inst/htmlwidgets/lib/SOURCE.json`: bio.viz's own, and the copy of safety.viz's bundle bio.viz builds its chart from. The safety.viz copy is a stand-in. It comes from a safety.viz branch that is not merged yet, and is to be replaced by gsm.safety's bundle once gsm.safety carries one with the kit.
 

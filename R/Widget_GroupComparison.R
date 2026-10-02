@@ -6,14 +6,23 @@
 #' R, by [Analyze_GroupDifference()], and shipped with the page, so a saved page
 #' shows them with no R and no network.
 #'
+#' @section What the page opens on:
+#' The chart opens on an overview of every biomarker at every visit, one row
+#' per biomarker, unless `start_value` names a biomarker to open. A row of the
+#' overview, or the Biomarker control, opens one biomarker alone, with its
+#' visits as panels and a test under each. The overview itself prints no test.
+#' For a change, a fold change or a percent change from one baseline visit, the
+#' baseline visit has no panel: there the value is the same for everyone.
+#'
 #' @section Statistics shipped with the page:
 #' The chart computes no test. It asks R for one test per panel, and in a
 #' widget the answers are worked out when the widget is made and stored in the
 #' page. For each biomarker the Biomarker control offers, the widget stores
-#' [Analyze_GroupDifference()]'s answer for each panel of that biomarker's view
-#' at the widget's settings, and for each visit the Visit control offers, on the
-#' rows the chart draws in that panel: the value type, baseline, group, panel
-#' column, filters, scale, test and pairwise switch the settings open on.
+#' [Analyze_GroupDifference()]'s answer for each panel the chart draws when
+#' that biomarker is opened at the widget's settings, on the rows the chart
+#' draws in that panel: the visits, value type, baseline, group, panel column,
+#' filters, scale, test and pairwise switch the settings open on. With no
+#' `visits` named that is every visit the chart draws.
 #'
 #' A stored result is found by the function's name, its arguments and the
 #' identity of the panel's rows together. A reader who moves a control to a
@@ -48,7 +57,8 @@
 #'   comes from a column carried on the results rows. Default: `NULL`.
 #' @param lSettings `list` bio.viz group comparison settings, under bio.viz's
 #'   own names; laid over the chart's defaults in the page, so only overrides
-#'   are needed. For example `start_value`, `visits`, `value_type`,
+#'   are needed. For example `start_value` (the biomarker to open; `NULL` is
+#'   the overview), `visits` (`NULL` is every visit), `value_type`,
 #'   `baseline_visits`, `group_by`, `color_by`, `panel_by`, `test` and
 #'   `pairwise`. The setting `connection` is the widget's to make and cannot be
 #'   given, and `statistic` can only be `"Analyze_GroupDifference"` or `NULL`
@@ -69,8 +79,12 @@
 #'   `computed_by`, the R version, gsm.bio version and time that computed them.
 #'
 #' @examples
-#' # Change from Baseline, by arm, on the synthetic study. Open IL-6, the
-#' # biomarker the study plants a difference in, to see R's test under it.
+#' # Change from Baseline, by arm, on the synthetic study. `start_value` opens
+#' # IL-6, the biomarker the study plants a difference in, so the page shows what
+#' # the widget is for at once: a panel for each visit after Baseline, with R's
+#' # test under each. Without `start_value` the chart opens on its overview of
+#' # every biomarker, which prints no test; "All Biomarkers" in the Biomarker
+#' # control goes there, and a click on a biomarker's row comes back.
 #' # Moving a filter or the Test control leaves the views that were computed:
 #' # the line then says that statistics are unavailable for the view.
 #' lColumns <- list(

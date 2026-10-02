@@ -15,6 +15,18 @@ dfChangeByArm <- function(strBiomarker, strVisit) {
   dfRows[!is.na(dfRows$y), ]
 }
 
+# The view the widget tests are of: change from Baseline, by arm, with no visit
+# named, so every visit is chosen. Opened on a biomarker, the chart draws one
+# panel per visit after Baseline (a change at the baseline visit is the same for
+# everyone, and is not drawn) and asks for one test per panel.
+chrVisitsDrawn <- function() {
+  setdiff(unique(Synthetic_Results$VISIT), Synthetic_Truth$GroupDifference$BaselineVisit)
+}
+
+nStoredForChange <- function() {
+  length(chrSyntheticBiomarkers()) * length(chrVisitsDrawn())
+}
+
 lSyntheticWidget <- function(lSettings = lWidgetSettings(), ...) {
   Widget_GroupComparison(Synthetic_Results, Synthetic_Participants, lSettings = lSettings, ...)
 }
@@ -50,7 +62,8 @@ test_that("Widget_GroupComparison returns an htmlwidget carrying the tables, the
   dfAlone$ARM <- Synthetic_Participants$ARM[match(dfAlone$USUBJID, Synthetic_Participants$USUBJID)]
   lAlone <- Widget_GroupComparison(dfAlone, lSettings = lSettings)
   expect_null(lAlone$x$dfParticipants)
-  expect_identical(length(lAlone$x$lStatistics$results), 60L)
+  expect_identical(length(lAlone$x$lStatistics$results), nStoredForChange())
+  expect_identical(nStoredForChange(), 48L)
   # The same participants, so the same answers.
   expect_identical(lAlone$x$lStatistics$results, lWidget$x$lStatistics$results)
 })
@@ -94,19 +107,33 @@ test_that("Widget_GroupComparison rejects invalid inputs before a page is made (
   expect_error(lSyntheticWidget(list(groups = "NOPE", group_by = "NOPE")), "no table has the column `NOPE`")
 })
 
-test_that("the widget stores one result for each biomarker at each visit, keyed to the view the settings open on (#9)", {
+test_that("the widget stores one result for each biomarker at each visit panel the chart draws, keyed to the view the settings open on (#9)", {
   lResults <- lSyntheticWidget()$x$lStatistics$results
   chrBiomarkers <- chrSyntheticBiomarkers()
   chrVisits <- unique(Synthetic_Results$VISIT)
 
-  expect_identical(length(lResults), length(chrBiomarkers) * length(chrVisits))
+  # Change from Baseline with every visit chosen: a panel, and so a result, for
+  # each visit after Baseline, and none for Baseline itself.
+  expect_identical(chrVisitsDrawn(), c("Week 2", "Week 4", "Week 8", "Week 12"))
+  expect_identical(length(lResults), length(chrBiomarkers) * length(chrVisitsDrawn()))
   dfKeys <- data.frame(
     measure = vapply(lResults, function(lResult) lResult$dataId$measure, character(1)),
     visit = vapply(lResults, function(lResult) lResult$dataId$visit, character(1))
   )
   expect_identical(anyDuplicated(dfKeys), 0L)
   expect_setequal(dfKeys$measure, chrBiomarkers)
-  expect_setequal(dfKeys$visit, chrVisits)
+  expect_setequal(dfKeys$visit, chrVisitsDrawn())
+  # Every biomarker is stored whichever the page opens on: the overview, when
+  # `start_value` names none, prints no test, and a reader opens one from it.
+  lFromOverview <- lSyntheticWidget(lWidgetSettings()[c("value_type", "baseline_visits", "group_by")])$x$lStatistics$results
+  expect_identical(lFromOverview, lResults)
+  # Visits named in the settings are the visits chosen, and the panels stored.
+  lWeek4 <- lSyntheticWidget(c(lWidgetSettings(), list(visits = c("Week 4", "Baseline"))))$x$lStatistics$results
+  expect_identical(length(lWeek4), length(chrBiomarkers))
+  expect_identical(unique(vapply(lWeek4, function(lResult) lResult$dataId$visit, character(1))), "Week 4")
+  # Against two baseline visits a change is drawn at every visit.
+  lTwo <- lSyntheticWidget(list(value_type = "change", baseline_visits = c("Baseline", "Week 2"), group_by = "ARM"))$x$lStatistics$results
+  expect_identical(length(lTwo), length(chrBiomarkers) * length(chrVisits))
   for (lResult in lResults) {
     expect_named(lResult, c("name", "args", "dataId", "rows", "value"))
     expect_identical(lResult$name, "Analyze_GroupDifference")
@@ -122,7 +149,9 @@ test_that("the widget stores one result for each biomarker at each visit, keyed 
   }
 
   # What the settings open on is what is computed: another test, a filter, a
-  # panel column and a logarithmic scale each give their own keys.
+  # panel column and a logarithmic scale each give their own keys. The result
+  # itself, not a change, is drawn at every visit, Baseline included: a panel
+  # per visit and per sex.
   lMore <- lSyntheticWidget(c(lWidgetSettings(), list(
     test = "wilcoxon", y_scale = "log", panel_by = "SEX", color_by = "RESPONSE", value_type = "raw",
     filters = list(list(value_col = "RESPONSE", start = "Responder"))
@@ -210,7 +239,7 @@ test_that("a result is written in the shape the chart's connection reads it in (
 
 test_that("the saved page holds the stored results, equal to Analyze_GroupDifference's answer member by member (#9)", {
   lResults <- lSavedWidget()$payload$lStatistics$results
-  expect_identical(length(lResults), 60L)
+  expect_identical(length(lResults), nStoredForChange())
 
   for (lResult in lResults) {
     strLabel <- paste(lResult$dataId$measure, lResult$dataId$visit)
@@ -375,5 +404,5 @@ test_that("the widget saves as one self-contained file that holds both bundles a
   # the folder htmlwidgets wrote the scripts to on the way included.
   expect_false(grepl("<(script|img|iframe|link)[^>]*\\s(src|href)\\s*=", strPage, perl = TRUE))
   expect_false(grepl("group-comparison_files", strPage, fixed = TRUE))
-  expect_identical(length(lPagePayload(strPage)$lStatistics$results), 60L)
+  expect_identical(length(lPagePayload(strPage)$lStatistics$results), nStoredForChange())
 })
