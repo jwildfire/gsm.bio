@@ -4,11 +4,8 @@
 # None of these but NEWS.md is in the built package. In the source tree, where
 # devtools::test() runs, a missing file is a failure; under R CMD check, where
 # the tests run against the installed package, there is no source tree and the
-# tests skip. A file that is merely absent must never read as a pass.
-
-bSourceTree <- function() {
-  file.exists(testthat::test_path("..", "..", "DESCRIPTION"))
-}
+# tests skip (bSourceTree() is in helper-source-tree.R). A file that is merely
+# absent must never read as a pass.
 
 chrRepositoryFile <- function(...) {
   skip_if_not(bSourceTree(), paste(file.path(...), "is not part of the built package"))
@@ -63,6 +60,15 @@ test_that("the R CMD check workflow has one job named R-CMD-check that fails on 
   expect_false(any(grepl("strategy:|matrix", chrJobs)))
   expect_true(any(grepl("^    runs-on: ubuntu-latest$", chrLines)))
   expect_true(any(grepl("error-on: '\"note\"'", chrLines, fixed = TRUE)))
+})
+
+test_that("the R CMD check job also runs the suite from the source tree, where nothing may skip (#2)", {
+  strText <- paste(chrRepositoryFile(".github", "workflows", "R-CMD-check.yaml"), collapse = "\n")
+
+  # R CMD check cannot see data-raw/, so the test that reruns the data script
+  # would never run on CI's R version without this step.
+  expect_match(strText, "testthat::test_local(stop_on_failure = TRUE)", fixed = TRUE)
+  expect_match(strText, "if (any(dfTests$skipped))", fixed = TRUE)
 })
 
 test_that("both workflows run again when a draft pull request is marked ready (#1)", {
