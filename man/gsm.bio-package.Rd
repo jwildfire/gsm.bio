@@ -4,7 +4,7 @@
 \name{gsm.bio-package}
 \alias{gsm.bio}
 \alias{gsm.bio-package}
-\title{gsm.bio: statistics for biomarker charts}
+\title{gsm.bio: statistics and widgets for biomarker charts}
 \description{
 The statistics behind the bio.viz biomarker charts. A chart never computes
 a test: it hands over a table with one row per participant and receives the
@@ -14,8 +14,8 @@ estimates, intervals, p-value, method name and counts that R worked out.
 
 Each statistic is a thin wrapper that fixes the inputs and the shape of the
 answer around a function from the stats or survival package. Nothing is
-reimplemented, and nothing from any other package is used, so the same
-source runs in a desktop session, in R in the browser and on a server.
+reimplemented, and the statistics use nothing from any other package, so the
+same source runs in a desktop session, in R in the browser and on a server.
 
 The tests the design names are imported here, once, for the functions that
 wrap them: \code{\link[stats:t.test]{stats::t.test()}}, \code{\link[stats:wilcox.test]{stats::wilcox.test()}}, \code{\link[stats:aov]{stats::aov()}},
@@ -25,11 +25,19 @@ wrap them: \code{\link[stats:t.test]{stats::t.test()}}, \code{\link[stats:wilcox
 \code{\link[survival:coxph]{survival::coxph()}} from survival.
 }
 
+\section{Widgets}{
+
+A widget draws a bio.viz chart from R. It computes the chart's statistics
+with the functions above when it is made and stores them in the page, so a
+saved page shows them with no R and no network: see
+\code{\link[=Widget_GroupComparison]{Widget_GroupComparison()}}. The widgets are the only part of the package
+that uses htmlwidgets.
+}
+
 \section{Status}{
 
-Version 0.1.0 is in development. This first step sets up the package; the
-statistics functions and a synthetic biomarker study with known planted
-effects follow in the same version.
+Version 0.1.0 is in development: the statistics functions, a synthetic
+biomarker study with known planted effects, and the first widget.
 }
 
 \seealso{
