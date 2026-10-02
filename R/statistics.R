@@ -40,7 +40,7 @@ local({
 #' | `dropped` | A data frame of `reason` and `n`: the rows left out and why. No rows when nothing was dropped. |
 #' | `warnings` | An unnamed list of the warnings R raised inside the wrapped call, as text. They are captured here and never printed. |
 #' | `notes` | An unnamed list of remarks of the package's own, as text. |
-#' | `rows` | A data frame for a function's many-row results: pairwise comparisons, per-group correlations, the pairs of a matrix, the cells of a table. Its columns are given on each function's page. No rows when there are none. |
+#' | `rows` | A data frame for a function's many-row results: pairwise comparisons, per-group correlations, the pairs of a matrix, the cells of a table, the groups of a survival comparison, the biomarkers of a screen. Its columns are given on each function's page. No rows when there are none. |
 #'
 #' When `status` is not `"ok"`, `reason` says why and the numbers are withheld:
 #' `p_value` is `NA` and `estimates` and `statistic` have no rows. `counts` and
@@ -50,6 +50,16 @@ local({
 #' Wherever `p_value` and `adjustment` appear together, at the top level or in
 #' a row of `rows`, `adjustment` describes that `p_value`. A row whose p-value
 #' was adjusted also carries the unadjusted one as `p_unadjusted`.
+#'
+#' @section R's answer:
+#' A result is the answer of the R that computed it. Every statistic is the R
+#' function called with R's own defaults, and those defaults are R's to change.
+#' A few have changed between versions, so the same call on the same data can
+#' give a different number in an older R and a newer one. One case is known:
+#' with tied values, `wilcox.test()` in R 4.3.3 warns that it cannot compute an
+#' exact p-value and uses the normal approximation, where R 4.6.1 computes the
+#' exact p-value and does not warn. A chart computing in the browser and a
+#' report computed at a desk agree when they run the same version of R.
 #'
 #' @section Crossing into JavaScript:
 #' The result needs only base R to become JSON, and these rules hold for every
@@ -89,12 +99,14 @@ local({
 #' The functions are defined once, in the file
 #' `system.file("statistics", "statistics.R", package = "gsm.bio")`. The
 #' package's exported functions are built from that file, and the same file
-#' runs as it is in a bare R session with only the stats package attached.
+#' runs as it is in a bare R session with only the stats and survival packages
+#' attached.
 #'
 #' @name StatisticsResult
 #' @aliases statistics-result
 #' @seealso [Analyze_GroupDifference()], [Analyze_Correlation()],
-#'   [Analyze_CorrelationMatrix()], [Analyze_Contingency()]
+#'   [Analyze_CorrelationMatrix()], [Analyze_Contingency()],
+#'   [Analyze_Survival()], [Analyze_Screen()]
 NULL
 
 #' Compare a numeric variable between groups
@@ -313,3 +325,186 @@ Analyze_CorrelationMatrix <- Analyze_CorrelationMatrix
 #' @family statistics
 #' @export
 Analyze_Contingency <- Analyze_Contingency
+
+#' Compare survival between groups
+#'
+#' Tests whether the time to an event differs between two or more groups of
+#' participants, and reports each group's median survival with its interval
+#' and, for two groups, the hazard ratio with its interval.
+#'
+#' Each part is the survival package's own function:
+#'
+#' | Part | R function |
+#' |---|---|
+#' | The test | [survival::survdiff()], the log-rank test, for two or more groups. |
+#' | Median survival and its interval | [survival::survfit()] with `conf.type = "log-log"`, the interval safety.viz draws as the band of its Kaplan-Meier curve. |
+#' | The hazard ratio and its interval | [survival::coxph()], when there are exactly two groups. |
+#'
+#' The hazard ratio is the hazard in the first group over the hazard in the
+#' second, so the second group is the reference: with
+#' `chrGroups = c("High", "Low")` a ratio above 1 means events come sooner in
+#' the high group.
+#'
+#' @section Two p-values, kept apart:
+#' `p_value` is the log-rank test's. The Cox model has p-values of its own, and
+#' the one that goes with the hazard ratio's interval is the Wald test's. It is
+#' in `rows` as `hr_p_value`, labelled by `hr_test`, and is a different test
+#' from the log-rank test: the two are usually close and need not agree.
+#'
+#' @section Censor flag or event flag:
+#' The outcome is a time and a flag, and the flag can be written either way
+#' round. Say which by the argument used: `strCensorCol` names a column that is
+#' 1 for a censored time and 0 for an event, as ADaM's `CNSR` is;
+#' `strEventCol` names a column that is 1 (or `TRUE`) for an event and 0 (or
+#' `FALSE`) for a censored time. Exactly one must be given, and a column
+#' holding anything but 0 and 1 is refused. The first of `notes` states which
+#' value was read as an event, and `rows` gives the events in each group, so a
+#' flag read the wrong way round shows.
+#'
+#' @inheritParams Analyze_GroupDifference
+#' @param strTimeCol `character` Name of the numeric column holding the time to
+#'   the event or to censoring.
+#' @param strCensorCol `character` Name of a censor flag column: 1 for a
+#'   censored time, 0 for an event. Default: `NULL`.
+#' @param strEventCol `character` Name of an event flag column: 1 for an event,
+#'   0 for a censored time. Default: `NULL`.
+#' @param chrGroups `character` The groups to compare, in order; the hazard
+#'   ratio is the first over the second. Participants in any other group are
+#'   dropped and counted. Default: `NULL`, every group present, in sorted
+#'   order.
+#' @param nMinGroup `numeric` The smallest group the comparison is computed
+#'   for, counted in participants, not events. If any group has fewer, the
+#'   result has `status` `"too_small"` and no numbers. Default:
+#'   `nMinGroupDefault`, which is 5. See [StatisticsResult].
+#'
+#' @return The fixed result described in [StatisticsResult]. Here `test` is
+#'   `"logrank"`; `counts` is a named list of group to participants used;
+#'   `estimates` has a row named `"Median"` per group and, for two groups, a
+#'   row named `"Hazard ratio"`; and `rows` has one row per group, with the
+#'   columns `group`, `n`, `events`, `median`, `lower`, `upper`, `level`, and,
+#'   filled on the first group's row when there are two groups,
+#'   `hazard_ratio`, `hr_lower`, `hr_upper`, `hr_p_value` and `hr_test`. A
+#'   median or a bound that the curve or its band never reaches is `NA`.
+#'
+#' @examples
+#' # Event-free survival by Baseline CRP, above against below its median
+#' dfCRP <- Synthetic_Results[
+#'   Synthetic_Results$TEST == "CRP" & Synthetic_Results$VISIT == "Baseline",
+#' ]
+#' dfFrame <- merge(Synthetic_Outcomes, dfCRP[c("USUBJID", "STRESN")])
+#' dfFrame$Level <- ifelse(dfFrame$STRESN > stats::median(dfFrame$STRESN), "High", "Low")
+#'
+#' lResult <- Analyze_Survival(
+#'   dfFrame, "AVAL", "Level",
+#'   strCensorCol = "CNSR", chrGroups = c("High", "Low")
+#' )
+#' lResult$p_value
+#' lResult$estimates
+#' lResult$rows[c("group", "n", "events", "median")]
+#'
+#' @family statistics
+#' @export
+Analyze_Survival <- Analyze_Survival
+
+#' Screen many biomarkers with one comparison
+#'
+#' Runs one comparison, chosen once, on every biomarker and returns one row
+#' per biomarker: a unit-free estimate with its interval, a p-value, and that
+#' p-value adjusted across the rows.
+#'
+#' The data stay one row per participant, with one column per biomarker.
+#' Each row of the screen is the matching single function's answer for that
+#' biomarker, so its unadjusted p-value is the one the single chart prints:
+#'
+#' | `strComparison` | Estimate | p-value from | Needs |
+#' |---|---|---|---|
+#' | `"difference"` | The standardised difference between two groups. | [Analyze_GroupDifference()], the Welch t-test. | `strGroupCol` |
+#' | `"correlation"` | The correlation with one fixed variable. | [Analyze_Correlation()]. | `strWithCol` |
+#' | `"hazard"` | The hazard ratio, high against low. | [Analyze_Survival()], the log-rank test. | `strTimeCol` and a flag column |
+#'
+#' The adjustment is [stats::p.adjust()] across the rows that have a p-value.
+#' A biomarker that could not be computed has its own `status` and `reason`,
+#' has no p-value, and is left out of the adjustment; `notes` says how many
+#' rows the adjustment covered, and each adjusted row carries that number as
+#' `adjusted_over`. The default is Benjamini-Hochberg, which controls the
+#' share of false leads among the rows picked out, the usual aim of a screen;
+#' Holm, which guards against any false lead at all, is stricter.
+#'
+#' The rows come back in the order the columns were named. Sorting is the
+#' caller's.
+#'
+#' @section The standardised difference:
+#' This is the one statistic the package computes itself rather than handing
+#' to an existing function, to avoid a heavy dependency. It is Hedges' g: the
+#' difference in means, first group minus second, divided by the pooled
+#' standard deviation, times the exact small-sample correction. Its interval
+#' is the noncentral t interval for the two-sample t statistic with pooled
+#' variance, put on the same scale. It agrees with `effectsize::hedges_g()`,
+#' and the package's tests check that it does.
+#'
+#' Its p-value is not computed from it: it is [stats::t.test()]'s, Welch,
+#' which does not assume the equal variances that the pooled standard
+#' deviation does.
+#'
+#' @section High against low:
+#' For `"hazard"`, each biomarker is split at its median among the
+#' participants who can be used, those with a value, a time and a flag. A
+#' value above the median is high and a value on the median or below it is
+#' low. The hazard ratio is high over low, its interval is the Cox model's and
+#' the p-value is the log-rank test's. Other cuts are not offered here.
+#'
+#' @inheritParams Analyze_Survival
+#' @param chrCols `character` Names of the numeric biomarker columns, one row
+#'   of the screen each.
+#' @param strComparison `character` The comparison: `"difference"`,
+#'   `"correlation"` or `"hazard"`. Default: `"difference"`.
+#' @param strGroupCol `character` For `"difference"`: name of the column
+#'   holding each participant's group. Default: `NULL`.
+#' @param chrGroups `character` For `"difference"`: the two groups, in order;
+#'   the difference is the first minus the second. Default: `NULL`, the two
+#'   groups present, in sorted order.
+#' @param strWithCol `character` For `"correlation"`: name of the numeric
+#'   column every biomarker is correlated with. Default: `NULL`.
+#' @param strCorMethod `character` For `"correlation"`: `"pearson"` or
+#'   `"spearman"`. Default: `"pearson"`.
+#' @param strTimeCol `character` For `"hazard"`: name of the numeric column
+#'   holding the time to the event or to censoring. Default: `NULL`.
+#' @param strPAdjust `character` The adjustment across the rows, one of
+#'   [stats::p.adjust.methods]. Default: `"BH"`.
+#' @param nMinGroup `numeric` The smallest group, or number of complete pairs,
+#'   a row is computed for. A biomarker below it has `status` `"too_small"`
+#'   in its row and no numbers. Default: `nMinGroupDefault`, which is 5. See
+#'   [StatisticsResult].
+#'
+#' @return The fixed result described in [StatisticsResult]. Here `test` is
+#'   the comparison; `p_value` is `NA` and `estimates` and `statistic` have no
+#'   rows; `counts` is a named list of biomarker to participants used; and
+#'   `rows` has one row per biomarker, with the columns `biomarker`, `counts`,
+#'   `n_1` and `n_2` (the two groups, or high and low), `events`, `dropped`,
+#'   `estimate`, `lower`, `upper`, `level`, `method`, `statistic`,
+#'   `p_unadjusted`, `p_value` (adjusted), `adjustment`, `adjusted_over`,
+#'   `status`, `reason` and `warning`. The result's own `status` is `"ok"`
+#'   when any row is.
+#'
+#' @examples
+#' # Every biomarker's change from Baseline to Week 4, Treatment against Placebo
+#' dfFrame <- Synthetic_Participants
+#' chrBiomarkers <- unique(Synthetic_Results$TEST)
+#' for (strBiomarker in chrBiomarkers) {
+#'   dfOne <- Synthetic_Results[Synthetic_Results$TEST == strBiomarker, ]
+#'   dfBaseline <- dfOne[dfOne$VISIT == "Baseline", ]
+#'   dfWeek4 <- dfOne[dfOne$VISIT == "Week 4", ]
+#'   dfFrame[[strBiomarker]] <- dfWeek4$STRESN[match(dfFrame$USUBJID, dfWeek4$USUBJID)] -
+#'     dfBaseline$STRESN[match(dfFrame$USUBJID, dfBaseline$USUBJID)]
+#' }
+#'
+#' lResult <- Analyze_Screen(
+#'   dfFrame, chrBiomarkers, "difference",
+#'   strGroupCol = "ARM", chrGroups = c("Treatment", "Placebo")
+#' )
+#' dfRows <- lResult$rows[order(lResult$rows$p_value), ]
+#' head(dfRows[c("biomarker", "estimate", "lower", "upper", "p_unadjusted", "p_value")], 3)
+#'
+#' @family statistics
+#' @export
+Analyze_Screen <- Analyze_Screen

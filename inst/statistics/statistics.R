@@ -3,8 +3,9 @@
 # The one definition of every statistics function in gsm.bio. The package's
 # exported functions are built from this file when the package is installed,
 # and the same file is handed to R in the browser, or to a server, as it is.
-# So it stands alone: it calls base R and the stats package and nothing else,
-# it never attaches or loads a package, and it never evaluates text.
+# So it stands alone: it calls base R, the stats package and the survival
+# package and nothing else, each by name (stats::, survival::), it never
+# attaches or loads a package, and it never evaluates text.
 #
 # Every Analyze_* function takes a data frame with one row per participant
 # first, and after it only named arguments that JSON can carry: strings,
@@ -12,11 +13,16 @@
 # values accepts a vector or an unnamed list of single values. No argument is
 # a formula, a function or an expression.
 #
-# Each statistic is the base R function the design names, called with R's own
-# defaults. Nothing is reimplemented. The wrappers fix the inputs, drop and
-# count what cannot be used, and put the answer in one shape (Stat_Result,
-# below). They never raise an error and never emit a warning: both become part
-# of the answer.
+# Each statistic is the R function the design names, called with R's own
+# defaults. Nothing is reimplemented but the standardised difference, which is
+# a few lines here to avoid a heavy dependency. The wrappers fix the inputs,
+# drop and count what cannot be used, and put the answer in one shape
+# (Stat_Result, below). They never raise an error and never emit a warning:
+# both become part of the answer.
+#
+# An answer is the answer of the R that computed it. R's defaults are R's to
+# change, and a few have changed between versions, so the same call on the
+# same data can differ between an older R and a newer one.
 
 # The smallest group a statistic is computed for, when the caller does not say.
 # A default, not an agreed or validated threshold.
@@ -269,6 +275,25 @@ Stat_TooSmallReason <- function(chrGroups, nCounts, nMinGroup) {
 
 # ---- Group comparison -------------------------------------------------------
 
+# A value per row, split by group. Rows with no group, with a group that was
+# not asked for, or with no value are dropped and counted, in that order.
+Stat_SplitByGroup <- function(nValue, chrGroup, chrLevels) {
+  bNoGroup <- is.na(chrGroup)
+  bOtherGroup <- !bNoGroup & !chrGroup %in% chrLevels
+  bNoValue <- !bNoGroup & !bOtherGroup & is.na(nValue)
+  bUsed <- !bNoGroup & !bOtherGroup & !bNoValue
+  lValues <- lapply(chrLevels, function(strLevel) nValue[bUsed & chrGroup == strLevel])
+  list(
+    used = bUsed,
+    values = lValues,
+    counts = vapply(lValues, length, integer(1)),
+    dropped = Stat_Dropped(
+      c("Missing group", "Group not selected", "Missing value"),
+      c(sum(bNoGroup), sum(bOtherGroup), sum(bNoValue))
+    )
+  )
+}
+
 # Welch's t-test between two groups, for the difference in means and its
 # interval: the first group's mean minus the second's.
 Stat_Welch <- function(nFirst, nSecond, nConfLevel) {
@@ -296,17 +321,11 @@ Analyze_GroupDifference <- function(dfData, strValueCol, strGroupCol, strMethod 
     chrGroup <- Stat_Category(dfData, strGroupCol, "strGroupCol")
     chrLevels <- Stat_Levels(chrGroup, chrGroups, "chrGroups")
 
-    # Drop, and count, what cannot be used.
-    bNoGroup <- is.na(chrGroup)
-    bOtherGroup <- !bNoGroup & !chrGroup %in% chrLevels
-    bNoValue <- !bNoGroup & !bOtherGroup & is.na(nValue)
-    bUsed <- !bNoGroup & !bOtherGroup & !bNoValue
-    dfDropped <- Stat_Dropped(
-      c("Missing group", "Group not selected", "Missing value"),
-      c(sum(bNoGroup), sum(bOtherGroup), sum(bNoValue))
-    )
-    lValues <- lapply(chrLevels, function(strLevel) nValue[bUsed & chrGroup == strLevel])
-    nCounts <- vapply(lValues, length, integer(1))
+    lSplit <- Stat_SplitByGroup(nValue, chrGroup, chrLevels)
+    bUsed <- lSplit$used
+    dfDropped <- lSplit$dropped
+    lValues <- lSplit$values
+    nCounts <- lSplit$counts
     lCounts <- Stat_GroupCounts(chrLevels, nCounts)
     nGroups <- length(chrLevels)
     bTwoGroupTest <- strMethod %in% c("t", "wilcoxon")
@@ -717,6 +736,359 @@ Analyze_Contingency <- function(dfData, strRowCol, strColCol, strMethod = "chisq
       strTest = strMethod, strMethod = lParts$method, dfEstimates = dfEstimates,
       dfStatistic = lParts$statistic, nPValue = lParts$p_value, xCounts = nUsed, dfDropped = dfDropped,
       chrWarnings = lRun$warnings, chrNotes = chrNotes, dfRows = dfRows
+    )
+  })
+}
+
+# ---- Survival ---------------------------------------------------------------
+
+# Which rows are events. The caller names one column and, by which argument it
+# uses, says which way round the column is: strCensorCol holds 1 for a censored
+# time and 0 for an event, as ADaM's CNSR does; strEventCol holds 1 for an
+# event and 0 for a censored time. A column holding anything else is refused,
+# because it is probably not the column that was meant.
+Stat_Events <- function(dfData, strCensorCol, strEventCol) {
+  if (is.null(strCensorCol) == is.null(strEventCol)) {
+    stop(
+      "Name exactly one of strCensorCol (1 = censored, 0 = event, as ADaM's CNSR) and strEventCol (1 = event, 0 = censored).",
+      call. = FALSE
+    )
+  }
+  bCensor <- !is.null(strCensorCol)
+  strCol <- if (bCensor) strCensorCol else strEventCol
+  strArg <- if (bCensor) "strCensorCol" else "strEventCol"
+  xCol <- Stat_Column(dfData, strCol, strArg)
+  if (!is.numeric(xCol) && !is.logical(xCol)) {
+    stop(sprintf("Column '%s' (%s) must hold only 0 and 1.", strCol, strArg), call. = FALSE)
+  }
+  nFlag <- as.numeric(xCol)
+  if (any(!is.na(nFlag) & nFlag != 0 & nFlag != 1)) {
+    stop(sprintf("Column '%s' (%s) must hold only 0 and 1.", strCol, strArg), call. = FALSE)
+  }
+  list(
+    event = if (bCensor) nFlag == 0 else nFlag == 1,
+    note = sprintf("An event is a row where %s is %d; the others are censored.", strCol, if (bCensor) 0L else 1L)
+  )
+}
+
+Analyze_Survival <- function(dfData, strTimeCol, strGroupCol, strCensorCol = NULL, strEventCol = NULL,
+                             chrGroups = NULL, nConfLevel = 0.95, nMinGroup = nMinGroupDefault) {
+  Stat_Run("logrank", function() {
+    Stat_CheckData(dfData)
+    Stat_CheckNumber(nConfLevel, "nConfLevel", 0, 1)
+    Stat_CheckNumber(nMinGroup, "nMinGroup", 0)
+    nTime <- Stat_Numeric(dfData, strTimeCol, "strTimeCol")
+    lEvents <- Stat_Events(dfData, strCensorCol, strEventCol)
+    chrGroup <- Stat_Category(dfData, strGroupCol, "strGroupCol")
+    chrLevels <- Stat_Levels(chrGroup, chrGroups, "chrGroups")
+
+    bNoGroup <- is.na(chrGroup)
+    bOtherGroup <- !bNoGroup & !chrGroup %in% chrLevels
+    bNoOutcome <- !bNoGroup & !bOtherGroup & (is.na(nTime) | is.na(lEvents$event))
+    bNegative <- !bNoGroup & !bOtherGroup & !bNoOutcome & nTime < 0
+    bUsed <- !bNoGroup & !bOtherGroup & !bNoOutcome & !bNegative
+    dfDropped <- Stat_Dropped(
+      c("Missing group", "Group not selected", "Missing time or event flag", "Negative time"),
+      c(sum(bNoGroup), sum(bOtherGroup), sum(bNoOutcome), sum(bNegative))
+    )
+    nGroups <- length(chrLevels)
+    nCounts <- vapply(chrLevels, function(strLevel) sum(bUsed & chrGroup == strLevel), integer(1))
+    nEvents <- vapply(chrLevels, function(strLevel) sum(bUsed & chrGroup == strLevel & lEvents$event), integer(1))
+    lCounts <- Stat_GroupCounts(chrLevels, nCounts)
+    dfRows <- data.frame(
+      group = chrLevels, n = unname(nCounts), events = unname(nEvents), median = NA_real_, lower = NA_real_,
+      upper = NA_real_, level = NA_real_, hazard_ratio = NA_real_, hr_lower = NA_real_, hr_upper = NA_real_,
+      hr_p_value = NA_real_, hr_test = NA_character_, stringsAsFactors = FALSE
+    )
+
+    if (nGroups < 2L) {
+      return(Stat_Result(
+        strTest = "logrank", strStatus = "error", xCounts = lCounts, dfDropped = dfDropped, dfRows = dfRows,
+        strReason = sprintf("The log-rank test compares two or more groups and %d was found.", nGroups)
+      ))
+    }
+    if (any(nCounts < nMinGroup)) {
+      return(Stat_Result(
+        strTest = "logrank", strStatus = "too_small", xCounts = lCounts, dfDropped = dfDropped, dfRows = dfRows,
+        strReason = Stat_TooSmallReason(chrLevels, nCounts, nMinGroup)
+      ))
+    }
+
+    # The rows used, in the order they came. The hazard ratio is the first
+    # group's hazard over the second's, so the second group is the reference.
+    dfModel <- data.frame(Group = factor(chrGroup[bUsed], levels = chrLevels))
+    dfModel$Outcome <- survival::Surv(nTime[bUsed], lEvents$event[bUsed])
+    lLogRank <- Stat_Capture(function() survival::survdiff(Outcome ~ Group, data = dfModel))
+    lFit <- Stat_Capture(function() {
+      summary(survival::survfit(Outcome ~ Group, data = dfModel, conf.type = "log-log", conf.int = nConfLevel))$table
+    })
+    chrWarnings <- c(lLogRank$warnings, lFit$warnings)
+    chrErrors <- c(lLogRank$error, lFit$error)
+    lCox <- NULL
+    if (nGroups == 2L) {
+      dfModel$Against <- factor(chrGroup[bUsed], levels = rev(chrLevels))
+      lCox <- Stat_Capture(function() summary(survival::coxph(Outcome ~ Against, data = dfModel), conf.int = nConfLevel))
+      chrWarnings <- c(chrWarnings, lCox$warnings)
+      chrErrors <- c(chrErrors, lCox$error)
+    }
+    chrErrors <- chrErrors[!is.na(chrErrors)]
+    if (length(chrErrors) > 0L) {
+      return(Stat_Result(
+        strTest = "logrank", strStatus = "error", strReason = paste(unique(chrErrors), collapse = "; "),
+        xCounts = lCounts, dfDropped = dfDropped, chrWarnings = chrWarnings, dfRows = dfRows
+      ))
+    }
+
+    # survdiff() reports its p-value from version 3.3 of survival; before that
+    # it is the same upper tail of the chi-squared distribution, taken here.
+    nChisq <- lLogRank$value$chisq
+    nDf <- nGroups - 1L
+    nPValue <- lLogRank$value$pvalue
+    if (is.null(nPValue)) {
+      nPValue <- stats::pchisq(nChisq, nDf, lower.tail = FALSE)
+    }
+
+    # The median columns of survfit()'s table: the median, then its interval.
+    iMedian <- match("median", colnames(lFit$value))
+    dfRows$median <- unname(lFit$value[, iMedian])
+    dfRows$lower <- unname(lFit$value[, iMedian + 1L])
+    dfRows$upper <- unname(lFit$value[, iMedian + 2L])
+    dfRows$level <- nConfLevel
+    dfEstimates <- Stat_Estimates(
+      rep("Median", nGroups), chrLevels, dfRows$median, dfRows$lower, dfRows$upper, nConfLevel
+    )
+    chrNotes <- c(
+      lEvents$note,
+      "The medians and their intervals are survfit()'s, with the log-log interval (conf.type = 'log-log')."
+    )
+    if (anyNA(dfRows$median) || anyNA(dfRows$lower) || anyNA(dfRows$upper)) {
+      chrNotes <- c(chrNotes, "A missing median or bound was not reached: the curve, or its band, did not fall to one half.")
+    }
+    if (nGroups == 2L) {
+      dfRows$hazard_ratio[1] <- unname(lCox$value$conf.int[1, 1])
+      dfRows$hr_lower[1] <- unname(lCox$value$conf.int[1, 3])
+      dfRows$hr_upper[1] <- unname(lCox$value$conf.int[1, 4])
+      dfRows$hr_p_value[1] <- unname(lCox$value$coefficients[1, 5])
+      dfRows$hr_test[1] <- "Wald"
+      dfEstimates <- rbind(dfEstimates, Stat_Estimates(
+        "Hazard ratio", paste(chrLevels[1], "/", chrLevels[2]),
+        dfRows$hazard_ratio[1], dfRows$hr_lower[1], dfRows$hr_upper[1], nConfLevel
+      ))
+      chrNotes <- c(chrNotes, sprintf(
+        "The hazard ratio is coxph()'s: the hazard in %s over the hazard in %s. p_value is the log-rank test's; the hazard ratio's interval and hr_p_value in rows are the Cox model's Wald test's, a different test.",
+        chrLevels[1], chrLevels[2]
+      ))
+    }
+
+    Stat_Result(
+      # survdiff() has no name for itself; this one is ours.
+      strTest = "logrank", strMethod = "Log-rank test", dfEstimates = dfEstimates,
+      dfStatistic = Stat_Statistic(c("Chisq", "df"), c(nChisq, nDf)), nPValue = nPValue, xCounts = lCounts,
+      dfDropped = dfDropped, chrWarnings = chrWarnings, chrNotes = chrNotes, dfRows = dfRows
+    )
+  })
+}
+
+# ---- Screen -----------------------------------------------------------------
+
+# The standardised difference between two groups: Hedges' g, the difference in
+# means over the pooled standard deviation, times the small-sample correction.
+# The interval is the noncentral t interval for the two-sample t statistic,
+# put on the same scale. This is the one statistic written here rather than
+# handed to an existing function.
+Stat_StandardisedDifference <- function(nFirst, nSecond, nConfLevel) {
+  nOne <- length(nFirst)
+  nTwo <- length(nSecond)
+  nDf <- nOne + nTwo - 2
+  nPooled <- sqrt(((nOne - 1) * stats::var(nFirst) + (nTwo - 1) * stats::var(nSecond)) / nDf)
+  nScale <- sqrt(1 / nOne + 1 / nTwo)
+  nT <- (mean(nFirst) - mean(nSecond)) / (nPooled * nScale)
+  nCorrection <- exp(lgamma(nDf / 2) - log(sqrt(nDf / 2)) - lgamma((nDf - 1) / 2))
+  if (!is.finite(nT)) {
+    stop("The standardised difference is not defined: the values do not vary.", call. = FALSE)
+  }
+  # The noncentrality at which the observed t sits at a given probability.
+  Limit <- function(nProbability) {
+    stats::uniroot(
+      function(nNoncentrality) stats::pt(nT, nDf, ncp = nNoncentrality) - nProbability,
+      interval = nT + c(-1, 1) * (stats::qnorm(1 - (1 - nConfLevel) / 4) + 1) * sqrt(1 + nT^2 / (2 * nDf)),
+      extendInt = "downX", tol = 1e-10
+    )$root
+  }
+  list(
+    estimate = nT * nScale * nCorrection,
+    lower = Limit(1 - (1 - nConfLevel) / 2) * nScale * nCorrection,
+    upper = Limit((1 - nConfLevel) / 2) * nScale * nCorrection
+  )
+}
+
+Analyze_Screen <- function(dfData, chrCols, strComparison = "difference", strGroupCol = NULL, chrGroups = NULL,
+                           strWithCol = NULL, strCorMethod = "pearson", strTimeCol = NULL, strCensorCol = NULL,
+                           strEventCol = NULL, strPAdjust = "BH", nConfLevel = 0.95,
+                           nMinGroup = nMinGroupDefault) {
+  Stat_Run(strComparison, function() {
+    Stat_CheckData(dfData)
+    Stat_CheckChoice(strComparison, c("difference", "correlation", "hazard"), "strComparison")
+    Stat_CheckChoice(strPAdjust, stats::p.adjust.methods, "strPAdjust")
+    Stat_CheckNumber(nConfLevel, "nConfLevel", 0, 1)
+    Stat_CheckNumber(nMinGroup, "nMinGroup", 0)
+    chrCols <- Stat_Vector(chrCols, "chrCols")
+    if (is.null(chrCols)) {
+      stop("chrCols must name one or more columns.", call. = FALSE)
+    }
+    nRows <- length(chrCols)
+    dfRows <- data.frame(
+      biomarker = chrCols, counts = NA_integer_, n_1 = NA_integer_, n_2 = NA_integer_, events = NA_integer_,
+      dropped = NA_integer_, estimate = NA_real_, lower = NA_real_, upper = NA_real_, level = NA_real_,
+      method = NA_character_, statistic = NA_real_, p_unadjusted = NA_real_, p_value = NA_real_,
+      adjustment = strPAdjust, adjusted_over = NA_integer_, status = "ok", reason = NA_character_,
+      warning = NA_character_, stringsAsFactors = FALSE
+    )
+    chrWarnings <- character(0)
+
+    # What each comparison needs, checked once, before any row is computed.
+    if (strComparison == "difference") {
+      chrGroup <- Stat_Category(dfData, strGroupCol, "strGroupCol")
+      chrLevels <- Stat_Levels(chrGroup, chrGroups, "chrGroups")
+      if (length(chrLevels) != 2L) {
+        stop(sprintf(
+          "A standardised difference compares exactly two groups and %d were found. Name two in chrGroups.",
+          length(chrLevels)
+        ), call. = FALSE)
+      }
+      strEstimate <- sprintf("Standardised difference (Hedges' g), %s - %s", chrLevels[1], chrLevels[2])
+    } else if (strComparison == "correlation") {
+      Stat_CheckChoice(strCorMethod, c("pearson", "spearman"), "strCorMethod")
+      Stat_Numeric(dfData, strWithCol, "strWithCol")
+      strEstimate <- sprintf("Correlation with %s", strWithCol)
+    } else {
+      nTime <- Stat_Numeric(dfData, strTimeCol, "strTimeCol")
+      lEvents <- Stat_Events(dfData, strCensorCol, strEventCol)
+      strEstimate <- "Hazard ratio, High / Low"
+    }
+
+    for (iRow in seq_len(nRows)) {
+      strCol <- chrCols[iRow]
+      # Every row is the matching single function's own answer for that
+      # biomarker, so its p-value is the one the single chart prints.
+      lRow <- if (strComparison == "difference") {
+        Analyze_GroupDifference(
+          dfData, strCol, strGroupCol,
+          strMethod = "t", chrGroups = chrLevels, nConfLevel = nConfLevel, nMinGroup = nMinGroup
+        )
+      } else if (strComparison == "correlation") {
+        Analyze_Correlation(
+          dfData, strCol, strWithCol,
+          strMethod = strCorMethod, nConfLevel = nConfLevel, nMinGroup = nMinGroup
+        )
+      } else {
+        # High and low are the two sides of the median of the biomarker among
+        # the rows that can be used; a value on the median is low.
+        lValue <- Stat_Capture(function() Stat_Numeric(dfData, strCol, "chrCols"))
+        if (is.na(lValue$error)) {
+          bUsable <- !is.na(lValue$value) & !is.na(nTime) & nTime >= 0 & !is.na(lEvents$event)
+          nMedian <- stats::median(lValue$value[bUsable])
+          dfSplit <- data.frame(
+            Time = nTime, Event = as.integer(lEvents$event),
+            Level = ifelse(is.na(lValue$value), NA_character_, ifelse(lValue$value > nMedian, "High", "Low")),
+            stringsAsFactors = FALSE
+          )
+          Analyze_Survival(
+            dfSplit, "Time", "Level",
+            strEventCol = "Event", chrGroups = c("High", "Low"), nConfLevel = nConfLevel, nMinGroup = nMinGroup
+          )
+        } else {
+          Stat_Result(strTest = "logrank", strStatus = "error", strReason = lValue$error)
+        }
+      }
+
+      dfRows$status[iRow] <- lRow$status
+      dfRows$reason[iRow] <- lRow$reason
+      dfRows$dropped[iRow] <- sum(lRow$dropped$n)
+      if (is.list(lRow$counts)) {
+        dfRows$n_1[iRow] <- lRow$counts[[1]]
+        dfRows$n_2[iRow] <- lRow$counts[[2]]
+        dfRows$counts[iRow] <- lRow$counts[[1]] + lRow$counts[[2]]
+      } else {
+        dfRows$counts[iRow] <- lRow$counts
+      }
+      chrRowWarnings <- unlist(lRow$warnings)
+      if (lRow$status == "ok") {
+        dfRows$method[iRow] <- lRow$method
+        dfRows$statistic[iRow] <- lRow$statistic$value[1]
+        dfRows$p_unadjusted[iRow] <- lRow$p_value
+        if (strComparison == "difference") {
+          lSplit <- Stat_SplitByGroup(Stat_Numeric(dfData, strCol, "chrCols"), chrGroup, chrLevels)
+          lEffect <- Stat_Capture(function() {
+            Stat_StandardisedDifference(lSplit$values[[1]], lSplit$values[[2]], nConfLevel)
+          })
+          chrRowWarnings <- c(chrRowWarnings, lEffect$warnings)
+          if (is.na(lEffect$error)) {
+            dfRows$estimate[iRow] <- lEffect$value$estimate
+            dfRows$lower[iRow] <- lEffect$value$lower
+            dfRows$upper[iRow] <- lEffect$value$upper
+            dfRows$level[iRow] <- nConfLevel
+          } else {
+            dfRows$status[iRow] <- "error"
+            dfRows$reason[iRow] <- lEffect$error
+            dfRows$p_unadjusted[iRow] <- NA_real_
+          }
+        } else {
+          # The last estimate is the one the screen is about: the coefficient,
+          # or the hazard ratio after the two medians.
+          dfLast <- lRow$estimates[nrow(lRow$estimates), ]
+          dfRows$estimate[iRow] <- dfLast$estimate
+          dfRows$lower[iRow] <- dfLast$lower
+          dfRows$upper[iRow] <- dfLast$upper
+          dfRows$level[iRow] <- dfLast$level
+          if (strComparison == "hazard") {
+            dfRows$events[iRow] <- sum(lRow$rows$events)
+          }
+        }
+      }
+      if (length(chrRowWarnings) > 0L) {
+        dfRows$warning[iRow] <- paste(unique(chrRowWarnings), collapse = "; ")
+        chrWarnings <- c(chrWarnings, chrRowWarnings)
+      }
+    }
+
+    # Adjust across the rows that have a p-value; the others are not tests.
+    bTested <- !is.na(dfRows$p_unadjusted)
+    dfRows$p_value[bTested] <- stats::p.adjust(dfRows$p_unadjusted[bTested], method = strPAdjust)
+    dfRows$adjusted_over[bTested] <- sum(bTested)
+
+    bAny <- any(dfRows$status == "ok")
+    bAllSmall <- all(dfRows$status == "too_small")
+    chrNotes <- c(
+      sprintf("Each row's estimate: %s.", strEstimate),
+      sprintf(
+        "p_value is adjusted across the %d rows that have a p-value by p.adjust(method = '%s'); %d of the %d rows have none and are left out of the adjustment.",
+        sum(bTested), strPAdjust, sum(!bTested), nRows
+      ),
+      if (strComparison == "difference") {
+        "The p-values are t.test()'s (Welch). The standardised difference and its interval are computed here, not by an existing function."
+      } else if (strComparison == "correlation") {
+        Stat_NoIntervalNote(strCorMethod)
+      } else {
+        c(
+          lEvents$note,
+          "High and low are the two sides of each biomarker's median among the rows used; a value on the median is low. The p-values are the log-rank test's and the intervals are the Cox model's."
+        )
+      }
+    )
+    Stat_Result(
+      strTest = strComparison,
+      strStatus = if (bAny) "ok" else if (bAllSmall) "too_small" else "error",
+      strReason = if (bAny) {
+        NA_character_
+      } else if (bAllSmall) {
+        "Not computed: every biomarker has a group below the minimum size. Each row gives its reason."
+      } else {
+        "No biomarker could be computed. Each row gives its reason."
+      },
+      strMethod = if (bAny) dfRows$method[dfRows$status == "ok"][1] else NA_character_,
+      xCounts = Stat_GroupCounts(chrCols, dfRows$counts),
+      chrWarnings = chrWarnings, chrNotes = chrNotes, dfRows = dfRows
     )
   })
 }

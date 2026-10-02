@@ -25,7 +25,7 @@ Always all of these, always in this order, all in lower snake case.\tabular{ll}{
    \code{dropped} \tab A data frame of \code{reason} and \code{n}: the rows left out and why. No rows when nothing was dropped. \cr
    \code{warnings} \tab An unnamed list of the warnings R raised inside the wrapped call, as text. They are captured here and never printed. \cr
    \code{notes} \tab An unnamed list of remarks of the package's own, as text. \cr
-   \code{rows} \tab A data frame for a function's many-row results: pairwise comparisons, per-group correlations, the pairs of a matrix, the cells of a table. Its columns are given on each function's page. No rows when there are none. \cr
+   \code{rows} \tab A data frame for a function's many-row results: pairwise comparisons, per-group correlations, the pairs of a matrix, the cells of a table, the groups of a survival comparison, the biomarkers of a screen. Its columns are given on each function's page. No rows when there are none. \cr
 }
 
 
@@ -37,6 +37,18 @@ explanation.
 Wherever \code{p_value} and \code{adjustment} appear together, at the top level or in
 a row of \code{rows}, \code{adjustment} describes that \code{p_value}. A row whose p-value
 was adjusted also carries the unadjusted one as \code{p_unadjusted}.
+}
+
+\section{R's answer}{
+
+A result is the answer of the R that computed it. Every statistic is the R
+function called with R's own defaults, and those defaults are R's to change.
+A few have changed between versions, so the same call on the same data can
+give a different number in an older R and a newer one. One case is known:
+with tied values, \code{wilcox.test()} in R 4.3.3 warns that it cannot compute an
+exact p-value and uses the normal approximation, where R 4.6.1 computes the
+exact p-value and does not warn. A chart computing in the browser and a
+report computed at a desk agree when they run the same version of R.
 }
 
 \section{Crossing into JavaScript}{
@@ -85,10 +97,12 @@ floor for an expected count in a chi-squared test.
 The functions are defined once, in the file
 \code{system.file("statistics", "statistics.R", package = "gsm.bio")}. The
 package's exported functions are built from that file, and the same file
-runs as it is in a bare R session with only the stats package attached.
+runs as it is in a bare R session with only the stats and survival packages
+attached.
 }
 
 \seealso{
 \code{\link[=Analyze_GroupDifference]{Analyze_GroupDifference()}}, \code{\link[=Analyze_Correlation]{Analyze_Correlation()}},
-\code{\link[=Analyze_CorrelationMatrix]{Analyze_CorrelationMatrix()}}, \code{\link[=Analyze_Contingency]{Analyze_Contingency()}}
+\code{\link[=Analyze_CorrelationMatrix]{Analyze_CorrelationMatrix()}}, \code{\link[=Analyze_Contingency]{Analyze_Contingency()}},
+\code{\link[=Analyze_Survival]{Analyze_Survival()}}, \code{\link[=Analyze_Screen]{Analyze_Screen()}}
 }
