@@ -23,6 +23,8 @@ Each function takes a data frame with one row per participant and the names of i
 | `Analyze_Correlation()` | `cor.test()`, Pearson or Spearman, overall and per group |
 | `Analyze_CorrelationMatrix()` | `cor.test()` on every pair of columns, with the pair count per cell |
 | `Analyze_Contingency()` | `chisq.test()`, with small expected counts flagged, and `fisher.test()` |
+| `Analyze_Survival()` | `survdiff()` for the log-rank test, `survfit()` for median survival with its log-log interval, `coxph()` for the hazard ratio between two groups |
+| `Analyze_Screen()` | One row per biomarker for one comparison: a standardised difference between two groups, a correlation with one variable, or a hazard ratio for high against low; p-values adjusted across the rows by `p.adjust()` |
 
 ```r
 library(gsm.bio)
@@ -31,7 +33,11 @@ lResult$method
 lResult$p_value
 ```
 
-The functions are defined once, in one file that needs nothing but the stats package: `system.file("statistics", "statistics.R", package = "gsm.bio")`. The package is built from that file, and a chart can hand the same file to R in the browser.
+Nothing is reimplemented, with one exception: the standardised difference in the screen is a few lines of the package's own, checked against `effectsize::hedges_g()`.
+
+The functions are defined once, in one file that needs nothing but the stats and survival packages: `system.file("statistics", "statistics.R", package = "gsm.bio")`. The package is built from that file, and a chart can hand the same file to R in the browser.
+
+A result is the answer of the R that computed it. R's own defaults can differ between versions, so a chart and a report agree when they run the same version of R.
 
 ## Synthetic study
 
@@ -39,7 +45,7 @@ The package ships a made-up biomarker study, so that a test can assert an answer
 
 ## Status
 
-Version 0.1.0 is in development. The group, correlation and contingency statistics and the synthetic study are in; the survival statistics and the biomarker screen arrive next, in the same version. [NEWS.md](https://github.com/jwildfire/gsm.bio/blob/dev/NEWS.md) lists what has landed, and the reference site is at <https://jwildfire.github.io/gsm.bio/>.
+Version 0.1.0 is in development on `dev`, and its content is complete: six statistics functions and the synthetic study. The widgets and static figures for the charts come in later versions. [NEWS.md](https://github.com/jwildfire/gsm.bio/blob/dev/NEWS.md) lists what has landed, and the reference site is at <https://jwildfire.github.io/gsm.bio/>.
 
 The design is on the obot roadmap: [bio.viz and gsm.bio](https://jwildfire.github.io/obot.roadmap/requirements/design/353_design.html).
 

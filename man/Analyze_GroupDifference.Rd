@@ -104,6 +104,8 @@ lResult$counts
 Other statistics: 
 \code{\link{Analyze_Contingency}()},
 \code{\link{Analyze_Correlation}()},
-\code{\link{Analyze_CorrelationMatrix}()}
+\code{\link{Analyze_CorrelationMatrix}()},
+\code{\link{Analyze_Screen}()},
+\code{\link{Analyze_Survival}()}
 }
 \concept{statistics}

@@ -29,10 +29,13 @@ test_that("testthat and the standardised-difference comparison package are sugge
   expect_identical(utils::packageDescription("gsm.bio")[["Config/testthat/edition"]], "3")
 })
 
-test_that("the package exports the four statistics functions and ships the synthetic study as its only data (#1, #2, #3)", {
+test_that("the package exports the six statistics functions and ships the synthetic study as its only data (#1, #2, #3, #4)", {
   expect_setequal(
     getNamespaceExports("gsm.bio"),
-    c("Analyze_GroupDifference", "Analyze_Correlation", "Analyze_CorrelationMatrix", "Analyze_Contingency")
+    c(
+      "Analyze_GroupDifference", "Analyze_Correlation", "Analyze_CorrelationMatrix", "Analyze_Contingency",
+      "Analyze_Survival", "Analyze_Screen"
+    )
   )
   expect_setequal(
     utils::data(package = "gsm.bio")$results[, "Item"],
