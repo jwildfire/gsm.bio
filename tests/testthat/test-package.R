@@ -39,7 +39,7 @@ test_that("the package exports the seven statistics functions and the widgets, a
     c(
       "Analyze_GroupDifference", "Analyze_Correlation", "Analyze_CorrelationMatrix", "Analyze_Fit",
       "Analyze_Contingency", "Analyze_Survival", "Analyze_Screen", "Widget_GroupComparison",
-      "Widget_AssociationScatter"
+      "Widget_AssociationScatter", "Widget_CorrelationMatrix"
     )
   )
   expect_setequal(
