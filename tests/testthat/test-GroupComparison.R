@@ -59,27 +59,8 @@ lCaseRequest <- function(lCase) {
   lFound[[1]]
 }
 
-# The value of every setting the bundle's chart defaults, read from the
-# bundle's own text: one `name: value` per line of its DEFAULT_SETTINGS.
-lBundleDefaults <- function() {
-  lRecord <- lReadJson(system.file("htmlwidgets", "lib", "SOURCE.json", package = "gsm.bio"))
-  strFile <- Filter(function(lFile) lFile$library == "bio.viz", lRecord$files)[[1]]$file
-  chrLines <- readLines(system.file("htmlwidgets", "lib", strFile, package = "gsm.bio"), warn = FALSE)
-  iStarts <- grep("^  var DEFAULT_SETTINGS[0-9]* = Object\\.freeze\\(\\{$", chrLines)
-  for (iStart in iStarts) {
-    iEnd <- iStart + match("  });", chrLines[-seq_len(iStart)])
-    chrBlock <- grep("^\\s*//", chrLines[(iStart + 1L):(iEnd - 1L)], value = TRUE, invert = TRUE)
-    chrNames <- sub("^\\s*([a-z_]+): .*$", "\\1", chrBlock)
-    if ("group_by" %in% chrNames) {
-      chrValues <- sub(",$", "", sub("^\\s*[a-z_]+: ", "", chrBlock))
-      return(stats::setNames(lapply(chrValues, function(strValue) jsonlite::fromJSON(strValue)), chrNames))
-    }
-  }
-  NULL
-}
-
 test_that("the settings R reads have the defaults of the vendored chart (#9)", {
-  lBundle <- lBundleDefaults()
+  lBundle <- lBundleDefaults("group_by")
   expect_false(is.null(lBundle), label = "the bundle's chart defaults were found")
   expect_true(all(names(lGroupComparisonDefaults) %in% names(lBundle)))
   for (strSetting in names(lGroupComparisonDefaults)) {
@@ -150,13 +131,13 @@ test_that("R keys a stored result exactly as the chart keys its request (#9)", {
   }
 
   # Two views are two keys: no two of the distinct requests share one.
-  chrKeys <- vapply(lRecorded, function(lResult) GroupComparison_KeyText(lResult[c("name", "args", "dataId")]), character(1))
+  chrKeys <- vapply(lRecorded, function(lResult) Chart_KeyText(lResult[c("name", "args", "dataId")]), character(1))
   expect_identical(anyDuplicated(chrKeys), 0L)
   expect_identical(
-    GroupComparison_KeyText(list(b = list("x", "y"), a = 1L)),
-    GroupComparison_KeyText(list(a = 1L, b = list("x", "y")))
+    Chart_KeyText(list(b = list("x", "y"), a = 1L)),
+    Chart_KeyText(list(a = 1L, b = list("x", "y")))
   )
-  expect_false(identical(GroupComparison_KeyText(list(a = "ARM")), GroupComparison_KeyText(list(a = list("ARM")))))
+  expect_false(identical(Chart_KeyText(list(a = "ARM")), Chart_KeyText(list(a = list("ARM")))))
 })
 
 test_that("R's answer on those rows is the answer bio.viz recorded from desktop R (#9)", {
@@ -190,11 +171,11 @@ test_that("the controls open on what the chart's open on: biomarkers, visits, gr
 
   # By name, with numbers inside a name as numbers: the order the chart lists.
   expect_identical(
-    GroupComparison_Measures(Synthetic_Results, lPlain),
+    Chart_Measures(Synthetic_Results, lPlain),
     c("CRP", "D-dimer", "Ferritin", "IFN-gamma", "IL-1beta", "IL-2", "IL-6", "IL-8", "IL-10", "LDH", "TNF-alpha", "VEGF")
   )
   expect_identical(
-    GroupComparison_Measures(Synthetic_Results, GroupComparison_Settings(list(measures = c("IL-6", "NOPE", "CRP")))),
+    Chart_Measures(Synthetic_Results, GroupComparison_Settings(list(measures = c("IL-6", "NOPE", "CRP")))),
     c("IL-6", "CRP")
   )
   # Every visit, or the visits asked for that the table has, in the order asked.
@@ -211,7 +192,7 @@ test_that("the controls open on what the chart's open on: biomarkers, visits, gr
   )
 
   # The participant table's category columns, and no column with too many values.
-  dfCategories <- GroupComparison_Categories(Synthetic_Results, Synthetic_Participants, lPlain)
+  dfCategories <- Chart_Categories(Synthetic_Results, Synthetic_Participants, lPlain)
   expect_identical(dfCategories$value_col, c("ARM", "SEX", "RESPONSE"))
   expect_identical(unique(dfCategories$table), "participants")
   lState <- GroupComparison_State(Synthetic_Results, Synthetic_Participants, lPlain)
@@ -235,7 +216,7 @@ test_that("the controls open on what the chart's open on: biomarkers, visits, gr
   dfAlone <- Synthetic_Results
   dfAlone$ARM <- Synthetic_Participants$ARM[match(dfAlone$USUBJID, Synthetic_Participants$USUBJID)]
   dfAlone$ROW <- seq_len(nrow(dfAlone)) %% 2L
-  dfCategories <- GroupComparison_Categories(dfAlone, NULL, lPlain)
+  dfCategories <- Chart_Categories(dfAlone, NULL, lPlain)
   expect_identical(dfCategories$value_col, "ARM")
   expect_identical(dfCategories$table, "results")
   expect_identical(GroupComparison_State(dfAlone, NULL, lPlain)$filters, list())
@@ -251,7 +232,7 @@ test_that("the controls open on what the chart's open on: biomarkers, visits, gr
   expect_null(lState$color_by)
   expect_identical(lState$filters, list(ARM = NULL, SEX = "F", RESPONSE = c("Responder", "Non-responder")))
   expect_identical(
-    GroupComparison_FiltersInForce(lState$filters),
+    Chart_FiltersInForce(lState$filters),
     list(SEX = "F", RESPONSE = c("Non-responder", "Responder"))
   )
 })

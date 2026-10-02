@@ -55,26 +55,37 @@ test_that("the record says the safety.viz copy is a stand-in, and carries where 
   expect_identical(lTheirs$version, lCopy$version)
 })
 
-test_that("the widget's dependency file loads the two recorded bundles, safety.viz first (#9)", {
+test_that("every widget's dependency file loads the two recorded bundles, safety.viz first, and then the package's own script (#9, #13)", {
   lRecord <- lReadJson(strLibDir(), "SOURCE.json")
-  chrYaml <- readLines(system.file("htmlwidgets", "Widget_GroupComparison.yaml", package = "gsm.bio"), warn = FALSE)
-  chrYaml <- grep("^\\s*#", chrYaml, value = TRUE, invert = TRUE)
   Versions <- function(strLibrary) {
     Filter(function(lFile) lFile$library == strLibrary, lRecord$files)[[1]]$version
   }
+  chrWidgets <- grep("^Widget_", getNamespaceExports("gsm.bio"), value = TRUE)
+  expect_gt(length(chrWidgets), 1)
 
-  expect_identical(chrYaml, c(
-    "dependencies:",
-    "  - name: safety-viz",
-    paste0("    version: ", Versions("safety.viz")),
-    paste0("    src: 'htmlwidgets/lib/safety.viz-", Versions("safety.viz"), "'"),
-    "    script: 'safety.viz.js'",
-    "  - name: bio-viz",
-    paste0("    version: ", Versions("bio.viz")),
-    paste0("    src: 'htmlwidgets/lib/bio.viz-", Versions("bio.viz"), "'"),
-    "    script: 'bio.viz.js'"
-  ))
-  expect_true(file.exists(system.file("htmlwidgets", "Widget_GroupComparison.js", package = "gsm.bio")))
+  for (strWidget in chrWidgets) {
+    chrYaml <- readLines(system.file("htmlwidgets", paste0(strWidget, ".yaml"), package = "gsm.bio"), warn = FALSE)
+    chrYaml <- grep("^\\s*#", chrYaml, value = TRUE, invert = TRUE)
+    expect_identical(chrYaml, c(
+      "dependencies:",
+      "  - name: safety-viz",
+      paste0("    version: ", Versions("safety.viz")),
+      paste0("    src: 'htmlwidgets/lib/safety.viz-", Versions("safety.viz"), "'"),
+      "    script: 'safety.viz.js'",
+      "  - name: bio-viz",
+      paste0("    version: ", Versions("bio.viz")),
+      paste0("    src: 'htmlwidgets/lib/bio.viz-", Versions("bio.viz"), "'"),
+      "    script: 'bio.viz.js'",
+      "  - name: gsm-bio-widget",
+      paste0("    version: ", utils::packageVersion("gsm.bio")),
+      "    src: 'htmlwidgets/shared'",
+      "    script: 'gsm.bio.widget.js'"
+    ), label = paste("the dependencies of", strWidget))
+    expect_true(file.exists(system.file("htmlwidgets", paste0(strWidget, ".js"), package = "gsm.bio")), label = paste(strWidget, "has a binding"))
+  }
+  # The script every binding is made with is the package's own, not a copy.
+  expect_true(file.exists(system.file("htmlwidgets", "shared", "gsm.bio.widget.js", package = "gsm.bio")))
+  expect_identical(list.files(system.file("htmlwidgets", "shared", package = "gsm.bio")), "gsm.bio.widget.js")
 })
 
 test_that("the fixtures copied from bio.viz match their record, at the bundles' commit (#9)", {

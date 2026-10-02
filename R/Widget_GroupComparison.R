@@ -117,81 +117,14 @@ Widget_GroupComparison <- function(
     height = NULL,
     elementId = NULL,
     bDebug = FALSE) {
-  if (!is.data.frame(dfResults)) {
-    stop("dfResults is not a data.frame", call. = FALSE)
-  }
-  if (!is.null(dfParticipants) && !is.data.frame(dfParticipants)) {
-    stop("dfParticipants is not a data.frame or NULL", call. = FALSE)
-  }
-  if (!is.list(lSettings) || is.data.frame(lSettings)) {
-    stop("lSettings must be a list, but not a data.frame", call. = FALSE)
-  }
-  if (length(lSettings) > 0L && (is.null(names(lSettings)) || !all(nzchar(names(lSettings))))) {
-    stop("lSettings must name every setting", call. = FALSE)
-  }
-  if (!(is.logical(bDebug) && length(bDebug) == 1L && !is.na(bDebug))) {
-    stop("bDebug is not a logical", call. = FALSE)
-  }
-  if ("connection" %in% names(lSettings)) {
-    stop(
-      "Setting 'connection' cannot be given: the widget makes the chart's connection to R from the results it stores",
-      call. = FALSE
-    )
-  }
-
+  Widget_CheckInputs(dfResults, dfParticipants, lSettings, bDebug)
   lConfig <- GroupComparison_Settings(lSettings)
-  for (strKey in c("id_col", "measure_col", "value_col", "visit_col")) {
-    if (!lConfig[[strKey]] %in% names(dfResults)) {
-      stop("Column '", lConfig[[strKey]], "' (setting '", strKey, "') not found in dfResults", call. = FALSE)
-    }
-  }
-  if (!is.null(dfParticipants)) {
-    strParticipantIdCol <- if (is.null(lConfig$participant_id_col)) lConfig$id_col else lConfig$participant_id_col
-    if (!strParticipantIdCol %in% names(dfParticipants)) {
-      stop(
-        "Column '", strParticipantIdCol, "' (setting '",
-        if (is.null(lConfig$participant_id_col)) "id_col" else "participant_id_col", "') not found in dfParticipants",
-        call. = FALSE
-      )
-    }
-  }
+  Widget_CheckColumns(lConfig, dfResults, dfParticipants)
+  lNamed <- Widget_NameBaseline(lConfig, lSettings, dfResults)
 
-  # The baseline visits are named to the chart outright, so R and the chart
-  # cannot resolve them differently: the first visit in visit order, which is
-  # what the chart chooses when none is named.
-  if (is.null(lConfig$baseline_visits)) {
-    chrFirstVisit <- Core_First(Core_Visits(dfResults, GroupComparison_CoreSettings(lConfig)))
-    if (length(chrFirstVisit) == 1L) {
-      lConfig$baseline_visits <- chrFirstVisit
-      lSettings$baseline_visits <- chrFirstVisit
-    }
-  }
-
-  lStored <- GroupComparison_StoredResults(dfResults, dfParticipants, lConfig)
-  x <- list(
-    dfResults = dfResults,
-    dfParticipants = dfParticipants,
-    lSettings = lSettings,
-    bDebug = bDebug,
-    bAutoWidth = is.null(width),
-    bAutoHeight = is.null(height),
-    lStatistics = list(
-      computed_by = StoredResultsProvenance(),
-      results = lapply(lStored, function(lResult) {
-        list(
-          name = lResult$name, args = lResult$args, dataId = lResult$dataId, rows = lResult$rows,
-          value = StoredValue(lResult$value)
-        )
-      })
-    )
-  )
-  htmlwidgets::createWidget(
-    name = "Widget_GroupComparison",
-    x = x,
-    width = width,
-    height = height,
-    package = "gsm.bio",
-    elementId = elementId,
-    sizingPolicy = WidgetSizingPolicy()
+  Widget_Create(
+    "Widget_GroupComparison", dfResults, dfParticipants, lNamed$settings,
+    GroupComparison_StoredResults(dfResults, dfParticipants, lNamed$config),
+    width, height, elementId, bDebug
   )
 }

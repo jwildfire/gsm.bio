@@ -133,3 +133,34 @@ chrPageDifferences <- function(xPage, xValue, strLabel) {
 ExpectInPage <- function(xPage, xValue, strLabel) {
   expect_identical(as.character(chrPageDifferences(xPage, xValue, strLabel)), character(0), label = paste("differences in", strLabel))
 }
+
+# The scripts a widget's page runs of the package's own: its binding, and the
+# script every binding is made with.
+strWidgetScripts <- function(strWidget) {
+  chrFiles <- c(
+    system.file("htmlwidgets", paste0(strWidget, ".js"), package = "gsm.bio"),
+    system.file("htmlwidgets", "shared", "gsm.bio.widget.js", package = "gsm.bio")
+  )
+  expect_true(all(nzchar(chrFiles)), label = paste("the scripts of", strWidget, "exist"))
+  paste(unlist(lapply(chrFiles, readLines, warn = FALSE)), collapse = "\n")
+}
+
+# The value of every setting a chart of the bundle defaults, read from the
+# bundle's own text: one `name: value` per line of its DEFAULT_SETTINGS. The
+# chart is the one that has the setting named.
+lBundleDefaults <- function(strSetting) {
+  lRecord <- lReadJson(system.file("htmlwidgets", "lib", "SOURCE.json", package = "gsm.bio"))
+  strFile <- Filter(function(lFile) lFile$library == "bio.viz", lRecord$files)[[1]]$file
+  chrLines <- readLines(system.file("htmlwidgets", "lib", strFile, package = "gsm.bio"), warn = FALSE)
+  iStarts <- grep("^  var DEFAULT_SETTINGS[0-9]* = Object\\.freeze\\(\\{$", chrLines)
+  for (iStart in iStarts) {
+    iEnd <- iStart + match("  });", chrLines[-seq_len(iStart)])
+    chrBlock <- grep("^\\s*//", chrLines[(iStart + 1L):(iEnd - 1L)], value = TRUE, invert = TRUE)
+    chrNames <- sub("^\\s*([a-z_]+): .*$", "\\1", chrBlock)
+    if (strSetting %in% chrNames) {
+      chrValues <- sub(",$", "", sub("^\\s*[a-z_]+: ", "", chrBlock))
+      return(stats::setNames(lapply(chrValues, function(strValue) jsonlite::fromJSON(strValue)), chrNames))
+    }
+  }
+  NULL
+}
