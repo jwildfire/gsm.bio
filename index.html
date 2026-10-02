@@ -60,6 +60,51 @@
 <span><span class="fu">remotes</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"jwildfire/gsm.bio@dev"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
+<h2 id="statistics">Statistics<a class="anchor" aria-label="anchor" href="#statistics"></a>
+</h2>
+<p>Each function takes a data frame with one row per participant and the names of its columns, and returns the same plain list: a status, the method’s name as R reports it, the estimates with their intervals, the statistic, the p-value, the participants used, what was dropped and why, and a reason in place of the numbers when a group is too small.</p>
+<table class="table">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+<thead><tr>
+<th>Function</th>
+<th>Wraps</th>
+</tr></thead>
+<tbody>
+<tr>
+<td><code><a href="reference/Analyze_GroupDifference.html">Analyze_GroupDifference()</a></code></td>
+<td>
+<code><a href="https://rdrr.io/r/stats/t.test.html" class="external-link">t.test()</a></code> (Welch), <code><a href="https://rdrr.io/r/stats/wilcox.test.html" class="external-link">wilcox.test()</a></code>, <code><a href="https://rdrr.io/r/stats/aov.html" class="external-link">aov()</a></code>, <code><a href="https://rdrr.io/r/stats/kruskal.test.html" class="external-link">kruskal.test()</a></code>; pairwise comparisons adjusted by <code><a href="https://rdrr.io/r/stats/p.adjust.html" class="external-link">p.adjust()</a></code>
+</td>
+</tr>
+<tr>
+<td><code><a href="reference/Analyze_Correlation.html">Analyze_Correlation()</a></code></td>
+<td>
+<code><a href="https://rdrr.io/r/stats/cor.test.html" class="external-link">cor.test()</a></code>, Pearson or Spearman, overall and per group</td>
+</tr>
+<tr>
+<td><code><a href="reference/Analyze_CorrelationMatrix.html">Analyze_CorrelationMatrix()</a></code></td>
+<td>
+<code><a href="https://rdrr.io/r/stats/cor.test.html" class="external-link">cor.test()</a></code> on every pair of columns, with the pair count per cell</td>
+</tr>
+<tr>
+<td><code><a href="reference/Analyze_Contingency.html">Analyze_Contingency()</a></code></td>
+<td>
+<code><a href="https://rdrr.io/r/stats/chisq.test.html" class="external-link">chisq.test()</a></code>, with small expected counts flagged, and <code><a href="https://rdrr.io/r/stats/fisher.test.html" class="external-link">fisher.test()</a></code>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/jwildfire/gsm.bio" class="external-link">gsm.bio</a></span><span class="op">)</span></span>
+<span><span class="va">lResult</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/Analyze_Contingency.html">Analyze_Contingency</a></span><span class="op">(</span><span class="va">Synthetic_Participants</span>, <span class="st">"ARM"</span>, <span class="st">"RESPONSE"</span><span class="op">)</span></span>
+<span><span class="va">lResult</span><span class="op">$</span><span class="va">method</span></span>
+<span><span class="va">lResult</span><span class="op">$</span><span class="va">p_value</span></span></code></pre></div>
+<p>The functions are defined once, in one file that needs nothing but the stats package: <code>system.file("statistics", "statistics.R", package = "gsm.bio")</code>. The package is built from that file, and a chart can hand the same file to R in the browser.</p>
+</div>
+<div class="section level2">
 <h2 id="synthetic-study">Synthetic study<a class="anchor" aria-label="anchor" href="#synthetic-study"></a>
 </h2>
 <p>The package ships a made-up biomarker study, so that a test can assert an answer known in advance: <code>Synthetic_Results</code> (one row per participant, biomarker and visit), <code>Synthetic_Participants</code> and <code>Synthetic_Outcomes</code>. Three effects are planted in it and every other biomarker is null. <code>Synthetic_Truth</code> holds the true size of each: a difference between arms in change from baseline, a correlation between two biomarkers, and a hazard ratio between high and low baseline levels. The same tables are CSV files under <code>inst/extdata/</code>. No real study data is used.</p>
@@ -67,7 +112,7 @@
 <div class="section level2">
 <h2 id="status">Status<a class="anchor" aria-label="anchor" href="#status"></a>
 </h2>
-<p>The package is set up and the synthetic study is in; the statistics functions arrive next, in the same version. <a href="https://github.com/jwildfire/gsm.bio/blob/dev/NEWS.md" class="external-link">NEWS.md</a> lists what has landed, and the reference site is at <a href="https://jwildfire.github.io/gsm.bio/" class="uri">https://jwildfire.github.io/gsm.bio/</a>.</p>
+<p>Version 0.1.0 is in development. The group, correlation and contingency statistics and the synthetic study are in; the survival statistics and the biomarker screen arrive next, in the same version. <a href="https://github.com/jwildfire/gsm.bio/blob/dev/NEWS.md" class="external-link">NEWS.md</a> lists what has landed, and the reference site is at <a href="https://jwildfire.github.io/gsm.bio/" class="uri">https://jwildfire.github.io/gsm.bio/</a>.</p>
 <p>The design is on the obot roadmap: <a href="https://jwildfire.github.io/obot.roadmap/requirements/design/353_design.html" class="external-link">bio.viz and gsm.bio</a>.</p>
 </div>
 <div class="section level2">

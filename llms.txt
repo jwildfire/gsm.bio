@@ -21,6 +21,35 @@ Version 0.1.0 is in development on the `dev` branch:
 remotes::install_github("jwildfire/gsm.bio@dev")
 ```
 
+## Statistics
+
+Each function takes a data frame with one row per participant and the
+names of its columns, and returns the same plain list: a status, the
+method’s name as R reports it, the estimates with their intervals, the
+statistic, the p-value, the participants used, what was dropped and why,
+and a reason in place of the numbers when a group is too small.
+
+| Function | Wraps |
+|----|----|
+| [`Analyze_GroupDifference()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_GroupDifference.md) | [`t.test()`](https://rdrr.io/r/stats/t.test.html) (Welch), [`wilcox.test()`](https://rdrr.io/r/stats/wilcox.test.html), [`aov()`](https://rdrr.io/r/stats/aov.html), [`kruskal.test()`](https://rdrr.io/r/stats/kruskal.test.html); pairwise comparisons adjusted by [`p.adjust()`](https://rdrr.io/r/stats/p.adjust.html) |
+| [`Analyze_Correlation()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_Correlation.md) | [`cor.test()`](https://rdrr.io/r/stats/cor.test.html), Pearson or Spearman, overall and per group |
+| [`Analyze_CorrelationMatrix()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_CorrelationMatrix.md) | [`cor.test()`](https://rdrr.io/r/stats/cor.test.html) on every pair of columns, with the pair count per cell |
+| [`Analyze_Contingency()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_Contingency.md) | [`chisq.test()`](https://rdrr.io/r/stats/chisq.test.html), with small expected counts flagged, and [`fisher.test()`](https://rdrr.io/r/stats/fisher.test.html) |
+
+``` r
+
+library(gsm.bio)
+lResult <- Analyze_Contingency(Synthetic_Participants, "ARM", "RESPONSE")
+lResult$method
+lResult$p_value
+```
+
+The functions are defined once, in one file that needs nothing but the
+stats package:
+`system.file("statistics", "statistics.R", package = "gsm.bio")`. The
+package is built from that file, and a chart can hand the same file to R
+in the browser.
+
 ## Synthetic study
 
 The package ships a made-up biomarker study, so that a test can assert
@@ -35,8 +64,9 @@ is used.
 
 ## Status
 
-The package is set up and the synthetic study is in; the statistics
-functions arrive next, in the same version.
+Version 0.1.0 is in development. The group, correlation and contingency
+statistics and the synthetic study are in; the survival statistics and
+the biomarker screen arrive next, in the same version.
 [NEWS.md](https://github.com/jwildfire/gsm.bio/blob/dev/NEWS.md) lists
 what has landed, and the reference site is at
 <https://jwildfire.github.io/gsm.bio/>.
@@ -58,6 +88,23 @@ What gsm.bio is for and how its statistics are built.
 - [`gsm.bio`](https://jwildfire.github.io/gsm.bio/reference/gsm.bio-package.md)
   [`gsm.bio-package`](https://jwildfire.github.io/gsm.bio/reference/gsm.bio-package.md)
   : gsm.bio: statistics for biomarker charts
+
+## Statistics
+
+One function per family of tests, each a thin wrapper around the base R
+function the design names, and all returning the same result.
+
+- [`Analyze_GroupDifference()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_GroupDifference.md)
+  : Compare a numeric variable between groups
+- [`Analyze_Correlation()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_Correlation.md)
+  : Correlate two numeric variables
+- [`Analyze_CorrelationMatrix()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_CorrelationMatrix.md)
+  : Correlate every pair of several numeric variables
+- [`Analyze_Contingency()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_Contingency.md)
+  : Test the association between two categories
+- [`StatisticsResult`](https://jwildfire.github.io/gsm.bio/reference/StatisticsResult.md)
+  [`statistics-result`](https://jwildfire.github.io/gsm.bio/reference/StatisticsResult.md)
+  : The result every statistics function returns
 
 ## Synthetic study
 

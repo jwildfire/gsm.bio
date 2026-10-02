@@ -8,6 +8,23 @@ What gsm.bio is for and how its statistics are built.
   [`gsm.bio-package`](https://jwildfire.github.io/gsm.bio/reference/gsm.bio-package.md)
   : gsm.bio: statistics for biomarker charts
 
+## Statistics
+
+One function per family of tests, each a thin wrapper around the base R
+function the design names, and all returning the same result.
+
+- [`Analyze_GroupDifference()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_GroupDifference.md)
+  : Compare a numeric variable between groups
+- [`Analyze_Correlation()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_Correlation.md)
+  : Correlate two numeric variables
+- [`Analyze_CorrelationMatrix()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_CorrelationMatrix.md)
+  : Correlate every pair of several numeric variables
+- [`Analyze_Contingency()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_Contingency.md)
+  : Test the association between two categories
+- [`StatisticsResult`](https://jwildfire.github.io/gsm.bio/reference/StatisticsResult.md)
+  [`statistics-result`](https://jwildfire.github.io/gsm.bio/reference/StatisticsResult.md)
+  : The result every statistics function returns
+
 ## Synthetic study
 
 A made-up biomarker study with three planted effects of known size, for

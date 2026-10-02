@@ -13,7 +13,7 @@ prepared.
 - **gsm.bio installs from GitHub.**
   `remotes::install_github("jwildfire/gsm.bio@dev")` installs a package
   that loads and depends on nothing but the stats and survival packages.
-  The statistics functions are the next steps of this version.
+  It depends on those two packages and on nothing else.
   ([obot.roadmap#364](https://github.com/jwildfire/obot.roadmap/issues/364),
   [\#1](https://github.com/jwildfire/gsm.bio/issues/1),
   [\#5](https://github.com/jwildfire/gsm.bio/pull/5))
@@ -31,6 +31,34 @@ prepared.
   ([obot.roadmap#364](https://github.com/jwildfire/obot.roadmap/issues/364),
   [\#2](https://github.com/jwildfire/gsm.bio/issues/2),
   [\#6](https://github.com/jwildfire/gsm.bio/pull/6))
+- **Group, correlation and contingency statistics, each R’s own.**
+  [`Analyze_GroupDifference()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_GroupDifference.md)
+  compares a value between groups with a Welch t-test, a Wilcoxon
+  rank-sum test, a one-way ANOVA or a Kruskal-Wallis test, reports the
+  difference in means with its interval, and compares every pair of
+  groups with Holm-adjusted p-values.
+  [`Analyze_Correlation()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_Correlation.md)
+  gives a Pearson or Spearman correlation for one pair of variables,
+  overall and per group, and
+  [`Analyze_CorrelationMatrix()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_CorrelationMatrix.md)
+  gives it for every pair of several, with the number of pairs behind
+  each cell.
+  [`Analyze_Contingency()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_Contingency.md)
+  tests a two-way table with a chi-squared test, flagging small expected
+  counts, or Fisher’s exact test. Every number comes from the base R
+  function, called with R’s defaults, and every function returns the
+  same plain result, with a reason in place of the numbers when a group
+  is too small.
+  ([obot.roadmap#364](https://github.com/jwildfire/obot.roadmap/issues/364),
+  [\#3](https://github.com/jwildfire/gsm.bio/issues/3),
+  [\#7](https://github.com/jwildfire/gsm.bio/pull/7))
+- **One source file a chart can hand to R in the browser.** The
+  statistics are defined once, in a file that needs nothing but the
+  stats package and ships in the installed package. The package’s
+  functions are built from it, so the number a chart prints in the
+  browser and the number R gives at a desk come from the same lines.
+  ([\#3](https://github.com/jwildfire/gsm.bio/issues/3),
+  [\#7](https://github.com/jwildfire/gsm.bio/pull/7))
 
 ### Also in this release
 

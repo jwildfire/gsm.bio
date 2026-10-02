@@ -43,6 +43,17 @@ runs one requirement per session
   needed only to check a result goes under Suggests.
 - A statistic is a thin wrapper around the base R function the design
   names. Nothing is reimplemented except the standardised difference.
+- The statistics have one definition: `inst/statistics/statistics.R`.
+  `R/statistics.R` evaluates that file into the namespace and holds only
+  the documentation, so edit the functions in the file under `inst/`,
+  never copy them into `R/`. The file must run in a bare session with
+  only stats attached (survival joins it with the survival functions):
+  call `stats::` by name, attach nothing, evaluate no text.
+- Every `Analyze_*` function returns the one result shape documented in
+  [`?StatisticsResult`](https://jwildfire.github.io/gsm.bio/reference/StatisticsResult.md)
+  and built by `Stat_Result()`; `tests/testthat/helper-result-shape.R`
+  checks it. It never raises an error or a warning: both go into the
+  result.
 - Argument and variable prefixes follow gsm.core: `df` data frame, `l`
   list, `str` character scalar, `chr` character vector, `n` numeric, `b`
   logical.
