@@ -11,10 +11,10 @@ The first version of gsm.bio: the statistics the bio.viz biomarker charts print,
 
 ## What's new
 
-- **gsm.bio installs from GitHub.** `remotes::install_github("jwildfire/gsm.bio@dev")` installs a package that loads and depends on nothing but the stats and survival packages. It holds no statistics function and no data yet; those are the next steps of this version. ([obot.roadmap#364](https://github.com/jwildfire/obot.roadmap/issues/364), [#1](https://github.com/jwildfire/gsm.bio/issues/1))
+- **gsm.bio installs from GitHub.** `remotes::install_github("jwildfire/gsm.bio@dev")` installs a package that loads and depends on nothing but the stats and survival packages. It holds no statistics function and no data yet; those are the next steps of this version. ([obot.roadmap#364](https://github.com/jwildfire/obot.roadmap/issues/364), [#1](https://github.com/jwildfire/gsm.bio/issues/1), [#5](https://github.com/jwildfire/gsm.bio/pull/5))
 
 ## Also in this release
 
-- **Checks on every pull request.** `R CMD check` runs on each pull request to `dev` and fails on an error, a warning or a note. ([#1](https://github.com/jwildfire/gsm.bio/issues/1))
-- **A reference site.** The pkgdown site is built on each pull request and deployed from `dev` to <https://jwildfire.github.io/gsm.bio/>. ([#1](https://github.com/jwildfire/gsm.bio/issues/1))
-- **Tests name the issue they prove.** Every test name ends with its issue number, and a guard test fails the suite when one does not. ([#1](https://github.com/jwildfire/gsm.bio/issues/1))
+- **Checks on every pull request.** `R CMD check` runs on each pull request to `dev` and fails on an error, a warning or a note. ([#1](https://github.com/jwildfire/gsm.bio/issues/1), [#5](https://github.com/jwildfire/gsm.bio/pull/5))
+- **A reference site.** The pkgdown site is built on each pull request and deployed from `dev` to <https://jwildfire.github.io/gsm.bio/>. ([#1](https://github.com/jwildfire/gsm.bio/issues/1), [#5](https://github.com/jwildfire/gsm.bio/pull/5))
+- **Tests name the issue they prove.** Every test name ends with its issue number, and a guard test fails the suite when one does not. ([#1](https://github.com/jwildfire/gsm.bio/issues/1), [#5](https://github.com/jwildfire/gsm.bio/pull/5))
