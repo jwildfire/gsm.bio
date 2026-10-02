@@ -13,3 +13,12 @@ reference:
     desc: What gsm.bio is for and how its statistics are built.
     contents:
       - gsm.bio-package
+  - title: Synthetic study
+    desc: >
+      A made-up biomarker study with three planted effects of known size, for
+      proving the statistics and for the charts to draw.
+    contents:
+      - Synthetic_Results
+      - Synthetic_Participants
+      - Synthetic_Outcomes
+      - Synthetic_Truth
