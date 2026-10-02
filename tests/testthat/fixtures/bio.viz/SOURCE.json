@@ -1,5 +1,5 @@
 {
-  "what": "Fixtures copied from bio.viz byte for byte: the rows bio.viz's own core wrote for thirteen panels of its demo chart (group-statistics/), and the request the chart makes for each with what desktop R answered (group-statistics-r.json).",
+  "what": "Fixtures copied from bio.viz byte for byte: the rows bio.viz's own core wrote for panels of its demo chart (group-statistics/), and the request the chart makes for each with what desktop R answered (group-statistics-r.json).",
   "copied_by": "data-raw/vendor-bio-viz.R",
   "repository": "https://github.com/jwildfire/bio.viz",
   "ref": "dev",

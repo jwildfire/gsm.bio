@@ -24,7 +24,7 @@
 #    carried into ours whole.
 #
 # 2. The fixtures the tests hold R to, into tests/testthat/fixtures/bio.viz/,
-#    with their record: the rows bio.viz's own core wrote for thirteen panels of
+#    with their record: the rows bio.viz's own core wrote for panels of
 #    its demo chart, and the requests the chart makes for them with what desktop
 #    R answered.
 #
@@ -173,7 +173,7 @@ lFixtures <- c(lFixtures, list(Place(
 
 WriteJson(list(
   what = paste(
-    "Fixtures copied from bio.viz byte for byte: the rows bio.viz's own core wrote for thirteen panels",
+    "Fixtures copied from bio.viz byte for byte: the rows bio.viz's own core wrote for panels",
     "of its demo chart (group-statistics/), and the request the chart makes for each with what",
     "desktop R answered (group-statistics-r.json)."
   ),

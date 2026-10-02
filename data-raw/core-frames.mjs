@@ -12,6 +12,10 @@
 // for the rest: fold and percent change, several baseline visits, the results
 // table alone, and every reason a participant is left out.
 //
+// bio.viz is asked to commit fixtures like these beside its core
+// (https://github.com/jwildfire/bio.viz/issues/25); when it does, they are
+// copied from there with their record, and this script and its cases go.
+//
 // Nothing is typed in: every frame is written by the bundle the widget ships,
 // and the file records that bundle's checksum, which the tests compare with the
 // vendored file's.

@@ -2,7 +2,8 @@
 # widget stores R's answers ahead of time, so it has to know which rows the
 # chart will hand R for each panel and how the chart will ask. Both are held to
 # bio.viz's own fixtures, copied with their record: the rows its core wrote for
-# thirteen panels of its demo chart, and the request the chart makes for each.
+# panels of its demo chart (thirteen when this was written; every case the
+# fixture lists is run), and the request the chart makes for each.
 
 strStatisticsFixture <- function(...) {
   testthat::test_path("fixtures", "bio.viz", ...)
@@ -95,9 +96,11 @@ test_that("the settings R reads have the defaults of the vendored chart (#9)", {
   expect_identical(lCoreDefaults, lGroupComparisonDefaults[names(lCoreDefaults)])
 })
 
-test_that("R resolves the rows bio.viz's chart hands R, for thirteen panels of its demo (#9)", {
+test_that("R resolves the rows bio.viz's chart hands R, for every panel of its demo bio.viz recorded (#9)", {
   dfCases <- dfDemoCases()
-  expect_identical(nrow(dfCases), 13L)
+  # Every case bio.viz lists is run, however many it comes to list.
+  expect_gte(nrow(dfCases), 13L)
+  expect_identical(anyDuplicated(dfCases$case), 0L)
 
   for (iCase in seq_len(nrow(dfCases))) {
     lCase <- as.list(dfCases[iCase, ])
@@ -117,7 +120,7 @@ test_that("R resolves the rows bio.viz's chart hands R, for thirteen panels of i
 
   # The cases reach a filter, a colour, a panel, several visits, a logarithmic
   # scale and a baseline value, and three of the five value types.
-  expect_setequal(dfCases$value_type, c("change", "raw", "baseline"))
+  expect_true(all(c("change", "raw", "baseline") %in% dfCases$value_type))
   expect_true(all(c("SEX=F", "AGE=57") %in% dfCases$filters))
   expect_true("log" %in% dfCases$y_scale && "SEX" %in% dfCases$color_by && "SEX" %in% dfCases$panel_by)
 })
