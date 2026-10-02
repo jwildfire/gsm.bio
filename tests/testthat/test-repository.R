@@ -71,6 +71,24 @@ test_that("the R CMD check job also runs the suite from the source tree, where n
   expect_match(strText, "if (any(dfTests$skipped))", fixed = TRUE)
 })
 
+test_that("both workflows run again when a draft pull request is marked ready (#1)", {
+  # Auto-merge can only be switched on while a required check is pending, so
+  # marking a draft ready has to start the checks again.
+  for (strWorkflow in c("R-CMD-check.yaml", "pkgdown.yaml")) {
+    strText <- paste(chrRepositoryFile(".github", "workflows", strWorkflow), collapse = "\n")
+    expect_match(
+      strText,
+      "  pull_request:\n    branches: [dev]\n",
+      fixed = TRUE, label = paste(strWorkflow, "pull_request trigger on dev")
+    )
+    expect_match(
+      strText,
+      "    types: [opened, synchronize, reopened, ready_for_review]\n",
+      fixed = TRUE, label = paste(strWorkflow, "pull_request types")
+    )
+  }
+})
+
 test_that("the pkgdown workflow may write, and deploys to gh-pages on pushes only (#1)", {
   chrLines <- chrRepositoryFile(".github", "workflows", "pkgdown.yaml")
   strText <- paste(chrLines, collapse = "\n")
