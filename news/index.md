@@ -119,14 +119,21 @@ numbers for says so.
   warning, or compute a p-value, differently.
   [\#4](https://github.com/jwildfire/gsm.bio/issues/4),
   [\#8](https://github.com/jwildfire/gsm.bio/pull/8)
-- **safety.viz from its `dev` branch.** The widgets carry the copy of
-  safety.viz bio.viz takes from safety.viz `dev`, both commits recorded.
-  Filters follow safety.viz’s rule: a `start` the data lacks opens on
-  All, and `all = FALSE` opens on the first value. The reader’s browser
-  may order accented letters and punctuation differently from R, so the
-  widget names R’s first value to the chart as the filter’s `start`.
+- **The widgets need, and carry, safety.viz v1.9.0 and bio.viz v0.1.0.**
+  safety.viz v1.9.0 is the first with the kit bio.viz’s charts are built
+  from; each widget carries the copy bio.viz takes from safety.viz `dev`
+  at its v1.9.0 release preparation, labelled 1.9.0 and not as an
+  earlier release, so a page that also holds a gsm.safety widget loads
+  one safety.viz, the newer, as htmlwidgets keeps the highest version of
+  a dependency. Both commits are recorded. Filters follow safety.viz’s
+  rule: a `start` the data lacks opens on All, and `all = FALSE` opens
+  on the first value. The reader’s browser may order accented letters
+  and punctuation differently from R, so the widget names R’s first
+  value to the chart as the filter’s `start`.
   [\#19](https://github.com/jwildfire/gsm.bio/issues/19),
-  [\#20](https://github.com/jwildfire/gsm.bio/pull/20)
+  [\#20](https://github.com/jwildfire/gsm.bio/pull/20),
+  [\#27](https://github.com/jwildfire/gsm.bio/issues/27),
+  [\#28](https://github.com/jwildfire/gsm.bio/pull/28)
 - **Checks and a reference site.** `R CMD check` on every pull request,
   the suite rerun from the source tree, and the [reference
   site](https://jwildfire.github.io/gsm.bio/) deployed from `dev`.
@@ -136,7 +143,7 @@ numbers for says so.
 
 ### Tests and provenance
 
-181 tests (28,849 expectations on R 4.3.3) pass from the source tree,
+181 tests (28,853 expectations on R 4.3.3) pass from the source tree,
 where none may skip; `R CMD check` runs them too, skipping the nine that
 read the repository’s own files. The group, correlation, matrix,
 fitted-line and screen statistics the charts print are held to desktop

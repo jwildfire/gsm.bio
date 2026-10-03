@@ -54,10 +54,11 @@
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
-<p>Version 0.1.0 is in development on the <code>dev</code> branch:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># install.packages("remotes")</span></span>
-<span><span class="fu">remotes</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"jwildfire/gsm.bio@dev"</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu">remotes</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"jwildfire/gsm.bio@v0.1.0"</span><span class="op">)</span> <span class="co"># the v0.1.0 release, from its tag</span></span>
+<span><span class="fu">remotes</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"jwildfire/gsm.bio@dev"</span><span class="op">)</span>    <span class="co"># what is on dev, the integration branch</span></span></code></pre></div>
+<p>The release line works from the day v0.1.0 is cut: until v0.1.0 is tagged, <a href="https://github.com/jwildfire/gsm.bio/blob/dev/NEWS.md" class="external-link">NEWS</a> marks it Upcoming and only <code>@dev</code> installs.</p>
 </div>
 <div class="section level2">
 <h2 id="statistics">Statistics<a class="anchor" aria-label="anchor" href="#statistics"></a>
@@ -163,7 +164,7 @@
 <span>  lSettings <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>visit <span class="op">=</span> <span class="st">"Week 4"</span>, value_type <span class="op">=</span> <span class="st">"change"</span>, group_by <span class="op">=</span> <span class="st">"ARM"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <p>It stores <code><a href="reference/Analyze_Screen.html">Analyze_Screen()</a></code>’s answer for the screen the settings open on and, for every row, exactly what the chart that row opens asks of R: for a difference the group comparison at the screen’s one visit, of the two groups, with Welch’s test; for a correlation the scatter with the biomarker along the bottom and the variable up the side. On the synthetic study, Placebo against Treatment, that is one screen and twelve group comparisons.</p>
-<p>Every widget carries two JavaScript bundles, both copied from bio.viz with the commit and a checksum per file recorded in <code>inst/htmlwidgets/lib/SOURCE.json</code>: bio.viz’s own, and the copy of safety.viz’s bundle bio.viz builds its chart from. The safety.viz copy is the one bio.viz takes from safety.viz’s <code>dev</code> branch, and its commit is recorded there too. It is a stand-in, to be replaced by gsm.safety’s bundle once gsm.safety carries one with the kit.</p>
+<p>Every widget carries two JavaScript bundles, both copied from bio.viz with the commit and a checksum per file recorded in <code>inst/htmlwidgets/lib/SOURCE.json</code>: bio.viz v0.1.0, and safety.viz v1.9.0, the first safety.viz with the kit bio.viz’s charts are built from. The safety.viz copy is the one bio.viz takes from safety.viz’s <code>dev</code> branch at its v1.9.0 release preparation, and its commit is recorded too. gsm.safety carries an earlier safety.viz without the kit; once it carries v1.9.0, the widgets can take the bundle from there instead of carrying their own copy.</p>
 </div>
 <div class="section level2">
 <h2 id="synthetic-study">Synthetic study<a class="anchor" aria-label="anchor" href="#synthetic-study"></a>
