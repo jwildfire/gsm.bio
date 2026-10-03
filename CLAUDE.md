@@ -37,9 +37,10 @@ runs one requirement per session
 - `Rscript data-raw/vendor-bio-viz.R` — copies what gsm.bio takes from
   bio.viz’s `dev` again, with its records: the two bundles the widgets
   load (`inst/htmlwidgets/lib/`), the fixtures the tests hold R to
-  (`tests/testthat/fixtures/bio.viz/`), and the frames the copied
-  bundle’s own core writes
-  (`tests/testthat/fixtures/core-frames/frames.json`). It needs git, a
+  (`tests/testthat/fixtures/bio.viz/`), the frames the copied bundle’s
+  own core writes (`tests/testthat/fixtures/core-frames/frames.json`),
+  and what its safety.viz kit opens each filter on
+  (`tests/testthat/fixtures/filter-states/states.json`). It needs git, a
   network connection and node. Run it when bio.viz’s `dev` moves, then
   run the suite: a test that fails names the rule in `R/core.R`,
   `R/chart.R` or a chart’s own file that bio.viz changed.

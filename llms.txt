@@ -178,9 +178,9 @@ Every widget carries two JavaScript bundles, both copied from bio.viz
 with the commit and a checksum per file recorded in
 `inst/htmlwidgets/lib/SOURCE.json`: bio.viz’s own, and the copy of
 safety.viz’s bundle bio.viz builds its chart from. The safety.viz copy
-is a stand-in. It comes from a safety.viz branch that is not merged yet,
-and is to be replaced by gsm.safety’s bundle once gsm.safety carries one
-with the kit.
+is the one bio.viz takes from safety.viz’s `dev` branch, and its commit
+is recorded there too. It is a stand-in, to be replaced by gsm.safety’s
+bundle once gsm.safety carries one with the kit.
 
 ## Synthetic study
 
