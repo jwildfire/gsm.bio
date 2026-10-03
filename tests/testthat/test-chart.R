@@ -177,3 +177,62 @@ test_that("the filter states were written by the vendored kit, from the study th
     lStates$study[[1]]$sha256
   )
 })
+
+# The study with numbers where it has names: the visit is its number, and the
+# arm, a dose and the sex are numeric participant columns.
+lNumericStudy <- function() {
+  dfResults <- Synthetic_Results
+  dfResults$VISIT <- dfResults$VISITNUM
+  dfParticipants <- Synthetic_Participants
+  dfParticipants$ARMN <- ifelse(dfParticipants$ARM == "Placebo", 0L, 1L)
+  dfParticipants$DOSE <- ifelse(dfParticipants$ARM == "Placebo", 0, 2.5)
+  dfParticipants$SEXN <- ifelse(dfParticipants$SEX == "F", 1, 2)
+  list(results = dfResults, participants = dfParticipants)
+}
+
+# Every value in a stored result's key, as the chart writes its request's: text
+# for a name, a visit, a panel, a group or a filter value, and a number only
+# where the chart writes one.
+chrKeyNumbers <- function(lResults) {
+  Leaves <- function(xValue, strPath) {
+    if (is.list(xValue)) {
+      return(unlist(lapply(seq_along(xValue), function(i) Leaves(xValue[[i]], paste0(strPath, "/", if (is.null(names(xValue))) i else names(xValue)[i])))))
+    }
+    if (is.numeric(xValue)) strPath else character(0)
+  }
+  unlist(lapply(lResults, function(lResult) Leaves(lResult$dataId, lResult$name)))
+}
+
+test_that("a numeric visit, panel, group or colour column is keyed as text, as the chart sends it (#19)", {
+  lStudy <- lNumericStudy()
+  Make <- function(Widget, lSettings) Widget(lStudy$results, lStudy$participants, lSettings = lSettings)$x$lStatistics$results
+
+  lGroup <- Make(Widget_GroupComparison, list(start_value = "IL-6", value_type = "change", group_by = "DOSE", color_by = "SEXN", panel_by = "SEXN", visits = c(4, 12)))
+  expect_gt(length(lGroup), 0L)
+  expect_identical(chrKeyNumbers(lGroup), character(0))
+  expect_setequal(vapply(lGroup, function(lResult) lResult$dataId$visit, character(1)), c("4", "12"))
+  expect_setequal(vapply(lGroup, function(lResult) lResult$dataId$panel, character(1)), c("1", "2"))
+  expect_identical(lGroup[[1]]$dataId$groups, list("0", "2.5"))
+  expect_identical(lGroup[[1]]$dataId$baseline_visits, list("0"))
+
+  lScatter <- Make(Widget_AssociationScatter, list(
+    x = list(measure = "TNF-alpha", visit = "0"), y = list(measure = "IL-10", visit = "0"), color_by = "ARMN", panel_by = "SEXN"
+  ))
+  expect_gt(length(lScatter), 0L)
+  expect_identical(chrKeyNumbers(lScatter), character(0))
+  expect_setequal(unique(vapply(lScatter, function(lResult) lResult$dataId$panel, character(1))), c("1", "2"))
+  expect_identical(lScatter[[1]]$dataId$groups, list("0", "1"))
+
+  lMatrix <- Make(Widget_CorrelationMatrix, list(visit = "4", limit = 3))
+  expect_identical(length(lMatrix), 1L + 6L)
+  expect_identical(chrKeyNumbers(lMatrix), character(0))
+  expect_identical(lMatrix[[1]]$dataId$variables[[1]]$visit, "4")
+
+  lScreen <- Make(Widget_BiomarkerScreen, list(visit = "4", value_type = "change", group_by = "ARMN", filters = list(list(value_col = "SEXN", start = 2))))
+  expect_identical(length(lScreen), 13L)
+  expect_identical(chrKeyNumbers(lScreen), character(0))
+  expect_identical(lScreen[[1]]$args$chrGroups, list("0", "1"))
+  expect_identical(lScreen[[1]]$dataId$visit, "4")
+  expect_identical(lScreen[[1]]$dataId$filters, list(SEXN = list("2")))
+  expect_identical(lScreen[[2]]$dataId$visit, "4")
+})
