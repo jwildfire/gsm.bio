@@ -108,16 +108,16 @@ test_that("the check job has pandoc, which the proof of the saved page needs (#9
   expect_true(length(iCheck) == 1L && iPandoc < iCheck)
 })
 
-test_that("CLAUDE.md gives the one command that copies bio.viz's files again, and the script is there (#9)", {
+test_that("CLAUDE.md gives the one command that copies bio.viz's files again, and the script is there (#9, #19)", {
   strText <- paste(chrRepositoryFile("CLAUDE.md"), collapse = "\n")
   expect_match(strText, "Rscript data-raw/vendor-bio-viz.R", fixed = TRUE)
-  for (strScript in c("vendor-bio-viz.R", "core-frames.mjs")) {
+  for (strScript in c("vendor-bio-viz.R", "core-frames.mjs", "filter-states.mjs")) {
     chrScript <- chrRepositoryFile("data-raw", strScript)
     expect_gt(length(chrScript), 0)
   }
   # The script writes the three things the tests read.
   strScript <- paste(chrRepositoryFile("data-raw", "vendor-bio-viz.R"), collapse = "\n")
-  for (strWritten in c('file.path("inst", "htmlwidgets", "lib")', 'file.path("tests", "testthat", "fixtures", "bio.viz")', "core-frames.mjs")) {
+  for (strWritten in c('file.path("inst", "htmlwidgets", "lib")', 'file.path("tests", "testthat", "fixtures", "bio.viz")', "core-frames.mjs", "filter-states.mjs")) {
     expect_match(strScript, strWritten, fixed = TRUE)
   }
 })

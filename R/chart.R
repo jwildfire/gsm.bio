@@ -124,8 +124,11 @@ Chart_Categories <- function(dfResults, dfParticipants, lConfig) {
 # What each filter opens on. There are filters only with a participant table:
 # they choose participants. The setting `filters`, when given, is the list,
 # kept to the columns the participant table has; otherwise every category
-# column of the participant table is a filter. A filter opens on its `start`,
-# and one with none lets every participant through. Returns a named list of
+# column of the participant table is a filter, and a filter on the
+# participant's id is none. A filter opens on its `start` when the data has it,
+# and otherwise lets every participant through, unless it is set `all = FALSE`,
+# when it opens on its first value. tests/testthat/test-chart.R holds this to
+# the safety.viz kit the widgets ship. Returns a named list of
 # column to the value, or values, the filter opens on; NULL for a filter that
 # opens on all.
 Chart_Filters <- function(dfParticipants, lConfig, dfCategories) {
@@ -137,16 +140,28 @@ Chart_Filters <- function(dfParticipants, lConfig, dfCategories) {
   } else {
     lapply(dfCategories$value_col[dfCategories$table == "participants"], function(strCol) list(value_col = strCol))
   }
+  # The participant's id is no filter: it gets no control, and so no restriction.
+  strIdCol <- if (is.null(lConfig$participant_id_col)) lConfig$id_col else lConfig$participant_id_col
+  lSpecs <- Filter(function(lSpec) !identical(lSpec$value_col, strIdCol), lSpecs)
+  # Each filter reconciled with the values its control offers, as the safety.viz
+  # kit does it (`reconcileFilters`): a start the data lacks is dropped, and the
+  # filter opens on All, or, with `all = FALSE`, on its first value; several
+  # values keep the ones the data has, and open on All when it has none.
   lState <- list()
   for (lSpec in lSpecs) {
     xStart <- unlist(lSpec$start)
     bStarted <- length(xStart) > 0L && !(length(xStart) == 1L && (is.na(xStart) || identical(as.character(xStart), "")))
-    lState[lSpec$value_col] <- list(if (!bStarted) {
-      NULL
-    } else if (isTRUE(lSpec$multiple)) {
-      Core_Text(xStart)
+    chrValues <- Core_Levels(dfParticipants[[lSpec$value_col]])
+    chrStart <- if (bStarted) Core_Text(xStart) else character(0)
+    lState[lSpec$value_col] <- list(if (isTRUE(lSpec$multiple)) {
+      chrKept <- chrStart[chrStart %in% chrValues]
+      if (length(chrKept) > 0L) chrKept else NULL
+    } else if (length(chrStart) > 0L && chrStart[1L] %in% chrValues) {
+      chrStart[1L]
+    } else if (identical(lSpec$all, FALSE) && length(chrValues) > 0L) {
+      chrValues[1L]
     } else {
-      Core_Text(xStart)[1L]
+      NULL
     })
   }
   lState

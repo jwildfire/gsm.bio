@@ -6,7 +6,7 @@
 #   Rscript data-raw/vendor-bio-viz.R --ref <ref>   another branch, or one commit
 #
 # Run from the repository root, by hand, when bio.viz's `dev` moves. It needs
-# git, a network connection and node; the output is committed. Three things are
+# git, a network connection and node; the output is committed. Four things are
 # copied or written:
 #
 # 1. The two bundles the widgets load, into inst/htmlwidgets/lib/, with their
@@ -32,6 +32,11 @@
 #    core of the bundle just copied on the cases in cases.json beside it
 #    (data-raw/core-frames.mjs): the value types and the tables bio.viz's own
 #    fixtures do not cover.
+#
+# 4. tests/testthat/fixtures/filter-states/states.json, written by running the
+#    safety.viz kit of the bundle just copied on the filter settings in
+#    cases.json beside it (data-raw/filter-states.mjs): what each filter opens
+#    on, which R's Chart_Filters() is held to.
 #
 # tests/testthat/test-vendored.R fails the suite when a copied file and its
 # record disagree, or when the three records name different bundles.
@@ -131,7 +136,7 @@ WriteJson(list(
       "safety.viz's bundle from gsm.safety. Until gsm.safety carries a safety.viz bundle with the kit,",
       "the widget carries the copy bio.viz itself builds its chart from, taken from bio.viz at the",
       "commit above. Where bio.viz took it from is bio.viz's own record, carried here whole as",
-      "`bio_viz_record`: read `merged_to_dev` and `note` there."
+      "`bio_viz_record`: read its `ref`, `commit` and `merged_to_dev`."
     ),
     bio_viz_record_file = "site/vendor/safety.viz/SOURCE.json",
     bio_viz_record = lKit
@@ -206,6 +211,13 @@ WriteJson(list(
 iStatus <- system2("node", c(file.path("data-raw", "core-frames.mjs")))
 if (!identical(iStatus, 0L)) {
   stop("data-raw/core-frames.mjs did not run: the bundles were copied, and frames.json is not theirs yet")
+}
+
+# ---- 4. The filter states the copied bundle's own kit opens on -----------------
+
+iStatus <- system2("node", c(file.path("data-raw", "filter-states.mjs")))
+if (!identical(iStatus, 0L)) {
+  stop("data-raw/filter-states.mjs did not run: the bundles were copied, and states.json is not theirs yet")
 }
 
 cat(sprintf(

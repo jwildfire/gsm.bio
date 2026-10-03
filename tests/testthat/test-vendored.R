@@ -36,20 +36,23 @@ test_that("the vendored bundles match the checksums recorded beside them (#9)", 
   )
 })
 
-test_that("the record says the safety.viz copy is a stand-in, and carries where bio.viz took it from (#9)", {
+test_that("the record says the safety.viz copy is a stand-in, and carries where bio.viz took it from: safety.viz's dev (#9, #19)", {
   lRecord <- lReadJson(strLibDir(), "SOURCE.json")
   lKit <- lRecord$safety_viz
 
   expect_true(lKit$stand_in)
   expect_match(lKit$note, "stand-in", fixed = TRUE)
   expect_match(lKit$note, "Until gsm.safety carries a safety.viz bundle with the kit", fixed = TRUE)
-  # bio.viz's own record of its copy, whole: the safety.viz commit, and that
-  # the commit is on an unmerged safety.viz branch.
+  # bio.viz's own record of its copy, whole: taken from safety.viz's dev
+  # branch, at a recorded commit.
   lTheirs <- lKit$bio_viz_record
   expect_identical(lTheirs$repository, "https://github.com/jwildfire/safety.viz")
+  expect_identical(lTheirs$ref, "dev")
   expect_match(lTheirs$commit, "^[0-9a-f]{40}$")
-  expect_false(lTheirs$merged_to_dev)
-  expect_match(lTheirs$note, "unmerged branch", fixed = TRUE)
+  expect_true(lTheirs$merged_to_dev)
+  # And ours: bio.viz's dev branch, at a recorded commit.
+  expect_identical(lRecord$ref, "dev")
+  expect_match(lRecord$commit, "^[0-9a-f]{40}$")
   lCopy <- Filter(function(lFile) lFile$library == "safety.viz", lRecord$files)[[1]]
   expect_identical(lTheirs$files[[1]]$sha256, lCopy$sha256)
   expect_identical(lTheirs$version, lCopy$version)
