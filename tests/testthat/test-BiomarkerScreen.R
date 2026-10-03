@@ -189,6 +189,7 @@ test_that("R keys the screen's stored result exactly as the chart keys its reque
 test_that("R's answers for those screens are the answers bio.viz recorded from desktop R, row by row (#16)", {
   dfCases <- dfScreenCases()
   lRecorded <- lRecordedScreenRequests()
+  strRecordedR <- lReadJson(strScreenFixture("screen-statistics-r.json"))$made_by$r_version
   for (iCase in seq_len(nrow(dfCases))) {
     lCase <- as.list(dfCases[iCase, ])
     lRequest <- lScreenCaseRequest(lCase)
@@ -202,8 +203,16 @@ test_that("R's answers for those screens are the answers bio.viz recorded from d
     Column <- function(strColumn, xType) {
       vapply(lTheirs$rows, function(lRow) if (is.null(lRow[[strColumn]])) methods::as(NA, class(xType)) else lRow[[strColumn]], xType)
     }
-    for (strColumn in c("biomarker", "method", "adjustment", "status", "reason", "warning")) {
+    for (strColumn in c("biomarker", "method", "adjustment", "status", "reason")) {
       expect_identical(lMine$rows[[strColumn]], Column(strColumn, character(1)), label = paste(lCase$case, strColumn))
+    }
+    # A warning is in R's own words, which change between R versions (R 4.6
+    # capitalises cor.test()'s "Cannot compute exact p-value with ties"): the
+    # same rows warn whatever the R, and in the same words under the R that
+    # recorded them.
+    expect_identical(is.na(lMine$rows$warning), is.na(Column("warning", character(1))), label = paste(lCase$case, "rows that warn"))
+    if (identical(as.character(getRversion()), strRecordedR)) {
+      expect_identical(lMine$rows$warning, Column("warning", character(1)), label = paste(lCase$case, "warning"))
     }
     for (strColumn in c("counts", "n_1", "n_2", "dropped", "adjusted_over")) {
       expect_identical(lMine$rows[[strColumn]], Column(strColumn, integer(1)), label = paste(lCase$case, strColumn))
