@@ -1,0 +1,68 @@
+# R CMD check on every pull request to dev and every push to dev.
+#
+# One job on one runner, so the check it reports is named exactly
+# "R-CMD-check": the dev ruleset requires a check of that name, and a matrix
+# would append the runner to it. The house rule is no errors, warnings or
+# notes, so a note fails the run.
+#
+# Derived from https://github.com/r-lib/actions/tree/v2/examples
+name: R-CMD-check
+
+on:
+  push:
+    branches: [dev]
+  pull_request:
+    branches: [dev]
+    # A draft marked ready is checked again, which is what lets auto-merge be
+    # switched on: GitHub allows it only while a required check is pending.
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+
+jobs:
+  R-CMD-check:
+    name: R-CMD-check
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      R_KEEP_PKG_SOURCE: yes
+      # R checks the runner's clock against a public time service and raises a
+      # note when that service does not answer. A note fails this run, so an
+      # outage elsewhere would block every merge; file timestamps are still
+      # checked against the runner's own clock.
+      _R_CHECK_SYSTEM_CLOCK_: 0
+    steps:
+      - uses: actions/checkout@v6
+
+      # htmlwidgets saves a widget as one self-contained file with pandoc, and
+      # the test that proves the saved page fails in the source tree without it.
+      - uses: r-lib/actions/setup-pandoc@v2
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: release
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-packages: any::rcmdcheck, any::pkgload
+          needs: check
+
+      - uses: r-lib/actions/check-r-package@v2
+        with:
+          error-on: '"note"'
+
+      # R CMD check tests the built package, which leaves out data-raw/ and the
+      # repository's own files, so the tests that read them skip there. This
+      # runs the suite again from the source tree, on the same R, where nothing
+      # may skip: a test that did not run must not read as a pass.
+      - name: Test from the source tree
+        run: |
+          dfTests <- as.data.frame(testthat::test_local(stop_on_failure = TRUE))
+          options(width = 220)
+          print(dfTests[c("file", "test", "nb", "failed", "skipped")], right = FALSE)
+          if (any(dfTests$skipped)) {
+            stop("Skipped in the source tree: ", paste(dfTests$test[dfTests$skipped], collapse = "; "))
+          }
+        shell: Rscript {0}

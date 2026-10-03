@@ -1,0 +1,46 @@
+{
+  "what": "The JavaScript bundles the widgets load, copied from bio.viz byte for byte.",
+  "copied_by": "data-raw/vendor-bio-viz.R",
+  "repository": "https://github.com/jwildfire/bio.viz",
+  "ref": "dev",
+  "commit": "8054114d9a8166b1418e8a1be2dcd3480a037669",
+  "files": [
+    {
+      "file": "bio.viz-0.1.0/bio.viz.js",
+      "source": "dist/bio.viz-0.1.0/bio.viz.js",
+      "library": "bio.viz",
+      "version": "0.1.0",
+      "sha256": "de683a9b03bb9bdfc6a4f139c98e75630badd989f30ce3b31287f1a831981b7b",
+      "bytes": 323416
+    },
+    {
+      "file": "safety.viz-1.9.0/safety.viz.js",
+      "source": "site/vendor/safety.viz/safety.viz.js",
+      "library": "safety.viz",
+      "version": "1.9.0",
+      "sha256": "67236ba4c206c3eabd77c9860331f2afa0fdbfc44be76407aa46fae34acfa0d7",
+      "bytes": 1588881
+    }
+  ],
+  "safety_viz": {
+    "stand_in": true,
+    "note": "The copy of safety.viz's bundle is a stand-in, to be replaced. The design has gsm.bio take safety.viz's bundle from gsm.safety. Until gsm.safety carries a safety.viz bundle with the kit, the widget carries the copy bio.viz itself builds its chart from, taken from bio.viz at the commit above. Where bio.viz took it from is bio.viz's own record, carried here whole as `bio_viz_record`: read its `ref`, `commit` and `merged_to_dev`.",
+    "bio_viz_record_file": "site/vendor/safety.viz/SOURCE.json",
+    "bio_viz_record": {
+      "bundle": "safety.viz script-tag bundle",
+      "repository": "https://github.com/jwildfire/safety.viz",
+      "ref": "dev",
+      "commit": "096cc26d48e5d3cd1bf03eb78249658974c7a307",
+      "version": "1.9.0",
+      "merged_to_dev": true,
+      "files": [
+        {
+          "file": "safety.viz.js",
+          "source": "dist/safety.viz-1.9.0/safety.viz.js",
+          "sha256": "67236ba4c206c3eabd77c9860331f2afa0fdbfc44be76407aa46fae34acfa0d7",
+          "bytes": 1588881
+        }
+      ]
+    }
+  }
+}

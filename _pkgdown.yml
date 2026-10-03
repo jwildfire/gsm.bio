@@ -1,0 +1,47 @@
+url: https://jwildfire.github.io/gsm.bio
+
+template:
+  bootstrap: 5
+
+navbar:
+  structure:
+    left: [reference, news]
+    right: [search, github]
+
+reference:
+  - title: Package
+    desc: What gsm.bio is for and how its statistics are built.
+    contents:
+      - gsm.bio-package
+  - title: Statistics
+    desc: >
+      One function per family of tests, each a thin wrapper around the base R
+      function the design names, and all returning the same result.
+    contents:
+      - Analyze_GroupDifference
+      - Analyze_Correlation
+      - Analyze_CorrelationMatrix
+      - Analyze_Fit
+      - Analyze_Contingency
+      - Analyze_Survival
+      - Analyze_Screen
+      - StatisticsResult
+  - title: Widgets
+    desc: >
+      A bio.viz chart drawn from R, with its statistics computed by the
+      functions above when the widget is made and stored in the page, so a
+      saved page shows them with no R and no network.
+    contents:
+      - Widget_GroupComparison
+      - Widget_AssociationScatter
+      - Widget_CorrelationMatrix
+      - Widget_BiomarkerScreen
+  - title: Synthetic study
+    desc: >
+      A made-up biomarker study with three planted effects of known size, for
+      proving the statistics and for the charts to draw.
+    contents:
+      - Synthetic_Results
+      - Synthetic_Participants
+      - Synthetic_Outcomes
+      - Synthetic_Truth
