@@ -67,8 +67,15 @@ made, because it has too few pairs or R stopped, is one row with its
 \code{status} and \code{reason} and no point: \code{x} is \code{NA}.
 }
 
-When every x value is the same there is no line to fit: \code{status} is
-\code{"error"} and \code{reason} says so.
+When every x value is the same, or every y value, there is no line to fit:
+\code{status} is \code{"error"} and \code{reason} says so.
+
+A smooth needs at least seven complete pairs, or the minimum group size when
+that is larger: with its defaults \code{loess()} gives a band that is not finite
+on most samples of five or six points. Below that a smooth has \code{status}
+\code{"too_small"}. A smooth whose curve or band is not finite at some x value,
+as \code{loess()} can give on few points or few distinct x values, has \code{status}
+\code{"error"}, and no part of it is drawn.
 }
 \description{
 Fits one numeric variable to another on the participants who have both,

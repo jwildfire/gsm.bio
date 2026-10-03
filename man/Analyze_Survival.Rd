@@ -71,6 +71,12 @@ The hazard ratio is the hazard in the first group over the hazard in the
 second, so the second group is the reference: with
 \code{chrGroups = c("High", "Low")} a ratio above 1 means events come sooner in
 the high group.
+
+When one of two groups has no events, the Cox model's estimate is infinite:
+the hazard ratio is not estimated, its columns in \code{rows} are \code{NA} and \code{notes}
+names the group. The log-rank test, which does not need it, and the medians
+are kept. With no event in any group nothing is compared: \code{status} is
+\code{"error"}.
 }
 \section{Two p-values, kept apart}{
 

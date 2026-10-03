@@ -34,6 +34,16 @@ When \code{status} is not \code{"ok"}, \code{reason} says why and the numbers ar
 \code{dropped} are still filled in where they are known, because they are the
 explanation.
 
+An answer that is \code{"ok"} has a number. Data the statistic does not allow is
+answered with a reason, not with a number that means nothing. Values that do
+not vary are refused as \code{\link[stats:t.test]{stats::t.test()}} refuses them, as "essentially
+constant": an ANOVA on values constant within every group, a line or smooth
+with a y that does not vary, and a correlation with a variable that does not
+vary. So is a Kruskal-Wallis test on values all tied, a test that returns no
+p-value, and a survival comparison with no event in any group. A part that
+cannot be estimated is said to be so in \code{notes}: the hazard ratio when one
+of two groups has no events.
+
 Wherever \code{p_value} and \code{adjustment} appear together, at the top level or in
 a row of \code{rows}, \code{adjustment} describes that \code{p_value}. A row whose p-value
 was adjusted also carries the unadjusted one as \code{p_unadjusted}.

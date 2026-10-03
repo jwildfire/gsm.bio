@@ -47,6 +47,16 @@ local({
 #' `dropped` are still filled in where they are known, because they are the
 #' explanation.
 #'
+#' An answer that is `"ok"` has a number. Data the statistic does not allow is
+#' answered with a reason, not with a number that means nothing. Values that do
+#' not vary are refused as [stats::t.test()] refuses them, as "essentially
+#' constant": an ANOVA on values constant within every group, a line or smooth
+#' with a y that does not vary, and a correlation with a variable that does not
+#' vary. So is a Kruskal-Wallis test on values all tied, a test that returns no
+#' p-value, and a survival comparison with no event in any group. A part that
+#' cannot be estimated is said to be so in `notes`: the hazard ratio when one
+#' of two groups has no events.
+#'
 #' Wherever `p_value` and `adjustment` appear together, at the top level or in
 #' a row of `rows`, `adjustment` describes that `p_value`. A row whose p-value
 #' was adjusted also carries the unadjusted one as `p_unadjusted`.
@@ -256,7 +266,8 @@ Analyze_Correlation <- Analyze_Correlation
 #'   long form, one row per pair of columns, each pair once, with the columns
 #'   `x`, `y`, `counts` (the complete pairs), `estimate`, `lower`, `upper`,
 #'   `level`, `status`, `reason` and `warning`. The result's own `status` is
-#'   `"too_small"` only when every pair is.
+#'   `"too_small"` when every pair is, and `"error"` when no pair could be
+#'   computed for any other reason, such as a column that does not vary.
 #'
 #' @examples
 #' # Four biomarkers at Baseline, one column each
@@ -340,8 +351,15 @@ Analyze_CorrelationMatrix <- Analyze_CorrelationMatrix
 #'   made, because it has too few pairs or R stopped, is one row with its
 #'   `status` and `reason` and no point: `x` is `NA`.
 #'
-#' When every x value is the same there is no line to fit: `status` is
-#' `"error"` and `reason` says so.
+#' When every x value is the same, or every y value, there is no line to fit:
+#' `status` is `"error"` and `reason` says so.
+#'
+#' A smooth needs at least seven complete pairs, or the minimum group size when
+#' that is larger: with its defaults `loess()` gives a band that is not finite
+#' on most samples of five or six points. Below that a smooth has `status`
+#' `"too_small"`. A smooth whose curve or band is not finite at some x value,
+#' as `loess()` can give on few points or few distinct x values, has `status`
+#' `"error"`, and no part of it is drawn.
 #'
 #' @examples
 #' # IL-10 against TNF-alpha at Baseline, the pair the synthetic study plants
@@ -435,6 +453,12 @@ Analyze_Contingency <- Analyze_Contingency
 #' second, so the second group is the reference: with
 #' `chrGroups = c("High", "Low")` a ratio above 1 means events come sooner in
 #' the high group.
+#'
+#' When one of two groups has no events, the Cox model's estimate is infinite:
+#' the hazard ratio is not estimated, its columns in `rows` are `NA` and `notes`
+#' names the group. The log-rank test, which does not need it, and the medians
+#' are kept. With no event in any group nothing is compared: `status` is
+#' `"error"`.
 #'
 #' @section Two p-values, kept apart:
 #' `p_value` is the log-rank test's. The Cox model has p-values of its own, and
@@ -535,7 +559,14 @@ Analyze_Survival <- Analyze_Survival
 #'
 #' Its p-value is not computed from it: it is [stats::t.test()]'s, Welch,
 #' which does not assume the equal variances that the pooled standard
-#' deviation does.
+#' deviation does. So when the two groups' spreads differ, a row's interval can
+#' include zero while its p-value is below 0.05, or exclude zero while it is
+#' above; the screen's notes say so. Whether the interval should follow Welch is
+#' an open design question.
+#'
+#' A row by hazard ratio whose hazard ratio cannot be estimated, because one
+#' side of the median has no events, has `status` `"error"` and a reason, as a
+#' difference row has when its standardised difference cannot be computed.
 #'
 #' @section High against low:
 #' For `"hazard"`, each biomarker is split at its median among the
