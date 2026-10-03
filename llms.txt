@@ -21,9 +21,8 @@ remotes::install_github("jwildfire/gsm.bio@v0.1.0") # the v0.1.0 release, from i
 remotes::install_github("jwildfire/gsm.bio@dev")    # what is on dev, the integration branch
 ```
 
-The release line works from the day v0.1.0 is cut: until v0.1.0 is
-tagged, [NEWS](https://github.com/jwildfire/gsm.bio/blob/dev/NEWS.md)
-marks it Upcoming and only `@dev` installs.
+[NEWS](https://github.com/jwildfire/gsm.bio/blob/dev/NEWS.md) lists what
+each release holds, and what is on `dev` for the next.
 
 ## Statistics
 
@@ -201,11 +200,13 @@ is used.
 
 ## Status
 
-Version 0.1.0 is in development on `dev`: seven statistics functions,
-the synthetic study and four widgets, for the group comparison chart,
-the association scatter, the correlation matrix and the biomarker
-screen. Widgets for the other charts and static figures come in later
-versions.
+[Version
+0.1.0](https://github.com/jwildfire/gsm.bio/releases/tag/v0.1.0) is
+released: seven statistics functions, the synthetic study and four
+widgets, for the group comparison chart, the association scatter, the
+correlation matrix and the biomarker screen. Version 0.2.0 is in
+development on `dev`; widgets for the other charts and static figures
+come in later versions.
 [NEWS.md](https://github.com/jwildfire/gsm.bio/blob/dev/NEWS.md) lists
 what has landed, and the reference site is at
 <https://jwildfire.github.io/gsm.bio/>.
