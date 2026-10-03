@@ -3,7 +3,7 @@
   "copied_by": "data-raw/vendor-bio-viz.R",
   "repository": "https://github.com/jwildfire/bio.viz",
   "ref": "dev",
-  "commit": "6f8e62a2697e44016bfe58b76dc78104116cc13c",
+  "commit": "23ccdc4cad77b1fa8388cdb4c15ef3897739dbce",
   "files": [
     {
       "file": "group-statistics/SOURCE.json",
@@ -370,6 +370,84 @@
       "source": "tests/fixtures/matrix-statistics-r.json",
       "sha256": "40a60d7242f23a751d6d4be5f5cab86303088e9afb3248d69002456b083124ba",
       "bytes": 95874
+    },
+    {
+      "file": "screen-statistics/SOURCE.json",
+      "source": "tests/fixtures/screen-statistics/SOURCE.json",
+      "sha256": "ef59a908d69921bc62aaf40d7499cfc2bc398edb4c7604c4348efcb8531722b0",
+      "bytes": 4256
+    },
+    {
+      "file": "screen-statistics/difference-week-4-change.csv",
+      "source": "tests/fixtures/screen-statistics/difference-week-4-change.csv",
+      "sha256": "a91e130374f635ef79ece29d1653cebb06b81496c0ab436149b3dd2473dd17dc",
+      "bytes": 40766
+    },
+    {
+      "file": "screen-statistics/difference-week-4-change-holm.csv",
+      "source": "tests/fixtures/screen-statistics/difference-week-4-change-holm.csv",
+      "sha256": "a91e130374f635ef79ece29d1653cebb06b81496c0ab436149b3dd2473dd17dc",
+      "bytes": 40766
+    },
+    {
+      "file": "screen-statistics/difference-baseline.csv",
+      "source": "tests/fixtures/screen-statistics/difference-baseline.csv",
+      "sha256": "58dbd6530a529d30b3b6742026035530b976efc0c5824329aaac64d38f223f42",
+      "bytes": 19046
+    },
+    {
+      "file": "screen-statistics/difference-week-4-change-women.csv",
+      "source": "tests/fixtures/screen-statistics/difference-week-4-change-women.csv",
+      "sha256": "ae1871e14e66a4e654642dd74030a14e10a20e612aa58f057805462911e85535",
+      "bytes": 18210
+    },
+    {
+      "file": "screen-statistics/difference-sex.csv",
+      "source": "tests/fixtures/screen-statistics/difference-sex.csv",
+      "sha256": "6140e9224d3d95f0d9b97f6a2af7b44c3a0725891d916b32a223fe4844d4ead3",
+      "bytes": 39460
+    },
+    {
+      "file": "screen-statistics/difference-age-35.csv",
+      "source": "tests/fixtures/screen-statistics/difference-age-35.csv",
+      "sha256": "1b02b0e57cb167df38706f5df8d85bfae5f8e151c7d3251fb1f0e9e7445a29ef",
+      "bytes": 1020
+    },
+    {
+      "file": "screen-statistics/correlation-il-10.csv",
+      "source": "tests/fixtures/screen-statistics/correlation-il-10.csv",
+      "sha256": "cbbe3732b1ada6c7ded5ea05ca9ddb7b1b047c670fc9977e0447150942cd459a",
+      "bytes": 17254
+    },
+    {
+      "file": "screen-statistics/correlation-il-10-holm.csv",
+      "source": "tests/fixtures/screen-statistics/correlation-il-10-holm.csv",
+      "sha256": "cbbe3732b1ada6c7ded5ea05ca9ddb7b1b047c670fc9977e0447150942cd459a",
+      "bytes": 17254
+    },
+    {
+      "file": "screen-statistics/correlation-il-10-spearman.csv",
+      "source": "tests/fixtures/screen-statistics/correlation-il-10-spearman.csv",
+      "sha256": "cbbe3732b1ada6c7ded5ea05ca9ddb7b1b047c670fc9977e0447150942cd459a",
+      "bytes": 17254
+    },
+    {
+      "file": "screen-statistics/correlation-age.csv",
+      "source": "tests/fixtures/screen-statistics/correlation-age.csv",
+      "sha256": "e93c79d16033134f4febf034e7663af6401bedc4d88fd45df48ea985f7e0aa78",
+      "bytes": 39647
+    },
+    {
+      "file": "screen-statistics/cases.csv",
+      "source": "tests/fixtures/screen-statistics/cases.csv",
+      "sha256": "52970287d2d66fab1003cc5fffd0e9e8321f73f85f5743c593a0b427ee939062",
+      "bytes": 2410
+    },
+    {
+      "file": "screen-statistics-r.json",
+      "source": "tests/fixtures/screen-statistics-r.json",
+      "sha256": "ca8fa559cea737466b79e5dbb51589d139b7250886efbc1321c6144ed9be4867",
+      "bytes": 59645
     }
   ]
 }

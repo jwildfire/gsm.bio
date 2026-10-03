@@ -194,6 +194,81 @@ Chart_KeepFiltered <- function(dfResults, dfParticipants, lConfig, lFilters) {
   )
 }
 
+# The participant-level numbers a chart can take as a variable: columns in which every value
+# that is written is a number, and that hold more than one different value.
+# With a participant table: its columns, other than the id. Without one, and
+# after them: the columns carried on the results rows, other than the ones the
+# settings map and the participant table's own, that hold one value for each
+# participant. The setting `numbers`, when given, is the list, and nothing is
+# worked out.
+Chart_Numbers <- function(dfResults, dfParticipants, lConfig) {
+  if (!is.null(lConfig$numbers)) {
+    return(vapply(lConfig$numbers, function(lSpec) lSpec$value_col, character(1)))
+  }
+  IsNumbers <- function(xValues) {
+    xWritten <- xValues[!Core_IsBlank(xValues)]
+    nWritten <- Core_Number(xWritten)
+    !anyNA(nWritten) && length(unique(nWritten)) > 1L
+  }
+  chrColumns <- character(0)
+  chrTaken <- character(0)
+  if (!is.null(dfParticipants) && nrow(dfParticipants) > 0L) {
+    strIdCol <- if (is.null(lConfig$participant_id_col)) lConfig$id_col else lConfig$participant_id_col
+    chrTaken <- setdiff(names(dfParticipants), strIdCol)
+    for (strName in chrTaken) {
+      if (IsNumbers(dfParticipants[[strName]])) {
+        chrColumns <- c(chrColumns, strName)
+      }
+    }
+  }
+  chrMapped <- unlist(lConfig[c(
+    "id_col", "measure_col", "value_col", "visit_col", "visit_order_col", "unit_col", "studyday_col",
+    "normal_col_high", "normal_col_low"
+  )])
+  chrRowId <- Core_Text(dfResults[[lConfig$id_col]])
+  for (strName in setdiff(names(dfResults), c(chrMapped, chrTaken))) {
+    xColumn <- dfResults[[strName]]
+    bFilled <- !Core_IsBlank(xColumn)
+    chrText <- Core_Text(xColumn)[bFilled]
+    chrId <- chrRowId[bFilled]
+    # One value for each participant, or it is not a participant-level column.
+    bConstant <- all(chrText == chrText[match(chrId, chrId)])
+    if (bConstant && IsNumbers(xColumn[bFilled][!duplicated(chrId)])) {
+      chrColumns <- c(chrColumns, strName)
+    }
+  }
+  chrColumns
+}
+
+# The filters a chart shows, as the chart a cell or a row opens is handed them:
+# their specs, as the setting `filters` gives them, kept to the columns the
+# participant table has, or the participant table's category columns. There
+# are filters only with a participant table.
+Chart_FilterSpecs <- function(dfResults, dfParticipants, lConfig) {
+  if (is.null(dfParticipants) || nrow(dfParticipants) == 0L) {
+    return(list())
+  }
+  if (!is.null(lConfig$filters)) {
+    return(Filter(function(lSpec) lSpec$value_col %in% names(dfParticipants), lConfig$filters))
+  }
+  dfCategories <- Chart_Categories(dfResults, dfParticipants, lConfig)
+  lapply(dfCategories$value_col[dfCategories$table == "participants"], function(strCol) {
+    list(value_col = strCol, label = strCol)
+  })
+}
+
+# Every level of a column, read from the table that holds it: the participant
+# table when it has the column, and otherwise the results rows.
+Chart_ColumnLevels <- function(dfResults, dfParticipants, strColumn) {
+  if (!is.null(dfParticipants) && strColumn %in% names(dfParticipants)) {
+    return(Core_Levels(dfParticipants[[strColumn]]))
+  }
+  if (!strColumn %in% names(dfResults)) {
+    return(character(0))
+  }
+  Core_Levels(dfResults[[strColumn]])
+}
+
 # A key as text, the same for two keys that differ only in the order their
 # members were written: how the chart's connection tells stored results apart.
 Chart_KeyText <- function(xValue) {

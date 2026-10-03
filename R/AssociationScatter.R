@@ -161,52 +161,6 @@ AssociationScatter_Settings <- function(lSettings = list()) {
   lConfig
 }
 
-# The participant-level numbers an axis can take: columns in which every value
-# that is written is a number, and that hold more than one different value.
-# With a participant table: its columns, other than the id. Without one, and
-# after them: the columns carried on the results rows, other than the ones the
-# settings map and the participant table's own, that hold one value for each
-# participant. The setting `numbers`, when given, is the list, and nothing is
-# worked out.
-AssociationScatter_Numbers <- function(dfResults, dfParticipants, lConfig) {
-  if (!is.null(lConfig$numbers)) {
-    return(vapply(lConfig$numbers, function(lSpec) lSpec$value_col, character(1)))
-  }
-  IsNumbers <- function(xValues) {
-    xWritten <- xValues[!Core_IsBlank(xValues)]
-    nWritten <- Core_Number(xWritten)
-    !anyNA(nWritten) && length(unique(nWritten)) > 1L
-  }
-  chrColumns <- character(0)
-  chrTaken <- character(0)
-  if (!is.null(dfParticipants) && nrow(dfParticipants) > 0L) {
-    strIdCol <- if (is.null(lConfig$participant_id_col)) lConfig$id_col else lConfig$participant_id_col
-    chrTaken <- setdiff(names(dfParticipants), strIdCol)
-    for (strName in chrTaken) {
-      if (IsNumbers(dfParticipants[[strName]])) {
-        chrColumns <- c(chrColumns, strName)
-      }
-    }
-  }
-  chrMapped <- unlist(lConfig[c(
-    "id_col", "measure_col", "value_col", "visit_col", "visit_order_col", "unit_col", "studyday_col",
-    "normal_col_high", "normal_col_low"
-  )])
-  chrRowId <- Core_Text(dfResults[[lConfig$id_col]])
-  for (strName in setdiff(names(dfResults), c(chrMapped, chrTaken))) {
-    xColumn <- dfResults[[strName]]
-    bFilled <- !Core_IsBlank(xColumn)
-    chrText <- Core_Text(xColumn)[bFilled]
-    chrId <- chrRowId[bFilled]
-    # One value for each participant, or it is not a participant-level column.
-    bConstant <- all(chrText == chrText[match(chrId, chrId)])
-    if (bConstant && IsNumbers(xColumn[bFilled][!duplicated(chrId)])) {
-      chrColumns <- c(chrColumns, strName)
-    }
-  }
-  chrColumns
-}
-
 # Whether the tables can draw an axis: its biomarker and its visit are in the
 # results table, or its column is one of the numbers offered.
 AssociationScatter_Offered <- function(lAxis, lOffered) {
@@ -268,7 +222,7 @@ AssociationScatter_State <- function(dfResults, dfParticipants, lConfig) {
   lAxes <- AssociationScatter_OpeningAxes(lConfig, list(
     measures = Chart_Measures(dfResults, lConfig),
     visits = Core_Visits(dfResults, Chart_CoreSettings(lConfig)),
-    numbers = AssociationScatter_Numbers(dfResults, dfParticipants, lConfig)
+    numbers = Chart_Numbers(dfResults, dfParticipants, lConfig)
   ))
   list(
     x = lAxes$x,

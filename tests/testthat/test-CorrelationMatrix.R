@@ -221,7 +221,7 @@ test_that("a cell's scatter is handed the pair, the method, the filters and the 
   lSettings$filters <- list(list(value_col = "SEX", start = "F"), "ARM")
   lConfig <- CorrelationMatrix_Settings(lSettings)
   lState <- CorrelationMatrix_State(lTables$results, lTables$participants, lConfig)
-  lSpecs <- CorrelationMatrix_FilterSpecs(lTables$results, lTables$participants, lConfig)
+  lSpecs <- Chart_FilterSpecs(lTables$results, lTables$participants, lConfig)
   lX <- list(measure = "TNF-alpha", value = "raw", visit = "Baseline")
   lY <- list(measure = "IL-10", value = "raw", visit = "Baseline")
   lHanded <- CorrelationMatrix_ScatterSettings(lConfig, lState, lSpecs, lX, lY)
