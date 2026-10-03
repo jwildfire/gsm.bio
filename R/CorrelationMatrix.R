@@ -276,21 +276,6 @@ CorrelationMatrix_ScatterSettings <- function(lConfig, lState, lFilterSpecs, lX,
   lSettings
 }
 
-# The filters the grid shows, as the scatter is handed them: their specs, as
-# the setting `filters` or the participant table's category columns give them.
-CorrelationMatrix_FilterSpecs <- function(dfResults, dfParticipants, lConfig) {
-  if (is.null(dfParticipants) || nrow(dfParticipants) == 0L) {
-    return(list())
-  }
-  if (!is.null(lConfig$filters)) {
-    return(Filter(function(lSpec) lSpec$value_col %in% names(dfParticipants), lConfig$filters))
-  }
-  dfCategories <- Chart_Categories(dfResults, dfParticipants, lConfig[setdiff(names(lConfig), "groups")])
-  lapply(dfCategories$value_col[dfCategories$table == "participants"], function(strCol) {
-    list(value_col = strCol, label = strCol)
-  })
-}
-
 # The stored results a page ships: R's answer for the grid the settings open
 # on, and, for every cell of it, exactly what the association scatter asks when
 # a click on that cell opens it, keyed as the scatter keys it. A cell on either
@@ -304,7 +289,7 @@ CorrelationMatrix_StoredResults <- function(dfResults, dfParticipants, lConfig) 
   lRequests <- CorrelationMatrix_Requests(dfResults, dfParticipants, lConfig, lState)
   lVariables <- CorrelationMatrix_Variables(dfResults, lConfig, lState)
   if (length(lRequests) > 0L) {
-    lFilterSpecs <- CorrelationMatrix_FilterSpecs(dfResults, dfParticipants, lConfig)
+    lFilterSpecs <- Chart_FilterSpecs(dfResults, dfParticipants, lConfig)
     for (iRow in seq_along(lVariables)) {
       for (iColumn in seq_along(lVariables)) {
         if (iRow == iColumn) next

@@ -86,6 +86,18 @@ Widget_CorrelationMatrix(
 
 It stores `Analyze_CorrelationMatrix()`'s answer for the grid the settings open on and, for every cell, exactly what the scatter that cell opens asks of R, so a saved page opens any cell's scatter with its coefficient, interval and p-value. On the synthetic study that is one grid and 132 scatters, one for each cell on either side of the diagonal.
 
+`Widget_BiomarkerScreen()` draws bio.viz's biomarker screen: one row per biomarker at one visit, each with its estimate and interval on one shared axis and its raw and adjusted p-values, as a standardised difference between two groups or a correlation with one variable. A click on a row opens that biomarker's group comparison or association scatter in place, with a way back.
+
+```r
+Widget_BiomarkerScreen(
+  Synthetic_Results,
+  Synthetic_Participants,
+  lSettings = list(visit = "Week 4", value_type = "change", group_by = "ARM")
+)
+```
+
+It stores `Analyze_Screen()`'s answer for the screen the settings open on and, for every row, exactly what the chart that row opens asks of R: for a difference the group comparison at the screen's one visit, of the two groups, with Welch's test; for a correlation the scatter with the biomarker along the bottom and the variable up the side. On the synthetic study, Placebo against Treatment, that is one screen and twelve group comparisons.
+
 Every widget carries two JavaScript bundles, both copied from bio.viz with the commit and a checksum per file recorded in `inst/htmlwidgets/lib/SOURCE.json`: bio.viz's own, and the copy of safety.viz's bundle bio.viz builds its chart from. The safety.viz copy is a stand-in. It comes from a safety.viz branch that is not merged yet, and is to be replaced by gsm.safety's bundle once gsm.safety carries one with the kit.
 
 ## Synthetic study
@@ -94,7 +106,7 @@ The package ships a made-up biomarker study, so that a test can assert an answer
 
 ## Status
 
-Version 0.1.0 is in development on `dev`: seven statistics functions, the synthetic study and three widgets, for the group comparison chart, the association scatter and the correlation matrix. Widgets for the other charts and static figures come in later versions. [NEWS.md](https://github.com/jwildfire/gsm.bio/blob/dev/NEWS.md) lists what has landed, and the reference site is at <https://jwildfire.github.io/gsm.bio/>.
+Version 0.1.0 is in development on `dev`: seven statistics functions, the synthetic study and four widgets, for the group comparison chart, the association scatter, the correlation matrix and the biomarker screen. Widgets for the other charts and static figures come in later versions. [NEWS.md](https://github.com/jwildfire/gsm.bio/blob/dev/NEWS.md) lists what has landed, and the reference site is at <https://jwildfire.github.io/gsm.bio/>.
 
 The design is on the obot roadmap: [bio.viz and gsm.bio](https://jwildfire.github.io/obot.roadmap/requirements/design/353_design.html).
 

@@ -231,19 +231,19 @@ test_that("the scatter's axes open on the pair the settings name, or the first t
 
   # The numbers an axis can take: columns that are all numbers, with more than
   # one value; the setting `numbers` is the list when given.
-  expect_identical(AssociationScatter_Numbers(Synthetic_Results, Synthetic_Participants, lPlain), c("AGE", "BMIBL"))
+  expect_identical(Chart_Numbers(Synthetic_Results, Synthetic_Participants, lPlain), c("AGE", "BMIBL"))
   expect_identical(
-    AssociationScatter_Numbers(Synthetic_Results, Synthetic_Participants, AssociationScatter_Settings(list(numbers = "AGE"))),
+    Chart_Numbers(Synthetic_Results, Synthetic_Participants, AssociationScatter_Settings(list(numbers = "AGE"))),
     "AGE"
   )
   dfAlone <- Synthetic_Results
   dfAlone$AGE <- Synthetic_Participants$AGE[match(dfAlone$USUBJID, Synthetic_Participants$USUBJID)]
   dfAlone$ARM <- Synthetic_Participants$ARM[match(dfAlone$USUBJID, Synthetic_Participants$USUBJID)]
   dfAlone$ONE <- 1
-  expect_identical(AssociationScatter_Numbers(dfAlone, NULL, lPlain), "AGE")
+  expect_identical(Chart_Numbers(dfAlone, NULL, lPlain), "AGE")
   # A column the participant table has is the participant table's, numbers or not.
-  expect_identical(AssociationScatter_Numbers(dfAlone, Synthetic_Participants["USUBJID"], lPlain), c("AGE"))
-  expect_identical(AssociationScatter_Numbers(dfAlone, Synthetic_Participants[c("USUBJID", "ARM", "AGE")], lPlain), "AGE")
+  expect_identical(Chart_Numbers(dfAlone, Synthetic_Participants["USUBJID"], lPlain), c("AGE"))
+  expect_identical(Chart_Numbers(dfAlone, Synthetic_Participants[c("USUBJID", "ARM", "AGE")], lPlain), "AGE")
 
   # With nothing named: the first two biomarkers at the first visit, as results.
   lState <- AssociationScatter_State(Synthetic_Results, Synthetic_Participants, lPlain)
