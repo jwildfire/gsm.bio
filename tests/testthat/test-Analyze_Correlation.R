@@ -149,7 +149,7 @@ test_that("too few complete pairs get a reason and no numbers, overall and per g
   expect_identical(formals(Analyze_Correlation)$nMinGroup, quote(nMinGroupDefault))
 })
 
-test_that("a correlation request that cannot be met is an error status, never an R error (#3)", {
+test_that("a correlation request that cannot be met is an error status, never an R error (#3, #24)", {
   lCases <- list(
     list(dfData = dfFrame, strXCol = "Nope", strYCol = strY),
     list(dfData = dfFrame, strXCol = strX, strYCol = "ARM"),
@@ -163,12 +163,15 @@ test_that("a correlation request that cannot be met is an error status, never an
     expect_identical(lResult$status, "error")
   }
 
-  # R's own warning about a constant column is captured, not printed.
+  # A constant column has no correlation: a reason, before cor.test() is
+  # asked and warns (#24).
   dfFlat <- dfFrame
   dfFlat$Flat <- 1
   expect_silent(lFlat <- Analyze_Correlation(dfFlat, strX, "Flat"))
   ExpectResultShape(lFlat)
-  expect_identical(lFlat$warnings, list("the standard deviation is zero"))
+  expect_identical(lFlat$status, "error")
+  expect_identical(lFlat$reason, "Not computed: y does not vary (every value is 1), so a correlation is not defined.")
+  expect_identical(lFlat$warnings, list())
 })
 
 chrMatrixCols <- c(strXLater, strYLater, "IL-6 @ Week 4", "CRP @ Week 4", "Change")

@@ -112,7 +112,15 @@ and the package's tests check that it does.
 
 Its p-value is not computed from it: it is \code{\link[stats:t.test]{stats::t.test()}}'s, Welch,
 which does not assume the equal variances that the pooled standard
-deviation does.
+deviation does. So when the two groups' spreads differ, a row's interval can
+include zero while its p-value is below 0.05, or exclude zero while it is
+above; the screen's notes say so. Whether the interval should follow Welch is
+an open design question.
+
+A row by hazard ratio whose hazard ratio cannot be estimated (see
+\code{\link[=Analyze_Survival]{Analyze_Survival()}}) has \code{status} \code{"error"} and a reason, and no method,
+statistic or p-value, as a difference row has when its standardised
+difference cannot be computed.
 }
 
 \section{High against low}{

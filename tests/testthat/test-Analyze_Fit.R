@@ -271,7 +271,7 @@ test_that("too few complete pairs get a reason and no numbers, overall and per g
   expect_identical(formals(Analyze_Fit)$nMinGroup, quote(nMinGroupDefault))
 })
 
-test_that("degenerate data is answered, never thrown: one x value, one y value, a smooth R cannot fit (#12)", {
+test_that("degenerate data is answered, never thrown: one x value, one y value, a smooth R cannot fit (#12, #24)", {
   # Every x the same: there is no line to fit, for either method.
   dfFlat <- dfFrame
   dfFlat$FlatX <- 3
@@ -285,47 +285,33 @@ test_that("degenerate data is answered, never thrown: one x value, one y value, 
     expect_true(all(is.na(lFlatX$rows$x)))
   }
 
-  # Every y the same: lm() fits a flat line, and whatever R says about the
-  # summary of such a fit (the warning depends on the arithmetic) is captured,
-  # not printed. The flat line is exact to rounding, so it is held to a tolerance.
+  # Every y the same: there is no line to fit, as t.test() refuses data that
+  # are essentially constant, for a line and for a smooth (#24).
   dfFlat$FlatY <- 2
-  expect_silent(lFlatY <- Analyze_Fit(dfFlat, strX, "FlatY", nPoints = 4))
-  ExpectResultShape(lFlatY)
-  expect_identical(lFlatY$status, "ok")
-  lBase <- lWithWarnings(function() summary(stats::lm(y ~ x, data = dfPairsOf(dfFlat, strX, "FlatY"))))
-  expect_identical(lFlatY$warnings, lBase$warnings)
-  expect_identical(lFlatY$estimates$estimate, unname(lBase$value$coefficients[, "Estimate"]))
-  expect_equal(lFlatY$estimates$estimate, c(2, 0), tolerance = 1e-10)
-  expect_equal(lFlatY$rows$fit, rep(2, 4), tolerance = 1e-10)
-  expect_silent(lFlatSmooth <- Analyze_Fit(dfFlat, strX, "FlatY", strMethod = "smooth"))
-  ExpectResultShape(lFlatSmooth)
-  expect_true(lFlatSmooth$status %in% c("ok", "error"))
+  for (strMethod in c("linear", "smooth")) {
+    expect_silent(lFlatY <- Analyze_Fit(dfFlat, strX, "FlatY", strMethod = strMethod, nPoints = 4))
+    ExpectResultShape(lFlatY)
+    expect_identical(lFlatY$status, "error")
+    expect_identical(lFlatY$reason, "Not computed: every y value is 2, so there is nothing to fit.")
+    expect_identical(lFlatY$warnings, list())
+  }
 
-  # A smooth on a handful of points: whatever loess() does with them, an error
-  # or a warning, is in the answer, and what R says is the reason.
+  # A smooth on a handful of points: below seven complete pairs it is too
+  # small, whatever the minimum group size (#24).
   dfTiny <- data.frame(x = c(1, 1, 2, 2, 3), y = c(1.2, 0.7, 2.9, 2.1, 3.3), g = c("a", "a", "a", "b", "b"))
-  lTinyBase <- tryCatch(
-    suppressWarnings(stats::predict(stats::loess(y ~ x, data = dfTiny[1:2]), newdata = data.frame(x = c(1, 2, 3)), se = TRUE)),
-    error = function(cndError) conditionMessage(cndError)
-  )
   expect_silent(lTiny <- Analyze_Fit(dfTiny, "x", "y", strMethod = "smooth", nPoints = 3))
   ExpectResultShape(lTiny)
-  if (is.character(lTinyBase)) {
-    expect_identical(lTiny$status, "error")
-    expect_identical(lTiny$reason, lTinyBase)
-  } else {
-    expect_identical(lTiny$status, "ok")
-    expect_identical(lTiny$rows$fit, unname(lTinyBase$fit))
-  }
+  expect_identical(lTiny$status, "too_small")
+  expect_identical(lTiny$reason, "Not computed: 5 complete pairs, and a smooth needs at least 7.")
   # The same points in two groups, each below the minimum: reasons, no numbers.
   expect_silent(lTinyGroups <- Analyze_Fit(dfTiny, "x", "y", strMethod = "smooth", strGroupCol = "g", nPoints = 3))
   ExpectResultShape(lTinyGroups)
   expect_identical(lTinyGroups$rows$status[lTinyGroups$rows$group %in% c("a", "b")], c("too_small", "too_small"))
-  # With the minimum lowered each group is handed to loess(), and nothing escapes.
+  # With the minimum group size lowered, each group is still below a smooth's own.
   expect_silent(lTinyFitted <- Analyze_Fit(dfTiny, "x", "y", strMethod = "smooth", strGroupCol = "g", nMinGroup = 2, nPoints = 3))
   ExpectResultShape(lTinyFitted)
-  expect_true(all(lTinyFitted$rows$status %in% c("ok", "error")))
-  expect_false(any(is.na(lTinyFitted$rows$reason[lTinyFitted$rows$status == "error"])))
+  expect_true(all(lTinyFitted$rows$status == "too_small"))
+  expect_true(all(grepl("a smooth needs at least 7", lTinyFitted$rows$reason[!is.na(lTinyFitted$rows$group)], fixed = TRUE)))
 })
 
 test_that("a fit request that cannot be met is an error status, never an R error (#12)", {

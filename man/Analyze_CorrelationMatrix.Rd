@@ -35,7 +35,8 @@ list of column to participants with a value; and \code{rows} is the matrix in
 long form, one row per pair of columns, each pair once, with the columns
 \code{x}, \code{y}, \code{counts} (the complete pairs), \code{estimate}, \code{lower}, \code{upper},
 \code{level}, \code{status}, \code{reason} and \code{warning}. The result's own \code{status} is
-\code{"too_small"} only when every pair is.
+\code{"too_small"} when every pair is, and \code{"error"} when no pair could be
+computed for any other reason, such as a column that does not vary.
 }
 \description{
 Runs \code{\link[stats:cor.test]{stats::cor.test()}} on every pair of the named columns, each pair on
