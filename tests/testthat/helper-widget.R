@@ -2,8 +2,9 @@
 
 # A JSON file, as nested lists: an array is an unnamed list whatever its
 # length, an object a named list, and null is NULL.
+# A JSON file, read as the UTF-8 it is whatever the session's locale.
 lReadJson <- function(...) {
-  jsonlite::fromJSON(paste(readLines(file.path(...), warn = FALSE), collapse = "\n"), simplifyVector = FALSE)
+  jsonlite::fromJSON(paste(readLines(file.path(...), warn = FALSE, encoding = "UTF-8"), collapse = "\n"), simplifyVector = FALSE)
 }
 
 strSha256 <- function(strFile) {

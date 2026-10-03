@@ -281,7 +281,7 @@ test_that("the scatter's axes open on the pair the settings name, or the first t
   )
 })
 
-test_that("the scatter asks for a coefficient and a line per panel, and for nothing where nothing is drawn (#13)", {
+test_that("the scatter asks for a coefficient and a line per panel, and for nothing where nothing is drawn (#13, #19)", {
   lTables <- lScatterDemo()
   Requests <- function(lMore) {
     lConfig <- AssociationScatter_Settings(c(lTables$settings[setdiff(names(lTables$settings), names(lMore))], lMore))
@@ -332,5 +332,11 @@ test_that("the scatter asks for a coefficient and a line per panel, and for noth
   # is drawn and nothing is asked. A filter that lets nobody through, the same.
   expect_identical(Requests(list(x = list(measure = "IL-6", visit = "Baseline", value = "change"))), list())
   expect_gt(length(Requests(list(x = list(measure = "IL-6", visit = "Baseline", value = "change"), baseline_visits = c("Baseline", "Week 2")))), 0)
-  expect_identical(Requests(list(filters = list(list(value_col = "SEX", start = "X")))), list())
+  lConfig <- AssociationScatter_Settings(lTables$settings)
+  lNobody <- AssociationScatter_State(lTables$results, lTables$participants, lConfig)
+  lNobody$filters$SEX <- "X"
+  expect_identical(AssociationScatter_Requests(lTables$results, lTables$participants, lConfig, lNobody), list())
+  # A filter set to start on a value the data lacks opens on All, as the kit
+  # opens it (#19): the scatter asks what it asks with no filter set.
+  expect_identical(Requests(list(filters = list(list(value_col = "SEX", start = "X")))), Requests(list(filters = list("SEX"))))
 })

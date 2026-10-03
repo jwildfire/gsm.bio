@@ -112,24 +112,77 @@ Core_Number <- function(xValue) {
   nValue
 }
 
+# Text as UTF-8: text R holds marked as Latin-1 is converted, and other text is
+# left as the bytes it is. Text R holds unmarked is usually UTF-8 read in a
+# session whose locale is not, and converting it from that locale would spoil it.
+Core_Utf8 <- function(chrText) {
+  bLatin1 <- !is.na(chrText) & Encoding(chrText) == "latin1"
+  chrText[bLatin1] <- enc2utf8(chrText[bLatin1])
+  chrText
+}
+
+# Text as its UTF-8 bytes, which is the order R sorts in: by code point, the
+# same in every session whatever its locale.
+Core_Bytes <- function(strText) {
+  charToRaw(Core_Utf8(strText))
+}
+
+# Which of two byte strings comes first: -1, 0 or 1.
+Core_CompareBytes <- function(rawFirst, rawSecond) {
+  nShared <- min(length(rawFirst), length(rawSecond))
+  if (nShared > 0L) {
+    nDifference <- as.integer(rawFirst[seq_len(nShared)]) - as.integer(rawSecond[seq_len(nShared)])
+    iAt <- which(nDifference != 0L)
+    if (length(iAt) > 0L) {
+      return(sign(nDifference[iAt[1L]]))
+    }
+  }
+  sign(length(rawFirst) - length(rawSecond))
+}
+
+# Text sorted by code point, as the chart sorts the parts of a key and the
+# values of a filter in force. `sort(method = "radix")` gives the same order in
+# a UTF-8 session, and refuses text that is not ASCII in a session that is not.
+Core_SortText <- function(chrText) {
+  chrBytes <- Core_Utf8(chrText)
+  Encoding(chrBytes) <- "bytes"
+  chrText[order(chrBytes, method = "radix")]
+}
+
 # Whether one name comes before another, by name, with numbers inside a name
-# counted as numbers, so that `Week 2` comes before `Week 12`. The chart orders
-# with the browser's own collation; this is the same rule for names made of
-# letters, digits and spaces, and close to it for anything else. It is used
-# only to order what is shown and to find the first visit when the table has no
-# visit-order column. No stored result rests on it: the widget names the
-# baseline visits to the chart outright.
+# counted as numbers, so that `Week 2` comes before `Week 12`, and the letters
+# A to Z read as a to z. Anything else is compared by its code point, the same
+# in every session whatever its locale. The chart orders with the reader's
+# browser's collation, which agrees with this for names made of ASCII letters,
+# digits and spaces, and not always for anything else: a letter with an
+# accent (the browser puts É with E, this puts it after Z) or punctuation
+# (each has its own order). It is used to order what is shown, to find the
+# first visit when the table has no visit-order column, and to find the first
+# value an `all = FALSE` filter opens on. Where a stored result rests on it the
+# widget names R's choice to the chart outright: the baseline visits
+# (Widget_NameBaseline()) and that first value (Widget_NameFilters()).
 Core_NaturalCompare <- function(strFirst, strSecond) {
   Parts <- function(strText) {
-    regmatches(strText, gregexpr("[0-9]+|[^0-9]+", strText))[[1]]
+    regmatches(strText, gregexpr("[0-9]+|[^0-9]+", strText, useBytes = TRUE))[[1]]
   }
-  chrFirst <- Parts(strFirst)
-  chrSecond <- Parts(strSecond)
+  Lower <- function(rawText) {
+    bUpper <- rawText >= as.raw(0x41) & rawText <= as.raw(0x5a)
+    rawText[bUpper] <- as.raw(as.integer(rawText[bUpper]) + 32L)
+    rawText
+  }
+  IsDigits <- function(strPart) grepl("^[0-9]", strPart, useBytes = TRUE)
+  # A letter, of any alphabet: an ASCII letter, or anything past ASCII.
+  IsLetter <- function(strPart) {
+    rawFirst <- Core_Bytes(strPart)[1L]
+    grepl("^[A-Za-z]", strPart, useBytes = TRUE) || rawFirst >= as.raw(0x80)
+  }
+  chrFirst <- Parts(Core_Utf8(strFirst))
+  chrSecond <- Parts(Core_Utf8(strSecond))
   for (iPart in seq_len(min(length(chrFirst), length(chrSecond)))) {
     strA <- chrFirst[iPart]
     strB <- chrSecond[iPart]
-    bDigitsA <- grepl("^[0-9]", strA)
-    bDigitsB <- grepl("^[0-9]", strB)
+    bDigitsA <- IsDigits(strA)
+    bDigitsB <- IsDigits(strB)
     if (bDigitsA && bDigitsB) {
       nDifference <- as.numeric(strA) - as.numeric(strB)
       if (nDifference != 0) {
@@ -137,25 +190,21 @@ Core_NaturalCompare <- function(strFirst, strSecond) {
       }
     } else if (bDigitsA != bDigitsB) {
       # A digit sorts before a letter and after a space or punctuation.
-      strOther <- if (bDigitsA) strB else strA
-      iSign <- if (grepl("^[[:alpha:]]", strOther)) -1 else 1
+      iSign <- if (IsLetter(if (bDigitsA) strB else strA)) -1 else 1
       return(if (bDigitsA) iSign else -iSign)
     } else {
-      strLowerA <- tolower(strA)
-      strLowerB <- tolower(strB)
-      if (strLowerA != strLowerB) {
-        return(if (identical(sort(c(strLowerA, strLowerB), method = "radix")[1], strLowerA)) -1 else 1)
+      iOrder <- Core_CompareBytes(Lower(Core_Bytes(strA)), Lower(Core_Bytes(strB)))
+      if (iOrder != 0) {
+        return(iOrder)
       }
     }
   }
   if (length(chrFirst) != length(chrSecond)) {
     return(sign(length(chrFirst) - length(chrSecond)))
   }
-  if (strFirst == strSecond) {
-    return(0)
-  }
+  iOrder <- Core_CompareBytes(Core_Bytes(strFirst), Core_Bytes(strSecond))
   # The same letters in another case: lower case first.
-  if (identical(sort(c(strFirst, strSecond), method = "radix")[1], strFirst)) 1 else -1
+  -iOrder
 }
 
 # The first of several names, or none when there is none.

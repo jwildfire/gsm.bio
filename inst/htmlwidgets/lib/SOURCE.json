@@ -3,43 +3,42 @@
   "copied_by": "data-raw/vendor-bio-viz.R",
   "repository": "https://github.com/jwildfire/bio.viz",
   "ref": "dev",
-  "commit": "23ccdc4cad77b1fa8388cdb4c15ef3897739dbce",
+  "commit": "29ac72265d86ac5a5e91e14336f7bf45d34b75dc",
   "files": [
     {
       "file": "bio.viz-0.1.0/bio.viz.js",
       "source": "dist/bio.viz-0.1.0/bio.viz.js",
       "library": "bio.viz",
       "version": "0.1.0",
-      "sha256": "7c6c9624c80680bd9ab1be6b4dcd670cb380ab259a721619c1544949f4d73591",
-      "bytes": 308627
+      "sha256": "bbc93e78d6a3c315f219bfe986a820de72941846ad825ce2b6096b01e11b44a9",
+      "bytes": 315897
     },
     {
       "file": "safety.viz-1.8.0/safety.viz.js",
       "source": "site/vendor/safety.viz/safety.viz.js",
       "library": "safety.viz",
       "version": "1.8.0",
-      "sha256": "22b6e6eeae44650ed8f28bf3e89af30a7677d877a07db7148fb55dafad41c855",
-      "bytes": 1742600
+      "sha256": "67236ba4c206c3eabd77c9860331f2afa0fdbfc44be76407aa46fae34acfa0d7",
+      "bytes": 1588881
     }
   ],
   "safety_viz": {
     "stand_in": true,
-    "note": "The copy of safety.viz's bundle is a stand-in, to be replaced. The design has gsm.bio take safety.viz's bundle from gsm.safety. Until gsm.safety carries a safety.viz bundle with the kit, the widget carries the copy bio.viz itself builds its chart from, taken from bio.viz at the commit above. Where bio.viz took it from is bio.viz's own record, carried here whole as `bio_viz_record`: read `merged_to_dev` and `note` there.",
+    "note": "The copy of safety.viz's bundle is a stand-in, to be replaced. The design has gsm.bio take safety.viz's bundle from gsm.safety. Until gsm.safety carries a safety.viz bundle with the kit, the widget carries the copy bio.viz itself builds its chart from, taken from bio.viz at the commit above. Where bio.viz took it from is bio.viz's own record, carried here whole as `bio_viz_record`: read its `ref`, `commit` and `merged_to_dev`.",
     "bio_viz_record_file": "site/vendor/safety.viz/SOURCE.json",
     "bio_viz_record": {
       "bundle": "safety.viz script-tag bundle",
       "repository": "https://github.com/jwildfire/safety.viz",
-      "ref": "17125bfcfa54ff69bb47fa247cf84f26454493e0",
-      "commit": "17125bfcfa54ff69bb47fa247cf84f26454493e0",
+      "ref": "dev",
+      "commit": "a57dbb2372742726d03f56c1ec68b00d8f981793",
       "version": "1.8.0",
-      "merged_to_dev": false,
-      "note": "Copied from safety.viz's unmerged branch 154-kit (pull request https://github.com/jwildfire/safety.viz/pull/161), which adds the kit and is held until safety.viz v1.8.0 is cut. The kit is not on safety.viz's dev branch at this commit. When it lands there, make this copy again from dev with node tools/vendor-safety-viz.mjs and rerun the tests.",
+      "merged_to_dev": true,
       "files": [
         {
           "file": "safety.viz.js",
           "source": "dist/safety.viz-1.8.0/safety.viz.js",
-          "sha256": "22b6e6eeae44650ed8f28bf3e89af30a7677d877a07db7148fb55dafad41c855",
-          "bytes": 1742600
+          "sha256": "67236ba4c206c3eabd77c9860331f2afa0fdbfc44be76407aa46fae34acfa0d7",
+          "bytes": 1588881
         }
       ]
     }

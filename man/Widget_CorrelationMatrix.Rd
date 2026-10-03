@@ -104,6 +104,23 @@ the baseline visits to the chart outright, as \code{\link[=Widget_GroupCompariso
 does.
 }
 
+\section{Filters}{
+
+With a participant table the chart has filters, set by the setting
+\code{filters} under safety.viz's rules: a filter opens on its \code{start} when the
+data has it and otherwise on All, a filter set \code{all = FALSE} has no All and
+opens on its first value, and \code{multiple = TRUE} lets several values through.
+R works out what each filter opens on as the chart does, and stores the
+results for those participants.
+
+The first value of an \code{all = FALSE} filter is the one exception, because
+the chart lists a filter's values in the order of the reader's browser,
+which R cannot know: for a letter with an accent or for punctuation it can
+differ from R's order, by code point. So the widget hands the chart R's
+first value as the filter's \code{start}, and the page opens on the participants
+R computed for, though that value may not be the first in the list.
+}
+
 \section{Bundles}{
 
 The widget loads bio.viz's bundle and the copy of safety.viz's bundle that

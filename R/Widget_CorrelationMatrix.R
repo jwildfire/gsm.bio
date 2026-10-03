@@ -45,6 +45,7 @@
 #' the baseline visits to the chart outright, as [Widget_GroupComparison()]
 #' does.
 #'
+#' @inheritSection Widget_GroupComparison Filters
 #' @inheritSection Widget_GroupComparison Bundles
 #'
 #' @inheritParams Widget_GroupComparison
@@ -110,6 +111,7 @@ Widget_CorrelationMatrix <- function(
   lConfig <- CorrelationMatrix_Settings(lSettings)
   Widget_CheckColumns(lConfig, dfResults, dfParticipants)
   lNamed <- Widget_NameBaseline(lConfig, lSettings, dfResults)
+  lNamed <- Widget_NameFilters(lNamed$config, lNamed$settings, dfResults, dfParticipants)
 
   Widget_Create(
     "Widget_CorrelationMatrix", dfResults, dfParticipants, lNamed$settings,

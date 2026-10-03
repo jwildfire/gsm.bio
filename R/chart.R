@@ -124,8 +124,11 @@ Chart_Categories <- function(dfResults, dfParticipants, lConfig) {
 # What each filter opens on. There are filters only with a participant table:
 # they choose participants. The setting `filters`, when given, is the list,
 # kept to the columns the participant table has; otherwise every category
-# column of the participant table is a filter. A filter opens on its `start`,
-# and one with none lets every participant through. Returns a named list of
+# column of the participant table is a filter, and a filter on the
+# participant's id is none. A filter opens on its `start` when the data has it,
+# and otherwise lets every participant through, unless it is set `all = FALSE`,
+# when it opens on its first value. tests/testthat/test-chart.R holds this to
+# the safety.viz kit the widgets ship. Returns a named list of
 # column to the value, or values, the filter opens on; NULL for a filter that
 # opens on all.
 Chart_Filters <- function(dfParticipants, lConfig, dfCategories) {
@@ -137,19 +140,56 @@ Chart_Filters <- function(dfParticipants, lConfig, dfCategories) {
   } else {
     lapply(dfCategories$value_col[dfCategories$table == "participants"], function(strCol) list(value_col = strCol))
   }
+  # What each filter starts on, as the kit's `normalizeFilterSpec` and
+  # `initFilterState` give it: its `start` as text, the first of several for a
+  # filter of one value, or NULL. Two specs on one column are one state, the
+  # later spec's.
   lState <- list()
   for (lSpec in lSpecs) {
     xStart <- unlist(lSpec$start)
     bStarted <- length(xStart) > 0L && !(length(xStart) == 1L && (is.na(xStart) || identical(as.character(xStart), "")))
-    lState[lSpec$value_col] <- list(if (!bStarted) {
-      NULL
-    } else if (isTRUE(lSpec$multiple)) {
-      Core_Text(xStart)
+    chrStart <- if (bStarted) Core_Text(xStart) else NULL
+    lState[lSpec$value_col] <- list(if (isTRUE(lSpec$multiple) || is.null(chrStart)) chrStart else chrStart[1L])
+  }
+  # The participant's id is no filter: it gets no control, and so no restriction.
+  strIdCol <- if (is.null(lConfig$participant_id_col)) lConfig$id_col else lConfig$participant_id_col
+  lState[[strIdCol]] <- NULL
+  lSpecs <- Filter(function(lSpec) !identical(lSpec$value_col, strIdCol), lSpecs)
+  # Each filter reconciled in turn with the values its control offers, as
+  # bio.viz's `addFilterControls` calls the kit's `reconcileFilters`: a start
+  # the data lacks is dropped, and the filter opens on All, or, with
+  # `all = FALSE`, on its first value; several values keep the ones the data
+  # has, and open on All when it has none. The values are listed only when
+  # they decide something.
+  for (lSpec in lSpecs) {
+    strColumn <- lSpec$value_col
+    chrSelected <- lState[[strColumn]]
+    bAll <- !identical(lSpec$all, FALSE)
+    if (isTRUE(lSpec$multiple)) {
+      if (!is.null(chrSelected)) {
+        chrSelected <- chrSelected[chrSelected %in% Chart_FilterValues(dfParticipants, strColumn)]
+        if (length(chrSelected) == 0L) chrSelected <- NULL
+      }
     } else {
-      Core_Text(xStart)[1L]
-    })
+      chrSelected <- if (is.null(chrSelected)) NULL else chrSelected[1L]
+      if (!is.null(chrSelected) || !bAll) {
+        chrValues <- Chart_FilterValues(dfParticipants, strColumn)
+        if (!is.null(chrSelected) && !chrSelected %in% chrValues) chrSelected <- NULL
+        if (is.null(chrSelected) && !bAll && length(chrValues) > 0L) chrSelected <- chrValues[1L]
+      }
+    }
+    lState[strColumn] <- list(chrSelected)
   }
   lState
+}
+
+# The values a filter's control offers, as bio.viz lists them: every distinct
+# value of the participant table's column as text, other than a missing value
+# and empty text (text that is only white space is a value), sorted by name with
+# numbers as numbers.
+Chart_FilterValues <- function(dfParticipants, strColumn) {
+  chrText <- Core_Text(dfParticipants[[strColumn]])
+  Core_SortWith(unique(chrText[!is.na(chrText) & chrText != ""]), Core_NaturalCompare)
 }
 
 # The filters in force, each as the values it lets through, as text sorted by
@@ -159,7 +199,7 @@ Chart_FiltersInForce <- function(lFilters) {
   for (strColumn in names(lFilters)) {
     chrValues <- lFilters[[strColumn]]
     if (length(chrValues) > 0L) {
-      lInForce[[strColumn]] <- sort(unique(Core_Text(chrValues)), method = "radix")
+      lInForce[[strColumn]] <- Core_SortText(unique(Core_Text(chrValues)))
     }
   }
   lInForce
@@ -276,7 +316,7 @@ Chart_KeyText <- function(xValue) {
     if (is.null(names(xValue))) {
       return(paste0("[", paste(vapply(xValue, Chart_KeyText, character(1)), collapse = ","), "]"))
     }
-    chrNames <- sort(names(xValue), method = "radix")
+    chrNames <- Core_SortText(names(xValue))
     return(paste0("{", paste0(chrNames, ":", vapply(xValue[chrNames], Chart_KeyText, character(1)), collapse = ","), "}"))
   }
   paste0(typeof(xValue), "(", paste(as.character(xValue), collapse = ","), ")")

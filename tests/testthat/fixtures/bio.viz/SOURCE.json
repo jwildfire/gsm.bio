@@ -3,7 +3,7 @@
   "copied_by": "data-raw/vendor-bio-viz.R",
   "repository": "https://github.com/jwildfire/bio.viz",
   "ref": "dev",
-  "commit": "23ccdc4cad77b1fa8388cdb4c15ef3897739dbce",
+  "commit": "29ac72265d86ac5a5e91e14336f7bf45d34b75dc",
   "files": [
     {
       "file": "group-statistics/SOURCE.json",

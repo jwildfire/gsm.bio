@@ -298,7 +298,7 @@ AssociationScatter_Id <- function(dfRows, lView) {
   lDataId$baseline_stat <- lView$baseline_stat
   if (!is.null(lView$color_by)) {
     lDataId$color_by <- lView$color_by
-    lDataId$groups <- as.list(sort(unique(Core_Text(dfRows$color)), method = "radix"))
+    lDataId$groups <- as.list(Core_SortText(unique(Core_Text(dfRows$color))))
   }
   if (!is.null(lView$panel_by)) {
     lDataId$panel_by <- lView$panel_by
