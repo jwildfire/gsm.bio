@@ -3,7 +3,7 @@
   "copied_by": "data-raw/vendor-bio-viz.R",
   "repository": "https://github.com/jwildfire/bio.viz",
   "ref": "dev",
-  "commit": "29ac72265d86ac5a5e91e14336f7bf45d34b75dc",
+  "commit": "8054114d9a8166b1418e8a1be2dcd3480a037669",
   "files": [
     {
       "file": "group-statistics/SOURCE.json",
@@ -128,8 +128,8 @@
     {
       "file": "group-statistics-r.json",
       "source": "tests/fixtures/group-statistics-r.json",
-      "sha256": "5d57abdde86c241cd762b994e63dd0896897cd58b1f10d4e85e766279492ecdf",
-      "bytes": 25560
+      "sha256": "bf4fd81e2ad5f77c8feaeb5f32f84edbe37fc7f9c3d5d40c5d3e5abac4f463be",
+      "bytes": 27420
     },
     {
       "file": "association-statistics/SOURCE.json",
@@ -290,8 +290,8 @@
     {
       "file": "association-statistics-r.json",
       "source": "tests/fixtures/association-statistics-r.json",
-      "sha256": "5b51a0923476ec9b01180e55d68e15e8b4e23ede84f9343c4271c1cd85b9566e",
-      "bytes": 272923
+      "sha256": "320e4651ac01c56a75bba03dd18d5756dc13148fa0b78fcfdd8e4e6c78041419",
+      "bytes": 273337
     },
     {
       "file": "matrix-statistics/SOURCE.json",
@@ -368,8 +368,8 @@
     {
       "file": "matrix-statistics-r.json",
       "source": "tests/fixtures/matrix-statistics-r.json",
-      "sha256": "40a60d7242f23a751d6d4be5f5cab86303088e9afb3248d69002456b083124ba",
-      "bytes": 95874
+      "sha256": "741c5d25da70d16d3ab9f0cd2d245e5612a0a3130b82258e45291d17ed33359a",
+      "bytes": 96853
     },
     {
       "file": "screen-statistics/SOURCE.json",
@@ -446,8 +446,8 @@
     {
       "file": "screen-statistics-r.json",
       "source": "tests/fixtures/screen-statistics-r.json",
-      "sha256": "ca8fa559cea737466b79e5dbb51589d139b7250886efbc1321c6144ed9be4867",
-      "bytes": 59645
+      "sha256": "c1078bcfaad7882453d0d967cffb7979ac980de48942dd0833fe6044cd2aafac",
+      "bytes": 61777
     }
   ]
 }

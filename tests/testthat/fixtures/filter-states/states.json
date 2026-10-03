@@ -1,8 +1,8 @@
 {
   "what": "What the vendored bundles open each filter on for each case in cases.json, as bio.viz charts build their filters: the state by column (null for All), how many values each control offers, the warnings the kit gave, and, for a case where R's first value differs, the state with R's value named as the start.",
   "written_by": "data-raw/filter-states.mjs",
-  "bundle": {"file":"inst/htmlwidgets/lib/safety.viz-1.8.0/safety.viz.js","sha256":"67236ba4c206c3eabd77c9860331f2afa0fdbfc44be76407aa46fae34acfa0d7","bio_viz_commit":"29ac72265d86ac5a5e91e14336f7bf45d34b75dc"},
-  "bio_viz_bundle": {"file":"inst/htmlwidgets/lib/bio.viz-0.1.0/bio.viz.js","sha256":"bbc93e78d6a3c315f219bfe986a820de72941846ad825ce2b6096b01e11b44a9"},
+  "bundle": {"file":"inst/htmlwidgets/lib/safety.viz-1.9.0/safety.viz.js","sha256":"67236ba4c206c3eabd77c9860331f2afa0fdbfc44be76407aa46fae34acfa0d7","bio_viz_commit":"8054114d9a8166b1418e8a1be2dcd3480a037669"},
+  "bio_viz_bundle": {"file":"inst/htmlwidgets/lib/bio.viz-0.1.0/bio.viz.js","sha256":"de683a9b03bb9bdfc6a4f139c98e75630badd989f30ce3b31287f1a831981b7b"},
   "study": [{"file":"inst/extdata/synthetic_participants.csv","sha256":"6d7d7f3bef86cc395255c01097e6ac099fb620fb0ea83b748ea0d02c049a9b09"}],
   "states": [
     {"case":"every-filter-opens-on-all","state":{"ARM":null,"SEX":null,"RESPONSE":null},"offered":{"ARM":2,"SEX":2,"RESPONSE":2},"warnings":[]},
