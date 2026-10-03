@@ -90,3 +90,126 @@ StoredResultsProvenance <- function() {
     computed_at = format(Sys.time(), "%Y-%m-%dT%H:%M:%SZ", tz = "UTC")
   )
 }
+
+#' Check what every widget is given
+#'
+#' The tables, the settings list and the debug switch, refused with a message
+#' naming the argument. The setting `connection` is the widget's to make: the
+#' chart's connection to R is made in the page from the results the widget
+#' stores.
+#'
+#' @keywords internal
+#' @noRd
+Widget_CheckInputs <- function(dfResults, dfParticipants, lSettings, bDebug) {
+  if (!is.data.frame(dfResults)) {
+    stop("dfResults is not a data.frame", call. = FALSE)
+  }
+  if (!is.null(dfParticipants) && !is.data.frame(dfParticipants)) {
+    stop("dfParticipants is not a data.frame or NULL", call. = FALSE)
+  }
+  if (!is.list(lSettings) || is.data.frame(lSettings)) {
+    stop("lSettings must be a list, but not a data.frame", call. = FALSE)
+  }
+  if (length(lSettings) > 0L && (is.null(names(lSettings)) || !all(nzchar(names(lSettings))))) {
+    stop("lSettings must name every setting", call. = FALSE)
+  }
+  if (!(is.logical(bDebug) && length(bDebug) == 1L && !is.na(bDebug))) {
+    stop("bDebug is not a logical", call. = FALSE)
+  }
+  if ("connection" %in% names(lSettings)) {
+    stop(
+      "Setting 'connection' cannot be given: the widget makes the chart's connection to R from the results it stores",
+      call. = FALSE
+    )
+  }
+  invisible(NULL)
+}
+
+#' Check that the tables have the columns the settings map
+#'
+#' @param lConfig `list` The chart's settings in full, as its `*_Settings()`
+#'   function returns them.
+#'
+#' @keywords internal
+#' @noRd
+Widget_CheckColumns <- function(lConfig, dfResults, dfParticipants) {
+  for (strKey in c("id_col", "measure_col", "value_col", "visit_col")) {
+    if (!lConfig[[strKey]] %in% names(dfResults)) {
+      stop("Column '", lConfig[[strKey]], "' (setting '", strKey, "') not found in dfResults", call. = FALSE)
+    }
+  }
+  if (!is.null(dfParticipants)) {
+    strParticipantIdCol <- if (is.null(lConfig$participant_id_col)) lConfig$id_col else lConfig$participant_id_col
+    if (!strParticipantIdCol %in% names(dfParticipants)) {
+      stop(
+        "Column '", strParticipantIdCol, "' (setting '",
+        if (is.null(lConfig$participant_id_col)) "id_col" else "participant_id_col", "') not found in dfParticipants",
+        call. = FALSE
+      )
+    }
+  }
+  invisible(NULL)
+}
+
+#' Name the baseline visits to the chart outright
+#'
+#' R and the chart then cannot resolve the baseline differently, and every
+#' stored result says which baseline it rests on. When the settings name no
+#' baseline visit it is the first visit in visit order, which is what the chart
+#' chooses.
+#'
+#' @return A list of `config`, the settings R reads, and `settings`, the
+#'   settings the page is given, each with `baseline_visits` filled in.
+#'
+#' @keywords internal
+#' @noRd
+Widget_NameBaseline <- function(lConfig, lSettings, dfResults) {
+  if (is.null(lConfig$baseline_visits)) {
+    chrFirstVisit <- Core_First(Core_Visits(dfResults, Chart_CoreSettings(lConfig)))
+    if (length(chrFirstVisit) == 1L) {
+      lConfig$baseline_visits <- chrFirstVisit
+      lSettings$baseline_visits <- chrFirstVisit
+    }
+  }
+  list(config = lConfig, settings = lSettings)
+}
+
+#' Make a widget from its tables, its settings and R's answers
+#'
+#' @param strName `character` The widget's name, which is its binding's.
+#' @param lStored `list` The stored results, as [Chart_Answer()] returns them.
+#'
+#' @return An `htmlwidget` whose payload carries the tables, the settings, the
+#'   stored results in the shape the chart's connection reads, and which R
+#'   computed them.
+#'
+#' @keywords internal
+#' @noRd
+Widget_Create <- function(strName, dfResults, dfParticipants, lSettings, lStored, width, height, elementId, bDebug) {
+  x <- list(
+    dfResults = dfResults,
+    dfParticipants = dfParticipants,
+    lSettings = lSettings,
+    bDebug = bDebug,
+    bAutoWidth = is.null(width),
+    bAutoHeight = is.null(height),
+    lStatistics = list(
+      computed_by = StoredResultsProvenance(),
+      results = lapply(lStored, function(lResult) {
+        list(
+          name = lResult$name, args = lResult$args, dataId = lResult$dataId, rows = lResult$rows,
+          value = StoredValue(lResult$value)
+        )
+      })
+    )
+  )
+  htmlwidgets::createWidget(
+    name = strName,
+    x = x,
+    width = width,
+    height = height,
+    package = "gsm.bio",
+    elementId = elementId,
+    sizingPolicy = WidgetSizingPolicy()
+  )
+}

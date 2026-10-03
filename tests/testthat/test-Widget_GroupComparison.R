@@ -295,7 +295,7 @@ test_that("the saved page prints the planted difference: a test, its method and 
 
 test_that("the saved page holds no result under a key it was not computed for (#9)", {
   lResults <- lSavedWidget()$payload$lStatistics$results
-  chrKeys <- vapply(lResults, function(lResult) GroupComparison_KeyText(lResult[c("name", "args", "dataId")]), character(1))
+  chrKeys <- vapply(lResults, function(lResult) Chart_KeyText(lResult[c("name", "args", "dataId")]), character(1))
 
   # One result per key, and every key is a view the settings open on.
   expect_identical(anyDuplicated(chrKeys), 0L)
@@ -320,7 +320,7 @@ test_that("the saved page holds no result under a key it was not computed for (#
     lKey <- lResults[[1]][c("name", "args", "dataId")]
     lKey$args[names(lArgs)] <- lArgs
     lKey$dataId[names(lDataId)] <- lDataId
-    GroupComparison_KeyText(lKey)
+    Chart_KeyText(lKey)
   }
   expect_true(Key() %in% chrKeys)
   expect_false(Key(list(strMethod = "wilcoxon")) %in% chrKeys)
@@ -350,7 +350,7 @@ test_that("the page records which R computed the results, and the binding prints
   expect_identical(lSaved$payload$lStatistics$computed_by[c("r_version", "gsm_bio_version")], lBy[c("r_version", "gsm_bio_version")])
 
   # The binding prints it from that record, in the page and not in bio.viz.
-  strBinding <- paste(readLines(system.file("htmlwidgets", "Widget_GroupComparison.js", package = "gsm.bio"), warn = FALSE), collapse = "\n")
+  strBinding <- strWidgetScripts("Widget_GroupComparison")
   expect_match(strBinding, "by.r_version", fixed = TRUE)
   expect_match(strBinding, "by.gsm_bio_version", fixed = TRUE)
   expect_match(strBinding, "by.computed_at", fixed = TRUE)
@@ -358,7 +358,7 @@ test_that("the page records which R computed the results, and the binding prints
 })
 
 test_that("the page's connection is made from the stored results alone: no R and no address in it (#9)", {
-  strBinding <- paste(readLines(system.file("htmlwidgets", "Widget_GroupComparison.js", package = "gsm.bio"), warn = FALSE), collapse = "\n")
+  strBinding <- strWidgetScripts("Widget_GroupComparison")
   expect_match(strBinding, "BioViz.r.createConnection({ results: statistics.results })", fixed = TRUE)
   expect_match(strBinding, "BioViz.groupComparison(chart, settings)", fixed = TRUE)
   # Nothing that starts R in the page or fetches anything.

@@ -34,6 +34,10 @@ lCaseSettings <- function(lCase) {
   if (!is.null(lSettings$baseline_visits)) {
     lSettings$baseline_visits <- unlist(lSettings$baseline_visits)
   }
+  # `required: []` is every variable optional, which is not NULL, all required.
+  if ("required" %in% names(lSettings)) {
+    lSettings$required <- as.character(unlist(lSettings$required))
+  }
   lSettings
 }
 
@@ -137,7 +141,8 @@ test_that("the frame refuses a column no table has, a malformed variable and an 
   expect_error(Core_Frame(Synthetic_Results, NULL, list(y = list(measure = "IL-6"))), "must name its visit")
   expect_error(Core_Frame(Synthetic_Results, NULL, list(y = list(measure = "IL-6", visit = "Week 4", value = "delta"))), "`value` must be one of")
   expect_error(Core_Frame(Synthetic_Results, NULL, list(y = list(measure = "IL-6", col = "ARM"))), "names both")
-  expect_error(Core_Frame(Synthetic_Results, NULL, list(y = lY), list(required = "y")), "`required` is not a setting")
+  expect_error(Core_Frame(Synthetic_Results, NULL, list(y = lY), list(requires = "y")), "`requires` is not a setting")
+  expect_error(Core_Frame(Synthetic_Results, NULL, list(y = lY), list(required = "z")), "`required` names `z`, which is not one of the variables")
   expect_error(Core_Frame(Synthetic_Results, NULL, list(y = lY), list(baseline_stat = "median")), "`baseline_stat` must be one of")
   # A biomarker or a visit no row has is not refused: everyone is counted.
   lNone <- Core_Frame(Synthetic_Results, Synthetic_Participants, list(y = list(measure = "IL-6", visit = "Week 99")))

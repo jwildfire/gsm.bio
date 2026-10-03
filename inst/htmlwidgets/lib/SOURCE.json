@@ -1,17 +1,17 @@
 {
-  "what": "The JavaScript bundles Widget_GroupComparison() loads, copied from bio.viz byte for byte.",
+  "what": "The JavaScript bundles the widgets load, copied from bio.viz byte for byte.",
   "copied_by": "data-raw/vendor-bio-viz.R",
   "repository": "https://github.com/jwildfire/bio.viz",
   "ref": "dev",
-  "commit": "1dba79810813d44354c605c5d3f5573fb331a61e",
+  "commit": "6f8e62a2697e44016bfe58b76dc78104116cc13c",
   "files": [
     {
       "file": "bio.viz-0.1.0/bio.viz.js",
       "source": "dist/bio.viz-0.1.0/bio.viz.js",
       "library": "bio.viz",
       "version": "0.1.0",
-      "sha256": "22638aa63cef9bc1dc89152c362c6e55e9d8cc0a6470b25c2baaa9978e8fd584",
-      "bytes": 126047
+      "sha256": "6e79d3930f734f640ed84274bd4bd77f0f0bd73f15cc406f3bb1d6cb7dfee134",
+      "bytes": 255242
     },
     {
       "file": "safety.viz-1.8.0/safety.viz.js",

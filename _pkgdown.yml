@@ -33,6 +33,8 @@ reference:
       saved page shows them with no R and no network.
     contents:
       - Widget_GroupComparison
+      - Widget_AssociationScatter
+      - Widget_CorrelationMatrix
   - title: Synthetic study
     desc: >
       A made-up biomarker study with three planted effects of known size, for

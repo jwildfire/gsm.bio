@@ -1,9 +1,9 @@
 {
-  "what": "Fixtures copied from bio.viz byte for byte: the rows bio.viz's own core wrote for panels of its demo chart (group-statistics/), and the request the chart makes for each with what desktop R answered (group-statistics-r.json).",
+  "what": "Fixtures copied from bio.viz byte for byte, a set per chart: the rows bio.viz's own core wrote for panels of the chart's demo (a folder), and the request the chart makes for each with what desktop R answered (the JSON file beside it).",
   "copied_by": "data-raw/vendor-bio-viz.R",
   "repository": "https://github.com/jwildfire/bio.viz",
   "ref": "dev",
-  "commit": "1dba79810813d44354c605c5d3f5573fb331a61e",
+  "commit": "6f8e62a2697e44016bfe58b76dc78104116cc13c",
   "files": [
     {
       "file": "group-statistics/SOURCE.json",
@@ -128,8 +128,248 @@
     {
       "file": "group-statistics-r.json",
       "source": "tests/fixtures/group-statistics-r.json",
-      "sha256": "8f80cbba44e6df2934e860fc8c281abd753fce9d753230ee4b7031036c3704d1",
+      "sha256": "5d57abdde86c241cd762b994e63dd0896897cd58b1f10d4e85e766279492ecdf",
       "bytes": 25560
+    },
+    {
+      "file": "association-statistics/SOURCE.json",
+      "source": "tests/fixtures/association-statistics/SOURCE.json",
+      "sha256": "634d3d4c8bea2bb04eeb0a8373ad9548cc528fc5578e06269b68d0e042d27ffd",
+      "bytes": 7954
+    },
+    {
+      "file": "association-statistics/pearson.csv",
+      "source": "tests/fixtures/association-statistics/pearson.csv",
+      "sha256": "6f4a0cc6b331e7493f8085832cb6458c11f7eec128c9f8314f3e8e4ce40d07aa",
+      "bytes": 4101
+    },
+    {
+      "file": "association-statistics/spearman.csv",
+      "source": "tests/fixtures/association-statistics/spearman.csv",
+      "sha256": "6f4a0cc6b331e7493f8085832cb6458c11f7eec128c9f8314f3e8e4ce40d07aa",
+      "bytes": 4101
+    },
+    {
+      "file": "association-statistics/pearson-by-arm.csv",
+      "source": "tests/fixtures/association-statistics/pearson-by-arm.csv",
+      "sha256": "31421457def787d4238cce2ec2e76953a21b98207f350ff10f0b64bed7b6f77e",
+      "bytes": 5907
+    },
+    {
+      "file": "association-statistics/spearman-by-arm.csv",
+      "source": "tests/fixtures/association-statistics/spearman-by-arm.csv",
+      "sha256": "31421457def787d4238cce2ec2e76953a21b98207f350ff10f0b64bed7b6f77e",
+      "bytes": 5907
+    },
+    {
+      "file": "association-statistics/pearson-women.csv",
+      "source": "tests/fixtures/association-statistics/pearson-women.csv",
+      "sha256": "e10305ee46afeb20ca6838e8d53abf22c9b67ed41c3944c3ee091eda8c86edd9",
+      "bytes": 2704
+    },
+    {
+      "file": "association-statistics/pearson-panel-women.csv",
+      "source": "tests/fixtures/association-statistics/pearson-panel-women.csv",
+      "sha256": "54ac42be14e91a761abc04d306229c57c292440e21c21954d617403c345d2dfc",
+      "bytes": 2064
+    },
+    {
+      "file": "association-statistics/pearson-age-57-by-arm.csv",
+      "source": "tests/fixtures/association-statistics/pearson-age-57-by-arm.csv",
+      "sha256": "1518cfe26def540d8b3779e93a98a60d645844ed8dfa76b9825df6c560acb584",
+      "bytes": 281
+    },
+    {
+      "file": "association-statistics/pearson-age-35.csv",
+      "source": "tests/fixtures/association-statistics/pearson-age-35.csv",
+      "sha256": "1ab9d7774537b2c0693ff8f8941c2bbfb4a34f6be3b63e07e39003bc5d7ec964",
+      "bytes": 92
+    },
+    {
+      "file": "association-statistics/pearson-skewed.csv",
+      "source": "tests/fixtures/association-statistics/pearson-skewed.csv",
+      "sha256": "2b042425cb5be353bb6cd27430f8757f8b5b6aa7e1bb839015714afd0da82dad",
+      "bytes": 3974
+    },
+    {
+      "file": "association-statistics/pearson-log.csv",
+      "source": "tests/fixtures/association-statistics/pearson-log.csv",
+      "sha256": "2b042425cb5be353bb6cd27430f8757f8b5b6aa7e1bb839015714afd0da82dad",
+      "bytes": 3974
+    },
+    {
+      "file": "association-statistics/pearson-log-x.csv",
+      "source": "tests/fixtures/association-statistics/pearson-log-x.csv",
+      "sha256": "2b042425cb5be353bb6cd27430f8757f8b5b6aa7e1bb839015714afd0da82dad",
+      "bytes": 3974
+    },
+    {
+      "file": "association-statistics/spearman-skewed.csv",
+      "source": "tests/fixtures/association-statistics/spearman-skewed.csv",
+      "sha256": "2b042425cb5be353bb6cd27430f8757f8b5b6aa7e1bb839015714afd0da82dad",
+      "bytes": 3974
+    },
+    {
+      "file": "association-statistics/spearman-log.csv",
+      "source": "tests/fixtures/association-statistics/spearman-log.csv",
+      "sha256": "2b042425cb5be353bb6cd27430f8757f8b5b6aa7e1bb839015714afd0da82dad",
+      "bytes": 3974
+    },
+    {
+      "file": "association-statistics/pearson-age.csv",
+      "source": "tests/fixtures/association-statistics/pearson-age.csv",
+      "sha256": "a29b461ed7dee67f49d00d1e3b70338dc876755f1ba36e52c32bbcba5c9479b9",
+      "bytes": 5323
+    },
+    {
+      "file": "association-statistics/spearman-age.csv",
+      "source": "tests/fixtures/association-statistics/spearman-age.csv",
+      "sha256": "a29b461ed7dee67f49d00d1e3b70338dc876755f1ba36e52c32bbcba5c9479b9",
+      "bytes": 5323
+    },
+    {
+      "file": "association-statistics/linear.csv",
+      "source": "tests/fixtures/association-statistics/linear.csv",
+      "sha256": "6f4a0cc6b331e7493f8085832cb6458c11f7eec128c9f8314f3e8e4ce40d07aa",
+      "bytes": 4101
+    },
+    {
+      "file": "association-statistics/smooth.csv",
+      "source": "tests/fixtures/association-statistics/smooth.csv",
+      "sha256": "6f4a0cc6b331e7493f8085832cb6458c11f7eec128c9f8314f3e8e4ce40d07aa",
+      "bytes": 4101
+    },
+    {
+      "file": "association-statistics/linear-by-arm.csv",
+      "source": "tests/fixtures/association-statistics/linear-by-arm.csv",
+      "sha256": "31421457def787d4238cce2ec2e76953a21b98207f350ff10f0b64bed7b6f77e",
+      "bytes": 5907
+    },
+    {
+      "file": "association-statistics/smooth-by-arm.csv",
+      "source": "tests/fixtures/association-statistics/smooth-by-arm.csv",
+      "sha256": "31421457def787d4238cce2ec2e76953a21b98207f350ff10f0b64bed7b6f77e",
+      "bytes": 5907
+    },
+    {
+      "file": "association-statistics/linear-panel-women.csv",
+      "source": "tests/fixtures/association-statistics/linear-panel-women.csv",
+      "sha256": "54ac42be14e91a761abc04d306229c57c292440e21c21954d617403c345d2dfc",
+      "bytes": 2064
+    },
+    {
+      "file": "association-statistics/linear-log.csv",
+      "source": "tests/fixtures/association-statistics/linear-log.csv",
+      "sha256": "2b042425cb5be353bb6cd27430f8757f8b5b6aa7e1bb839015714afd0da82dad",
+      "bytes": 3974
+    },
+    {
+      "file": "association-statistics/linear-age-57-by-arm.csv",
+      "source": "tests/fixtures/association-statistics/linear-age-57-by-arm.csv",
+      "sha256": "1518cfe26def540d8b3779e93a98a60d645844ed8dfa76b9825df6c560acb584",
+      "bytes": 281
+    },
+    {
+      "file": "association-statistics/smooth-age-57-by-arm.csv",
+      "source": "tests/fixtures/association-statistics/smooth-age-57-by-arm.csv",
+      "sha256": "1518cfe26def540d8b3779e93a98a60d645844ed8dfa76b9825df6c560acb584",
+      "bytes": 281
+    },
+    {
+      "file": "association-statistics/linear-age-35.csv",
+      "source": "tests/fixtures/association-statistics/linear-age-35.csv",
+      "sha256": "1ab9d7774537b2c0693ff8f8941c2bbfb4a34f6be3b63e07e39003bc5d7ec964",
+      "bytes": 92
+    },
+    {
+      "file": "association-statistics/cases.csv",
+      "source": "tests/fixtures/association-statistics/cases.csv",
+      "sha256": "fee2742d7fa203feb1a708543e7b88800869dbd866da6256bea50dcfa2136b4d",
+      "bytes": 3590
+    },
+    {
+      "file": "association-statistics-r.json",
+      "source": "tests/fixtures/association-statistics-r.json",
+      "sha256": "5b51a0923476ec9b01180e55d68e15e8b4e23ede84f9343c4271c1cd85b9566e",
+      "bytes": 272923
+    },
+    {
+      "file": "matrix-statistics/SOURCE.json",
+      "source": "tests/fixtures/matrix-statistics/SOURCE.json",
+      "sha256": "c0da6659586cc69f369fa8ef3da425b828b88d85fa51719452a4d5f6646d4add",
+      "bytes": 4154
+    },
+    {
+      "file": "matrix-statistics/biomarkers-baseline.csv",
+      "source": "tests/fixtures/matrix-statistics/biomarkers-baseline.csv",
+      "sha256": "b873b2050fff9ab8aa2acca2a44da55a5c3da71c66d569fe63559d6738735b22",
+      "bytes": 17201
+    },
+    {
+      "file": "matrix-statistics/biomarkers-baseline-spearman.csv",
+      "source": "tests/fixtures/matrix-statistics/biomarkers-baseline-spearman.csv",
+      "sha256": "b873b2050fff9ab8aa2acca2a44da55a5c3da71c66d569fe63559d6738735b22",
+      "bytes": 17201
+    },
+    {
+      "file": "matrix-statistics/biomarkers-week-4-change.csv",
+      "source": "tests/fixtures/matrix-statistics/biomarkers-week-4-change.csv",
+      "sha256": "95cfe4a6f20c4234c3c518a6feac159f80850e01a6f6221bc2a949ef765ac2ea",
+      "bytes": 39041
+    },
+    {
+      "file": "matrix-statistics/biomarkers-women.csv",
+      "source": "tests/fixtures/matrix-statistics/biomarkers-women.csv",
+      "sha256": "e7543bedd242008c1e4ecb2a56a4a637fe082c623656fafe47061d55e33df8d7",
+      "bytes": 7846
+    },
+    {
+      "file": "matrix-statistics/six-biomarkers.csv",
+      "source": "tests/fixtures/matrix-statistics/six-biomarkers.csv",
+      "sha256": "3abaac49d9173a8ce6619b1270bd306990041ab46d6e0a528a07e7fd00b2d44f",
+      "bytes": 8840
+    },
+    {
+      "file": "matrix-statistics/visits-il-6.csv",
+      "source": "tests/fixtures/matrix-statistics/visits-il-6.csv",
+      "sha256": "7defb0594e68a97b3496e7bd6df514591380093bb1fd5161f890b579cfb92d67",
+      "bytes": 7279
+    },
+    {
+      "file": "matrix-statistics/visits-il-6-change.csv",
+      "source": "tests/fixtures/matrix-statistics/visits-il-6-change.csv",
+      "sha256": "a9528f2b375d85641b24fae050e988835e0857dc5eb7f9561541facc7f13cfa7",
+      "bytes": 14918
+    },
+    {
+      "file": "matrix-statistics/visits-tnf-alpha-spearman.csv",
+      "source": "tests/fixtures/matrix-statistics/visits-tnf-alpha-spearman.csv",
+      "sha256": "26b72af1c1366e04802cba447eb095f9bdfd8a99206908449625d31a376926b2",
+      "bytes": 7901
+    },
+    {
+      "file": "matrix-statistics/week-12-minimum-183.csv",
+      "source": "tests/fixtures/matrix-statistics/week-12-minimum-183.csv",
+      "sha256": "0f59062565817356849416bad15785a95cd4cd35f7d190f2ab3ba2e9953f0c1c",
+      "bytes": 15979
+    },
+    {
+      "file": "matrix-statistics/age-35.csv",
+      "source": "tests/fixtures/matrix-statistics/age-35.csv",
+      "sha256": "b08be38377b8f0d8b9e81608e30c9cebf434ad1100cd7522ee31fcfc0524badb",
+      "bytes": 392
+    },
+    {
+      "file": "matrix-statistics/cases.csv",
+      "source": "tests/fixtures/matrix-statistics/cases.csv",
+      "sha256": "4623fefd3c274db0cee191be64c8c77ca58df9bb3858a20c762cac19802b6ed8",
+      "bytes": 1910
+    },
+    {
+      "file": "matrix-statistics-r.json",
+      "source": "tests/fixtures/matrix-statistics-r.json",
+      "sha256": "40a60d7242f23a751d6d4be5f5cab86303088e9afb3248d69002456b083124ba",
+      "bytes": 95874
     }
   ]
 }

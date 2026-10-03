@@ -9,9 +9,9 @@
 # git, a network connection and node; the output is committed. Three things are
 # copied or written:
 #
-# 1. The two bundles Widget_GroupComparison() loads, into inst/htmlwidgets/lib/,
-#    with their record, SOURCE.json, beside them and the widget's dependency
-#    file, inst/htmlwidgets/Widget_GroupComparison.yaml, written to match:
+# 1. The two bundles the widgets load, into inst/htmlwidgets/lib/, with their
+#    record, SOURCE.json, beside them and each widget's dependency file,
+#    inst/htmlwidgets/Widget_<Chart>.yaml, written to match:
 #
 #      bio.viz's script-tag bundle       dist/bio.viz-<version>/bio.viz.js
 #      the copy of safety.viz's bundle   site/vendor/safety.viz/safety.viz.js
@@ -24,9 +24,9 @@
 #    carried into ours whole.
 #
 # 2. The fixtures the tests hold R to, into tests/testthat/fixtures/bio.viz/,
-#    with their record: the rows bio.viz's own core wrote for panels of
-#    its demo chart, and the requests the chart makes for them with what desktop
-#    R answered.
+#    with their record, a set per chart: the rows bio.viz's own core wrote for
+#    panels of the chart's demo, and the requests the chart makes for them with
+#    what desktop R answered.
 #
 # 3. tests/testthat/fixtures/core-frames/frames.json, written by running the
 #    core of the bundle just copied on the cases in cases.json beside it
@@ -118,7 +118,7 @@ lBundles <- list(
 )
 
 WriteJson(list(
-  what = "The JavaScript bundles Widget_GroupComparison() loads, copied from bio.viz byte for byte.",
+  what = "The JavaScript bundles the widgets load, copied from bio.viz byte for byte.",
   copied_by = "data-raw/vendor-bio-viz.R",
   repository = strRepository,
   ref = strRef,
@@ -138,44 +138,61 @@ WriteJson(list(
   )
 ), file.path(strLib, "SOURCE.json"))
 
-# The widget's dependencies, by the versions just copied. safety.viz first: the
-# chart is built from its kit. Its dependency is named as gsm.safety names its
+# Every widget's dependencies, by the versions just copied. safety.viz first:
+# a chart is built from its kit. Its dependency is named as gsm.safety names its
 # own, so a page holding widgets of both packages loads one copy of safety.viz.
-writeLines(c(
-  "# Written by data-raw/vendor-bio-viz.R: do not edit by hand.",
-  "dependencies:",
-  "  - name: safety-viz",
-  sprintf("    version: %s", strSafetyVizVersion),
-  sprintf("    src: 'htmlwidgets/lib/safety.viz-%s'", strSafetyVizVersion),
-  "    script: 'safety.viz.js'",
-  "  - name: bio-viz",
-  sprintf("    version: %s", strBioVizVersion),
-  sprintf("    src: 'htmlwidgets/lib/bio.viz-%s'", strBioVizVersion),
-  "    script: 'bio.viz.js'"
-), file.path("inst", "htmlwidgets", "Widget_GroupComparison.yaml"))
+# Last, the package's own script, which every binding is made with
+# (inst/htmlwidgets/shared/, not copied from anywhere).
+chrWidgets <- c("Widget_GroupComparison", "Widget_AssociationScatter", "Widget_CorrelationMatrix")
+strPackageVersion <- read.dcf("DESCRIPTION", fields = "Version")[[1]]
+for (strWidget in chrWidgets) {
+  writeLines(c(
+    "# Written by data-raw/vendor-bio-viz.R: do not edit by hand.",
+    "dependencies:",
+    "  - name: safety-viz",
+    sprintf("    version: %s", strSafetyVizVersion),
+    sprintf("    src: 'htmlwidgets/lib/safety.viz-%s'", strSafetyVizVersion),
+    "    script: 'safety.viz.js'",
+    "  - name: bio-viz",
+    sprintf("    version: %s", strBioVizVersion),
+    sprintf("    src: 'htmlwidgets/lib/bio.viz-%s'", strBioVizVersion),
+    "    script: 'bio.viz.js'",
+    "  - name: gsm-bio-widget",
+    sprintf("    version: %s", strPackageVersion),
+    "    src: 'htmlwidgets/shared'",
+    "    script: 'gsm.bio.widget.js'"
+  ), file.path("inst", "htmlwidgets", paste0(strWidget, ".yaml")))
+}
 
 # ---- 2. The fixtures -----------------------------------------------------------
 
 strFixtures <- file.path("tests", "testthat", "fixtures", "bio.viz")
 unlink(strFixtures, recursive = TRUE)
 
-strFrames <- "tests/fixtures/group-statistics"
-lFramesRecord <- ReadJsonAt(file.path(strFrames, "SOURCE.json"))
-chrFrameFiles <- c("SOURCE.json", vapply(lFramesRecord$files, function(lFile) lFile$file, character(1)))
-lFixtures <- lapply(chrFrameFiles, function(strFile) {
-  strSource <- paste(strFrames, strFile, sep = "/")
-  Place(ReadAt(strSource), strFixtures, file.path("group-statistics", strFile), strSource)
-})
-lFixtures <- c(lFixtures, list(Place(
-  ReadAt("tests/fixtures/group-statistics-r.json"), strFixtures,
-  "group-statistics-r.json", "tests/fixtures/group-statistics-r.json"
-)))
+# One set per chart: the rows the chart's own code wrote for panels of its demo
+# (a folder, with its own record), and beside it the request the chart makes for
+# each with what desktop R answered.
+chrFixtureSets <- c("group-statistics", "association-statistics", "matrix-statistics")
+lFixtures <- list()
+for (strSet in chrFixtureSets) {
+  strFrames <- paste0("tests/fixtures/", strSet)
+  lFramesRecord <- ReadJsonAt(paste0(strFrames, "/SOURCE.json"))
+  chrFrameFiles <- c("SOURCE.json", vapply(lFramesRecord$files, function(lFile) lFile$file, character(1)))
+  lFixtures <- c(lFixtures, lapply(chrFrameFiles, function(strFile) {
+    strSource <- paste(strFrames, strFile, sep = "/")
+    Place(ReadAt(strSource), strFixtures, file.path(strSet, strFile), strSource)
+  }))
+  strAnswers <- paste0(strSet, "-r.json")
+  lFixtures <- c(lFixtures, list(Place(
+    ReadAt(paste0("tests/fixtures/", strAnswers)), strFixtures, strAnswers, paste0("tests/fixtures/", strAnswers)
+  )))
+}
 
 WriteJson(list(
   what = paste(
-    "Fixtures copied from bio.viz byte for byte: the rows bio.viz's own core wrote for panels",
-    "of its demo chart (group-statistics/), and the request the chart makes for each with what",
-    "desktop R answered (group-statistics-r.json)."
+    "Fixtures copied from bio.viz byte for byte, a set per chart: the rows bio.viz's own core wrote",
+    "for panels of the chart's demo (a folder), and the request the chart makes for each with what",
+    "desktop R answered (the JSON file beside it)."
   ),
   copied_by = "data-raw/vendor-bio-viz.R",
   repository = strRepository,
