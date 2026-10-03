@@ -190,3 +190,111 @@ test_that("on a logarithmic axis the group comparison leaves out zero and less, 
   expect_identical(nPositive, sum(bIL6) - 9L)
   expect_true(lRequests[[1]]$dataId$positive_only)
 })
+
+# The review of #26 (#24): more of the same family.
+
+# Two groups' survival, from times and event flags.
+dfTwoArms <- function(nTimeA, nEventA, nTimeB, nEventB) {
+  data.frame(
+    t = c(nTimeA, nTimeB), e = c(rep_len(nEventA, length(nTimeA)), rep_len(nEventB, length(nTimeB))),
+    g = rep(c("A", "B"), c(length(nTimeA), length(nTimeB)))
+  )
+}
+
+test_that("a hazard ratio is not estimable when its interval is not finite, though both groups have events (#24)", {
+  # Every event in A comes before every event in B: the Cox model's likelihood
+  # has no maximum, and its estimate runs off to infinity.
+  dfData <- dfTwoArms(1:5, c(1, 1, 1, 1, 0), c(10, 20, 30, 40, 50), c(1, 0, 1, 0, 1))
+  lResult <- Analyze_Survival(dfData, "t", "g", strEventCol = "e")
+  ExpectResultShape(lResult)
+  expect_identical(lResult$status, "ok")
+  expect_identical(lResult$rows$events, c(4L, 3L))
+  lLogRank <- survival::survdiff(survival::Surv(t, e) ~ factor(g), data = dfData)
+  expect_equal(lResult$p_value, stats::pchisq(lLogRank$chisq, 1, lower.tail = FALSE), tolerance = 1e-12)
+  expect_false("Hazard ratio" %in% lResult$estimates$name)
+  expect_true(all(is.na(lResult$rows$hazard_ratio)) && all(is.na(lResult$rows$hr_upper)) && all(is.na(lResult$rows$hr_test)))
+  expect_true(any(grepl("The hazard ratio is not estimable", unlist(lResult$notes), fixed = TRUE)))
+  expect_true(any(grepl("estimate is infinite", unlist(lResult$notes), fixed = TRUE)))
+  # In a screen the row has no number, no method and no statistic, and is
+  # not in the adjustment.
+  set.seed(24)
+  dfScreen <- data.frame(Time = dfData$t, Event = dfData$e, Marker = ifelse(dfData$g == "A", 2, 1), Other = stats::rnorm(10))
+  lScreen <- Analyze_Screen(dfScreen, c("Marker", "Other"), strComparison = "hazard", strTimeCol = "Time", strEventCol = "Event")
+  expect_identical(lScreen$rows$status[1], "error")
+  expect_match(lScreen$rows$reason[1], "the hazard ratio is not estimable", fixed = TRUE)
+  expect_true(is.na(lScreen$rows$estimate[1]) && is.na(lScreen$rows$p_unadjusted[1]) && is.na(lScreen$rows$adjusted_over[1]))
+  expect_true(is.na(lScreen$rows$method[1]) && is.na(lScreen$rows$statistic[1]))
+})
+
+test_that("a hazard ratio not estimable because the first group has no events is said to be zero, not infinite (#24)", {
+  dfData <- dfTwoArms(c(10, 20, 30, 40, 50), 0, c(5, 8, 12, 15, 20, 22), c(1, 1, 1, 0, 1, 1))
+  lResult <- Analyze_Survival(dfData, "t", "g", strEventCol = "e")
+  expect_identical(lResult$status, "ok")
+  expect_true(any(grepl("not estimable: A has no events, so the Cox model's estimate is zero", unlist(lResult$notes), fixed = TRUE)))
+  dfOther <- dfTwoArms(c(5, 8, 12, 15, 20, 22), c(1, 1, 1, 0, 1, 1), c(10, 20, 30, 40, 50), 0)
+  expect_true(any(grepl("not estimable: B has no events, so the Cox model's estimate is infinite", unlist(Analyze_Survival(dfOther, "t", "g", strEventCol = "e")$notes), fixed = TRUE)))
+})
+
+test_that("a log-rank test with no event while both groups are at risk is not computed (#24)", {
+  # B is censored, at 1 to 5, before A's first event.
+  dfData <- dfTwoArms(c(10, 20, 30, 40, 50), 1, 1:5, 0)
+  expect_identical(survival::survdiff(survival::Surv(t, e) ~ factor(g), data = dfData)$chisq, 0)
+  ExpectReason(Analyze_Survival(dfData, "t", "g", strEventCol = "e"), "error", "no event happens while", "no overlap")
+})
+
+test_that("a linear fit whose test or band is not finite is not ok: two pairs with the minimum lowered (#24)", {
+  ExpectReason(Analyze_Fit(data.frame(x = c(1, 2), y = c(3, 5)), "x", "y", nMinGroup = 1), "error", "not finite", "two pairs")
+  # Three pairs on a line are a fit, exact to rounding.
+  ExpectNumbers(Analyze_Fit(data.frame(x = c(1, 2, 3), y = c(1, 2.5, 3)), "x", "y", nMinGroup = 1), "three pairs")
+})
+
+test_that("values that differ only by rounding do not vary: ANOVA, a fit's x and y, and a correlation (#24)", {
+  nRound <- c(0.3, 0.1 + 0.2)
+  expect_false(identical(nRound[1], nRound[2]))
+  nNear <- rep(nRound, length.out = 18)
+  ExpectReason(Analyze_GroupDifference(data.frame(v = nNear, g = chrThree), "v", "g", strMethod = "anova"), "error", "essentially constant", "ANOVA")
+  ExpectReason(Analyze_GroupDifference(data.frame(v = nNear, g = chrThree), "v", "g", strMethod = "kruskal"), "error", "nothing to rank", "Kruskal-Wallis")
+  set.seed(24)
+  dfData <- data.frame(x = stats::rnorm(18), near = nNear, g = rep(c("A", "B"), 9))
+  ExpectReason(Analyze_Fit(dfData, "x", "near"), "error", "every y value is 0.3", "a fit's y")
+  ExpectReason(Analyze_Fit(dfData, "near", "x"), "error", "every x value is 0.3", "a fit's x")
+  ExpectReason(Analyze_Correlation(dfData, "x", "near"), "error", "does not vary", "a correlation")
+  # One group whose x differs only by rounding: that group's reason, and the
+  # others fitted.
+  dfData$x2 <- dfData$x
+  dfData$x2[dfData$g == "B"] <- nNear[dfData$g == "B"]
+  lFit <- Analyze_Fit(transform(dfData, y = stats::rnorm(18)), "x2", "y", strGroupCol = "g")
+  ExpectNumbers(lFit, "overall")
+  dfB <- lFit$rows[!is.na(lFit$rows$group) & lFit$rows$group == "B", ]
+  expect_identical(dfB$status, "error")
+  expect_match(dfB$reason, "every x value is 0.3")
+})
+
+test_that("two groups of zeros under a t-test give no p-value, and so are not computed (#24)", {
+  dfZero <- data.frame(v = 0, g = rep(c("A", "B"), each = 6))
+  lTest <- suppressWarnings(stats::t.test(dfZero$v[1:6], dfZero$v[7:12]))
+  expect_true(is.nan(lTest$p.value))
+  ExpectReason(Analyze_GroupDifference(dfZero, "v", "g"), "error", "gave no p-value", "zeros")
+})
+
+test_that("an ANOVA with one row per group says it needs more rows than groups (#24)", {
+  ExpectReason(
+    Analyze_GroupDifference(data.frame(v = c(1, 2, 3), g = c("A", "B", "C")), "v", "g", strMethod = "anova", nMinGroup = 1),
+    "error", "needs more rows than groups", "one row per group"
+  )
+})
+
+test_that("a smooth that loess() stops on has loess()'s own message as its reason (#24)", {
+  dfData <- data.frame(
+    x = c(2, 2, 2, 2, 3, 1, 2, 2),
+    y = c(-0.0731248216938637, 1.64310713116132, 1.44927727104653, 0.303767374090571, 0.443071122749174, -0.929024387373451, -0.837661865322127, 0.59095757732656)
+  )
+  strBase <- tryCatch(
+    suppressWarnings(stats::predict(stats::loess(y ~ x, data = dfData), newdata = data.frame(x = seq(1, 3, length.out = 50)), se = TRUE)),
+    error = function(cndError) conditionMessage(cndError)
+  )
+  expect_true(is.character(strBase))
+  lSmooth <- Analyze_Fit(dfData, "x", "y", strMethod = "smooth")
+  ExpectReason(lSmooth, "error", ".", "loess() stops")
+  expect_identical(lSmooth$reason, strBase)
+})

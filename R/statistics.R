@@ -53,9 +53,14 @@ local({
 #' constant": an ANOVA on values constant within every group, a line or smooth
 #' with a y that does not vary, and a correlation with a variable that does not
 #' vary. So is a Kruskal-Wallis test on values all tied, a test that returns no
-#' p-value, and a survival comparison with no event in any group. A part that
-#' cannot be estimated is said to be so in `notes`: the hazard ratio when one
-#' of two groups has no events.
+#' p-value, an ANOVA with no more rows than groups, a linear fit with no
+#' residual degrees of freedom, and a survival comparison with no event while
+#' two groups are both at risk. A part that cannot be estimated is said to be
+#' so in `notes`: a hazard ratio whose interval is not finite. "Essentially
+#' constant" is `t.test()`'s rule: the spread is at most `10 *
+#' .Machine$double.eps` times the largest absolute value; for an ANOVA, the
+#' pooled within-group standard deviation against the largest absolute group
+#' mean.
 #'
 #' Wherever `p_value` and `adjustment` appear together, at the top level or in
 #' a row of `rows`, `adjustment` describes that `p_value`. A row whose p-value
@@ -352,7 +357,9 @@ Analyze_CorrelationMatrix <- Analyze_CorrelationMatrix
 #'   `status` and `reason` and no point: `x` is `NA`.
 #'
 #' When every x value is the same, or every y value, there is no line to fit:
-#' `status` is `"error"` and `reason` says so.
+#' `status` is `"error"` and `reason` says so. So it is when a line leaves no
+#' residual degrees of freedom, as two pairs do with the minimum lowered: its
+#' interval, its test and its band are not finite.
 #'
 #' A smooth needs at least seven complete pairs, or the minimum group size when
 #' that is larger: with its defaults `loess()` gives a band that is not finite
@@ -454,10 +461,13 @@ Analyze_Contingency <- Analyze_Contingency
 #' `chrGroups = c("High", "Low")` a ratio above 1 means events come sooner in
 #' the high group.
 #'
-#' When one of two groups has no events, the Cox model's estimate is infinite:
-#' the hazard ratio is not estimated, its columns in `rows` are `NA` and `notes`
-#' names the group. The log-rank test, which does not need it, and the medians
-#' are kept. With no event in any group nothing is compared: `status` is
+#' The hazard ratio is reported only when the Cox model gives it a finite
+#' interval. When one of two groups has no events, or every event in one group
+#' comes before every event in the other, the model's estimate runs off to zero
+#' or to infinity: the hazard ratio is not estimated, its columns in `rows` are
+#' `NA`, and `notes` says why and which. The log-rank test, which does not need
+#' it, and the medians are kept. With no event in any group, or no event while
+#' two groups are both at risk, the log-rank test compares nothing: `status` is
 #' `"error"`.
 #'
 #' @section Two p-values, kept apart:
@@ -564,9 +574,10 @@ Analyze_Survival <- Analyze_Survival
 #' above; the screen's notes say so. Whether the interval should follow Welch is
 #' an open design question.
 #'
-#' A row by hazard ratio whose hazard ratio cannot be estimated, because one
-#' side of the median has no events, has `status` `"error"` and a reason, as a
-#' difference row has when its standardised difference cannot be computed.
+#' A row by hazard ratio whose hazard ratio cannot be estimated (see
+#' [Analyze_Survival()]) has `status` `"error"` and a reason, and no method,
+#' statistic or p-value, as a difference row has when its standardised
+#' difference cannot be computed.
 #'
 #' @section High against low:
 #' For `"hazard"`, each biomarker is split at its median among the

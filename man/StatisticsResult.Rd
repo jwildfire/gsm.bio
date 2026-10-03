@@ -40,9 +40,13 @@ not vary are refused as \code{\link[stats:t.test]{stats::t.test()}} refuses them
 constant": an ANOVA on values constant within every group, a line or smooth
 with a y that does not vary, and a correlation with a variable that does not
 vary. So is a Kruskal-Wallis test on values all tied, a test that returns no
-p-value, and a survival comparison with no event in any group. A part that
-cannot be estimated is said to be so in \code{notes}: the hazard ratio when one
-of two groups has no events.
+p-value, an ANOVA with no more rows than groups, a linear fit with no
+residual degrees of freedom, and a survival comparison with no event while
+two groups are both at risk. A part that cannot be estimated is said to be
+so in \code{notes}: a hazard ratio whose interval is not finite. "Essentially
+constant" is \code{t.test()}'s rule: the spread is at most \code{10 * .Machine$double.eps} times the largest absolute value; for an ANOVA, the
+pooled within-group standard deviation against the largest absolute group
+mean.
 
 Wherever \code{p_value} and \code{adjustment} appear together, at the top level or in
 a row of \code{rows}, \code{adjustment} describes that \code{p_value}. A row whose p-value

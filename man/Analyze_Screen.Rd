@@ -117,9 +117,10 @@ include zero while its p-value is below 0.05, or exclude zero while it is
 above; the screen's notes say so. Whether the interval should follow Welch is
 an open design question.
 
-A row by hazard ratio whose hazard ratio cannot be estimated, because one
-side of the median has no events, has \code{status} \code{"error"} and a reason, as a
-difference row has when its standardised difference cannot be computed.
+A row by hazard ratio whose hazard ratio cannot be estimated (see
+\code{\link[=Analyze_Survival]{Analyze_Survival()}}) has \code{status} \code{"error"} and a reason, and no method,
+statistic or p-value, as a difference row has when its standardised
+difference cannot be computed.
 }
 
 \section{High against low}{

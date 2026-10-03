@@ -311,7 +311,7 @@ test_that("degenerate data is answered, never thrown: one x value, one y value, 
   expect_silent(lTinyFitted <- Analyze_Fit(dfTiny, "x", "y", strMethod = "smooth", strGroupCol = "g", nMinGroup = 2, nPoints = 3))
   ExpectResultShape(lTinyFitted)
   expect_true(all(lTinyFitted$rows$status == "too_small"))
-  expect_false(any(is.na(lTinyFitted$rows$reason[lTinyFitted$rows$status == "error"])))
+  expect_true(all(grepl("a smooth needs at least 7", lTinyFitted$rows$reason[!is.na(lTinyFitted$rows$group)], fixed = TRUE)))
 })
 
 test_that("a fit request that cannot be met is an error status, never an R error (#12)", {

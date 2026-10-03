@@ -68,7 +68,9 @@ made, because it has too few pairs or R stopped, is one row with its
 }
 
 When every x value is the same, or every y value, there is no line to fit:
-\code{status} is \code{"error"} and \code{reason} says so.
+\code{status} is \code{"error"} and \code{reason} says so. So it is when a line leaves no
+residual degrees of freedom, as two pairs do with the minimum lowered: its
+interval, its test and its band are not finite.
 
 A smooth needs at least seven complete pairs, or the minimum group size when
 that is larger: with its defaults \code{loess()} gives a band that is not finite

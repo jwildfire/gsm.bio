@@ -391,7 +391,12 @@ Analyze_GroupDifference <- function(dfData, strValueCol, strGroupCol, strMethod 
     # With more than two groups no t.test() has looked at the values: a test
     # of values that do not vary is refused here, as t.test() refuses them.
     strConstant <- NA_character_
-    if (strMethod == "anova") {
+    if (strMethod == "anova" && sum(nCounts) <= nGroups) {
+      strConstant <- sprintf(
+        "Not computed: an ANOVA needs more rows than groups, to estimate the variance within them; it has %d rows in %d groups.",
+        as.integer(sum(nCounts)), nGroups
+      )
+    } else if (strMethod == "anova") {
       nWithin <- sum(vapply(lValues, function(nGroup) sum((nGroup - mean(nGroup))^2), numeric(1)))
       nPooled <- sqrt(nWithin / (sum(nCounts) - nGroups))
       if (nPooled <= 10 * .Machine$double.eps * max(abs(vapply(lValues, mean, numeric(1))))) {
@@ -727,7 +732,7 @@ Stat_FitPair <- function(nX, nY, strMethod, nConfLevel, nMinGroup, nPoints) {
     return(lFit)
   }
   dfPairs <- data.frame(x = nX[bPair], y = nY[bPair])
-  if (min(dfPairs$x) == max(dfPairs$x)) {
+  if (Stat_Constant(dfPairs$x)) {
     lFit$status <- "error"
     lFit$reason <- sprintf(
       "Not computed: every x value is %s, so there is no line to fit.", format(dfPairs$x[1])
@@ -774,6 +779,12 @@ Stat_FitPair <- function(nX, nY, strMethod, nConfLevel, nMinGroup, nPoints) {
 
   if (strMethod == "linear") {
     lSummary <- lRun$value$summary
+    if (!"x" %in% rownames(lSummary$coefficients)) {
+      lFit$status <- "error"
+      lFit$reason <- "Not computed: lm() could not estimate a slope from these x values."
+      lFit$method <- NA_character_
+      return(lFit)
+    }
     lFit$estimates <- Stat_Estimates(
       c("Intercept", "Slope"), NA_character_, unname(lRun$value$coefficients),
       unname(lRun$value$intervals[, 1]), unname(lRun$value$intervals[, 2]), nConfLevel
@@ -791,6 +802,20 @@ Stat_FitPair <- function(nX, nY, strMethod, nConfLevel, nMinGroup, nPoints) {
       lower = as.numeric(lRun$value$band[, "lwr"]),
       upper = as.numeric(lRun$value$band[, "upr"])
     )
+    # With no residual degrees of freedom lm() has a line and nothing else:
+    # no interval, no test and no band.
+    if (!all(is.finite(c(
+      lFit$estimates$estimate, lFit$estimates$lower, lFit$estimates$upper, lFit$t, lFit$p_value,
+      lFit$line$fit, lFit$line$lower, lFit$line$upper
+    )))) {
+      lFit <- c(lFit[c("counts", "warnings")], list(
+        status = "error",
+        reason = "Not computed: lm() gave an interval, a test or a band that is not finite, as it does when no residual degrees of freedom are left.",
+        method = NA_character_, estimates = Stat_Estimates(), statistic = Stat_Statistic(), t = NA_real_, df = NA_real_,
+        r_squared = NA_real_, p_value = NA_real_,
+        line = data.frame(x = numeric(0), fit = numeric(0), lower = numeric(0), upper = numeric(0))
+      ))
+    }
   } else {
     # The pointwise band: the fit, give or take the t quantile, on the degrees
     # of freedom predict() returns, times the standard error of the fit.
@@ -1095,7 +1120,7 @@ Analyze_Survival <- function(dfData, strTimeCol, strGroupCol, strCensorCol = NUL
     # infinite or zero: it is not estimated, and the log-rank test, which does
     # not need it, is kept.
     chrNoEvents <- chrLevels[nEvents == 0L]
-    bHazardRatio <- nGroups == 2L && length(chrNoEvents) == 0L
+    bCox <- nGroups == 2L && length(chrNoEvents) == 0L
 
     # The rows used, in the order they came. The hazard ratio is the first
     # group's hazard over the second's, so the second group is the reference.
@@ -1108,7 +1133,7 @@ Analyze_Survival <- function(dfData, strTimeCol, strGroupCol, strCensorCol = NUL
     chrWarnings <- c(lLogRank$warnings, lFit$warnings)
     chrErrors <- c(lLogRank$error, lFit$error)
     lCox <- NULL
-    if (bHazardRatio) {
+    if (bCox) {
       dfModel$Against <- factor(chrGroup[bUsed], levels = rev(chrLevels))
       lCox <- Stat_Capture(function() summary(survival::coxph(Outcome ~ Against, data = dfModel), conf.int = nConfLevel))
       chrWarnings <- c(chrWarnings, lCox$warnings)
@@ -1120,6 +1145,32 @@ Analyze_Survival <- function(dfData, strTimeCol, strGroupCol, strCensorCol = NUL
         strTest = "logrank", strStatus = "error", strReason = paste(unique(chrErrors), collapse = "; "),
         xCounts = lCounts, dfDropped = dfDropped, chrWarnings = chrWarnings, dfRows = dfRows
       ))
+    }
+
+    # With no event while two groups are both at risk the log-rank statistic
+    # has no variance: there is nothing it compares.
+    if (max(abs(lLogRank$value$var)) <= 10 * .Machine$double.eps * sum(nEvents)) {
+      return(Stat_Result(
+        strTest = "logrank", strStatus = "error", xCounts = lCounts, dfDropped = dfDropped, chrWarnings = chrWarnings,
+        dfRows = dfRows,
+        strReason = "Not computed: no event happens while two groups are both at risk, so the log-rank test has nothing to compare."
+      ))
+    }
+    # The hazard ratio is estimable when the Cox model gives it a finite
+    # interval. With no events in one of two groups, or every event in one
+    # before every event in the other, its estimate runs off to zero or to
+    # infinity instead.
+    bHazardRatio <- bCox && all(is.finite(lCox$value$conf.int[1, c(1, 3, 4)]))
+    strNotEstimable <- if (nGroups != 2L || bHazardRatio) {
+      NA_character_
+    } else {
+      strWhy <- if (length(chrNoEvents) > 0L) {
+        sprintf("%s has no events", paste(chrNoEvents, collapse = " and "))
+      } else {
+        "the Cox model's likelihood has no maximum, as when every event in one group comes before every event in the other"
+      }
+      bZero <- if (length(chrNoEvents) > 0L) identical(chrNoEvents, chrLevels[1]) else lCox$value$coefficients[1, 1] < 0
+      sprintf("%s, so the Cox model's estimate is %s", strWhy, if (bZero) "zero" else "infinite")
     }
 
     # survdiff() reports its p-value from version 3.3 of survival; before that
@@ -1147,10 +1198,10 @@ Analyze_Survival <- function(dfData, strTimeCol, strGroupCol, strCensorCol = NUL
     if (anyNA(dfRows$median) || anyNA(dfRows$lower) || anyNA(dfRows$upper)) {
       chrNotes <- c(chrNotes, "A missing median or bound was not reached: the curve, or its band, did not fall to one half.")
     }
-    if (nGroups == 2L && !bHazardRatio) {
+    if (!is.na(strNotEstimable)) {
       chrNotes <- c(chrNotes, sprintf(
-        "The hazard ratio is not estimable: %s has no events, so the Cox model's estimate is infinite. It is left out; p_value is the log-rank test's, which does not need it.",
-        paste(chrNoEvents, collapse = " and ")
+        "The hazard ratio is not estimable: %s. It is left out; p_value is the log-rank test's, which does not need it.",
+        strNotEstimable
       ))
     }
     if (bHazardRatio) {
@@ -1320,6 +1371,8 @@ Analyze_Screen <- function(dfData, chrCols, strComparison = "difference", strGro
           } else {
             dfRows$status[iRow] <- "error"
             dfRows$reason[iRow] <- lEffect$error
+            dfRows$method[iRow] <- NA_character_
+            dfRows$statistic[iRow] <- NA_real_
             dfRows$p_unadjusted[iRow] <- NA_real_
           }
         } else {
@@ -1331,11 +1384,14 @@ Analyze_Screen <- function(dfData, chrCols, strComparison = "difference", strGro
           }
           if (strComparison == "hazard" && !"Hazard ratio" %in% lRow$estimates$name) {
             # The row is about the hazard ratio: with none, it has no number.
+            strNote <- grep("^The hazard ratio is not estimable: ", unlist(lRow$notes), value = TRUE)[1]
             dfRows$status[iRow] <- "error"
-            dfRows$reason[iRow] <- sprintf(
-              "Not computed: the hazard ratio is not estimable: %s has no events.",
-              paste(lRow$rows$group[lRow$rows$events == 0L], collapse = " and ")
+            dfRows$reason[iRow] <- paste0(
+              "Not computed: the hazard ratio is not estimable: ",
+              sub("^The hazard ratio is not estimable: (.*?)\\. It is left out.*$", "\\1", strNote, perl = TRUE), "."
             )
+            dfRows$method[iRow] <- NA_character_
+            dfRows$statistic[iRow] <- NA_real_
             dfRows$p_unadjusted[iRow] <- NA_real_
           } else {
             dfRows$estimate[iRow] <- dfLast$estimate
