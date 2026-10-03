@@ -3,7 +3,7 @@
   "copied_by": "data-raw/vendor-bio-viz.R",
   "repository": "https://github.com/jwildfire/bio.viz",
   "ref": "dev",
-  "commit": "67710caf3898a81d5f8dfb797044f75037bbedc4",
+  "commit": "8054114d9a8166b1418e8a1be2dcd3480a037669",
   "files": [
     {
       "file": "group-statistics/SOURCE.json",
@@ -128,8 +128,8 @@
     {
       "file": "group-statistics-r.json",
       "source": "tests/fixtures/group-statistics-r.json",
-      "sha256": "ad95aacd9b2126f7c23437df1b3f92ecbb4b3197120a3cca94d9fa4fdca200cf",
-      "bytes": 27088
+      "sha256": "bf4fd81e2ad5f77c8feaeb5f32f84edbe37fc7f9c3d5d40c5d3e5abac4f463be",
+      "bytes": 27420
     },
     {
       "file": "association-statistics/SOURCE.json",
