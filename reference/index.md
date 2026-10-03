@@ -39,6 +39,10 @@ saved page shows them with no R and no network.
 
 - [`Widget_GroupComparison()`](https://jwildfire.github.io/gsm.bio/reference/Widget_GroupComparison.md)
   : Group Comparison Widget
+- [`Widget_AssociationScatter()`](https://jwildfire.github.io/gsm.bio/reference/Widget_AssociationScatter.md)
+  : Association Scatter Widget
+- [`Widget_CorrelationMatrix()`](https://jwildfire.github.io/gsm.bio/reference/Widget_CorrelationMatrix.md)
+  : Correlation Matrix Widget
 
 ## Synthetic study
 

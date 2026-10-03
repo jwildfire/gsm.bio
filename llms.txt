@@ -98,8 +98,59 @@ view that was not computed, such as another test or a filter, says that
 statistics are unavailable for it; it never shows another view’s
 numbers.
 
-The widget carries two JavaScript bundles, both copied from bio.viz with
-the commit and a checksum per file recorded in
+[`Widget_AssociationScatter()`](https://jwildfire.github.io/gsm.bio/reference/Widget_AssociationScatter.md)
+draws bio.viz’s association scatter the same way: one point per
+participant with a variable on each axis, a correlation coefficient
+under each panel and, when asked for, a fitted line.
+
+``` r
+
+Widget_AssociationScatter(
+  Synthetic_Results,
+  Synthetic_Participants,
+  lSettings = list(
+    x = list(measure = "TNF-alpha", visit = "Baseline"),
+    y = list(measure = "IL-10", visit = "Baseline"),
+    color_by = "ARM",
+    fit = "linear"
+  )
+)
+```
+
+For the pair the settings open on it stores
+[`Analyze_Correlation()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_Correlation.md)’s
+answer for Pearson’s and for Spearman’s coefficient and
+[`Analyze_Fit()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_Fit.md)’s
+for the linear fit and for the smooth, four results for each panel, so
+the Method and Fitted line controls of a saved page are answered. The
+fitted line is drawn from R’s stored points. Another variable, colour,
+filter or scale is a view that was not computed, and says so.
+
+[`Widget_CorrelationMatrix()`](https://jwildfire.github.io/gsm.bio/reference/Widget_CorrelationMatrix.md)
+draws bio.viz’s correlation matrix: a grid over several biomarkers at
+one visit, or one biomarker at several visits, each pair a cell with its
+coefficient and its own pair count, and no p-values. A click on a cell
+opens that pair’s association scatter in place, with a way back.
+
+``` r
+
+Widget_CorrelationMatrix(
+  Synthetic_Results,
+  Synthetic_Participants,
+  lSettings = list(visit = "Baseline")
+)
+```
+
+It stores
+[`Analyze_CorrelationMatrix()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_CorrelationMatrix.md)’s
+answer for the grid the settings open on and, for every cell, exactly
+what the scatter that cell opens asks of R, so a saved page opens any
+cell’s scatter with its coefficient, interval and p-value. On the
+synthetic study that is one grid and 132 scatters, one for each cell on
+either side of the diagonal.
+
+Every widget carries two JavaScript bundles, both copied from bio.viz
+with the commit and a checksum per file recorded in
 `inst/htmlwidgets/lib/SOURCE.json`: bio.viz’s own, and the copy of
 safety.viz’s bundle bio.viz builds its chart from. The safety.viz copy
 is a stand-in. It comes from a safety.viz branch that is not merged yet,
@@ -121,9 +172,9 @@ is used.
 ## Status
 
 Version 0.1.0 is in development on `dev`: seven statistics functions,
-the synthetic study and the first widget, for the group comparison
-chart. Widgets for the other charts and static figures come in later
-versions.
+the synthetic study and three widgets, for the group comparison chart,
+the association scatter and the correlation matrix. Widgets for the
+other charts and static figures come in later versions.
 [NEWS.md](https://github.com/jwildfire/gsm.bio/blob/dev/NEWS.md) lists
 what has landed, and the reference site is at
 <https://jwildfire.github.io/gsm.bio/>.
@@ -177,6 +228,10 @@ saved page shows them with no R and no network.
 
 - [`Widget_GroupComparison()`](https://jwildfire.github.io/gsm.bio/reference/Widget_GroupComparison.md)
   : Group Comparison Widget
+- [`Widget_AssociationScatter()`](https://jwildfire.github.io/gsm.bio/reference/Widget_AssociationScatter.md)
+  : Association Scatter Widget
+- [`Widget_CorrelationMatrix()`](https://jwildfire.github.io/gsm.bio/reference/Widget_CorrelationMatrix.md)
+  : Correlation Matrix Widget
 
 ## Synthetic study
 

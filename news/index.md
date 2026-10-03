@@ -124,6 +124,40 @@ prepared.
   ([obot.roadmap#357](https://github.com/jwildfire/obot.roadmap/issues/357),
   [\#12](https://github.com/jwildfire/gsm.bio/issues/12),
   [\#14](https://github.com/jwildfire/gsm.bio/pull/14))
+- **The association scatter from R, with R’s coefficient and fitted line
+  stored in the page.**
+  [`Widget_AssociationScatter()`](https://jwildfire.github.io/gsm.bio/reference/Widget_AssociationScatter.md)
+  draws bio.viz’s association scatter from a results table, an optional
+  participant table and the chart’s own settings: one point per
+  participant with a variable on each axis. When the widget is made, R
+  computes the correlation coefficient and the fitted line of the pair
+  the settings open on, with
+  [`Analyze_Correlation()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_Correlation.md)
+  and
+  [`Analyze_Fit()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_Fit.md),
+  overall and within each colour, and stores them in the page: Pearson’s
+  and Spearman’s coefficient and the linear fit and the smooth, so a
+  saved page answers its Method and Fitted line controls with no R and
+  no network, and draws the line from R’s own points. Another variable,
+  colour, filter or scale is a view that was not computed, and says that
+  statistics are unavailable.
+  ([obot.roadmap#357](https://github.com/jwildfire/obot.roadmap/issues/357),
+  [\#13](https://github.com/jwildfire/gsm.bio/issues/13),
+  [\#15](https://github.com/jwildfire/gsm.bio/pull/15))
+- **The correlation matrix from R, with every cell’s scatter stored in
+  the page.**
+  [`Widget_CorrelationMatrix()`](https://jwildfire.github.io/gsm.bio/reference/Widget_CorrelationMatrix.md)
+  draws bio.viz’s correlation matrix: several biomarkers at one visit,
+  or one biomarker at several visits, each pair a cell with R’s
+  coefficient, its interval and its own pair count, and no p-values.
+  When the widget is made, R computes the grid with
+  [`Analyze_CorrelationMatrix()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_CorrelationMatrix.md)
+  and, for every cell, what the association scatter that cell opens asks
+  for, so a saved page opens any cell’s scatter with its coefficient,
+  interval and p-value, and back again, with no R and no network.
+  ([obot.roadmap#357](https://github.com/jwildfire/obot.roadmap/issues/357),
+  [\#13](https://github.com/jwildfire/gsm.bio/issues/13),
+  [\#15](https://github.com/jwildfire/gsm.bio/pull/15))
 
 ### Also in this release
 

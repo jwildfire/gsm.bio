@@ -35,14 +35,14 @@ runs one requirement per session
   — builds the reference site into `docs/` (not committed); CI deploys
   it from `dev` to the `gh-pages` branch.
 - `Rscript data-raw/vendor-bio-viz.R` — copies what gsm.bio takes from
-  bio.viz’s `dev` again, with its records: the two bundles the widget
-  loads (`inst/htmlwidgets/lib/`), the fixtures the tests hold R to
+  bio.viz’s `dev` again, with its records: the two bundles the widgets
+  load (`inst/htmlwidgets/lib/`), the fixtures the tests hold R to
   (`tests/testthat/fixtures/bio.viz/`), and the frames the copied
   bundle’s own core writes
   (`tests/testthat/fixtures/core-frames/frames.json`). It needs git, a
   network connection and node. Run it when bio.viz’s `dev` moves, then
-  run the suite: a test that fails names the rule in `R/core.R` or
-  `R/GroupComparison.R` that bio.viz changed.
+  run the suite: a test that fails names the rule in `R/core.R`,
+  `R/chart.R` or a chart’s own file that bio.viz changed.
 
 # Conventions
 
@@ -68,12 +68,21 @@ runs one requirement per session
 - A file copied from bio.viz is never edited here: change it in bio.viz
   and copy it again. `tests/testthat/test-vendored.R` fails the suite
   when a copied file and its record disagree.
-- `R/core.R` and `R/GroupComparison.R` are bio.viz’s rules written a
-  second time, so that R computes on the rows the chart draws: which
-  participants are in a panel, and how the chart asks for a panel’s
-  result. They are the only such copies. The tests hold them to frames
+- `R/core.R`, `R/chart.R` and one file per chart (`R/GroupComparison.R`,
+  `R/AssociationScatter.R`, `R/CorrelationMatrix.R`) are bio.viz’s rules
+  written a second time, so that R computes on the rows the chart draws:
+  which participants are in a panel, and how the chart asks for a
+  panel’s result. `R/core.R` is bio.viz’s core, `R/chart.R` what every
+  chart shares (bio.viz’s `src/shared/`), and a chart’s own file its own
+  rules. They are the only such copies. The tests hold them to frames
   and requests written by bio.viz’s own code, so change them only to
   follow bio.viz.
+- A widget’s binding names its chart and nothing more:
+  `inst/htmlwidgets/shared/gsm.bio.widget.js` is the script every
+  binding is made with, and `R/utils-widget.R` what every `Widget_*()`
+  function is made with. A new widget adds its chart’s rules, a few
+  lines of binding, and its name to `chrWidgets` in
+  `data-raw/vendor-bio-viz.R`, which writes its dependency file.
 - The proof that a widget saves as one self-contained file needs pandoc.
   In the source tree the test fails without it; it never skips there.
 - Every `Analyze_*` function returns the one result shape documented in

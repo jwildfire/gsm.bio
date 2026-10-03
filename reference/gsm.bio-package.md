@@ -36,13 +36,16 @@ from survival.
 A widget draws a bio.viz chart from R. It computes the chart's
 statistics with the functions above when it is made and stores them in
 the page, so a saved page shows them with no R and no network: see
-[`Widget_GroupComparison()`](https://jwildfire.github.io/gsm.bio/reference/Widget_GroupComparison.md).
+[`Widget_GroupComparison()`](https://jwildfire.github.io/gsm.bio/reference/Widget_GroupComparison.md),
+[`Widget_AssociationScatter()`](https://jwildfire.github.io/gsm.bio/reference/Widget_AssociationScatter.md)
+and
+[`Widget_CorrelationMatrix()`](https://jwildfire.github.io/gsm.bio/reference/Widget_CorrelationMatrix.md).
 The widgets are the only part of the package that uses htmlwidgets.
 
 ## Status
 
 Version 0.1.0 is in development: the statistics functions, a synthetic
-biomarker study with known planted effects, and the first widget.
+biomarker study with known planted effects, and the first widgets.
 
 ## See also
 

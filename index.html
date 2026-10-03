@@ -134,7 +134,28 @@
 <span><span class="op">)</span></span></code></pre></div>
 <p>It takes the results table, optionally the participant table, and the chart’s settings as a list under bio.viz’s own names. The chart opens on an overview of every biomarker at every visit, which prints no test; a click on a biomarker opens it alone, with a panel for each visit and a test under each. <code>start_value = "IL-6"</code> opens that biomarker straight away.</p>
 <p>The tests are computed in R when the widget is made, by <code><a href="reference/Analyze_GroupDifference.html">Analyze_GroupDifference()</a></code>, for each biomarker at each visit panel the chart draws at the widget’s settings, and are stored in the page. Saved with <code><a href="https://rdrr.io/pkg/htmlwidgets/man/saveWidget.html" class="external-link">htmlwidgets::saveWidget()</a></code>, the page is one file that shows them with no R and no network, and says under the chart which R version and gsm.bio version computed them. A view that was not computed, such as another test or a filter, says that statistics are unavailable for it; it never shows another view’s numbers.</p>
-<p>The widget carries two JavaScript bundles, both copied from bio.viz with the commit and a checksum per file recorded in <code>inst/htmlwidgets/lib/SOURCE.json</code>: bio.viz’s own, and the copy of safety.viz’s bundle bio.viz builds its chart from. The safety.viz copy is a stand-in. It comes from a safety.viz branch that is not merged yet, and is to be replaced by gsm.safety’s bundle once gsm.safety carries one with the kit.</p>
+<p><code><a href="reference/Widget_AssociationScatter.html">Widget_AssociationScatter()</a></code> draws bio.viz’s association scatter the same way: one point per participant with a variable on each axis, a correlation coefficient under each panel and, when asked for, a fitted line.</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="reference/Widget_AssociationScatter.html">Widget_AssociationScatter</a></span><span class="op">(</span></span>
+<span>  <span class="va">Synthetic_Results</span>,</span>
+<span>  <span class="va">Synthetic_Participants</span>,</span>
+<span>  lSettings <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
+<span>    x <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>measure <span class="op">=</span> <span class="st">"TNF-alpha"</span>, visit <span class="op">=</span> <span class="st">"Baseline"</span><span class="op">)</span>,</span>
+<span>    y <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>measure <span class="op">=</span> <span class="st">"IL-10"</span>, visit <span class="op">=</span> <span class="st">"Baseline"</span><span class="op">)</span>,</span>
+<span>    color_by <span class="op">=</span> <span class="st">"ARM"</span>,</span>
+<span>    fit <span class="op">=</span> <span class="st">"linear"</span></span>
+<span>  <span class="op">)</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>For the pair the settings open on it stores <code><a href="reference/Analyze_Correlation.html">Analyze_Correlation()</a></code>’s answer for Pearson’s and for Spearman’s coefficient and <code><a href="reference/Analyze_Fit.html">Analyze_Fit()</a></code>’s for the linear fit and for the smooth, four results for each panel, so the Method and Fitted line controls of a saved page are answered. The fitted line is drawn from R’s stored points. Another variable, colour, filter or scale is a view that was not computed, and says so.</p>
+<p><code><a href="reference/Widget_CorrelationMatrix.html">Widget_CorrelationMatrix()</a></code> draws bio.viz’s correlation matrix: a grid over several biomarkers at one visit, or one biomarker at several visits, each pair a cell with its coefficient and its own pair count, and no p-values. A click on a cell opens that pair’s association scatter in place, with a way back.</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="reference/Widget_CorrelationMatrix.html">Widget_CorrelationMatrix</a></span><span class="op">(</span></span>
+<span>  <span class="va">Synthetic_Results</span>,</span>
+<span>  <span class="va">Synthetic_Participants</span>,</span>
+<span>  lSettings <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>visit <span class="op">=</span> <span class="st">"Baseline"</span><span class="op">)</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>It stores <code><a href="reference/Analyze_CorrelationMatrix.html">Analyze_CorrelationMatrix()</a></code>’s answer for the grid the settings open on and, for every cell, exactly what the scatter that cell opens asks of R, so a saved page opens any cell’s scatter with its coefficient, interval and p-value. On the synthetic study that is one grid and 132 scatters, one for each cell on either side of the diagonal.</p>
+<p>Every widget carries two JavaScript bundles, both copied from bio.viz with the commit and a checksum per file recorded in <code>inst/htmlwidgets/lib/SOURCE.json</code>: bio.viz’s own, and the copy of safety.viz’s bundle bio.viz builds its chart from. The safety.viz copy is a stand-in. It comes from a safety.viz branch that is not merged yet, and is to be replaced by gsm.safety’s bundle once gsm.safety carries one with the kit.</p>
 </div>
 <div class="section level2">
 <h2 id="synthetic-study">Synthetic study<a class="anchor" aria-label="anchor" href="#synthetic-study"></a>
@@ -144,7 +165,7 @@
 <div class="section level2">
 <h2 id="status">Status<a class="anchor" aria-label="anchor" href="#status"></a>
 </h2>
-<p>Version 0.1.0 is in development on <code>dev</code>: seven statistics functions, the synthetic study and the first widget, for the group comparison chart. Widgets for the other charts and static figures come in later versions. <a href="https://github.com/jwildfire/gsm.bio/blob/dev/NEWS.md" class="external-link">NEWS.md</a> lists what has landed, and the reference site is at <a href="https://jwildfire.github.io/gsm.bio/" class="uri">https://jwildfire.github.io/gsm.bio/</a>.</p>
+<p>Version 0.1.0 is in development on <code>dev</code>: seven statistics functions, the synthetic study and three widgets, for the group comparison chart, the association scatter and the correlation matrix. Widgets for the other charts and static figures come in later versions. <a href="https://github.com/jwildfire/gsm.bio/blob/dev/NEWS.md" class="external-link">NEWS.md</a> lists what has landed, and the reference site is at <a href="https://jwildfire.github.io/gsm.bio/" class="uri">https://jwildfire.github.io/gsm.bio/</a>.</p>
 <p>The design is on the obot roadmap: <a href="https://jwildfire.github.io/obot.roadmap/requirements/design/353_design.html" class="external-link">bio.viz and gsm.bio</a>.</p>
 </div>
 <div class="section level2">
