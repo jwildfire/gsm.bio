@@ -91,7 +91,8 @@ list of column to participants with a value; and <code>rows</code> is the matrix
 long form, one row per pair of columns, each pair once, with the columns
 <code>x</code>, <code>y</code>, <code>counts</code> (the complete pairs), <code>estimate</code>, <code>lower</code>, <code>upper</code>,
 <code>level</code>, <code>status</code>, <code>reason</code> and <code>warning</code>. The result's own <code>status</code> is
-<code>"too_small"</code> only when every pair is.</p>
+<code>"too_small"</code> when every pair is, and <code>"error"</code> when no pair could be
+computed for any other reason, such as a column that does not vary.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>

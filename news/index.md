@@ -107,6 +107,14 @@ numbers for says so.
   [`StatisticsResult()`](https://jwildfire.github.io/gsm.bio/reference/StatisticsResult.html),
   [\#3](https://github.com/jwildfire/gsm.bio/issues/3),
   [\#7](https://github.com/jwildfire/gsm.bio/pull/7)
+- **Data a statistic does not allow gets a reason, not a number.**
+  Values that do not vary, ranks all tied, no event in any group, or a
+  smooth on fewer than seven pairs answers with a reason, never “ok”
+  with a number that means nothing. A hazard ratio whose Cox interval is
+  not finite, as when one of two groups has no events, is reported as
+  not estimable, and the log-rank test is kept.
+  [\#24](https://github.com/jwildfire/gsm.bio/issues/24),
+  [\#26](https://github.com/jwildfire/gsm.bio/pull/26)
 - **A result is the running R’s answer:** R 4.3 and R 4.6 can word a
   warning, or compute a p-value, differently.
   [\#4](https://github.com/jwildfire/gsm.bio/issues/4),
@@ -128,7 +136,7 @@ numbers for says so.
 
 ### Tests and provenance
 
-164 tests (26,031 expectations on R 4.3.3) pass from the source tree,
+181 tests (28,849 expectations on R 4.3.3) pass from the source tree,
 where none may skip; `R CMD check` runs them too, skipping the nine that
 read the repository’s own files. The group, correlation, matrix,
 fitted-line and screen statistics the charts print are held to desktop

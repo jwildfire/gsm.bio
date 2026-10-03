@@ -172,7 +172,14 @@ variance, put on the same scale. It agrees with <code><a href="https://easystats
 and the package's tests check that it does.</p>
 <p>Its p-value is not computed from it: it is <code><a href="https://rdrr.io/r/stats/t.test.html" class="external-link">stats::t.test()</a></code>'s, Welch,
 which does not assume the equal variances that the pooled standard
-deviation does.</p>
+deviation does. So when the two groups' spreads differ, a row's interval can
+include zero while its p-value is below 0.05, or exclude zero while it is
+above; the screen's notes say so. Whether the interval should follow Welch is
+an open design question.</p>
+<p>A row by hazard ratio whose hazard ratio cannot be estimated (see
+<code><a href="Analyze_Survival.html">Analyze_Survival()</a></code>) has <code>status</code> <code>"error"</code> and a reason, and no method,
+statistic or p-value, as a difference row has when its standardised
+difference cannot be computed.</p>
     </div>
     <div class="section level2">
     <h2 id="high-against-low">High against low<a class="anchor" aria-label="anchor" href="#high-against-low"></a></h2>

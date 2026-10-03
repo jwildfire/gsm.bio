@@ -52,7 +52,9 @@ Here `p_value` is `NA` and `estimates` and `statistic` have no rows;
 `rows` is the matrix in long form, one row per pair of columns, each
 pair once, with the columns `x`, `y`, `counts` (the complete pairs),
 `estimate`, `lower`, `upper`, `level`, `status`, `reason` and `warning`.
-The result's own `status` is `"too_small"` only when every pair is.
+The result's own `status` is `"too_small"` when every pair is, and
+`"error"` when no pair could be computed for any other reason, such as a
+column that does not vary.
 
 ## Details
 

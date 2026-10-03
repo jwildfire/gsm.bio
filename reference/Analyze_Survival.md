@@ -91,6 +91,15 @@ second, so the second group is the reference: with
 `chrGroups = c("High", "Low")` a ratio above 1 means events come sooner
 in the high group.
 
+The hazard ratio is reported only when the Cox model gives it a finite
+interval. When one of two groups has no events, or every event in one
+group comes before every event in the other, the model's estimate runs
+off to zero or to infinity: the hazard ratio is not estimated, its
+columns in `rows` are `NA`, and `notes` says why and which. The log-rank
+test, which does not need it, and the medians are kept. With no event in
+any group, or no event while two groups are both at risk, the log-rank
+test compares nothing: `status` is `"error"`.
+
 ## Two p-values, kept apart
 
 `p_value` is the log-rank test's. The Cox model has p-values of its own,

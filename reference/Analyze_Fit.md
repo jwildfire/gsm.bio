@@ -95,8 +95,19 @@ Here:
   or R stopped, is one row with its `status` and `reason` and no point:
   `x` is `NA`.
 
-When every x value is the same there is no line to fit: `status` is
-`"error"` and `reason` says so.
+When every x value is the same, or every y value, there is no line to
+fit: `status` is `"error"` and `reason` says so. So it is when a line
+leaves no residual degrees of freedom, as two pairs do with the minimum
+lowered: its interval, its test and its band are not finite.
+
+A smooth needs at least seven complete pairs, or the minimum group size
+when that is larger: with its defaults
+[`loess()`](https://rdrr.io/r/stats/loess.html) gives a band that is not
+finite on most samples of five or six points. Below that a smooth has
+`status` `"too_small"`. A smooth whose curve or band is not finite at
+some x value, as [`loess()`](https://rdrr.io/r/stats/loess.html) can
+give on few points or few distinct x values, has `status` `"error"`, and
+no part of it is drawn.
 
 ## Details
 

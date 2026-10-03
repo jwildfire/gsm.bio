@@ -30,6 +30,23 @@ withheld: `p_value` is `NA` and `estimates` and `statistic` have no
 rows. `counts` and `dropped` are still filled in where they are known,
 because they are the explanation.
 
+An answer that is `"ok"` has a number. Data the statistic does not allow
+is answered with a reason, not with a number that means nothing. Values
+that do not vary are refused as
+[`stats::t.test()`](https://rdrr.io/r/stats/t.test.html) refuses them,
+as "essentially constant": an ANOVA on values constant within every
+group, a line or smooth with a y that does not vary, and a correlation
+with a variable that does not vary. So is a Kruskal-Wallis test on
+values all tied, a test that returns no p-value, an ANOVA with no more
+rows than groups, a linear fit with no residual degrees of freedom, and
+a survival comparison with no event while two groups are both at risk. A
+part that cannot be estimated is said to be so in `notes`: a hazard
+ratio whose interval is not finite. "Essentially constant" is
+[`t.test()`](https://rdrr.io/r/stats/t.test.html)'s rule: the spread is
+at most `10 * .Machine$double.eps` times the largest absolute value; for
+an ANOVA, the pooled within-group standard deviation against the largest
+absolute group mean.
+
 Wherever `p_value` and `adjustment` appear together, at the top level or
 in a row of `rows`, `adjustment` describes that `p_value`. A row whose
 p-value was adjusted also carries the unadjusted one as `p_unadjusted`.

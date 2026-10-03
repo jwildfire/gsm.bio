@@ -146,7 +146,16 @@ and the package's tests check that it does.
 Its p-value is not computed from it: it is
 [`stats::t.test()`](https://rdrr.io/r/stats/t.test.html)'s, Welch, which
 does not assume the equal variances that the pooled standard deviation
-does.
+does. So when the two groups' spreads differ, a row's interval can
+include zero while its p-value is below 0.05, or exclude zero while it
+is above; the screen's notes say so. Whether the interval should follow
+Welch is an open design question.
+
+A row by hazard ratio whose hazard ratio cannot be estimated (see
+[`Analyze_Survival()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_Survival.md))
+has `status` `"error"` and a reason, and no method, statistic or
+p-value, as a difference row has when its standardised difference cannot
+be computed.
 
 ## High against low
 
