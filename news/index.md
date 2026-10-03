@@ -158,6 +158,23 @@ prepared.
   ([obot.roadmap#357](https://github.com/jwildfire/obot.roadmap/issues/357),
   [\#13](https://github.com/jwildfire/gsm.bio/issues/13),
   [\#15](https://github.com/jwildfire/gsm.bio/pull/15))
+- **The biomarker screen from R, with every row’s chart stored in the
+  page.**
+  [`Widget_BiomarkerScreen()`](https://jwildfire.github.io/gsm.bio/reference/Widget_BiomarkerScreen.md)
+  draws bio.viz’s biomarker screen: every biomarker at one visit, as a
+  standardised difference between two groups or a correlation with one
+  variable, each row with R’s estimate, its interval and its raw and
+  adjusted p-values. When the widget is made, R computes the screen with
+  [`Analyze_Screen()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_Screen.md)
+  and, for every row, what the chart that row opens asks for: the group
+  comparison at that visit, of the two groups, with Welch’s test, or the
+  association scatter with the biomarker against the variable. A saved
+  page opens any row’s chart with its statistics, and back again, with
+  no R and no network; a view that was not computed says that statistics
+  are unavailable.
+  ([obot.roadmap#358](https://github.com/jwildfire/obot.roadmap/issues/358),
+  [\#16](https://github.com/jwildfire/gsm.bio/issues/16),
+  [\#17](https://github.com/jwildfire/gsm.bio/pull/17))
 
 ### Also in this release
 

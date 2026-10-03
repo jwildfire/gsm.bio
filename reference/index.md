@@ -43,6 +43,8 @@ saved page shows them with no R and no network.
   : Association Scatter Widget
 - [`Widget_CorrelationMatrix()`](https://jwildfire.github.io/gsm.bio/reference/Widget_CorrelationMatrix.md)
   : Correlation Matrix Widget
+- [`Widget_BiomarkerScreen()`](https://jwildfire.github.io/gsm.bio/reference/Widget_BiomarkerScreen.md)
+  : Biomarker Screen Widget
 
 ## Synthetic study
 

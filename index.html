@@ -155,6 +155,14 @@
 <span>  lSettings <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>visit <span class="op">=</span> <span class="st">"Baseline"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <p>It stores <code><a href="reference/Analyze_CorrelationMatrix.html">Analyze_CorrelationMatrix()</a></code>’s answer for the grid the settings open on and, for every cell, exactly what the scatter that cell opens asks of R, so a saved page opens any cell’s scatter with its coefficient, interval and p-value. On the synthetic study that is one grid and 132 scatters, one for each cell on either side of the diagonal.</p>
+<p><code><a href="reference/Widget_BiomarkerScreen.html">Widget_BiomarkerScreen()</a></code> draws bio.viz’s biomarker screen: one row per biomarker at one visit, each with its estimate and interval on one shared axis and its raw and adjusted p-values, as a standardised difference between two groups or a correlation with one variable. A click on a row opens that biomarker’s group comparison or association scatter in place, with a way back.</p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="reference/Widget_BiomarkerScreen.html">Widget_BiomarkerScreen</a></span><span class="op">(</span></span>
+<span>  <span class="va">Synthetic_Results</span>,</span>
+<span>  <span class="va">Synthetic_Participants</span>,</span>
+<span>  lSettings <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>visit <span class="op">=</span> <span class="st">"Week 4"</span>, value_type <span class="op">=</span> <span class="st">"change"</span>, group_by <span class="op">=</span> <span class="st">"ARM"</span><span class="op">)</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>It stores <code><a href="reference/Analyze_Screen.html">Analyze_Screen()</a></code>’s answer for the screen the settings open on and, for every row, exactly what the chart that row opens asks of R: for a difference the group comparison at the screen’s one visit, of the two groups, with Welch’s test; for a correlation the scatter with the biomarker along the bottom and the variable up the side. On the synthetic study, Placebo against Treatment, that is one screen and twelve group comparisons.</p>
 <p>Every widget carries two JavaScript bundles, both copied from bio.viz with the commit and a checksum per file recorded in <code>inst/htmlwidgets/lib/SOURCE.json</code>: bio.viz’s own, and the copy of safety.viz’s bundle bio.viz builds its chart from. The safety.viz copy is a stand-in. It comes from a safety.viz branch that is not merged yet, and is to be replaced by gsm.safety’s bundle once gsm.safety carries one with the kit.</p>
 </div>
 <div class="section level2">
@@ -165,7 +173,7 @@
 <div class="section level2">
 <h2 id="status">Status<a class="anchor" aria-label="anchor" href="#status"></a>
 </h2>
-<p>Version 0.1.0 is in development on <code>dev</code>: seven statistics functions, the synthetic study and three widgets, for the group comparison chart, the association scatter and the correlation matrix. Widgets for the other charts and static figures come in later versions. <a href="https://github.com/jwildfire/gsm.bio/blob/dev/NEWS.md" class="external-link">NEWS.md</a> lists what has landed, and the reference site is at <a href="https://jwildfire.github.io/gsm.bio/" class="uri">https://jwildfire.github.io/gsm.bio/</a>.</p>
+<p>Version 0.1.0 is in development on <code>dev</code>: seven statistics functions, the synthetic study and four widgets, for the group comparison chart, the association scatter, the correlation matrix and the biomarker screen. Widgets for the other charts and static figures come in later versions. <a href="https://github.com/jwildfire/gsm.bio/blob/dev/NEWS.md" class="external-link">NEWS.md</a> lists what has landed, and the reference site is at <a href="https://jwildfire.github.io/gsm.bio/" class="uri">https://jwildfire.github.io/gsm.bio/</a>.</p>
 <p>The design is on the obot roadmap: <a href="https://jwildfire.github.io/obot.roadmap/requirements/design/353_design.html" class="external-link">bio.viz and gsm.bio</a>.</p>
 </div>
 <div class="section level2">
