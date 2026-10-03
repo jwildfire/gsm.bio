@@ -247,7 +247,7 @@ GroupComparison_Panels <- function(dfResults, dfParticipants, lConfig, lState) {
 # that is a list is an unnamed list, so it is written as a JSON array whatever
 # its length.
 GroupComparison_Key <- function(dfRecords, lView) {
-  chrGroups <- sort(unique(Core_Text(dfRecords$x)), method = "radix")
+  chrGroups <- Core_SortText(unique(Core_Text(dfRecords$x)))
   lDataId <- list(chart = "group-comparison", measure = lView$measure, value_type = lView$value_type)
   if (!is.null(lView$visit)) lDataId$visit <- lView$visit
   if (!is.null(lView$baseline_visits)) lDataId$baseline_visits <- as.list(lView$baseline_visits)

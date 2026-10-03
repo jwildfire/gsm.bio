@@ -174,6 +174,45 @@ Widget_NameBaseline <- function(lConfig, lSettings, dfResults) {
   list(config = lConfig, settings = lSettings)
 }
 
+#' Name the value an `all = FALSE` filter opens on to the chart outright
+#'
+#' A filter set `all = FALSE` with no start the data has opens on its first
+#' value. R and the reader's browser can order a column's values differently
+#' (a letter with an accent, punctuation), so R's first value is handed to the
+#' chart as the filter's `start`, which the chart keeps: R computes on the
+#' participants the chart draws, and every stored result is found. Every spec
+#' on that column is named, so two specs on one column agree. Filters that name
+#' no first value leave the settings as they were given.
+#'
+#' @return A list of `config`, the settings R reads, and `settings`, the
+#'   settings the page is given.
+#'
+#' @keywords internal
+#' @noRd
+Widget_NameFilters <- function(lConfig, lSettings, dfResults, dfParticipants) {
+  lUnchanged <- list(config = lConfig, settings = lSettings)
+  if (is.null(lConfig$filters) || is.null(dfParticipants) || nrow(dfParticipants) == 0L) {
+    return(lUnchanged)
+  }
+  lState <- Chart_Filters(dfParticipants, lConfig, NULL)
+  chrNamed <- unique(unlist(lapply(lConfig$filters, function(lSpec) {
+    strColumn <- lSpec$value_col
+    if (identical(lSpec$all, FALSE) && !isTRUE(lSpec$multiple) && !is.null(lState[[strColumn]])) strColumn
+  })))
+  if (length(chrNamed) == 0L) {
+    return(lUnchanged)
+  }
+  lSpecs <- lapply(lConfig$filters, function(lSpec) {
+    if (lSpec$value_col %in% chrNamed) {
+      lSpec$start <- lState[[lSpec$value_col]]
+    }
+    lSpec
+  })
+  lConfig$filters <- lSpecs
+  lSettings$filters <- lSpecs
+  list(config = lConfig, settings = lSettings)
+}
+
 #' Make a widget from its tables, its settings and R's answers
 #'
 #' @param strName `character` The widget's name, which is its binding's.

@@ -39,6 +39,21 @@
 #' visits to the chart outright: when `baseline_visits` is not given, it is set
 #' to the first visit in visit order, which is what the chart would choose.
 #'
+#' @section Filters:
+#' With a participant table the chart has filters, set by the setting
+#' `filters` under safety.viz's rules: a filter opens on its `start` when the
+#' data has it and otherwise on All, a filter set `all = FALSE` has no All and
+#' opens on its first value, and `multiple = TRUE` lets several values through.
+#' R works out what each filter opens on as the chart does, and stores the
+#' results for those participants.
+#'
+#' The first value of an `all = FALSE` filter is the one exception, because
+#' the chart lists a filter's values in the order of the reader's browser,
+#' which R cannot know: for a letter with an accent or for punctuation it can
+#' differ from R's order, by code point. So the widget hands the chart R's
+#' first value as the filter's `start`, and the page opens on the participants
+#' R computed for, though that value may not be the first in the list.
+#'
 #' @section Bundles:
 #' The widget loads bio.viz's bundle and the copy of safety.viz's bundle that
 #' bio.viz itself builds its chart from. Both are copied from bio.viz, with the
@@ -121,6 +136,7 @@ Widget_GroupComparison <- function(
   lConfig <- GroupComparison_Settings(lSettings)
   Widget_CheckColumns(lConfig, dfResults, dfParticipants)
   lNamed <- Widget_NameBaseline(lConfig, lSettings, dfResults)
+  lNamed <- Widget_NameFilters(lNamed$config, lNamed$settings, dfResults, dfParticipants)
 
   Widget_Create(
     "Widget_GroupComparison", dfResults, dfParticipants, lNamed$settings,

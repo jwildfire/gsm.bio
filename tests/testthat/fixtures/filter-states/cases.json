@@ -1,17 +1,507 @@
 {
-  "what": "Filter settings over the synthetic study's participant table, each run through the vendored safety.viz kit by data-raw/filter-states.mjs as bio.viz's charts run them: normalizeFilterSpec, initFilterState, then reconcileFilters with the values each filter control offers.",
+  "what": "Filter settings, each run through the vendored bundles by data-raw/filter-states.mjs as bio.viz's charts run them: the safety.viz kit's normalizeFilterSpec and initFilterState, then bio.viz's own addFilterControls, which lists each control's values and calls the kit's reconcileFilters. A case with no `participants` is over the synthetic study's participant table; one with `participants` gives its own, by column. A case with `differs` is one where R's order of a column's values is not the browser's, so R's first value is not the kit's: `differs.r` is the value R opens the filter on, and the widget names it to the chart as the filter's `start`; the script also runs the kit on the spec with that start.",
   "cases": [
-    {"case": "every-filter-opens-on-all", "filters": ["ARM", "SEX", "RESPONSE"]},
-    {"case": "a-start-the-data-has", "filters": [{"value_col": "SEX", "start": "F"}, "ARM"]},
-    {"case": "a-start-the-data-lacks", "filters": [{"value_col": "SEX", "start": "X"}, "ARM"]},
-    {"case": "all-false-opens-on-the-first-value", "filters": [{"value_col": "SEX", "all": false}, {"value_col": "ARM", "all": false}]},
-    {"case": "all-false-with-a-start", "filters": [{"value_col": "ARM", "all": false, "start": "Treatment"}]},
-    {"case": "all-false-with-a-start-the-data-lacks", "filters": [{"value_col": "ARM", "all": false, "start": "Nope"}]},
-    {"case": "a-number-column", "filters": [{"value_col": "AGE", "start": 35}, {"value_col": "BMIBL", "all": false}]},
-    {"case": "multiple-with-starts", "filters": [{"value_col": "RESPONSE", "multiple": true, "start": ["Responder", "Non-responder"]}]},
-    {"case": "multiple-with-one-start-the-data-lacks", "filters": [{"value_col": "RESPONSE", "multiple": true, "start": ["Responder", "Nope"]}]},
-    {"case": "multiple-with-every-start-lacking", "filters": [{"value_col": "RESPONSE", "multiple": true, "start": ["Nope"]}]},
-    {"case": "multiple-all-false-with-no-start", "filters": [{"value_col": "SEX", "multiple": true, "all": false}]},
-    {"case": "the-id-is-no-filter", "filters": [{"value_col": "USUBJID", "start": "BIO-001"}, {"value_col": "SEX", "start": "M"}]}
+    {
+      "case": "every-filter-opens-on-all",
+      "filters": [
+        "ARM",
+        "SEX",
+        "RESPONSE"
+      ]
+    },
+    {
+      "case": "a-start-the-data-has",
+      "filters": [
+        {
+          "value_col": "SEX",
+          "start": "F"
+        },
+        "ARM"
+      ]
+    },
+    {
+      "case": "a-start-the-data-lacks",
+      "filters": [
+        {
+          "value_col": "SEX",
+          "start": "X"
+        },
+        "ARM"
+      ]
+    },
+    {
+      "case": "all-false-opens-on-the-first-value",
+      "filters": [
+        {
+          "value_col": "SEX",
+          "all": false
+        },
+        {
+          "value_col": "ARM",
+          "all": false
+        }
+      ]
+    },
+    {
+      "case": "all-false-with-a-start",
+      "filters": [
+        {
+          "value_col": "ARM",
+          "all": false,
+          "start": "Treatment"
+        }
+      ]
+    },
+    {
+      "case": "all-false-with-a-start-the-data-lacks",
+      "filters": [
+        {
+          "value_col": "ARM",
+          "all": false,
+          "start": "Nope"
+        }
+      ]
+    },
+    {
+      "case": "a-number-column",
+      "filters": [
+        {
+          "value_col": "AGE",
+          "start": 35
+        },
+        {
+          "value_col": "BMIBL",
+          "all": false
+        }
+      ]
+    },
+    {
+      "case": "multiple-with-starts",
+      "filters": [
+        {
+          "value_col": "RESPONSE",
+          "multiple": true,
+          "start": [
+            "Responder",
+            "Non-responder"
+          ]
+        }
+      ]
+    },
+    {
+      "case": "multiple-with-one-start-the-data-lacks",
+      "filters": [
+        {
+          "value_col": "RESPONSE",
+          "multiple": true,
+          "start": [
+            "Responder",
+            "Nope"
+          ]
+        }
+      ]
+    },
+    {
+      "case": "multiple-with-every-start-lacking",
+      "filters": [
+        {
+          "value_col": "RESPONSE",
+          "multiple": true,
+          "start": [
+            "Nope"
+          ]
+        }
+      ]
+    },
+    {
+      "case": "multiple-all-false-with-no-start",
+      "filters": [
+        {
+          "value_col": "SEX",
+          "multiple": true,
+          "all": false
+        }
+      ]
+    },
+    {
+      "case": "the-id-is-no-filter",
+      "filters": [
+        {
+          "value_col": "USUBJID",
+          "start": "BIO-001"
+        },
+        {
+          "value_col": "SEX",
+          "start": "M"
+        }
+      ]
+    },
+    {
+      "case": "a-blank-looking-value-with-all-false",
+      "participants": {
+        "USUBJID": [
+          "S01",
+          "S02",
+          "S03",
+          "S04"
+        ],
+        "SEX": [
+          " ",
+          "M",
+          " ",
+          "F"
+        ]
+      },
+      "filters": [
+        {
+          "value_col": "SEX",
+          "all": false
+        }
+      ]
+    },
+    {
+      "case": "a-blank-looking-start",
+      "participants": {
+        "USUBJID": [
+          "S01",
+          "S02",
+          "S03",
+          "S04"
+        ],
+        "SEX": [
+          "F",
+          "M",
+          " ",
+          "F"
+        ]
+      },
+      "filters": [
+        {
+          "value_col": "SEX",
+          "start": " "
+        }
+      ]
+    },
+    {
+      "case": "an-empty-value-is-no-value",
+      "participants": {
+        "USUBJID": [
+          "S01",
+          "S02",
+          "S03",
+          "S04"
+        ],
+        "SEX": [
+          "",
+          "M",
+          null,
+          "F"
+        ]
+      },
+      "filters": [
+        {
+          "value_col": "SEX",
+          "all": false
+        }
+      ]
+    },
+    {
+      "case": "two-specs-on-one-column",
+      "participants": {
+        "USUBJID": [
+          "S01",
+          "S02",
+          "S03",
+          "S04"
+        ],
+        "SEX": [
+          "F",
+          "M",
+          "M",
+          "F"
+        ]
+      },
+      "filters": [
+        {
+          "value_col": "SEX",
+          "start": "M",
+          "all": false
+        },
+        {
+          "value_col": "SEX"
+        }
+      ]
+    },
+    {
+      "case": "two-specs-on-one-column-the-second-started",
+      "participants": {
+        "USUBJID": [
+          "S01",
+          "S02",
+          "S03",
+          "S04"
+        ],
+        "SEX": [
+          "F",
+          "M",
+          "M",
+          "F"
+        ]
+      },
+      "filters": [
+        {
+          "value_col": "SEX",
+          "all": false
+        },
+        {
+          "value_col": "SEX",
+          "start": "M"
+        }
+      ]
+    },
+    {
+      "case": "logical-values",
+      "participants": {
+        "USUBJID": [
+          "S01",
+          "S02",
+          "S03",
+          "S04"
+        ],
+        "G": [
+          true,
+          false,
+          null,
+          true
+        ]
+      },
+      "filters": [
+        {
+          "value_col": "G",
+          "all": false
+        }
+      ]
+    },
+    {
+      "case": "a-logical-start",
+      "participants": {
+        "USUBJID": [
+          "S01",
+          "S02",
+          "S03",
+          "S04"
+        ],
+        "G": [
+          true,
+          false,
+          true,
+          true
+        ]
+      },
+      "filters": [
+        {
+          "value_col": "G",
+          "start": false
+        }
+      ]
+    },
+    {
+      "case": "negative-and-decimal-numbers",
+      "participants": {
+        "USUBJID": [
+          "S01",
+          "S02",
+          "S03",
+          "S04"
+        ],
+        "G": [
+          10,
+          9,
+          -1,
+          2.5
+        ]
+      },
+      "filters": [
+        {
+          "value_col": "G",
+          "all": false
+        }
+      ]
+    },
+    {
+      "case": "a-zero-start",
+      "participants": {
+        "USUBJID": [
+          "S01",
+          "S02",
+          "S03",
+          "S04"
+        ],
+        "G": [
+          0,
+          1,
+          1,
+          0
+        ]
+      },
+      "filters": [
+        {
+          "value_col": "G",
+          "start": 0,
+          "all": false
+        }
+      ]
+    },
+    {
+      "case": "several-starts-on-a-single-filter",
+      "participants": {
+        "USUBJID": [
+          "S01",
+          "S02",
+          "S03",
+          "S04"
+        ],
+        "SEX": [
+          "F",
+          "M",
+          "M",
+          "F"
+        ]
+      },
+      "filters": [
+        {
+          "value_col": "SEX",
+          "start": [
+            "X",
+            "M"
+          ],
+          "all": false
+        }
+      ]
+    },
+    {
+      "case": "one-start-on-a-multiple-filter",
+      "participants": {
+        "USUBJID": [
+          "S01",
+          "S02",
+          "S03",
+          "S04"
+        ],
+        "SEX": [
+          "F",
+          "M",
+          "M",
+          "F"
+        ]
+      },
+      "filters": [
+        {
+          "value_col": "SEX",
+          "multiple": true,
+          "start": "M"
+        }
+      ]
+    },
+    {
+      "case": "names-differing-in-case",
+      "participants": {
+        "USUBJID": [
+          "S01",
+          "S02",
+          "S03",
+          "S04"
+        ],
+        "G": [
+          "apple",
+          "Apple",
+          "banana",
+          "Banana"
+        ]
+      },
+      "filters": [
+        {
+          "value_col": "G",
+          "all": false
+        }
+      ]
+    },
+    {
+      "case": "a-non-ascii-first-value",
+      "participants": {
+        "USUBJID": [
+          "S01",
+          "S02",
+          "S03",
+          "S04"
+        ],
+        "COUNTRY": [
+          "France",
+          "Éire",
+          "France",
+          "Éire"
+        ]
+      },
+      "filters": [
+        {
+          "value_col": "COUNTRY",
+          "all": false
+        }
+      ],
+      "differs": {
+        "r": "France",
+        "why": "R orders text by its UTF-8 bytes, whatever the session's locale; the browser's collation puts É with E, before F."
+      }
+    },
+    {
+      "case": "a-non-ascii-start",
+      "participants": {
+        "USUBJID": [
+          "S01",
+          "S02",
+          "S03",
+          "S04"
+        ],
+        "COUNTRY": [
+          "France",
+          "Éire",
+          "France",
+          "Éire"
+        ]
+      },
+      "filters": [
+        {
+          "value_col": "COUNTRY",
+          "start": "Éire"
+        }
+      ]
+    },
+    {
+      "case": "punctuation-first",
+      "participants": {
+        "USUBJID": [
+          "S01",
+          "S02",
+          "S03",
+          "S04"
+        ],
+        "G": [
+          "b",
+          "_a",
+          "~c",
+          "(d)"
+        ]
+      },
+      "filters": [
+        {
+          "value_col": "G",
+          "all": false
+        }
+      ],
+      "differs": {
+        "r": "(d)",
+        "why": "R orders punctuation by its code point, ( before _ before ~; the browser's collation has its own order for punctuation."
+      }
+    }
   ]
 }
