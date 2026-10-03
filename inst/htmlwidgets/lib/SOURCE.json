@@ -3,21 +3,21 @@
   "copied_by": "data-raw/vendor-bio-viz.R",
   "repository": "https://github.com/jwildfire/bio.viz",
   "ref": "dev",
-  "commit": "29ac72265d86ac5a5e91e14336f7bf45d34b75dc",
+  "commit": "67710caf3898a81d5f8dfb797044f75037bbedc4",
   "files": [
     {
       "file": "bio.viz-0.1.0/bio.viz.js",
       "source": "dist/bio.viz-0.1.0/bio.viz.js",
       "library": "bio.viz",
       "version": "0.1.0",
-      "sha256": "bbc93e78d6a3c315f219bfe986a820de72941846ad825ce2b6096b01e11b44a9",
-      "bytes": 315897
+      "sha256": "cf8088c7f3c27200d22e630fae25aef507c104bd8380fbce1a71cd05b8d0e920",
+      "bytes": 321691
     },
     {
-      "file": "safety.viz-1.8.0/safety.viz.js",
+      "file": "safety.viz-1.9.0/safety.viz.js",
       "source": "site/vendor/safety.viz/safety.viz.js",
       "library": "safety.viz",
-      "version": "1.8.0",
+      "version": "1.9.0",
       "sha256": "67236ba4c206c3eabd77c9860331f2afa0fdbfc44be76407aa46fae34acfa0d7",
       "bytes": 1588881
     }
@@ -30,13 +30,13 @@
       "bundle": "safety.viz script-tag bundle",
       "repository": "https://github.com/jwildfire/safety.viz",
       "ref": "dev",
-      "commit": "a57dbb2372742726d03f56c1ec68b00d8f981793",
-      "version": "1.8.0",
+      "commit": "096cc26d48e5d3cd1bf03eb78249658974c7a307",
+      "version": "1.9.0",
       "merged_to_dev": true,
       "files": [
         {
           "file": "safety.viz.js",
-          "source": "dist/safety.viz-1.8.0/safety.viz.js",
+          "source": "dist/safety.viz-1.9.0/safety.viz.js",
           "sha256": "67236ba4c206c3eabd77c9860331f2afa0fdbfc44be76407aa46fae34acfa0d7",
           "bytes": 1588881
         }

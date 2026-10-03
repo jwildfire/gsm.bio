@@ -30,9 +30,20 @@ test_that("CLAUDE.md carries the Standards block and the commands a session runs
   }
 })
 
-test_that("README.md gives the install line for the integration branch (#1)", {
+test_that("README.md gives the install lines for the release and for the integration branch (#1, #27)", {
   strText <- paste(chrRepositoryFile("README.md"), collapse = "\n")
+  strVersion <- as.character(utils::packageVersion("gsm.bio"))
+  # The release is installed from its tag, named by the package's version.
+  expect_match(strText, sprintf('remotes::install_github("jwildfire/gsm.bio@v%s")', strVersion), fixed = TRUE)
   expect_match(strText, 'remotes::install_github("jwildfire/gsm.bio@dev")', fixed = TRUE)
+  # The release line names the version NEWS opens on: the release, or, while
+  # NEWS still marks it Upcoming, the one being prepared, which the README says
+  # is not installed from its tag until the tag is cut.
+  chrHeadings <- grep("^# ", chrRepositoryFile("NEWS.md"), value = TRUE)
+  expect_true(chrHeadings[1] %in% sprintf(c("# gsm.bio v%s", "# gsm.bio v%s (Upcoming)"), strVersion))
+  if (grepl("(Upcoming)", chrHeadings[1], fixed = TRUE)) {
+    expect_match(strText, sprintf("until v%s is tagged", strVersion), fixed = TRUE)
+  }
 })
 
 test_that("NEWS.md opens with the upcoming v0.1.0 section (#1)", {

@@ -6,12 +6,13 @@ Each statistic is a thin wrapper around a function from the stats or survival pa
 
 ## Installation
 
-Version 0.1.0 is in development on the `dev` branch:
-
 ```r
 # install.packages("remotes")
-remotes::install_github("jwildfire/gsm.bio@dev")
+remotes::install_github("jwildfire/gsm.bio@v0.1.0") # the v0.1.0 release, from its tag
+remotes::install_github("jwildfire/gsm.bio@dev")    # what is on dev, the integration branch
 ```
+
+The release line works from the day v0.1.0 is cut: until v0.1.0 is tagged, [NEWS](https://github.com/jwildfire/gsm.bio/blob/dev/NEWS.md) marks it Upcoming and only `@dev` installs.
 
 ## Statistics
 
@@ -98,7 +99,7 @@ Widget_BiomarkerScreen(
 
 It stores `Analyze_Screen()`'s answer for the screen the settings open on and, for every row, exactly what the chart that row opens asks of R: for a difference the group comparison at the screen's one visit, of the two groups, with Welch's test; for a correlation the scatter with the biomarker along the bottom and the variable up the side. On the synthetic study, Placebo against Treatment, that is one screen and twelve group comparisons.
 
-Every widget carries two JavaScript bundles, both copied from bio.viz with the commit and a checksum per file recorded in `inst/htmlwidgets/lib/SOURCE.json`: bio.viz's own, and the copy of safety.viz's bundle bio.viz builds its chart from. The safety.viz copy is the one bio.viz takes from safety.viz's `dev` branch, and its commit is recorded there too. It is a stand-in, to be replaced by gsm.safety's bundle once gsm.safety carries one with the kit.
+Every widget carries two JavaScript bundles, both copied from bio.viz with the commit and a checksum per file recorded in `inst/htmlwidgets/lib/SOURCE.json`: bio.viz v0.1.0, and safety.viz v1.9.0, the first safety.viz with the kit bio.viz's charts are built from. The safety.viz copy is the one bio.viz takes from safety.viz's `dev` branch at its v1.9.0 release preparation, and its commit is recorded too. gsm.safety carries an earlier safety.viz without the kit; once it carries v1.9.0, the widgets can take the bundle from there instead of carrying their own copy.
 
 ## Synthetic study
 
