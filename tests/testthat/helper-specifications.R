@@ -16,7 +16,7 @@ strSpecText <- function(lSpec) {
 
 # The smallest specification of a chart, with settings and filters to add.
 lSpecOf <- function(strChart = "cross-tab", lSettings = NULL, lFilters = NULL, ...) {
-  lSpec <- list(format = "bio.viz specification", format_version = 1L, bio_viz_version = "0.1.0", chart = strChart)
+  lSpec <- list(format = "bio.viz specification", format_version = 1L, bio_viz_version = "0.2.0", chart = strChart)
   if (!is.null(lSettings)) lSpec$settings <- lSettings
   if (!is.null(lFilters)) lSpec$filters <- lFilters
   utils::modifyList(lSpec, list(...))
@@ -25,7 +25,7 @@ lSpecOf <- function(strChart = "cross-tab", lSettings = NULL, lFilters = NULL, .
 # Specifications bio.viz's reader accepts or refuses, each as JSON text. Every
 # rule of the format is here, and a value each chart checks.
 lSpecCases <- function() {
-  strDeep <- paste0('{"format":"bio.viz specification","format_version":1,"bio_viz_version":"0.1.0","chart":"cross-tab","settings":{"title":',
+  strDeep <- paste0('{"format":"bio.viz specification","format_version":1,"bio_viz_version":"0.2.0","chart":"cross-tab","settings":{"title":',
     strrep("[", 70), '"x"', strrep("]", 70), "}}")
   lCases <- list(
     "the six charts' own" = NULL,
@@ -36,7 +36,7 @@ lSpecCases <- function() {
     "no settings" = strSpecText(lSpecOf("stratified-survival")),
     "code-like text" = strSpecText(lSpecOf(lSettings = list(title = "${1 + 1} <script>alert(1)</script> {{x}} system('touch PWNED')"))),
     "a number as a filter value" = strSpecText(lSpecOf(lFilters = list(list(column = "AGE", operator = "in", values = list(35, "36"))))),
-    "a member twice, the last kept" = '{"format":"vega-lite","format":"bio.viz specification","format_version":1,"bio_viz_version":"0.1.0","chart":"cross-tab","settings":{"row_by":"SEX","row_by":"ARM"}}',
+    "a member twice, the last kept" = '{"format":"vega-lite","format":"bio.viz specification","format_version":1,"bio_viz_version":"0.2.0","chart":"cross-tab","settings":{"row_by":"SEX","row_by":"ARM"}}',
     "not an object" = "[1, 2]",
     "not JSON" = "{format: bio.viz}",
     "another format" = strSpecText(lSpecOf(format = "vega-lite")),
@@ -50,7 +50,7 @@ lSpecCases <- function() {
     "settings that are not an object" = strSpecText(lSpecOf(lSettings = list("ARM"))),
     "a filters setting that is not a list" = strSpecText(lSpecOf(lSettings = list(filters = "SEX"))),
     "a setting that names __proto__" = strSpecText(lSpecOf(lSettings = list(row_by = "__proto__"))),
-    "a setting named __proto__" = '{"format":"bio.viz specification","format_version":1,"bio_viz_version":"0.1.0","chart":"cross-tab","settings":{"__proto__":{"row_by":"ARM"}}}',
+    "a setting named __proto__" = '{"format":"bio.viz specification","format_version":1,"bio_viz_version":"0.2.0","chart":"cross-tab","settings":{"__proto__":{"row_by":"ARM"}}}',
     "filters that are not a list" = strSpecText(lSpecOf(lFilters = list(column = "SEX"))),
     "a filter that is not an object" = strSpecText(lSpecOf(lFilters = list("SEX"))),
     "a filter with more than it has" = strSpecText(lSpecOf(lFilters = list(list(column = "SEX", operator = "in", values = list("F"), label = "Sex")))),
@@ -92,7 +92,7 @@ lSpecCases <- function() {
 # reason V8 gives for text that is not JSON is its own, and changes with
 # node's version, so only bio.viz's sentence before it is kept.
 lBioVizLive <- function(lCases, bObject = FALSE) {
-  strBundle <- system.file("htmlwidgets", "lib", "bio.viz-0.1.0", "bio.viz.js", package = "gsm.bio")
+  strBundle <- system.file("htmlwidgets", "lib", "bio.viz-0.2.0", "bio.viz.js", package = "gsm.bio")
   strCases <- tempfile(fileext = ".json")
   writeLines(as.character(jsonlite::toJSON(
     unname(Map(function(strCase, strText) list(case = strCase, text = strText), names(lCases), unlist(lCases))),
@@ -114,7 +114,7 @@ lBioVizLive <- function(lCases, bObject = FALSE) {
 lSpecDepthCases <- function() {
   lCases <- lapply(55:66, function(nDeep) {
     paste0(
-      '{"format":"bio.viz specification","format_version":1,"bio_viz_version":"0.1.0","chart":"cross-tab",',
+      '{"format":"bio.viz specification","format_version":1,"bio_viz_version":"0.2.0","chart":"cross-tab",',
       '"settings":{"filters":[{"value_col":"SEX","label":"Sex","x":', strrep("[", nDeep), '"x"', strrep("]", nDeep), "}]}}"
     )
   })
@@ -168,7 +168,7 @@ lFuzzCases <- function() {
     for (strSetting in setdiff(lNames[[strChart]], c("connection", "back"))) {
       for (strValue in chrFuzzValues) {
         lCases[[paste(strChart, strSetting, strValue, sep = " | ")]] <- paste0(
-          '{"format":"bio.viz specification","format_version":1,"bio_viz_version":"0.1.0","chart":"', strChart,
+          '{"format":"bio.viz specification","format_version":1,"bio_viz_version":"0.2.0","chart":"', strChart,
           '","settings":{"', strSetting, '":', strValue, "}}"
         )
       }

@@ -133,7 +133,7 @@ Widget_StratifiedSurvival(
 
 It stores `Analyze_Survival()`'s answer for the curves the settings open on. A cut's groups are handed to R high to low, so the hazard ratio is the higher group's hazard over the lower's.
 
-Every widget carries two JavaScript bundles, both copied from bio.viz with the commit and a checksum per file recorded in `inst/htmlwidgets/lib/SOURCE.json`: bio.viz v0.1.0, and safety.viz v1.9.0, the first safety.viz with the kit bio.viz's charts are built from. The safety.viz copy is the one bio.viz takes from safety.viz's `dev` branch at its v1.9.0 release preparation, and its commit is recorded too. gsm.safety carries an earlier safety.viz without the kit; once it carries v1.9.0, the widgets can take the bundle from there instead of carrying their own copy.
+Every widget carries two JavaScript bundles, both copied from bio.viz with the commit and a checksum per file recorded in `inst/htmlwidgets/lib/SOURCE.json`: bio.viz v0.2.0, and safety.viz v1.9.0, the first safety.viz with the kit bio.viz's charts are built from. The safety.viz copy is the one bio.viz takes from safety.viz's `dev` branch at its v1.9.0 release preparation, and its commit is recorded too. gsm.safety carries an earlier safety.viz without the kit; once it carries v1.9.0, the widgets can take the bundle from there instead of carrying their own copy.
 
 ## Figures
 
