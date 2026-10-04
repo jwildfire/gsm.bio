@@ -327,3 +327,102 @@ test_that("a view the tables cannot honour is written as the chart draws it, and
     strFolder = tempfile("batch-asked-each"), bTables = FALSE, bAcrossBiomarkers = TRUE)
   expect_true(all(is.na(c(dfSaved$reason, dfEach$reason))))
 })
+
+test_that("each output's file name is its own: biomarkers whose names make one name are numbered, a name with no letter it can keep is its place, and the manifest names the file written (#39)", {
+  skip_if_not_installed("ggplot2")
+  strNoAscii <- intToUtf8(c(0x4E2D, 0x6587))
+  dfResults <- Synthetic_Results
+  dfResults$TEST[dfResults$TEST == "IL-8"] <- "IL_6"
+  dfResults$TEST[dfResults$TEST == "VEGF"] <- strNoAscii
+  strFolder <- tempfile("batch-names")
+  dfManifest <- Run_Specifications(strSpecText(lSavedSpecs()[1]), dfResults, Synthetic_Participants, strFolder = strFolder, bTables = FALSE, bAcrossBiomarkers = TRUE)
+  expect_identical(dfManifest$status, rep("written", 12L))
+  expect_identical(anyDuplicated(dfManifest$figure), 0L)
+  expect_true(all(file.exists(file.path(strFolder, dfManifest$figure))))
+  expect_setequal(list.files(strFolder), c("manifest.json", dfManifest$figure))
+  chrSame <- dfManifest$figure[dfManifest$biomarker %in% c("IL-6", "IL_6")]
+  expect_identical(chrSame, c("01-group-comparison-il-6.png", "01-group-comparison-il-6-2.png"))
+  iPlace <- which(dfManifest$biomarker == strNoAscii)
+  expect_identical(dfManifest$figure[iPlace], sprintf("01-group-comparison-%d.png", iPlace))
+  expect_identical(Batch_Slug(strNoAscii), "")
+})
+
+test_that("a view that cannot be drawn is failed with its reason, leaves no file of it behind, and the rest still run (#39)", {
+  skip_if_not_installed("ggplot2")
+  skip_if_not_installed("r2rtf")
+  strFolder <- tempfile("batch-failed")
+  # The survival chart is drawn of the outcomes, which are not given.
+  dfManifest <- Run_Specifications(strSpecText(lSavedSpecs()[c(7, 1)]), Synthetic_Results, Synthetic_Participants, strFolder = strFolder)
+  expect_identical(dfManifest$status, c("failed", "written"))
+  expect_match(dfManifest$reason[1], "needs an outcomes table", fixed = TRUE)
+  expect_true(is.na(dfManifest$figure[1]) && is.na(dfManifest$table[1]))
+  # A format that fails part way leaves none of the view's files: the PNG
+  # written before the PDF failed is taken away again.
+  strPartial <- tempfile("batch-partial")
+  local_mocked_bindings(Batch_Save = function(strFile, gg, strFormat, nWidth, nHeight) {
+    if (strFormat == "pdf") stop("the PDF device failed")
+    writeLines("drawn", strFile)
+    FALSE
+  })
+  dfPartial <- Run_Specifications(strSpecText(lSavedSpecs()[1]), Synthetic_Results, Synthetic_Participants, strFolder = strPartial, chrFormats = c("png", "pdf"))
+  expect_identical(dfPartial$status, "failed")
+  expect_match(dfPartial$reason, "the PDF device failed", fixed = TRUE)
+  expect_identical(list.files(strPartial), "manifest.json")
+})
+
+test_that("a figure with no table to go with it is written, and its row says why there is no table (#39)", {
+  skip_if_not_installed("ggplot2")
+  skip_if_not_installed("r2rtf")
+  strFolder <- tempfile("batch-no-table")
+  lSpec <- lSpecOf(lSettings = list(row_by = "ARM", col_by = "RESPONSE", statistic = NULL))
+  dfManifest <- Run_Specifications(strSpecText(list(lSpec)), Synthetic_Results, Synthetic_Participants, strFolder = strFolder)
+  expect_identical(dfManifest$status, "written")
+  expect_identical(dfManifest$reason, "No table: Table_CrossTab() has no statistic to show: the setting 'statistic' is NULL, which asks R for no test")
+  expect_true(is.na(dfManifest$table))
+  expect_true(file.exists(file.path(strFolder, dfManifest$figure)))
+})
+
+test_that("across every biomarker, the cross-tabulation's cut row or column and the matrix across visits take each biomarker; an axis at another visit keeps its own; explicit cut points are named in each row (#39)", {
+  chrBiomarkers <- sort(unique(Synthetic_Results$TEST))
+  lCross <- Spec_Expand(Spec_Read(strSpecText(lSavedSpecs()[[6]])), Synthetic_Results, Synthetic_Participants)
+  expect_setequal(names(lCross), chrBiomarkers)
+  expect_identical(unname(vapply(lCross, function(lView) lView$settings$col_by$measure, character(1))), names(lCross))
+  expect_identical(unname(vapply(lCross, function(lView) lView$settings$row_by, character(1))), rep("RESPONSE", length(lCross)))
+  lRows <- Spec_Expand(Spec_Read(strSpecText(lSpecOf(lSettings = list(row_by = list(measure = "CRP", visit = "Baseline", value = "raw", cut = "median"), col_by = "ARM")))), Synthetic_Results)
+  expect_identical(unname(vapply(lRows, function(lView) lView$settings$row_by$measure, character(1))), names(lRows))
+  expect_length(lRows, length(chrBiomarkers))
+  lMatrix <- Spec_Expand(Spec_Read(strSpecText(lSpecOf("correlation-matrix", lSettings = list(mode = "visits", measure = "CRP")))), Synthetic_Results)
+  expect_length(lMatrix, length(chrBiomarkers))
+  expect_identical(unname(vapply(lMatrix, function(lView) lView$settings$measure, character(1))), names(lMatrix))
+  # The scatter's y at another visit is a pair of its own for every x, its own biomarker too.
+  lSpec <- lSavedSpecs()[[3]]
+  lSpec$settings$y$visit <- "Week 4"
+  lScatter <- Spec_Expand(Spec_Read(strSpecText(lSpec)), Synthetic_Results, Synthetic_Participants)
+  expect_setequal(names(lScatter), chrBiomarkers)
+  expect_null(lScatter[["IL-10"]]$note)
+  # Explicit cut points stay as they are for every biomarker, and each row says so.
+  lCut <- lSpecOf("stratified-survival", lSettings = list(group_by = list(measure = "CRP", visit = "Baseline", value = "raw", cut = list(2.5, 4))))
+  lCuts <- Spec_Expand(Spec_Read(strSpecText(lCut)), Synthetic_Results)
+  expect_identical(unname(vapply(lCuts, function(lView) lView$settings$group_by$cut[[2]], numeric(1))), rep(4, length(lCuts)))
+  expect_identical(lCuts[["IL-6"]]$note, "The explicit cut 2.5, 4 is applied to IL-6 as it is.")
+  expect_null(Spec_Expand(Spec_Read(strSpecText(lSavedSpecs()[[7]])), Synthetic_Results)[["IL-6"]]$note)
+  skip_if_not_installed("ggplot2")
+  dfManifest <- Run_Specifications(strSpecText(list(lCut)), Synthetic_Results, Synthetic_Participants, dfOutcomes = Synthetic_Outcomes,
+    strFolder = tempfile("batch-cut"), bTables = FALSE, bAcrossBiomarkers = TRUE)
+  expect_identical(dfManifest$reason[dfManifest$biomarker == "LDH"], "The explicit cut 2.5, 4 is applied to LDH as it is.")
+})
+
+test_that("a PDF drawn without cairo says so, naming only the outputs asked for that have every character (#39)", {
+  skip_if_not_installed("ggplot2")
+  skip_if_not_installed("r2rtf")
+  local_mocked_bindings(Batch_HasCairo = function() FALSE)
+  strDots <- "The PDF was drawn without cairo, which this R cannot load, so a character beyond Latin-1 is a dot in it"
+  # The survival chart's cut is labelled with its sign, beyond Latin-1.
+  lSpec <- lSavedSpecs()[7]
+  dfAlone <- Run_Specifications(strSpecText(lSpec), Synthetic_Results, Synthetic_Participants, dfOutcomes = Synthetic_Outcomes,
+    strFolder = tempfile("batch-pdf"), chrFormats = "pdf", bTables = FALSE)
+  expect_identical(dfAlone$reason, paste0(strDots, "."))
+  dfBoth <- Run_Specifications(strSpecText(lSpec), Synthetic_Results, Synthetic_Participants, dfOutcomes = Synthetic_Outcomes,
+    strFolder = tempfile("batch-pdf-png"), chrFormats = c("pdf", "png"))
+  expect_identical(dfBoth$reason, paste0(strDots, "; the PNG and the RTF table have every character."))
+})

@@ -147,6 +147,7 @@ Run_Specifications <- function(
   }
 
   lRows <- list()
+  chrStems <- character(0)
   Row <- function(iSpec, strChart, strBiomarker, strStatus, strReason = NA_character_, lDrawn = list(), nPassing = NA_integer_) {
     data.frame(
       specification = iSpec, chart = strChart, biomarker = strBiomarker, status = strStatus, reason = strReason,
@@ -169,12 +170,14 @@ Run_Specifications <- function(
     lViews <- if (bAcross[iSpec]) Spec_Expand(lRead, dfResults, dfParticipants) else stats::setNames(list(lRead), NA_character_)
     for (iView in seq_along(lViews)) {
       strBiomarker <- names(lViews)[iView]
-      strStem <- sprintf("%02d-%s%s", iSpec, lRead$chart, if (is.na(strBiomarker)) "" else paste0("-", Batch_Slug(strBiomarker)))
+      strStem <- Batch_Stem(iSpec, lRead$chart, strBiomarker, iView, chrStems)
+      chrStems <- c(chrStems, strStem)
       lOpened <- Batch_Opened(lViews[[iView]], dfResults, dfParticipants, dfOutcomes)
       nPassing <- Batch_Passing(lOpened, dfResults, dfParticipants)
       strNotices <- Batch_Notices(lViews[[iView]], lOpened, dfParticipants)
+      strNote <- if (is.null(lViews[[iView]]$note)) NA_character_ else lViews[[iView]]$note
       Reason <- function(strMore) {
-        chrReason <- stats::na.omit(c(strNotices, strMore))
+        chrReason <- stats::na.omit(c(strNote, strNotices, strMore))
         if (length(chrReason) == 0L) NA_character_ else paste(chrReason, collapse = " ")
       }
       if (identical(nPassing, 0L)) {
@@ -316,16 +319,78 @@ Batch_Notices <- function(lRead, lOpened, dfParticipants) {
   if (length(chrNotices) == 0L) NA_character_ else paste("Not drawn as the specification asks:", paste(chrNotices, collapse = " "))
 }
 
+# The name an output's files share: the specification's place, the chart,
+# and the biomarker's name as a file's name can hold it, or its place among the
+# views when nothing of the name can be kept; numbered -2, -3 and on when an
+# output before it in the run has the name already.
+Batch_Stem <- function(iSpec, strChart, strBiomarker, iView, chrTaken) {
+  strStem <- sprintf("%02d-%s", iSpec, strChart)
+  if (!is.na(strBiomarker)) {
+    strSlug <- Batch_Slug(strBiomarker)
+    strStem <- paste0(strStem, "-", if (nzchar(strSlug)) strSlug else as.character(iView))
+  }
+  strUnique <- strStem
+  iCopy <- 1L
+  while (strUnique %in% chrTaken) {
+    iCopy <- iCopy + 1L
+    strUnique <- paste0(strStem, "-", iCopy)
+  }
+  strUnique
+}
+
 # A biomarker's name as part of a file's name.
 Batch_Slug <- function(strText) {
   strSlug <- gsub("[^a-z0-9]+", "-", tolower(iconv(strText, "UTF-8", "ASCII//TRANSLIT", sub = "")))
   gsub("^-+|-+$", "", strSlug)
 }
 
+# One figure file written in one format. Returns TRUE when a PDF drawn without
+# cairo has a character beyond Latin-1, which it draws as a dot.
+Batch_Save <- function(strFile, gg, strFormat, nWidth, nHeight) {
+  if (strFormat == "pdf" && Batch_HasCairo()) {
+    # A PDF by cairo, which draws every character a figure holds: the sign of
+    # a cut, an apostrophe.
+    ggplot2::ggsave(strFile, gg, width = nWidth, height = nHeight, device = grDevices::cairo_pdf)
+    return(FALSE)
+  }
+  if (strFormat == "pdf") {
+    # Without cairo the pdf device draws only Latin-1, and a character beyond
+    # it as a dot: the figure is written, and its row says so.
+    bDots <- FALSE
+    withCallingHandlers(
+      ggplot2::ggsave(strFile, gg, width = nWidth, height = nHeight, device = "pdf"),
+      warning = function(cndWarning) {
+        if (grepl("conversion failure on", conditionMessage(cndWarning), fixed = TRUE)) {
+          bDots <<- TRUE
+          invokeRestart("muffleWarning")
+        }
+      }
+    )
+    return(bDots)
+  }
+  ggplot2::ggsave(strFile, gg, width = nWidth, height = nHeight, device = strFormat, dpi = 150)
+  FALSE
+}
+
 # One view drawn: its figure in each format and its table to RTF. A table that
 # cannot be made (the chart tests nothing at the settings) leaves the figure
-# written and says why.
+# written and says why. A view that fails part way leaves none of its files:
+# the ones it wrote are taken away again, and the error is the view's.
 Batch_Draw <- function(lRead, dfResults, dfParticipants, dfOutcomes, strFolder, strStem, chrFormats, bTables, nWidth, nHeight) {
+  chrWritten <- character(0)
+  tryCatch(
+    Batch_DrawFiles(lRead, dfResults, dfParticipants, dfOutcomes, strFolder, strStem, chrFormats, bTables, nWidth, nHeight, function(strFile) {
+      chrWritten <<- c(chrWritten, strFile)
+    }),
+    error = function(cndError) {
+      chrLeft <- chrWritten[file.exists(chrWritten)]
+      if (length(chrLeft) > 0L) unlink(chrLeft)
+      stop(conditionMessage(cndError), call. = FALSE)
+    }
+  )
+}
+
+Batch_DrawFiles <- function(lRead, dfResults, dfParticipants, dfOutcomes, strFolder, strStem, chrFormats, bTables, nWidth, nHeight, fnWriting) {
   lSettings <- lRead$settings
   gg <- switch(lRead$chart,
     "group-comparison" = Visualize_GroupComparison(dfResults, dfParticipants, lSettings),
@@ -337,31 +402,11 @@ Batch_Draw <- function(lRead, dfResults, dfParticipants, dfOutcomes, strFolder, 
   )
   chrFigures <- paste0(strStem, ".", chrFormats)
   chrNotes <- character(0)
+  bDots <- FALSE
   for (iFormat in seq_along(chrFormats)) {
     strFile <- file.path(strFolder, chrFigures[iFormat])
-    if (chrFormats[iFormat] == "pdf" && Batch_HasCairo()) {
-      # A PDF by cairo, which draws every character a figure holds: the sign of
-      # a cut, an apostrophe.
-      ggplot2::ggsave(strFile, gg, width = nWidth, height = nHeight, device = grDevices::cairo_pdf)
-    } else if (chrFormats[iFormat] == "pdf") {
-      # Without cairo the pdf device draws only Latin-1, and a character beyond
-      # it as a dot: the figure is written, and its row says so.
-      bDots <- FALSE
-      withCallingHandlers(
-        ggplot2::ggsave(strFile, gg, width = nWidth, height = nHeight, device = "pdf"),
-        warning = function(cndWarning) {
-          if (grepl("conversion failure on", conditionMessage(cndWarning), fixed = TRUE)) {
-            bDots <<- TRUE
-            invokeRestart("muffleWarning")
-          }
-        }
-      )
-      if (bDots) {
-        chrNotes <- c(chrNotes, "The PDF was drawn without cairo, which this R cannot load, so a character beyond Latin-1 is a dot in it; the PNG and the RTF table have every character.")
-      }
-    } else {
-      ggplot2::ggsave(strFile, gg, width = nWidth, height = nHeight, device = chrFormats[iFormat], dpi = 150)
-    }
+    fnWriting(strFile)
+    bDots <- Batch_Save(strFile, gg, chrFormats[iFormat], nWidth, nHeight) || bDots
   }
   strTable <- NULL
   if (bTables) {
@@ -377,8 +422,18 @@ Batch_Draw <- function(lRead, dfResults, dfParticipants, dfOutcomes, strFolder, 
       chrNotes <- c(chrNotes, paste("No table:", dfTable))
     } else {
       strTable <- paste0(strStem, ".rtf")
+      fnWriting(file.path(strFolder, strTable))
       Write_RTF(dfTable, file.path(strFolder, strTable))
     }
+  }
+  if (bDots) {
+    # The outputs that have every character: the other figures asked for, and
+    # the table.
+    chrWhole <- c(toupper(setdiff(chrFormats, "pdf")), if (!is.null(strTable)) "RTF table")
+    chrNotes <- c(chrNotes, paste0(
+      "The PDF was drawn without cairo, which this R cannot load, so a character beyond Latin-1 is a dot in it",
+      if (length(chrWhole) > 0L) paste0("; the ", paste(chrWhole, collapse = " and the "), if (length(chrWhole) == 1L) " has" else " have", " every character"), "."
+    ))
   }
   list(
     title = gg$labels$title, subtitle = gg$labels$subtitle,

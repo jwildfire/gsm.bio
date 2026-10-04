@@ -438,13 +438,29 @@ Spec_Expand <- function(lRead, dfResults, dfParticipants = NULL) {
     lGiven[[strKey]]$measure <- strBiomarker
     lGiven
   }
+  # Explicit cut points are the specification's, and stay as they are for
+  # every biomarker; each view says so. A named cut (a median, tertiles) is
+  # worked out on each biomarker's own values.
+  Noted <- function(lViews, strKey) {
+    xCut <- lSettings[[strKey]]$cut
+    if (is.list(xCut) || is.numeric(xCut)) {
+      strCut <- paste(vapply(unlist(xCut), Core_Text, character(1)), collapse = ", ")
+      for (strBiomarker in names(lViews)) {
+        lViews[[strBiomarker]]$note <- paste0("The explicit cut ", strCut, " is applied to ", strBiomarker, " as it is.")
+      }
+    }
+    lViews
+  }
+  # The scatter's other axis keeps its biomarker out of the views only where
+  # the two would be one variable: at the same visit.
+  SameVisit <- function(lOne, lOther) identical(lOne$visit, lOther$visit) && identical(lOne$value, lOther$value)
   switch(lRead$chart,
     "group-comparison" = Each(function(lGiven, strBiomarker) {
       lGiven$start_value <- strBiomarker
       lGiven
     }),
     "association-scatter" = if (Spec_IsBiomarker(lSettings$x)) {
-      Each(Measure("x"), if (Spec_IsBiomarker(lSettings$y)) lSettings$y$measure else character(0))
+      Each(Measure("x"), if (Spec_IsBiomarker(lSettings$y) && SameVisit(lSettings$x, lSettings$y)) lSettings$y$measure else character(0))
     } else if (Spec_IsBiomarker(lSettings$y)) {
       Each(Measure("y"))
     } else {
@@ -458,8 +474,14 @@ Spec_Expand <- function(lRead, dfResults, dfParticipants = NULL) {
     } else {
       One
     },
-    "cross-tab" = if (Spec_IsBiomarker(lSettings$row_by)) Each(Measure("row_by")) else if (Spec_IsBiomarker(lSettings$col_by)) Each(Measure("col_by")) else One,
-    "stratified-survival" = if (Spec_IsBiomarker(lSettings$group_by)) Each(Measure("group_by")) else One,
+    "cross-tab" = if (Spec_IsBiomarker(lSettings$row_by)) {
+      Noted(Each(Measure("row_by")), "row_by")
+    } else if (Spec_IsBiomarker(lSettings$col_by)) {
+      Noted(Each(Measure("col_by")), "col_by")
+    } else {
+      One
+    },
+    "stratified-survival" = if (Spec_IsBiomarker(lSettings$group_by)) Noted(Each(Measure("group_by")), "group_by") else One,
     One
   )
 }
