@@ -37,6 +37,14 @@ and \code{\link[=Widget_StratifiedSurvival]{Widget_StratifiedSurvival()}}. The w
 package that uses htmlwidgets.
 }
 
+\section{Figures}{
+
+Each chart has a static ggplot2 figure too, \verb{Visualize_<Chart>()}, from the
+same settings and with the same statistics: see
+\code{\link[=Visualize_GroupComparison]{Visualize_GroupComparison()}} and the functions beside it. ggplot2 is
+suggested, not imported.
+}
+
 \section{Status}{
 
 Version 0.1.0 is in development: the statistics functions, a synthetic

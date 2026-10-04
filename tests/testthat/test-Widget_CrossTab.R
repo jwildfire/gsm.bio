@@ -135,7 +135,7 @@ test_that("the cross-tabulation page records which R computed the results, and i
   expect_identical(lSaved$payload$lStatistics$computed_by, lSaved$widget$x$lStatistics$computed_by)
   strScripts <- strWidgetScripts("Widget_CrossTab")
   expect_match(strScripts, "BioViz.crossTab(chart, settings)", fixed = TRUE)
-  expect_match(strScripts, "BioViz.r.createConnection({ results: statistics.results })", fixed = TRUE)
+  expect_match(strScripts, "BioViz.r.createConnection({ results: statistics.results, computedBy: statistics.computed_by })", fixed = TRUE)
   for (strNever in c("browser", "webr", "sourceUrl", "http", "fetch(", "import(")) {
     expect_false(grepl(strNever, strScripts, fixed = TRUE), label = paste("the scripts name", strNever))
   }
@@ -189,4 +189,17 @@ test_that("a cut with no value to cut stores nothing and stops nothing (#18)", {
     lWidget <- Widget_CrossTab(lCase$results, lCase$participants, lSettings = list(row_by = "ARM", col_by = lCase$col_by))
     expect_identical(lWidget$x$lStatistics$results, list())
   }
+})
+
+test_that("every widget hands its chart which R computed the stored results, so the chart's own footnote names the versions (#37)", {
+  strScripts <- strWidgetScripts("Widget_CrossTab")
+  expect_match(strScripts, "BioViz.r.createConnection({ results: statistics.results, computedBy: statistics.computed_by })", fixed = TRUE)
+  # The copied bundle takes the record, and its footnote says it.
+  strBundle <- paste(readLines(system.file("htmlwidgets", "lib", "bio.viz-0.1.0", "bio.viz.js", package = "gsm.bio"), warn = FALSE), collapse = "\n")
+  expect_match(strBundle, "computedBy", fixed = TRUE)
+  expect_match(strBundle, "stored with the page", fixed = TRUE)
+  # The record the page carries has the members the connection checks.
+  lBy <- Widget_CrossTab(Synthetic_Results, Synthetic_Participants, lSettings = list(row_by = "ARM", col_by = "RESPONSE"))$x$lStatistics$computed_by
+  expect_true(all(c("r_version", "gsm_bio_version", "computed_at") %in% names(lBy)))
+  expect_true(all(vapply(lBy[c("r_version", "gsm_bio_version", "computed_at")], is.character, logical(1))))
 })

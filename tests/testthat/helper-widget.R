@@ -167,8 +167,22 @@ lBundleDefaults <- function(strSetting) {
   # there: OUTCOME_DEFAULTS.time_col.
   iOutcomes <- grep("^  var OUTCOME_DEFAULTS = Object\\.freeze\\(\\{$", chrLines)
   chrOutcomes <- if (length(iOutcomes) == 1L) Block(iOutcomes) else character(0)
+  # The title settings every chart has are written once, in TITLE_DEFAULTS
+  # (bio.viz, src/shared/titles.js), on one line, and spread into each chart's
+  # defaults: ...TITLE_DEFAULTS.
+  strTitles <- grep("^  var TITLE_DEFAULTS = Object\\.freeze\\(\\{.*\\}\\);$", chrLines, value = TRUE)
+  chrTitlePairs <- if (length(strTitles) == 1L) {
+    strsplit(sub("^.*\\{ *(.*?) *\\}\\);$", "\\1", strTitles, perl = TRUE), ", *")[[1]]
+  } else {
+    character(0)
+  }
+  chrTitles <- stats::setNames(sub("^[a-z_]+: ", "", chrTitlePairs), sub(":.*$", "", chrTitlePairs))
   for (iStart in grep("^  var DEFAULT_SETTINGS[0-9]* = Object\\.freeze\\(\\{$", chrLines)) {
     chrValues <- Block(iStart)
+    bSpread <- grepl("^\\s*\\.\\.\\.TITLE_DEFAULTS$", names(chrValues))
+    if (any(bSpread)) {
+      chrValues <- c(chrValues[!bSpread], chrTitles)
+    }
     if (strSetting %in% names(chrValues)) {
       bShared <- grepl("^OUTCOME_DEFAULTS\\.[a-z_]+$", chrValues)
       chrValues[bShared] <- chrOutcomes[sub("^OUTCOME_DEFAULTS\\.", "", chrValues[bShared])]

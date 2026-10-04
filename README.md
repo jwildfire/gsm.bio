@@ -135,6 +135,26 @@ It stores `Analyze_Survival()`'s answer for the curves the settings open on. A c
 
 Every widget carries two JavaScript bundles, both copied from bio.viz with the commit and a checksum per file recorded in `inst/htmlwidgets/lib/SOURCE.json`: bio.viz v0.1.0, and safety.viz v1.9.0, the first safety.viz with the kit bio.viz's charts are built from. The safety.viz copy is the one bio.viz takes from safety.viz's `dev` branch at its v1.9.0 release preparation, and its commit is recorded too. gsm.safety carries an earlier safety.viz without the kit; once it carries v1.9.0, the widgets can take the bundle from there instead of carrying their own copy.
 
+## Figures
+
+Each chart also has a static figure, for a report or a slide: `Visualize_GroupComparison()`, `Visualize_AssociationScatter()`, `Visualize_CorrelationMatrix()`, `Visualize_BiomarkerScreen()`, `Visualize_CrossTab()` and `Visualize_StratifiedSurvival()`. Each takes the same tables and settings as its widget and returns a `ggplot`. The statistics printed under it come from the same `Analyze_*()` call on the same rows. ggplot2 is suggested, not imported: install it to draw figures.
+
+```r
+Visualize_StratifiedSurvival(
+  Synthetic_Results,
+  Synthetic_Participants,
+  lSettings = list(
+    endpoint = "EFS",
+    group_by = list(measure = "CRP", visit = "Baseline", cut = "median"),
+    title = "{endpoint} by {group}",
+    subtitle = "{n} participants"
+  ),
+  dfOutcomes = Synthetic_Outcomes
+)
+```
+
+The settings `title`, `subtitle` and `footnotes` are written with the chart's placeholders, by bio.viz's rules: a name in braces is replaced by text, and a name the figure does not have is left as written. The last line under a figure is always its own: the date it was drawn, by gsm.bio, and R's method and counts behind each statistic it printed, with the R and gsm.bio versions. The [gallery](https://jwildfire.github.io/gsm.bio/articles/gallery.html) shows each figure beside its widget.
+
 ## Tables
 
 Each chart's statistics also come as a table, for a report: `Table_GroupComparison()`, `Table_AssociationScatter()`, `Table_CorrelationMatrix()`, `Table_BiomarkerScreen()`, `Table_CrossTab()` and `Table_StratifiedSurvival()`. Each takes the same tables and settings as its widget and returns a data frame, one row per statistic R computed for the view the chart opens on. A row gives the method, each estimate with its interval, the counts, and the p-value written by the display rules: three decimals, `p < 0.001` below that, labelled exploratory with its adjustment named, and no stars. A statistic R did not compute carries R's reason instead.

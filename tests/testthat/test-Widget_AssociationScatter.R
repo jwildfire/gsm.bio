@@ -271,7 +271,7 @@ test_that("the scatter page records which R computed the results, and is made by
   strScripts <- strWidgetScripts("Widget_AssociationScatter")
   expect_match(strScripts, "name: 'Widget_AssociationScatter'", fixed = TRUE)
   expect_match(strScripts, "BioViz.associationScatter(chart, settings)", fixed = TRUE)
-  expect_match(strScripts, "BioViz.r.createConnection({ results: statistics.results })", fixed = TRUE)
+  expect_match(strScripts, "BioViz.r.createConnection({ results: statistics.results, computedBy: statistics.computed_by })", fixed = TRUE)
   expect_match(strScripts, "gsm-bio-provenance", fixed = TRUE)
   expect_match(strScripts, "by.r_version", fixed = TRUE)
   # Nothing that starts R in the page or fetches anything.

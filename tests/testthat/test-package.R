@@ -30,15 +30,16 @@ test_that("the package imports stats and survival for the statistics, htmlwidget
   expect_identical(chrDependencies("Remotes"), character(0))
 })
 
-test_that("what only a test or the RTF writer needs is suggested, not imported (#1, #9, #38)", {
+test_that("what only a test, a static figure or the RTF writer needs is suggested, not imported (#1, #9, #37, #38)", {
   # effectsize checks the standardised difference; digest, jsonlite and
-  # rmarkdown check the vendored files and read a saved page back; r2rtf writes
-  # a table to RTF, and Write_RTF() says so when it is not installed.
-  expect_identical(chrDependencies("Suggests"), c("digest", "effectsize", "jsonlite", "r2rtf", "rmarkdown", "testthat"))
+  # rmarkdown check the vendored files and read a saved page back; ggplot2
+  # draws the static figures and r2rtf writes a table to RTF, and each says so
+  # when it is not installed.
+  expect_identical(chrDependencies("Suggests"), c("digest", "effectsize", "ggplot2", "jsonlite", "r2rtf", "rmarkdown", "testthat"))
   expect_identical(utils::packageDescription("gsm.bio")[["Config/testthat/edition"]], "3")
 })
 
-test_that("the package exports the seven statistics functions, the widgets and the tables, and ships the synthetic study as its only data (#1, #2, #3, #4, #9, #12, #13, #16, #18, #35, #38)", {
+test_that("the package exports the seven statistics functions, the widgets, the figures and the tables, and ships the synthetic study as its only data (#1, #2, #3, #4, #9, #12, #13, #16, #18, #35, #37, #38)", {
   expect_setequal(
     getNamespaceExports("gsm.bio"),
     c(
@@ -46,6 +47,8 @@ test_that("the package exports the seven statistics functions, the widgets and t
       "Analyze_Contingency", "Analyze_Survival", "Analyze_Screen", "Widget_GroupComparison",
       "Widget_AssociationScatter", "Widget_CorrelationMatrix", "Widget_BiomarkerScreen",
       "Widget_CrossTab", "Widget_StratifiedSurvival",
+      "Visualize_GroupComparison", "Visualize_AssociationScatter", "Visualize_CorrelationMatrix",
+      "Visualize_BiomarkerScreen", "Visualize_CrossTab", "Visualize_StratifiedSurvival",
       "Table_GroupComparison", "Table_AssociationScatter", "Table_CorrelationMatrix",
       "Table_BiomarkerScreen", "Table_CrossTab", "Table_StratifiedSurvival", "Write_RTF"
     )

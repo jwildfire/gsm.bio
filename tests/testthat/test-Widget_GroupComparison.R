@@ -359,7 +359,7 @@ test_that("the page records which R computed the results, and the binding prints
 
 test_that("the page's connection is made from the stored results alone: no R and no address in it (#9)", {
   strBinding <- strWidgetScripts("Widget_GroupComparison")
-  expect_match(strBinding, "BioViz.r.createConnection({ results: statistics.results })", fixed = TRUE)
+  expect_match(strBinding, "BioViz.r.createConnection({ results: statistics.results, computedBy: statistics.computed_by })", fixed = TRUE)
   expect_match(strBinding, "BioViz.groupComparison(chart, settings)", fixed = TRUE)
   # Nothing that starts R in the page or fetches anything.
   for (strNever in c("browser", "webr", "sourceUrl", "http", "fetch(", "import(")) {

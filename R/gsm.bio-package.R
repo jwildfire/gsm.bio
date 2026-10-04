@@ -27,6 +27,12 @@
 #' and [Widget_StratifiedSurvival()]. The widgets are the only part of the
 #' package that uses htmlwidgets.
 #'
+#' @section Figures:
+#' Each chart has a static ggplot2 figure too, `Visualize_<Chart>()`, from the
+#' same settings and with the same statistics: see
+#' [Visualize_GroupComparison()] and the functions beside it. ggplot2 is
+#' suggested, not imported.
+#'
 #' @section Status:
 #' Version 0.1.0 is in development: the statistics functions, a synthetic
 #' biomarker study with known planted effects, and the first widgets.
