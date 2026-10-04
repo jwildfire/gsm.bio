@@ -68,6 +68,7 @@ if (requireNamespace("ggplot2", quietly = TRUE)) {
 \code{\link[=Widget_StratifiedSurvival]{Widget_StratifiedSurvival()}}, its interactive twin.
 
 Other figures: 
+\code{\link{Run_Specifications}()},
 \code{\link{Visualize_AssociationScatter}()},
 \code{\link{Visualize_BiomarkerScreen}()},
 \code{\link{Visualize_CorrelationMatrix}()},

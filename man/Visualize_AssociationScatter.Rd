@@ -65,6 +65,7 @@ if (requireNamespace("ggplot2", quietly = TRUE)) {
 \code{\link[=Widget_AssociationScatter]{Widget_AssociationScatter()}}, its interactive twin.
 
 Other figures: 
+\code{\link{Run_Specifications}()},
 \code{\link{Visualize_BiomarkerScreen}()},
 \code{\link{Visualize_CorrelationMatrix}()},
 \code{\link{Visualize_CrossTab}()},

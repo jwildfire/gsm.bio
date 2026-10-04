@@ -23,6 +23,10 @@
 #    keeps its own record of where that copy came from, and that record is
 #    carried into ours whole.
 #
+# 1b. The JSON Schema of bio.viz's chart specifications, into
+#    inst/specification/, with its record: Run_Specifications() reads each
+#    chart's settings by name from it.
+#
 # 2. The fixtures the tests hold R to, into tests/testthat/fixtures/bio.viz/,
 #    with their record, a set per chart: the rows bio.viz's own core wrote for
 #    panels of the chart's demo, and the requests the chart makes for them with
@@ -196,6 +200,25 @@ for (strWidget in chrWidgets) {
     "    script: 'gsm.bio.widget.js'"
   ), file.path("inst", "htmlwidgets", paste0(strWidget, ".yaml")))
 }
+
+# ---- 1b. The specification schema ----------------------------------------------
+
+# The format bio.viz writes a chart's specification in (bio.viz#68), with each
+# chart's settings by name and default: Run_Specifications() reads a
+# specification by it.
+strSchemaDir <- file.path("inst", "specification")
+strSchemaSource <- "src/data/specification.schema.json"
+lSchema <- Place(ReadAt(strSchemaSource), strSchemaDir, "specification.schema.json", strSchemaSource)
+WriteJson(list(
+  what = "The JSON Schema of bio.viz's chart specifications, copied from bio.viz byte for byte.",
+  copied_by = "data-raw/vendor-bio-viz.R",
+  repository = strRepository,
+  ref = strRef,
+  commit = strCommit,
+  merged_to_dev = bMergedToDev,
+  note = strUnmergedNote,
+  files = list(lSchema)
+), file.path(strSchemaDir, "SOURCE.json"))
 
 # ---- 2. The fixtures -----------------------------------------------------------
 

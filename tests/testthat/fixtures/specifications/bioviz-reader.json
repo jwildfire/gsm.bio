@@ -1,0 +1,824 @@
+[
+  {
+    "case": "saved by bio.viz: 1 group-comparison",
+    "accepted": true,
+    "chart": "group-comparison",
+    "settings": {
+      "id_col": "USUBJID",
+      "measure_col": "TEST",
+      "value_col": "STRESN",
+      "visit_col": "VISIT",
+      "visit_order_col": "VISITNUM",
+      "unit_col": "STRESU",
+      "participant_id_col": null,
+      "baseline_visits": [
+        "Baseline"
+      ],
+      "baseline_stat": "mean",
+      "start_value": "IL-6",
+      "visits": [
+        "Week 4",
+        "Week 8"
+      ],
+      "value_type": "change",
+      "group_by": "ARM",
+      "levels": null,
+      "color_by": null,
+      "panel_by": null,
+      "mark": "box",
+      "y_scale": "linear",
+      "measures": null,
+      "groups": [
+        {
+          "value_col": "ARM",
+          "label": "Arm"
+        },
+        {
+          "value_col": "SEX",
+          "label": "Sex"
+        },
+        {
+          "value_col": "RESPONSE",
+          "label": "Response"
+        }
+      ],
+      "max_levels": 12,
+      "filters": [
+        {
+          "value_col": "ARM",
+          "label": "Arm"
+        },
+        {
+          "value_col": "SEX",
+          "label": "Sex"
+        },
+        {
+          "value_col": "RESPONSE",
+          "label": "Response"
+        }
+      ],
+      "overview_limit": 12,
+      "page": 0,
+      "details": null,
+      "page_size": 10,
+      "statistic": "Analyze_GroupDifference",
+      "test": "t",
+      "pairwise": false,
+      "waiting_note": null,
+      "profile": true,
+      "profile_details": null,
+      "studyday_col": null,
+      "normal_col_high": null,
+      "normal_col_low": null,
+      "title": "{measure}: {value} by {group}",
+      "subtitle": "{n} participants, at {visits}",
+      "footnotes": [
+        "Synthetic study from gsm.bio.",
+        "Filters: {filters}."
+      ],
+      "downloads": true,
+      "png_scale": 2
+    }
+  },
+  {
+    "case": "saved by bio.viz: 2 group-comparison",
+    "accepted": true,
+    "chart": "group-comparison",
+    "settings": {
+      "id_col": "USUBJID",
+      "measure_col": "TEST",
+      "value_col": "STRESN",
+      "visit_col": "VISIT",
+      "visit_order_col": "VISITNUM",
+      "unit_col": "STRESU",
+      "participant_id_col": null,
+      "baseline_visits": [
+        "Baseline"
+      ],
+      "baseline_stat": "mean",
+      "start_value": "IL-6",
+      "visits": [
+        "Week 4",
+        "Week 8"
+      ],
+      "value_type": "change",
+      "group_by": "ARM",
+      "levels": null,
+      "color_by": null,
+      "panel_by": null,
+      "mark": "box",
+      "y_scale": "linear",
+      "measures": null,
+      "groups": [
+        {
+          "value_col": "ARM",
+          "label": "Arm"
+        },
+        {
+          "value_col": "SEX",
+          "label": "Sex"
+        },
+        {
+          "value_col": "RESPONSE",
+          "label": "Response"
+        }
+      ],
+      "max_levels": 12,
+      "filters": [
+        {
+          "value_col": "ARM",
+          "label": "Arm"
+        },
+        {
+          "value_col": "SEX",
+          "label": "Sex",
+          "start": "F"
+        },
+        {
+          "value_col": "RESPONSE",
+          "label": "Response"
+        }
+      ],
+      "overview_limit": 12,
+      "page": 0,
+      "details": null,
+      "page_size": 10,
+      "statistic": "Analyze_GroupDifference",
+      "test": "t",
+      "pairwise": false,
+      "waiting_note": null,
+      "profile": true,
+      "profile_details": null,
+      "studyday_col": null,
+      "normal_col_high": null,
+      "normal_col_low": null,
+      "title": "{measure}: {value} by {group}",
+      "subtitle": "{n} participants, at {visits}",
+      "footnotes": [
+        "Synthetic study from gsm.bio.",
+        "Filters: {filters}."
+      ],
+      "downloads": true,
+      "png_scale": 2
+    }
+  },
+  {
+    "case": "saved by bio.viz: 3 association-scatter",
+    "accepted": true,
+    "chart": "association-scatter",
+    "settings": {
+      "id_col": "USUBJID",
+      "measure_col": "TEST",
+      "value_col": "STRESN",
+      "visit_col": "VISIT",
+      "visit_order_col": "VISITNUM",
+      "unit_col": "STRESU",
+      "participant_id_col": null,
+      "baseline_visits": [
+        "Baseline"
+      ],
+      "baseline_stat": "mean",
+      "x": {
+        "measure": "TNF-alpha",
+        "value": "raw",
+        "visit": "Baseline"
+      },
+      "y": {
+        "measure": "IL-10",
+        "value": "raw",
+        "visit": "Baseline"
+      },
+      "color_by": null,
+      "panel_by": null,
+      "x_scale": "linear",
+      "y_scale": "linear",
+      "fit": "linear",
+      "measures": null,
+      "numbers": null,
+      "groups": null,
+      "max_levels": 12,
+      "filters": [
+        {
+          "value_col": "ARM",
+          "label": "Arm"
+        },
+        {
+          "value_col": "SEX",
+          "label": "Sex"
+        },
+        {
+          "value_col": "RESPONSE",
+          "label": "Response"
+        }
+      ],
+      "details": null,
+      "page_size": 10,
+      "statistic": "Analyze_Correlation",
+      "method": "pearson",
+      "fit_statistic": "Analyze_Fit",
+      "waiting_note": null,
+      "profile": true,
+      "profile_details": null,
+      "studyday_col": null,
+      "normal_col_high": null,
+      "normal_col_low": null,
+      "title": "{y} against {x}",
+      "subtitle": "{n} participants",
+      "footnotes": null,
+      "downloads": true,
+      "png_scale": 2
+    }
+  },
+  {
+    "case": "saved by bio.viz: 4 correlation-matrix",
+    "accepted": true,
+    "chart": "correlation-matrix",
+    "settings": {
+      "id_col": "USUBJID",
+      "measure_col": "TEST",
+      "value_col": "STRESN",
+      "visit_col": "VISIT",
+      "visit_order_col": "VISITNUM",
+      "unit_col": "STRESU",
+      "participant_id_col": null,
+      "baseline_visits": [
+        "Baseline"
+      ],
+      "baseline_stat": "mean",
+      "mode": "biomarkers",
+      "visit": "Baseline",
+      "biomarkers": null,
+      "measure": "CRP",
+      "visits": null,
+      "value_type": "raw",
+      "view": "grid",
+      "limit": 12,
+      "measures": null,
+      "max_levels": 12,
+      "filters": [
+        {
+          "value_col": "ARM",
+          "label": "Arm"
+        },
+        {
+          "value_col": "SEX",
+          "label": "Sex"
+        },
+        {
+          "value_col": "RESPONSE",
+          "label": "Response"
+        }
+      ],
+      "statistic": "Analyze_CorrelationMatrix",
+      "method": "pearson",
+      "min_pairs": null,
+      "waiting_note": null,
+      "scatter": null,
+      "title": "{heading}",
+      "subtitle": null,
+      "footnotes": null,
+      "downloads": true,
+      "png_scale": 2
+    }
+  },
+  {
+    "case": "saved by bio.viz: 5 biomarker-screen",
+    "accepted": true,
+    "chart": "biomarker-screen",
+    "settings": {
+      "id_col": "USUBJID",
+      "measure_col": "TEST",
+      "value_col": "STRESN",
+      "visit_col": "VISIT",
+      "visit_order_col": "VISITNUM",
+      "unit_col": "STRESU",
+      "participant_id_col": null,
+      "baseline_visits": [
+        "Baseline"
+      ],
+      "baseline_stat": "mean",
+      "comparison": "difference",
+      "visit": "Week 4",
+      "value_type": "change",
+      "group_by": "ARM",
+      "levels": [
+        "Placebo",
+        "Treatment"
+      ],
+      "with": {
+        "col": "AGE"
+      },
+      "method": "pearson",
+      "outcome_id_col": null,
+      "endpoint_col": "PARAMCD",
+      "endpoint_label_col": "PARAM",
+      "time_col": "AVAL",
+      "censor_col": "CNSR",
+      "event_col": null,
+      "endpoint": null,
+      "adjustment": "BH",
+      "sort": "estimate",
+      "limit": 20,
+      "page": 0,
+      "measures": null,
+      "groups": [
+        {
+          "value_col": "ARM",
+          "label": "Arm"
+        },
+        {
+          "value_col": "SEX",
+          "label": "Sex"
+        },
+        {
+          "value_col": "RESPONSE",
+          "label": "Response"
+        }
+      ],
+      "numbers": null,
+      "max_levels": 12,
+      "filters": [
+        {
+          "value_col": "ARM",
+          "label": "Arm"
+        },
+        {
+          "value_col": "SEX",
+          "label": "Sex"
+        },
+        {
+          "value_col": "RESPONSE",
+          "label": "Response"
+        }
+      ],
+      "statistic": "Analyze_Screen",
+      "waiting_note": null,
+      "group_comparison": null,
+      "association_scatter": null,
+      "stratified_survival": null,
+      "title": "{heading}",
+      "subtitle": "{biomarkers} biomarkers, {n} participants",
+      "footnotes": null,
+      "downloads": true,
+      "png_scale": 2
+    }
+  },
+  {
+    "case": "saved by bio.viz: 6 cross-tab",
+    "accepted": true,
+    "chart": "cross-tab",
+    "settings": {
+      "id_col": "USUBJID",
+      "measure_col": "TEST",
+      "value_col": "STRESN",
+      "visit_col": "VISIT",
+      "visit_order_col": "VISITNUM",
+      "unit_col": "STRESU",
+      "participant_id_col": null,
+      "baseline_visits": [
+        "Baseline"
+      ],
+      "baseline_stat": "mean",
+      "row_by": "RESPONSE",
+      "col_by": {
+        "measure": "CRP",
+        "visit": "Baseline",
+        "value": "raw",
+        "cut": "median"
+      },
+      "percent": "row",
+      "cuts": null,
+      "measures": null,
+      "groups": [
+        {
+          "value_col": "ARM",
+          "label": "Arm"
+        },
+        {
+          "value_col": "SEX",
+          "label": "Sex"
+        },
+        {
+          "value_col": "RESPONSE",
+          "label": "Response"
+        }
+      ],
+      "max_levels": 12,
+      "filters": [
+        {
+          "value_col": "ARM",
+          "label": "Arm"
+        },
+        {
+          "value_col": "SEX",
+          "label": "Sex"
+        },
+        {
+          "value_col": "RESPONSE",
+          "label": "Response"
+        }
+      ],
+      "details": null,
+      "page_size": 10,
+      "statistic": "Analyze_Contingency",
+      "test": "chisq",
+      "waiting_note": null,
+      "profile": true,
+      "profile_details": null,
+      "studyday_col": null,
+      "normal_col_high": null,
+      "normal_col_low": null,
+      "title": "${1 + 1} {rows} by {columns} <script>alert(1)<\/script>",
+      "subtitle": "{n} participants; system('touch PWNED')",
+      "footnotes": null,
+      "downloads": true,
+      "png_scale": 2
+    }
+  },
+  {
+    "case": "saved by bio.viz: 7 stratified-survival",
+    "accepted": true,
+    "chart": "stratified-survival",
+    "settings": {
+      "id_col": "USUBJID",
+      "measure_col": "TEST",
+      "value_col": "STRESN",
+      "visit_col": "VISIT",
+      "visit_order_col": "VISITNUM",
+      "unit_col": "STRESU",
+      "participant_id_col": null,
+      "baseline_visits": [
+        "Baseline"
+      ],
+      "baseline_stat": "mean",
+      "outcome_id_col": null,
+      "endpoint_col": "PARAMCD",
+      "endpoint_label_col": "PARAM",
+      "time_col": "AVAL",
+      "censor_col": "CNSR",
+      "event_col": null,
+      "endpoint": "EFS",
+      "group_by": {
+        "measure": "CRP",
+        "visit": "Baseline",
+        "value": "raw",
+        "cut": "median"
+      },
+      "cuts": null,
+      "at_risk_times": null,
+      "measures": null,
+      "groups": [
+        {
+          "value_col": "ARM",
+          "label": "Arm"
+        },
+        {
+          "value_col": "SEX",
+          "label": "Sex"
+        },
+        {
+          "value_col": "RESPONSE",
+          "label": "Response"
+        }
+      ],
+      "max_levels": 12,
+      "filters": [
+        {
+          "value_col": "ARM",
+          "label": "Arm"
+        },
+        {
+          "value_col": "SEX",
+          "label": "Sex"
+        },
+        {
+          "value_col": "RESPONSE",
+          "label": "Response"
+        }
+      ],
+      "details": null,
+      "page_size": 10,
+      "statistic": "Analyze_Survival",
+      "waiting_note": null,
+      "profile": true,
+      "profile_details": null,
+      "studyday_col": null,
+      "normal_col_high": null,
+      "normal_col_low": null,
+      "title": "{endpoint} by {group}",
+      "subtitle": "{n} participants",
+      "footnotes": null,
+      "downloads": true,
+      "png_scale": 2
+    }
+  },
+  {
+    "case": "a filter in force",
+    "accepted": true,
+    "chart": "cross-tab",
+    "settings": {
+      "row_by": "ARM",
+      "col_by": "RESPONSE",
+      "filters": [
+        {
+          "value_col": "SEX",
+          "start": "F"
+        }
+      ]
+    }
+  },
+  {
+    "case": "a filter of two values",
+    "accepted": true,
+    "chart": "cross-tab",
+    "settings": {
+      "filters": [
+        {
+          "value_col": "ARM",
+          "start": [
+            "Placebo",
+            "Treatment"
+          ],
+          "multiple": true
+        }
+      ]
+    }
+  },
+  {
+    "case": "a filter of none",
+    "accepted": true,
+    "chart": "cross-tab",
+    "settings": {
+      "filters": [
+        {
+          "value_col": "ARM",
+          "start": [],
+          "multiple": true
+        }
+      ]
+    }
+  },
+  {
+    "case": "a filter onto the chart's own",
+    "accepted": true,
+    "chart": "cross-tab",
+    "settings": {
+      "filters": [
+        {
+          "value_col": "SEX",
+          "label": "Sex",
+          "start": "M"
+        }
+      ]
+    }
+  },
+  {
+    "case": "no settings",
+    "accepted": true,
+    "chart": "stratified-survival",
+    "settings": {}
+  },
+  {
+    "case": "code-like text",
+    "accepted": true,
+    "chart": "cross-tab",
+    "settings": {
+      "title": "${1 + 1} <script>alert(1)<\/script> {{x}} system('touch PWNED')"
+    }
+  },
+  {
+    "case": "a number as a filter value",
+    "accepted": true,
+    "chart": "cross-tab",
+    "settings": {
+      "filters": [
+        {
+          "value_col": "AGE",
+          "start": [
+            "35",
+            "36"
+          ],
+          "multiple": true
+        }
+      ]
+    }
+  },
+  {
+    "case": "a member twice, the last kept",
+    "accepted": true,
+    "chart": "cross-tab",
+    "settings": {
+      "row_by": "ARM"
+    }
+  },
+  {
+    "case": "not an object",
+    "accepted": false,
+    "refusal": "bio.viz: a specification is an object: { format, chart, settings, filters }."
+  },
+  {
+    "case": "not JSON",
+    "accepted": false,
+    "refusal": "bio.viz: a specification given as text must be JSON: Expected property name or '}' in JSON at position 1 (line 1 column 2)."
+  },
+  {
+    "case": "another format",
+    "accepted": false,
+    "refusal": "bio.viz: this is not a bio.viz specification: its `format` must be \"bio.viz specification\"."
+  },
+  {
+    "case": "another format version",
+    "accepted": false,
+    "refusal": "bio.viz: this specification is of format version 2, and this version of bio.viz reads version 1."
+  },
+  {
+    "case": "a member it does not have",
+    "accepted": false,
+    "refusal": "bio.viz: a specification has no `data`: it holds format, format_version, bio_viz_version, chart, settings, filters."
+  },
+  {
+    "case": "a version that is not text",
+    "accepted": false,
+    "refusal": "bio.viz: a specification’s `bio_viz_version` is text, the version that wrote it."
+  },
+  {
+    "case": "no version",
+    "accepted": false,
+    "refusal": "bio.viz: a specification’s `bio_viz_version` is text, the version that wrote it."
+  },
+  {
+    "case": "a chart bio.viz does not have",
+    "accepted": false,
+    "refusal": "bio.viz: this specification names the chart \"pie-chart\", which bio.viz does not have. Its charts are group-comparison, association-scatter, correlation-matrix, biomarker-screen, cross-tab, stratified-survival."
+  },
+  {
+    "case": "a setting the chart does not have",
+    "accepted": false,
+    "refusal": "bio.viz: this specification of the cross-tab chart, written by bio.viz 0.1.0, holds `colour`, which is not a setting of that chart in this version."
+  },
+  {
+    "case": "the page's connection",
+    "accepted": false,
+    "refusal": "bio.viz: this specification of the cross-tab chart, written by bio.viz 0.1.0, holds `connection`, which is not a setting of that chart in this version."
+  },
+  {
+    "case": "settings that are not an object",
+    "accepted": false,
+    "refusal": "bio.viz: a specification’s `settings` is an object of settings."
+  },
+  {
+    "case": "a filters setting that is not a list",
+    "accepted": false,
+    "refusal": "bio.viz: the setting `filters` of a specification is a list of filters, or null."
+  },
+  {
+    "case": "a setting that names __proto__",
+    "accepted": false,
+    "refusal": "bio.viz: `row_by` names `__proto__`, which is no column’s name."
+  },
+  {
+    "case": "a setting named __proto__",
+    "accepted": false,
+    "refusal": "bio.viz: this specification of the cross-tab chart, written by bio.viz 0.1.0, holds `__proto__`, which is not a setting of that chart in this version."
+  },
+  {
+    "case": "filters that are not a list",
+    "accepted": false,
+    "refusal": "bio.viz: a specification’s `filters` is a list of { column, operator, values }."
+  },
+  {
+    "case": "a filter that is not an object",
+    "accepted": false,
+    "refusal": "bio.viz: filter 1 must be { column, operator, values }."
+  },
+  {
+    "case": "a filter with more than it has",
+    "accepted": false,
+    "refusal": "bio.viz: filter 1 has `label`: a filter is { column, operator, values }."
+  },
+  {
+    "case": "a filter with no column",
+    "accepted": false,
+    "refusal": "bio.viz: filter 1 must name its column."
+  },
+  {
+    "case": "a filter on constructor",
+    "accepted": false,
+    "refusal": "bio.viz: filter 1 is on `constructor`, which is no column’s name."
+  },
+  {
+    "case": "a filter on prototype",
+    "accepted": false,
+    "refusal": "bio.viz: filter 1 is on `prototype`, which is no column’s name."
+  },
+  {
+    "case": "a column filtered twice",
+    "accepted": false,
+    "refusal": "bio.viz: filter 2 is on SEX, which filter 1 is already on: a column is filtered once."
+  },
+  {
+    "case": "an operator it does not have",
+    "accepted": false,
+    "refusal": "bio.viz: filter 1, on SEX, has the operator \"eq\"; the operators are \"in\": in, the values it lets through."
+  },
+  {
+    "case": "values that are not a list",
+    "accepted": false,
+    "refusal": "bio.viz: filter 1, on SEX, must list the values it lets through: text or numbers."
+  },
+  {
+    "case": "a value that is not text or a number",
+    "accepted": false,
+    "refusal": "bio.viz: filter 1, on SEX, must list the values it lets through: text or numbers."
+  },
+  {
+    "case": "a value twice",
+    "accepted": false,
+    "refusal": "bio.viz: filter 1, on AGE, names 35 twice: a value is listed once."
+  },
+  {
+    "case": "nested more than 64 deep",
+    "accepted": false,
+    "refusal": "bio.viz: `title` must be text, which may hold placeholders such as {n}, or null for none."
+  },
+  {
+    "case": "a choice the chart does not have",
+    "accepted": false,
+    "refusal": "bio.viz: `percent` must be one of row, col, none."
+  },
+  {
+    "case": "a test the chart does not have",
+    "accepted": false,
+    "refusal": "bio.viz: `test` must be one of t, wilcoxon, anova, kruskal, none."
+  },
+  {
+    "case": "a title that is not text",
+    "accepted": false,
+    "refusal": "bio.viz: `title` must be text, which may hold placeholders such as {n}, or null for none."
+  },
+  {
+    "case": "footnotes that are not texts",
+    "accepted": false,
+    "refusal": "bio.viz: `footnotes` must be text, or a list of texts, or null for none."
+  },
+  {
+    "case": "a mark the chart does not have",
+    "accepted": false,
+    "refusal": "bio.viz: `mark` must be one of box, violin, points."
+  },
+  {
+    "case": "a page below nought",
+    "accepted": false,
+    "refusal": "bio.viz: `page` must be a whole number, from 0: the page of rows it opens on."
+  },
+  {
+    "case": "a limit of nought",
+    "accepted": false,
+    "refusal": "bio.viz: `limit` must be a whole number, one or more."
+  },
+  {
+    "case": "a sort it does not have",
+    "accepted": false,
+    "refusal": "bio.viz: `sort` must be one of estimate, name, adjusted."
+  },
+  {
+    "case": "a view it does not have",
+    "accepted": false,
+    "refusal": "bio.viz: `view` must be one of grid, scatters."
+  },
+  {
+    "case": "a png_scale beyond 4",
+    "accepted": false,
+    "refusal": "bio.viz: `png_scale` must be a number from 1 to 4: image pixels per CSS pixel."
+  },
+  {
+    "case": "downloads that is not true or false",
+    "accepted": false,
+    "refusal": "bio.viz: `downloads` must be true or false."
+  },
+  {
+    "case": "a profile that is not true or false",
+    "accepted": false,
+    "refusal": "bio.viz: `profile` must be true or false."
+  },
+  {
+    "case": "a waiting note of white space",
+    "accepted": false,
+    "refusal": "bio.viz: `waiting_note` must be a sentence, or null for none."
+  },
+  {
+    "case": "a page size that is not whole",
+    "accepted": false,
+    "refusal": "bio.viz: `page_size` must be a whole number, one or more."
+  },
+  {
+    "case": "details that are not columns",
+    "accepted": false,
+    "refusal": "bio.viz: `details` holds something that is not a column name or { value_col, label }."
+  },
+  {
+    "case": "a study day column that is not a name",
+    "accepted": false,
+    "refusal": "bio.viz: `studyday_col` must be the name of a column, or null."
+  }
+]

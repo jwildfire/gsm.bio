@@ -1,0 +1,6 @@
+{
+  "what": "Specifications written by bio.viz's own charts (charts.json), and the script that reads specifications with bio.viz's own reader (bioviz-reader.mjs).",
+  "charts.json": "Each chart of the copied bundle (bio.viz dev 15cf0ea) made by a gsm.bio widget on the synthetic study, and its specification() saved offline in headless Chromium: the six charts, and the group comparison again with its Sex filter at F. Written by data-raw/specifications/save-pages.R and data-raw/specifications/write-specifications.mjs.",
+  "bioviz-reader.json": "What bio.viz's own reader (bioviz-reader.mjs, on the copied bundle) made of each case of tests/testthat/test-batch.R, for a session with no node; the test holds it to a live run wherever node is installed.",
+  "bio_viz_commit": "15cf0ea6b611ab7cbd8055dbc0e2af0e2efa69a1"
+}

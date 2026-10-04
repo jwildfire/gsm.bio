@@ -28,6 +28,7 @@ Suggests:
     jsonlite,
     r2rtf,
     rmarkdown,
+    svglite,
     testthat (>= 3.0.0)
 Config/testthat/edition: 3
 LazyData: true

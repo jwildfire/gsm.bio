@@ -155,3 +155,16 @@ test_that("the core's frames were written by the vendored bundle, from the study
     vapply(lCases, function(lCase) lCase$case, character(1))
   )
 })
+
+test_that("the specification schema matches the checksum recorded beside it, from the same bio.viz commit as the bundles (#39)", {
+  strDir <- system.file("specification", package = "gsm.bio")
+  lRecord <- lReadJson(strDir, "SOURCE.json")
+  expect_identical(lRecord$copied_by, "data-raw/vendor-bio-viz.R")
+  expect_identical(lRecord$commit, lReadJson(strLibDir(), "SOURCE.json")$commit)
+  expect_length(lRecord$files, 1L)
+  lFile <- lRecord$files[[1]]
+  expect_identical(lFile$file, "specification.schema.json")
+  expect_identical(lFile$source, "src/data/specification.schema.json")
+  expect_identical(strSha256(file.path(strDir, lFile$file)), lFile$sha256)
+  expect_setequal(list.files(strDir), c("SOURCE.json", "specification.schema.json"))
+})

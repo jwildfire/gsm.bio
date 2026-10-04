@@ -68,6 +68,7 @@ if (requireNamespace("ggplot2", quietly = TRUE)) {
 \code{\link[=Analyze_GroupDifference]{Analyze_GroupDifference()}}, which computes the tests.
 
 Other figures: 
+\code{\link{Run_Specifications}()},
 \code{\link{Visualize_AssociationScatter}()},
 \code{\link{Visualize_BiomarkerScreen}()},
 \code{\link{Visualize_CorrelationMatrix}()},
