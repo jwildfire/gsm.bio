@@ -87,7 +87,7 @@ Widget_CorrelationMatrix(
 
 It stores `Analyze_CorrelationMatrix()`'s answer for the grid the settings open on and, for every cell, exactly what the scatter that cell opens asks of R, so a saved page opens any cell's scatter with its coefficient, interval and p-value. On the synthetic study that is one grid and 132 scatters, one for each cell on either side of the diagonal.
 
-`Widget_BiomarkerScreen()` draws bio.viz's biomarker screen: one row per biomarker at one visit, each with its estimate and interval on one shared axis and its raw and adjusted p-values, as a standardised difference between two groups or a correlation with one variable. A click on a row opens that biomarker's group comparison or association scatter in place, with a way back.
+`Widget_BiomarkerScreen()` draws bio.viz's biomarker screen: one row per biomarker at one visit, each with its estimate and interval on one shared axis and its raw and adjusted p-values, as a standardised difference between two groups, a correlation with one variable or, given an outcomes table, a hazard ratio of high against low. A click on a row opens that biomarker's group comparison, association scatter or survival curves in place, with a way back.
 
 ```r
 Widget_BiomarkerScreen(
@@ -97,7 +97,16 @@ Widget_BiomarkerScreen(
 )
 ```
 
-It stores `Analyze_Screen()`'s answer for the screen the settings open on and, for every row, exactly what the chart that row opens asks of R: for a difference the group comparison at the screen's one visit, of the two groups, with Welch's test; for a correlation the scatter with the biomarker along the bottom and the variable up the side. On the synthetic study, Placebo against Treatment, that is one screen and twelve group comparisons.
+It stores `Analyze_Screen()`'s answer for the screen the settings open on and, for every row, exactly what the chart that row opens asks of R: for a difference the group comparison at the screen's one visit, of the two groups, with Welch's test; for a correlation the scatter with the biomarker along the bottom and the variable up the side; for a hazard ratio the survival curves of the biomarker cut where the screen cut it. On the synthetic study, Placebo against Treatment, that is one screen and twelve group comparisons. The outcomes table comes after the participant table, so give `lSettings` by name:
+
+```r
+Widget_BiomarkerScreen(
+  Synthetic_Results,
+  Synthetic_Participants,
+  Synthetic_Outcomes,
+  lSettings = list(comparison = "hazard", visit = "Baseline", endpoint = "EFS")
+)
+```
 
 `Widget_CrossTab()` draws bio.viz's cross-tabulation: a two-way table of counts with its totals and percentages, beside stacked bars, and R's chi-square or Fisher's exact test under it. A click on a count lists that cell's participants.
 
@@ -110,6 +119,19 @@ Widget_CrossTab(
 ```
 
 It stores `Analyze_Contingency()`'s answer for the table the settings open on, by both tests. Either variable of the table, and the groups or the panels of `Widget_GroupComparison()`, can be a biomarker or a number cut into groups at its median, tertiles, quartiles or typed points, by the cut rule bio.viz uses in every chart: `quantile()` with its default for the points, and `cut()` with a value on a point in the lower group.
+
+`Widget_StratifiedSurvival()` draws bio.viz's stratified survival chart: a Kaplan-Meier curve for each group on one endpoint of an outcomes table, the number at risk beneath, and R's log-rank test, each group's median and the hazard ratio under them. The outcomes table is read as ADaM holds time to event (`PARAMCD`, `PARAM`, `AVAL`, and `CNSR` with 1 for censored), or with an event flag the other way round. A click on a curve or a count at risk lists those participants.
+
+```r
+Widget_StratifiedSurvival(
+  Synthetic_Results,
+  Synthetic_Participants,
+  Synthetic_Outcomes,
+  lSettings = list(endpoint = "EFS", group_by = list(measure = "CRP", visit = "Baseline", cut = "median"))
+)
+```
+
+It stores `Analyze_Survival()`'s answer for the curves the settings open on. A cut's groups are handed to R high to low, so the hazard ratio is the higher group's hazard over the lower's.
 
 Every widget carries two JavaScript bundles, both copied from bio.viz with the commit and a checksum per file recorded in `inst/htmlwidgets/lib/SOURCE.json`: bio.viz v0.1.0, and safety.viz v1.9.0, the first safety.viz with the kit bio.viz's charts are built from. The safety.viz copy is the one bio.viz takes from safety.viz's `dev` branch at its v1.9.0 release preparation, and its commit is recorded too. gsm.safety carries an earlier safety.viz without the kit; once it carries v1.9.0, the widgets can take the bundle from there instead of carrying their own copy.
 

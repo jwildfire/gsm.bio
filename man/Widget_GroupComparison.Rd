@@ -163,6 +163,7 @@ Other widgets:
 \code{\link{Widget_AssociationScatter}()},
 \code{\link{Widget_BiomarkerScreen}()},
 \code{\link{Widget_CorrelationMatrix}()},
-\code{\link{Widget_CrossTab}()}
+\code{\link{Widget_CrossTab}()},
+\code{\link{Widget_StratifiedSurvival}()}
 }
 \concept{widgets}

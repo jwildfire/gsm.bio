@@ -156,14 +156,23 @@ lBundleDefaults <- function(strSetting) {
   lRecord <- lReadJson(system.file("htmlwidgets", "lib", "SOURCE.json", package = "gsm.bio"))
   strFile <- Filter(function(lFile) lFile$library == "bio.viz", lRecord$files)[[1]]$file
   chrLines <- readLines(system.file("htmlwidgets", "lib", strFile, package = "gsm.bio"), warn = FALSE)
-  iStarts <- grep("^  var DEFAULT_SETTINGS[0-9]* = Object\\.freeze\\(\\{$", chrLines)
-  for (iStart in iStarts) {
+  # A block of plain values: each setting's value as the JSON it is written in.
+  Block <- function(iStart) {
     iEnd <- iStart + match("  });", chrLines[-seq_len(iStart)])
     chrBlock <- grep("^\\s*//", chrLines[(iStart + 1L):(iEnd - 1L)], value = TRUE, invert = TRUE)
-    chrNames <- sub("^\\s*([a-z_]+): .*$", "\\1", chrBlock)
-    if (strSetting %in% chrNames) {
-      chrValues <- sub(",$", "", sub("^\\s*[a-z_]+: ", "", chrBlock))
-      return(stats::setNames(lapply(chrValues, function(strValue) jsonlite::fromJSON(strValue)), chrNames))
+    stats::setNames(sub(",$", "", sub("^\\s*[a-z_]+: ", "", chrBlock)), sub("^\\s*([a-z_]+): .*$", "\\1", chrBlock))
+  }
+  # The outcome settings two charts share are written once, in OUTCOME_DEFAULTS
+  # (bio.viz, src/shared/outcomes.js), and each chart's defaults name them
+  # there: OUTCOME_DEFAULTS.time_col.
+  iOutcomes <- grep("^  var OUTCOME_DEFAULTS = Object\\.freeze\\(\\{$", chrLines)
+  chrOutcomes <- if (length(iOutcomes) == 1L) Block(iOutcomes) else character(0)
+  for (iStart in grep("^  var DEFAULT_SETTINGS[0-9]* = Object\\.freeze\\(\\{$", chrLines)) {
+    chrValues <- Block(iStart)
+    if (strSetting %in% names(chrValues)) {
+      bShared <- grepl("^OUTCOME_DEFAULTS\\.[a-z_]+$", chrValues)
+      chrValues[bShared] <- chrOutcomes[sub("^OUTCOME_DEFAULTS\\.", "", chrValues[bShared])]
+      return(lapply(chrValues, function(strValue) jsonlite::fromJSON(strValue)))
     }
   }
   NULL

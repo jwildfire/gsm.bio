@@ -34,6 +34,7 @@ lScreenDemo <- function() {
   list(
     results = Synthetic_Results,
     participants = Synthetic_Participants,
+    outcomes = Synthetic_Outcomes,
     settings = list(
       comparison = "difference",
       visit = "Week 4",
@@ -44,7 +45,8 @@ lScreenDemo <- function() {
       numbers = lNumbers,
       filters = lLabelled,
       group_comparison = list(groups = lLabelled),
-      association_scatter = list(groups = lLabelled, numbers = lNumbers)
+      association_scatter = list(groups = lLabelled, numbers = lNumbers),
+      stratified_survival = list(groups = lLabelled)
     )
   )
 }
@@ -72,20 +74,23 @@ lScreenCaseView <- function(lCase) {
   if (lCase$comparison == "difference") {
     lSettings$group_by <- lCase$group_by
     lSettings$levels <- Several(lCase$groups)
+  } else if (lCase$comparison == "hazard") {
+    lSettings$endpoint <- lCase$endpoint
+    if (identical(lCase$flag, "event")) lSettings$event_col <- "EVENT"
   } else if (!is.na(lCase$with_col)) {
     lSettings$with <- list(col = lCase$with_col)
   } else {
     lSettings$with <- list(measure = lCase$with_measure, value = lCase$with_value, visit = One(lCase$with_visit))
   }
   lConfig <- BiomarkerScreen_Settings(lSettings)
-  lState <- BiomarkerScreen_State(lTables$results, lTables$participants, lConfig)
+  lState <- BiomarkerScreen_State(lTables$results, lTables$participants, lConfig, lTables$outcomes)
   lState$filters <- lFilters
-  list(results = lTables$results, participants = lTables$participants, config = lConfig, state = lState)
+  list(results = lTables$results, participants = lTables$participants, outcomes = lTables$outcomes, config = lConfig, state = lState)
 }
 
 lScreenCaseRequest <- function(lCase) {
   lView <- lScreenCaseView(lCase)
-  lRequests <- BiomarkerScreen_Requests(lView$results, lView$participants, lView$config, lView$state)
+  lRequests <- BiomarkerScreen_Requests(lView$results, lView$participants, lView$config, lView$state, lView$outcomes)
   expect_identical(length(lRequests), 1L, label = paste(lCase$case, "asks once"))
   lRequests[[1]]
 }
@@ -148,10 +153,10 @@ test_that("R resolves the frame bio.viz's screen hands R, gaps kept, for every v
       }
     }
   }
-  # The cases reach both comparisons, a change, a baseline visit, a filter,
+  # The cases reach the three comparisons, a change, a baseline visit, a filter,
   # both adjustments, both coefficients, a biomarker and a number to correlate
   # with, and frames with gaps.
-  expect_setequal(dfCases$comparison, c("difference", "correlation"))
+  expect_setequal(dfCases$comparison, c("difference", "correlation", "hazard"))
   expect_true(all(c("change", "raw") %in% dfCases$value_type))
   expect_true(any(!is.na(dfCases$filters)))
   expect_setequal(dfCases$adjustment, c("BH", "holm"))
@@ -421,4 +426,125 @@ test_that("the stored results are the screen's answer and, for each row, what th
     BiomarkerScreen_StoredResults(lTables$results, lTables$participants, BiomarkerScreen_Settings(c(lTables$settings, list(statistic = NULL)))),
     list()
   )
+})
+
+test_that("a hazard ratio is offered with an outcomes table, and the settings of the chart its row opens are checked (#35)", {
+  lTables <- lScreenDemo()
+  lSettings <- c(lTables$settings[setdiff(names(lTables$settings), c("comparison", "visit", "value_type"))], list(comparison = "hazard", visit = "Baseline", value_type = "raw"))
+  lConfig <- BiomarkerScreen_Settings(lSettings)
+  lState <- BiomarkerScreen_State(lTables$results, lTables$participants, lConfig, lTables$outcomes)
+  expect_identical(lState$comparison, "hazard")
+  expect_identical(lState$endpoint, "EFS")
+  # Without an outcomes table there is no hazard ratio, and the screen opens on
+  # a difference; an endpoint the table does not have is its first.
+  expect_identical(BiomarkerScreen_State(lTables$results, lTables$participants, lConfig)$comparison, "difference")
+  expect_null(BiomarkerScreen_State(lTables$results, lTables$participants, lConfig)$endpoint)
+  expect_identical(BiomarkerScreen_State(lTables$results, lTables$participants, BiomarkerScreen_Settings(c(lSettings, list(endpoint = "OS"))), lTables$outcomes)$endpoint, "EFS")
+  # The outcome settings are the chart's, read either way round.
+  expect_error(BiomarkerScreen_Settings(list(event_col = "EVENT", censor_col = "CNSR")), "exactly one of 'censor_col'")
+  expect_null(BiomarkerScreen_Settings(list(event_col = "EVENT"))$censor_col)
+  expect_error(BiomarkerScreen_Settings(list(stratified_survival = "median")), "stratified_survival.*named list")
+  # What the screen hands the survival chart is the screen's to set.
+  expect_error(BiomarkerScreen_Settings(list(stratified_survival = list(group_by = "ARM", endpoint = "OS"))), "stratified_survival.*cannot name 'group_by', 'endpoint'")
+  # And the request is of the endpoint, with the time and the flag.
+  lRequest <- BiomarkerScreen_Requests(lTables$results, lTables$participants, lConfig, lState, lTables$outcomes)[[1]]
+  expect_identical(lRequest$args[c("strComparison", "strTimeCol", "strCensorCol")], list(strComparison = "hazard", strTimeCol = "time", strCensorCol = "censor"))
+  expect_identical(lRequest$dataId$endpoint, "EFS")
+  expect_identical(names(lRequest$data), c("USUBJID", unlist(lRequest$args$chrCols), "time", "censor"))
+  # A participant with no outcome is in the frame, with no time and no flag:
+  # R leaves them out of every row, and counts them.
+  lFewer <- BiomarkerScreen_Requests(lTables$results, lTables$participants, lConfig, lState, lTables$outcomes[-(1:10), ])[[1]]
+  expect_identical(nrow(lFewer$data), nrow(lRequest$data))
+  expect_identical(sum(is.na(lFewer$data$time)), 10L)
+  expect_identical(sum(is.na(lFewer$data$censor)), 10L)
+  # No endpoint, no rows.
+  lNoEndpoint <- lState
+  lNoEndpoint$endpoint <- NULL
+  expect_length(BiomarkerScreen_Requests(lTables$results, lTables$participants, lConfig, lNoEndpoint, lTables$outcomes), 0L)
+})
+
+test_that("a row of a hazard ratio opens the survival chart on its biomarker cut at its median, as the chart recorded it (#35)", {
+  lTables <- lScreenDemo()
+  lSettings <- c(lTables$settings[setdiff(names(lTables$settings), c("comparison", "visit", "value_type"))], list(comparison = "hazard", visit = "Baseline", value_type = "raw"))
+  lSettings$stratified_survival <- list(groups = lTables$settings$groups, page_size = 5L)
+  lConfig <- BiomarkerScreen_Settings(lSettings)
+  lState <- BiomarkerScreen_State(lTables$results, lTables$participants, lConfig, lTables$outcomes)
+  lSpecs <- Chart_FilterSpecs(lTables$results, lTables$participants, lConfig)
+  lAxis <- list(measure = "CRP", value = "raw", visit = "Baseline")
+  lHanded <- BiomarkerScreen_OpenedSettings(lConfig, lState, lSpecs, "CRP", lAxis)
+  expect_identical(lHanded$group_by, list(measure = "CRP", value = "raw", visit = "Baseline", cut = "median"))
+  expect_identical(lHanded$endpoint, "EFS")
+  expect_identical(lHanded[names(lOutcomeDefaults)[names(lOutcomeDefaults) != "endpoint"]], lConfig[names(lOutcomeDefaults)[names(lOutcomeDefaults) != "endpoint"]])
+  expect_identical(lHanded$page_size, 5L)
+  expect_identical(lHanded$baseline_visits, "Baseline")
+  # A baseline value is cut with no visit.
+  lBaselineState <- lState
+  lBaselineState$value_type <- "baseline"
+  expect_identical(
+    BiomarkerScreen_OpenedSettings(lConfig, lBaselineState, lSpecs, "CRP", list(measure = "CRP", value = "baseline"))$group_by,
+    list(measure = "CRP", value = "baseline", cut = "median")
+  )
+
+  # What the chart it opens asks is what bio.viz recorded the survival chart
+  # asking on CRP at Baseline cut at its median.
+  lRequests <- BiomarkerScreen_OpenedRequests(lTables$results, lTables$participants, lConfig, lState, lSpecs, "CRP", lAxis, lTables$outcomes)
+  expect_length(lRequests, 1L)
+  lRecorded <- Filter(function(lCase) lCase$case == "crp-median", lReadJson(testthat::test_path("fixtures", "bio.viz"), "stratified-survival-r.json")$cases)[[1]]
+  expect_identical(
+    as.character(jsonlite::toJSON(lRequests[[1]][c("name", "args", "dataId", "rows")], auto_unbox = TRUE, digits = NA)),
+    as.character(jsonlite::toJSON(lRecorded[c("name", "args", "dataId", "rows")], auto_unbox = TRUE, digits = NA))
+  )
+  # Under the screen's filters, the chart asks of the same participants.
+  lState$filters$SEX <- "F"
+  lFiltered <- BiomarkerScreen_OpenedRequests(lTables$results, lTables$participants, lConfig, lState, lSpecs, "CRP", lAxis, lTables$outcomes)[[1]]
+  expect_identical(lFiltered$dataId$filters, list(SEX = list("F")))
+  expect_identical(lFiltered$rows, sum(Synthetic_Participants$SEX == "F"))
+})
+
+test_that("the stored results of a hazard screen are its rows and each row's survival test, and the two agree (#35)", {
+  lTables <- lScreenDemo()
+  lSettings <- c(lTables$settings[setdiff(names(lTables$settings), c("comparison", "visit", "value_type"))], list(comparison = "hazard", visit = "Baseline", value_type = "raw"))
+  lConfig <- BiomarkerScreen_Settings(lSettings)
+  lStored <- BiomarkerScreen_StoredResults(lTables$results, lTables$participants, lConfig, lTables$outcomes)
+  expect_identical(vapply(lStored, function(lResult) lResult$name, character(1)), c("Analyze_Screen", rep("Analyze_Survival", 12L)))
+  expect_identical(
+    vapply(lStored[-1], function(lResult) lResult$dataId$group_by$measure, character(1)),
+    unlist(lStored[[1]]$args$chrCols)
+  )
+  # Each row's hazard ratio, High over Low, is the survival chart's, the
+  # higher group's over the lower's, of the same participants.
+  dfRows <- lStored[[1]]$value$rows
+  for (lResult in lStored[-1]) {
+    iRow <- match(lResult$dataId$group_by$measure, dfRows$biomarker)
+    expect_identical(lResult$rows, dfRows$counts[iRow])
+    expect_equal(
+      lResult$value$estimates$estimate[lResult$value$estimates$name == "Hazard ratio"], dfRows$estimate[iRow],
+      tolerance = 1e-8, label = paste(lResult$dataId$group_by$measure, "hazard ratio")
+    )
+    expect_equal(lResult$value$p_value, dfRows$p_unadjusted[iRow], tolerance = 1e-8, label = paste(lResult$dataId$group_by$measure, "log-rank p"))
+  }
+})
+
+test_that("a hazard row opens its survival chart at the screen's own cut, so the two agree when some participants have no outcome (#35)", {
+  lTables <- lScreenDemo()
+  # Thirty participants with no event-free survival row: the screen's median
+  # is of the participants with a value and an outcome, not of everyone with a
+  # value.
+  dfOutcomes <- lTables$outcomes[-(1:30), ]
+  lSettings <- c(lTables$settings[setdiff(names(lTables$settings), c("comparison", "visit", "value_type"))], list(comparison = "hazard", visit = "Baseline", value_type = "raw"))
+  lConfig <- BiomarkerScreen_Settings(lSettings)
+  lStored <- BiomarkerScreen_StoredResults(lTables$results, lTables$participants, lConfig, dfOutcomes)
+  dfRows <- lStored[[1]]$value$rows
+  expect_identical(dfRows$counts[dfRows$biomarker == "CRP"], 170L)
+  for (lResult in lStored[-1]) {
+    strBiomarker <- lResult$dataId$group_by$measure
+    iRow <- match(strBiomarker, dfRows$biomarker)
+    expect_identical(lResult$rows, dfRows$counts[iRow], label = paste(strBiomarker, "participants"))
+    expect_identical(unlist(lResult$value$counts, use.names = FALSE), c(dfRows$n_1[iRow], dfRows$n_2[iRow]), label = paste(strBiomarker, "high and low"))
+    expect_equal(
+      lResult$value$estimates$estimate[lResult$value$estimates$name == "Hazard ratio"], dfRows$estimate[iRow],
+      tolerance = 1e-8, label = paste(strBiomarker, "hazard ratio")
+    )
+    expect_equal(lResult$value$p_value, dfRows$p_unadjusted[iRow], tolerance = 1e-8, label = paste(strBiomarker, "log-rank p"))
+  }
 })

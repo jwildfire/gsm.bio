@@ -81,10 +81,16 @@ window.GsmBioWidget = (function() {
                         // nothing else: no R is started and nothing is fetched.
                         settings.connection = BioViz.r.createConnection({ results: statistics.results });
                         instance = make(chart, settings);
+                        // The tables the chart is given: the results, the
+                        // participants when there are any, and the outcomes
+                        // table for a chart that reads one.
+                        const tables = { results: toRows(x.dfResults) };
                         const participants = toRows(x.dfParticipants);
-                        instance.init(participants
-                            ? { results: toRows(x.dfResults), participants: participants }
-                            : { results: toRows(x.dfResults) });
+                        if (participants)
+                            tables.participants = participants;
+                        if (x.dfOutcomes)
+                            tables.outcomes = toRows(x.dfOutcomes);
+                        instance.init(tables);
                     } catch (error) {
                         // The chart says what it refused, in the page and not
                         // only in the console.

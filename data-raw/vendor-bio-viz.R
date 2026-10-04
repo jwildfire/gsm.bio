@@ -175,7 +175,7 @@ WriteJson(list(
 # (inst/htmlwidgets/shared/, not copied from anywhere).
 chrWidgets <- c(
   "Widget_GroupComparison", "Widget_AssociationScatter", "Widget_CorrelationMatrix", "Widget_BiomarkerScreen",
-  "Widget_CrossTab"
+  "Widget_CrossTab", "Widget_StratifiedSurvival"
 )
 strPackageVersion <- read.dcf("DESCRIPTION", fields = "Version")[[1]]
 for (strWidget in chrWidgets) {
@@ -223,8 +223,10 @@ for (strSet in chrFixtureSets) {
 
 # And single files, with no rows of their own: what desktop R makes of the
 # shared cut rule (cut-r.json), and the cross-tabulation's tables with R's
-# answers (cross-tab-r.json), each worked out from the study by bio.viz's tools.
-for (strFile in c("cut-r.json", "cross-tab-r.json")) {
+# answers (cross-tab-r.json), and the stratified survival chart's curves with R's
+# answers (stratified-survival-r.json), each worked out from the study by
+# bio.viz's tools.
+for (strFile in c("cut-r.json", "cross-tab-r.json", "stratified-survival-r.json")) {
   strSource <- paste0("tests/fixtures/", strFile)
   lFixtures <- c(lFixtures, list(Place(ReadAt(strSource), strFixtures, strFile, strSource)))
 }

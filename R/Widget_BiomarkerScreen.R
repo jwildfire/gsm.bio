@@ -4,9 +4,10 @@
 #' each with its estimate and interval drawn on one shared axis and its raw and
 #' adjusted p-values, and a click on a row opens that biomarker's own chart in
 #' place. The rows are computed here, in R, by [Analyze_Screen()], and the
-#' chart each row opens by [Analyze_GroupDifference()] or
-#' [Analyze_Correlation()] (and [Analyze_Fit()] for a fitted line), and shipped
-#' with the page, so a saved page shows them with no R and no network.
+#' chart each row opens by [Analyze_GroupDifference()],
+#' [Analyze_Correlation()] (and [Analyze_Fit()] for a fitted line) or
+#' [Analyze_Survival()], and shipped with the page, so a saved page shows them
+#' with no R and no network.
 #'
 #' @section What the page opens on:
 #' Every biomarker the Biomarker control offers, at one visit, `visit` (the
@@ -17,7 +18,12 @@
 #' standardised difference (Hedges' g) with Welch's p-value. A correlation
 #' (`comparison = "correlation"`) correlates every biomarker with one variable,
 #' `with`, a biomarker at a visit or a participant-level number, by `method`;
-#' the biomarker that is that variable is not a row of its own. The p-values
+#' the biomarker that is that variable is not a row of its own. A hazard ratio
+#' (`comparison = "hazard"`), offered only with an outcomes table, cuts every
+#' biomarker at its median and compares high against low on one endpoint,
+#' `endpoint` (the first when none is named); each row is the hazard ratio,
+#' High over Low, with the log-rank p-value. The outcomes table is read as
+#' [Widget_StratifiedSurvival()] reads it, by the same settings. The p-values
 #' are adjusted across the rows by `adjustment`, Benjamini-Hochberg by default.
 #'
 #' @section Statistics shipped with the page:
@@ -31,10 +37,11 @@
 #' statistics. For a difference it is the group comparison, on the biomarker,
 #' at the screen's one visit, with only the two groups and Welch's test; for a
 #' correlation it is the association scatter, with the biomarker along the
-#' bottom and the variable up the side, by the same method. For every row the
-#' widget stores exactly what that chart asks when it opens, under the screen's
-#' filters. On the synthetic study, a difference between the arms is one screen
-#' and twelve group comparisons.
+#' bottom and the variable up the side, by the same method; for a hazard ratio
+#' it is the stratified survival chart, on the biomarker cut at its median, on
+#' the same endpoint. For every row the widget stores exactly what that chart
+#' asks when it opens, under the screen's filters. On the synthetic study, a
+#' difference between the arms is one screen and twelve group comparisons.
 #'
 #' A reader who moves a control of the screen, or of the chart a row opens, to
 #' a view that was not computed is told that statistics are unavailable for
@@ -51,22 +58,27 @@
 #' @param dfParticipants `data.frame` One row per participant, or `NULL`. With
 #'   it the chart has filters, and the columns of groups and the numbers it
 #'   offers are read from it. Default: `NULL`.
+#' @param dfOutcomes `data.frame` An outcomes table, one row per participant and
+#'   endpoint with a time and a flag, as [Widget_StratifiedSurvival()] takes
+#'   it, or `NULL`. With it the screen offers a hazard ratio. It comes before
+#'   `lSettings`, so give `lSettings` by name. Default: `NULL`.
 #' @param lSettings `list` bio.viz biomarker screen settings, under bio.viz's
 #'   own names; laid over the chart's defaults in the page, so only overrides
 #'   are needed. For example `comparison`, `visit`, `value_type`, `group_by`,
-#'   `levels`, `with`, `method`, `adjustment`, `sort`, `limit`, `groups`,
-#'   `numbers`, `filters` and `baseline_visits`; and `group_comparison` and
-#'   `association_scatter`, lists of settings for the chart a row opens. The
+#'   `levels`, `with`, `method`, `endpoint`, `adjustment`, `sort`, `limit`,
+#'   `groups`, `numbers`, `filters`, `baseline_visits` and the outcome columns;
+#'   and `group_comparison`, `association_scatter` and `stratified_survival`,
+#'   lists of settings for the chart a row opens. The
 #'   setting `connection` cannot be given; `statistic` can only be
 #'   `"Analyze_Screen"` or `NULL` for no rows; and the settings for the chart a
 #'   row opens cannot name what the screen hands that chart itself: for the
 #'   group comparison `start_value`, `visits`, `value_type`, `group_by`,
-#'   `levels` and `test`, for the association scatter `x`, `y` and `method`, and
-#'   for either `filters`, `connection`, `waiting_note` or `back`. Default:
-#'   `list()`.
+#'   `levels` and `test`, for the association scatter `x`, `y` and `method`,
+#'   for the stratified survival chart `group_by` and `endpoint`, and for any
+#'   `filters`, `connection`, `waiting_note` or `back`. Default: `list()`.
 #'
 #' @return An `htmlwidget`. Its payload `x` carries `dfResults`,
-#'   `dfParticipants`, `lSettings`, `bDebug`, whether a width and a height were
+#'   `dfParticipants`, `dfOutcomes` when it is given, `lSettings`, `bDebug`, whether a width and a height were
 #'   left to the widget (`bAutoWidth`, `bAutoHeight`), and `lStatistics`: the
 #'   stored results, each with `name`, `args`, `dataId`, `rows` and `value`, and
 #'   `computed_by`, the R version, gsm.bio version and time that computed them.
@@ -96,39 +108,61 @@
 #'   )
 #' )
 #'
+#' # Every biomarker at Baseline, high against low on event-free survival. CRP
+#' # is the biomarker the study plants a survival effect in; a click on a row
+#' # opens the survival curves of that biomarker cut at its median.
+#' Widget_BiomarkerScreen(
+#'   Synthetic_Results,
+#'   Synthetic_Participants,
+#'   Synthetic_Outcomes,
+#'   lSettings = list(
+#'     comparison = "hazard",
+#'     visit = "Baseline",
+#'     endpoint = "EFS",
+#'     groups = lColumns,
+#'     filters = lColumns
+#'   )
+#' )
+#'
 #' @seealso [Analyze_Screen()], which computes the rows, and
-#'   [Widget_GroupComparison()] and [Widget_AssociationScatter()], the charts a
-#'   row opens.
+#'   [Widget_GroupComparison()], [Widget_AssociationScatter()] and
+#'   [Widget_StratifiedSurvival()], the charts a row opens.
 #' @family widgets
 #' @export
 Widget_BiomarkerScreen <- function(
     dfResults,
     dfParticipants = NULL,
+    dfOutcomes = NULL,
     lSettings = list(),
     width = NULL,
     height = NULL,
     elementId = NULL,
     bDebug = FALSE) {
   Widget_CheckInputs(dfResults, dfParticipants, lSettings, bDebug)
+  if (!is.null(dfOutcomes) && !is.data.frame(dfOutcomes)) {
+    Widget_CheckOutcomes(dfOutcomes, NULL)
+  }
   # Text as UTF-8, marked so, before anything is computed: the page carries it
   # so whatever the session's locale.
   dfResults <- Widget_Utf8(dfResults)
   dfParticipants <- Widget_Utf8(dfParticipants)
+  dfOutcomes <- Widget_Utf8(dfOutcomes)
   lSettings <- Widget_Utf8(lSettings)
   # No settings for the chart a row opens is none, and the page is given none.
-  for (strKey in c("group_comparison", "association_scatter")) {
+  for (strKey in c("group_comparison", "association_scatter", "stratified_survival")) {
     if (strKey %in% names(lSettings) && length(lSettings[[strKey]]) == 0L) {
       lSettings[strKey] <- list(NULL)
     }
   }
   lConfig <- BiomarkerScreen_Settings(lSettings)
   Widget_CheckColumns(lConfig, dfResults, dfParticipants)
+  Widget_CheckOutcomes(dfOutcomes, lConfig)
   lNamed <- Widget_NameBaseline(lConfig, lSettings, dfResults)
   lNamed <- Widget_NameFilters(lNamed$config, lNamed$settings, dfResults, dfParticipants)
 
   Widget_Create(
     "Widget_BiomarkerScreen", dfResults, dfParticipants, lNamed$settings,
-    BiomarkerScreen_StoredResults(dfResults, dfParticipants, lNamed$config),
-    width, height, elementId, bDebug
+    BiomarkerScreen_StoredResults(dfResults, dfParticipants, lNamed$config, dfOutcomes),
+    width, height, elementId, bDebug, dfOutcomes
   )
 }
