@@ -280,16 +280,21 @@ Core_Settings <- function(lSettings = list()) {
 }
 
 # A variable in full: `list(kind = "measure", measure, visit, value)` for a
-# biomarker at a visit, or `list(kind = "column", col, type)` for a column.
+# biomarker at a visit, or `list(kind = "column", col, type)` for a column,
+# with `cut` when the number is cut into groups (the cut rule, below). A column
+# that is cut must be read as a number.
 Core_Variable <- function(lSpec) {
   IsName <- function(xValue) is.character(xValue) && length(xValue) == 1L && !is.na(xValue) && nzchar(trimws(xValue))
   if (!is.list(lSpec) || is.data.frame(lSpec)) {
     Core_Stop("a variable must be a list: list(measure, visit, value) for a biomarker at a visit, or list(col) for a column.")
   }
-  chrUnknown <- setdiff(names(lSpec), c("kind", "measure", "visit", "value", "col", "type"))
+  chrUnknown <- setdiff(names(lSpec), c("kind", "measure", "visit", "value", "col", "type", "cut"))
   if (length(chrUnknown) > 0L) {
     Core_Stop("a variable has a member that is not known: ", paste(chrUnknown, collapse = ", "), ".")
   }
+  xCut <- if (is.null(lSpec$cut)) NULL else Core_ReadCut(lSpec$cut)
+  # The variable in full, with its cut when it has one.
+  Done <- function(lRead) if (is.null(xCut)) lRead else c(lRead, list(cut = xCut))
   bMeasure <- !is.null(lSpec$measure)
   bColumn <- !is.null(lSpec$col)
   if (bMeasure == bColumn) {
@@ -305,7 +310,10 @@ Core_Variable <- function(lSpec) {
     if (!is.null(lSpec$type) && !identical(lSpec$type, "number")) {
       Core_Stop("`type` can only be 'number', to read the column as a number.")
     }
-    return(list(kind = "column", col = lSpec$col, type = lSpec$type))
+    if (!is.null(xCut) && !identical(lSpec$type, "number")) {
+      Core_Stop("a variable that cuts a column must read it as a number: add `type = \"number\"`.")
+    }
+    return(Done(list(kind = "column", col = lSpec$col, type = lSpec$type)))
   }
   if (!IsName(lSpec$measure)) {
     Core_Stop("`measure` must be the name of a biomarker.")
@@ -318,12 +326,130 @@ Core_Variable <- function(lSpec) {
     if (!is.null(lSpec$visit)) {
       Core_Stop("a baseline value is read at the baseline visits named in settings: it takes no `visit`.")
     }
-    return(list(kind = "measure", measure = lSpec$measure, visit = NULL, value = strValue))
+    return(Done(list(kind = "measure", measure = lSpec$measure, visit = NULL, value = strValue)))
   }
   if (!IsName(lSpec$visit)) {
     Core_Stop("a variable on a biomarker must name its visit.")
   }
-  list(kind = "measure", measure = lSpec$measure, visit = lSpec$visit, value = strValue)
+  Done(list(kind = "measure", measure = lSpec$measure, visit = lSpec$visit, value = strValue))
+}
+
+# ---- The cut rule ----------------------------------------------------------
+#
+# One rule cuts a number into groups, the same in every bio.viz chart that makes
+# groups from one (bio.viz, docs/core.md, "The cut rule", whose R lines these
+# follow, and src/core/cut.js). The points are quantile() with its default, type
+# 7, at the median, the tertiles or the quartiles, or typed points as written;
+# a point that repeats collapses. A participant is in the group cut() puts them
+# in with right = TRUE: a value equal to a point falls in the lower group. The
+# groups run low to high, labelled by their bounds written to four significant
+# digits; groups whose bounds are written alike are one, as cut() merges levels
+# with the same label. tests/testthat/test-cut.R holds this to the cases
+# bio.viz recorded from desktop R.
+
+chrCoreCuts <- c("median", "tertiles", "quartiles")
+lCoreCutProbs <- list(median = 0.5, tertiles = c(1, 2) / 3, quartiles = c(1, 2, 3) / 4)
+
+# A cut point as a bound is written: four significant digits, in full.
+Core_CutBound <- function(nPoint) {
+  vapply(nPoint, function(nOne) format(signif(nOne, 4), scientific = FALSE, trim = TRUE), character(1))
+}
+
+# Each group's label, low to high, for the points: one more than there are
+# points, some of them alike where points are written alike.
+Core_BoundLabels <- function(nPoints) {
+  nPoints <- as.numeric(nPoints)
+  nCount <- length(nPoints)
+  if (nCount == 0L) {
+    return(character(0))
+  }
+  chrBounds <- Core_CutBound(nPoints)
+  chrMiddle <- if (nCount > 1L) paste0("> ", chrBounds[-nCount], ", \u2264 ", chrBounds[-1L]) else character(0)
+  enc2utf8(c(paste0("\u2264 ", chrBounds[1L]), chrMiddle, paste0("> ", chrBounds[nCount])))
+}
+
+# The groups' labels: the bound labels, each once.
+Core_CutLabels <- function(nPoints) {
+  unique(Core_BoundLabels(nPoints))
+}
+
+# A cut as written: one of the named cuts, or typed points, each a finite
+# number, each greater than the one before, and no two written alike.
+Core_ReadCut <- function(xCut) {
+  if (is.character(xCut) && length(xCut) == 1L && xCut %in% chrCoreCuts) {
+    return(xCut)
+  }
+  if (is.character(xCut)) {
+    Core_Stop("`cut` must be ", paste0("'", chrCoreCuts, "'", collapse = ", "), " or a list of cut points in ascending order.")
+  }
+  if (is.list(xCut)) {
+    if (!all(vapply(xCut, function(xPoint) is.numeric(xPoint) && length(xPoint) == 1L, logical(1)))) {
+      Core_Stop("a cut point must be a finite number.")
+    }
+    xCut <- unlist(xCut)
+  }
+  if (length(xCut) == 0L) {
+    Core_Stop("`cut` is an empty list: give one cut point or more.")
+  }
+  if (!is.numeric(xCut) || !all(is.finite(xCut))) {
+    Core_Stop("a cut point must be a finite number.")
+  }
+  nCut <- as.numeric(xCut)
+  if (length(nCut) > 1L && !all(diff(nCut) > 0)) {
+    Core_Stop("the cut points must be in ascending order, each greater than the one before.")
+  }
+  chrBounds <- Core_CutBound(nCut)
+  if (anyDuplicated(chrBounds) > 0L) {
+    Core_Stop(
+      "two cut points are written alike to four significant digits, so the groups they make could not be ",
+      "told apart: give points that differ in their first four significant digits."
+    )
+  }
+  nCut
+}
+
+# The cut points of a variable's values, and the groups they make: `n`, the
+# values it was worked out on; `asked`, quantile()'s points or the typed ones;
+# `points`, those once each; whether a point `repeated` or labels `merged`; and
+# the groups' `labels`, low to high.
+Core_CutPoints <- function(nValues, xCut) {
+  nPresent <- nValues[!is.na(nValues)]
+  nAsked <- if (is.character(xCut)) {
+    if (length(nPresent) == 0L) numeric(0) else stats::quantile(nPresent, lCoreCutProbs[[xCut]], type = 7, names = FALSE)
+  } else {
+    as.numeric(xCut)
+  }
+  nPoints <- unique(nAsked)
+  chrLabels <- Core_CutLabels(nPoints)
+  list(
+    cut = xCut,
+    n = length(nPresent),
+    asked = nAsked,
+    points = nPoints,
+    repeated = length(nPoints) < length(nAsked),
+    merged = length(nPoints) > 0L && length(chrLabels) < length(nPoints) + 1L,
+    labels = chrLabels
+  )
+}
+
+# The group each value is in, by its label; NA for a missing value.
+Core_CutGroups <- function(nValues, nPoints) {
+  as.character(cut(nValues, breaks = c(-Inf, nPoints, Inf), right = TRUE, labels = Core_BoundLabels(nPoints)))
+}
+
+# A cut variable as the settings write it, and as it is written into the
+# identity of the rows R is handed: list(measure, visit, value, cut), without
+# the visit for a baseline value, or list(col, type = "number", cut). Typed
+# points are a list, so they are written as a JSON array whatever their number.
+Core_WrittenCut <- function(lVariable) {
+  xCut <- if (is.character(lVariable$cut)) lVariable$cut else as.list(lVariable$cut)
+  if (lVariable$kind == "column") {
+    return(list(col = lVariable$col, type = lVariable$type, cut = xCut))
+  }
+  if (lVariable$value == "baseline") {
+    return(list(measure = lVariable$measure, value = lVariable$value, cut = xCut))
+  }
+  list(measure = lVariable$measure, visit = lVariable$visit, value = lVariable$value, cut = xCut)
 }
 
 Core_NeedColumn <- function(dfTable, strColumn, strSetting, strTable) {

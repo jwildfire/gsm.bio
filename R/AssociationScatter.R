@@ -81,6 +81,10 @@ AssociationScatter_Axis <- function(lSpec, strSetting) {
   lVariable <- tryCatch(Core_Variable(lSpec), error = function(cndError) {
     Core_Stop("Setting '", strSetting, "': ", conditionMessage(cndError))
   })
+  # A number taken as a number is not cut: a cut makes groups.
+  if (!is.null(lVariable$cut)) {
+    Core_Stop("Setting '", strSetting, "' is read as a number, so it takes no `cut`: a cut makes groups. Leave `cut` out.")
+  }
   if (lVariable$kind == "column") {
     return(list(col = lVariable$col))
   }

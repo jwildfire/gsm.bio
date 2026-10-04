@@ -164,6 +164,7 @@ Widget_CorrelationMatrix(
 Other widgets: 
 \code{\link{Widget_AssociationScatter}()},
 \code{\link{Widget_BiomarkerScreen}()},
+\code{\link{Widget_CrossTab}()},
 \code{\link{Widget_GroupComparison}()}
 }
 \concept{widgets}

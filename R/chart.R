@@ -309,6 +309,71 @@ Chart_ColumnLevels <- function(dfResults, dfParticipants, strColumn) {
   Core_Levels(dfResults[[strColumn]])
 }
 
+# A setting that makes groups (bio.viz, src/shared/cut.js, `checkGrouping`): a
+# column's name, NULL, or a biomarker or a number cut into groups, which must
+# carry a cut and comes back as the settings write it (Core_WrittenCut()).
+Chart_Grouping <- function(xValue, strSetting) {
+  if (is.null(xValue)) {
+    return(NULL)
+  }
+  if (is.list(xValue) && !is.data.frame(xValue)) {
+    if (is.null(xValue$cut)) {
+      Core_Stop(
+        "Setting '", strSetting, "' is a variable with no cut. A biomarker or a number makes groups only when it ",
+        "is cut: add cut = 'median', 'tertiles', 'quartiles' or the cut points."
+      )
+    }
+    lVariable <- tryCatch(Core_Variable(xValue), error = function(cndError) {
+      Core_Stop("Setting '", strSetting, "': ", conditionMessage(cndError))
+    })
+    return(Core_WrittenCut(lVariable))
+  }
+  if (!(is.character(xValue) && length(xValue) == 1L && !is.na(xValue) && nzchar(trimws(xValue)))) {
+    Core_Stop("Setting '", strSetting, "' must be a single name (a character string), a cut variable, or NULL")
+  }
+  xValue
+}
+
+# Whether a setting that makes groups holds a cut variable rather than a column.
+Chart_IsCut <- function(xBy) is.list(xBy)
+
+# A grouping as the frame takes it: the cut variable, or the column.
+Chart_GroupingVariable <- function(xBy) if (Chart_IsCut(xBy)) xBy else list(col = xBy)
+
+# A cut variable a chart is given must be of a biomarker the results table has,
+# or of a column a table has: one that is not is refused when the tables are
+# read, naming the setting.
+Chart_CheckCut <- function(xBy, strSetting, dfResults, dfParticipants, lConfig) {
+  if (!Chart_IsCut(xBy)) {
+    return(invisible(NULL))
+  }
+  if (!is.null(xBy$measure) && !xBy$measure %in% Core_Text(dfResults[[lConfig$measure_col]])) {
+    Core_Stop("Setting '", strSetting, "' cuts the biomarker '", xBy$measure, "', which the results table does not have.")
+  }
+  if (!is.null(xBy$col) && !xBy$col %in% c(names(dfResults), names(dfParticipants))) {
+    Core_Stop("Setting '", strSetting, "' cuts the column '", xBy$col, "', which neither table has.")
+  }
+  invisible(NULL)
+}
+
+# The cut of one variable on a chart's tables (bio.viz, src/shared/cut.js,
+# `cutOf`): its value for each participant the filters keep, one each, and the
+# points and groups of the cut rule, worked out on those with a value. Returns
+# Core_CutPoints()'s list with `spec`, the variable as the settings write it,
+# and `ids` and `values`, each participant's.
+Chart_Cut <- function(dfResults, dfParticipants, lConfig, lFilters, xBy) {
+  lKept <- Chart_KeepFiltered(dfResults, dfParticipants, lConfig, lFilters)
+  dfData <- Core_Frame(
+    lKept$results, lKept$participants, list(v = xBy),
+    c(Chart_CoreSettings(lConfig), list(required = character(0)))
+  )$data
+  lVariable <- Core_Variable(xBy)
+  c(
+    Core_CutPoints(dfData$v, lVariable$cut),
+    list(spec = Core_WrittenCut(lVariable), ids = Core_Text(dfData[[lConfig$id_col]]), values = dfData$v)
+  )
+}
+
 # A key as text, the same for two keys that differ only in the order their
 # members were written: how the chart's connection tells stored results apart.
 Chart_KeyText <- function(xValue) {

@@ -79,8 +79,18 @@ strSavedPage <- function(lWidget, bSelfContained = bPandoc()) {
   strDir <- tempfile("Widget_GroupComparison")
   dir.create(strDir)
   strFile <- file.path(strDir, "group-comparison.html")
+  # A page is written in a UTF-8 locale: in one that is not, jsonlite writes
+  # text that is not ASCII, such as a cut group's sign \u2264, as an escape
+  # (gsm.bio#22, not fixed here).
+  strCtype <- Sys.getlocale("LC_CTYPE")
+  if (!l10n_info()[["UTF-8"]]) {
+    for (strLocale in c("C.UTF-8", "en_US.UTF-8")) {
+      if (nzchar(suppressWarnings(Sys.setlocale("LC_CTYPE", strLocale)))) break
+    }
+    on.exit(Sys.setlocale("LC_CTYPE", strCtype), add = TRUE)
+  }
   htmlwidgets::saveWidget(lWidget, file = strFile, selfcontained = bSelfContained)
-  paste(readLines(strFile, warn = FALSE), collapse = "\n")
+  paste(readLines(strFile, warn = FALSE, encoding = "UTF-8"), collapse = "\n")
 }
 
 # The payload a saved page carries for its widget, read back out of the page.
@@ -164,4 +174,10 @@ lBundleDefaults <- function(strSetting) {
     }
   }
   NULL
+}
+
+# A value as it reads back from the JSON a page is written in: a typed cut
+# point is a number, whole or not, as the chart reads it.
+lJsonRoundTrip <- function(xValue) {
+  jsonlite::fromJSON(jsonlite::toJSON(xValue, auto_unbox = TRUE, digits = NA), simplifyVector = FALSE)
 }

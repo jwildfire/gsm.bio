@@ -162,6 +162,7 @@ Widget_GroupComparison(
 Other widgets: 
 \code{\link{Widget_AssociationScatter}()},
 \code{\link{Widget_BiomarkerScreen}()},
-\code{\link{Widget_CorrelationMatrix}()}
+\code{\link{Widget_CorrelationMatrix}()},
+\code{\link{Widget_CrossTab}()}
 }
 \concept{widgets}
