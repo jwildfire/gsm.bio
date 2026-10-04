@@ -19,7 +19,7 @@ in a cloud environment). Work runs one requirement per session (`/requirement-se
 # Conventions
 
 - Every `test_that()` name ends with the issue it proves, `(#N)`; `tests/testthat/test-qcthat-convention.R` fails the suite otherwise.
-- Imports are stats and survival for the statistics, and htmlwidgets for the widgets, and nothing else; `tests/testthat/test-package.R` fails the suite otherwise. A package needed only to check a result goes under Suggests.
+- Imports are stats and survival for the statistics, htmlwidgets for the widgets, and grDevices (part of R) for the device `Write_RTF()` measures text on, and nothing else; `tests/testthat/test-package.R` fails the suite otherwise. A package needed only to check a result goes under Suggests.
 - A statistic is a thin wrapper around the base R function the design names. Nothing is reimplemented except the standardised difference.
 - The statistics have one definition: `inst/statistics/statistics.R`. `R/statistics.R` evaluates that file into the namespace and holds only the documentation, so edit the functions in the file under `inst/`, never copy them into `R/`. The file must run in a bare session with only stats and survival attached: call `stats::` and `survival::` by name, attach nothing, evaluate no text.
 - A widget computes no statistic of its own: every stored result is an `Analyze_*` function's answer. It is named `Widget_<Chart>()` and takes its tables, then `lSettings`, a list under bio.viz's own setting names, then `width`, `height`, `elementId` and `bDebug`, as gsm.safety's widgets do. The outcomes table, which came after v0.1.0, is `dfOutcomes`, after `lSettings` and before `width`, in every widget that reads one, so a released widget's positional calls keep working.

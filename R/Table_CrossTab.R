@@ -37,7 +37,21 @@ Table_CrossTab <- function(dfResults, dfParticipants = NULL, lSettings = list())
   lState <- CrossTab_State(dfResults, dfParticipants, lConfig)
   lRequests <- CrossTab_Requests(dfResults, dfParticipants, lConfig, lState)
   if (length(lRequests) == 0L) {
-    Core_Stop("Table_CrossTab(): the chart tests nothing at these settings")
+    lTable <- CrossTab_Table(dfResults, dfParticipants, lConfig, lState)
+    strWhy <- if (is.null(lConfig$statistic)) {
+      "the setting 'statistic' is NULL, which asks R for no test"
+    } else if (identical(lState$test, "none")) {
+      "the setting test = 'none' asks R for no test"
+    } else if (identical(lTable$filtered, 0L)) {
+      "no participant passes the filters"
+    } else if (lTable$total == 0L) {
+      "no participant has a category both ways"
+    } else if (length(lTable$row_levels) < 2L) {
+      "the rows have only one category, and a test of a table needs two or more each way"
+    } else {
+      "the columns have only one category, and a test of a table needs two or more each way"
+    }
+    Core_Stop("Table_CrossTab() has no statistic to show: ", strWhy)
   }
   lAnswers <- Chart_Answer(lRequests, list(Analyze_Contingency = Analyze_Contingency))
   dfRows <- do.call(rbind, lapply(lAnswers, function(lResult) Table_Row(lResult$value, "Test of the table")))

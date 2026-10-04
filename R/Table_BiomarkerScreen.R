@@ -41,7 +41,18 @@ Table_BiomarkerScreen <- function(dfResults, dfParticipants = NULL, lSettings = 
   lState <- BiomarkerScreen_State(dfResults, dfParticipants, lConfig, dfOutcomes)
   lRequests <- BiomarkerScreen_Requests(dfResults, dfParticipants, lConfig, lState, dfOutcomes)
   if (length(lRequests) == 0L) {
-    Core_Stop("Table_BiomarkerScreen(): there is no screen at these settings")
+    strWhy <- if (is.null(lConfig$statistic)) {
+      "the setting 'statistic' is NULL, which asks R for no rows"
+    } else if (lState$comparison == "difference" && length(lState$levels) != 2L) {
+      "there is no column with two groups to compare"
+    } else if (lState$comparison == "correlation" && is.null(lState$with)) {
+      "there is no variable to correlate with"
+    } else if (lState$comparison == "hazard" && is.null(lState$endpoint)) {
+      "the outcomes table has no endpoint"
+    } else {
+      "no participant has a value of any biomarker at the visit, after the filters, or a change is read at the one baseline visit"
+    }
+    Core_Stop("Table_BiomarkerScreen() has no statistic to show: ", strWhy)
   }
   lAnswer <- Chart_Answer(lRequests, list(Analyze_Screen = Analyze_Screen))[[1]]
   lValue <- lAnswer$value

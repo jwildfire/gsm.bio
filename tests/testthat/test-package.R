@@ -22,8 +22,10 @@ test_that("the package loads and reports its version: a development version afte
   expect_identical(as.character(utils::packageVersion("gsm.bio")), "0.1.0.9000")
 })
 
-test_that("the package imports stats and survival for the statistics, and htmlwidgets for the widgets (#1, #9)", {
-  expect_identical(chrDependencies("Imports"), c("htmlwidgets", "stats", "survival"))
+test_that("the package imports stats and survival for the statistics, htmlwidgets for the widgets, and grDevices for the RTF writer (#1, #9, #38)", {
+  # grDevices ships with R: Write_RTF() opens a device of its own for r2rtf to
+  # measure text on, so it leaves no Rplots.pdf and the caller's device as it was.
+  expect_identical(chrDependencies("Imports"), c("grDevices", "htmlwidgets", "stats", "survival"))
   expect_identical(chrDependencies("Depends"), "R")
   expect_identical(chrDependencies("Remotes"), character(0))
 })

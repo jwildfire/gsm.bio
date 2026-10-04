@@ -255,3 +255,138 @@ test_that("Write_RTF says r2rtf is needed when it is not installed, and refuses 
   local_mocked_bindings(Table_HasR2rtf = function() TRUE)
   expect_error(Write_RTF("not a table", tempfile()), "dfTable is not a data.frame")
 })
+
+test_that("Write_RTF escapes a backslash, a brace and a character beyond 16 bits, so RTF control text in a title stays text (#38)", {
+  skip_if_not_installed("r2rtf")
+  strSmile <- intToUtf8(0x1F600L)
+  strTitle <- paste0("back\\slash {brace} {x} \\par } { ", strSmile)
+  dfTable <- Table_CrossTab(Synthetic_Results, Synthetic_Participants, list(row_by = "ARM", col_by = "RESPONSE", title = strTitle))
+  expect_identical(attr(dfTable, "title"), strTitle)
+  expect_identical(Table_RtfText(strTitle), "back\\\\slash \\{brace\\} \\{x\\} \\\\par \\} \\{ \\u-10179?\\u-8704?")
+  strFile <- tempfile(fileext = ".rtf")
+  Write_RTF(dfTable, strFile)
+  strRtf <- paste(readLines(strFile, warn = FALSE), collapse = "\n")
+  expect_true(grepl(Table_RtfText(strTitle), strRtf, fixed = TRUE))
+  # The braces still balance: the title opened and closed no group.
+  chrChars <- strsplit(gsub("\\\\[\\\\{}]", "", strRtf), "")[[1]]
+  nDepth <- cumsum((chrChars == "{") - (chrChars == "}"))
+  expect_identical(nDepth[length(nDepth)], 0L)
+  expect_true(all(nDepth[-length(nDepth)] > 0L))
+  # Read back by an RTF reader where there is one (macOS's textutil), the
+  # title is the text it was.
+  if (nzchar(Sys.which("textutil"))) {
+    strText <- paste(system2("textutil", c("-convert", "txt", "-stdout", shQuote(strFile)), stdout = TRUE), collapse = "\n")
+    Encoding(strText) <- "UTF-8"
+    expect_true(grepl(strTitle, strText, fixed = TRUE), label = "textutil reads the title back")
+  }
+})
+
+test_that("the group comparison's pairs are each a row, equal to Welch's pairwise tests with Holm's adjustment (#38)", {
+  dfTable <- Table_GroupComparison(Synthetic_Results, Synthetic_Participants, list(
+    start_value = "IL-6", visits = "Week 4", value_type = "change", baseline_visits = "Baseline",
+    group_by = list(measure = "CRP", visit = "Baseline", cut = "tertiles"), test = "t", pairwise = TRUE
+  ))
+  # The cut's groups, worked out here: CRP at Baseline at its tertiles.
+  nCrp <- nResultAt("CRP", "Baseline")
+  nPoints <- stats::quantile(nCrp, c(1, 2) / 3, type = 7, names = FALSE)
+  chrLabels <- Core_CutLabels(nPoints)
+  dfRows <- data.frame(y = nResultAt("IL-6", "Week 4") - nResultAt("IL-6", "Baseline"), x = Core_CutGroups(nCrp, nPoints), stringsAsFactors = FALSE)
+  dfRows <- dfRows[!is.na(dfRows$y) & !is.na(dfRows$x), ]
+  dfRows$x <- factor(dfRows$x, levels = chrLabels)
+  mHolm <- stats::pairwise.t.test(dfRows$y, dfRows$x, pool.sd = FALSE, p.adjust.method = "holm")$p.value
+  dfPairs <- dfTable[dfTable$Statistic != "Test of the groups", ]
+  expect_identical(nrow(dfPairs), 3L)
+  for (iPair in seq_len(nrow(dfPairs))) {
+    chrGroups <- strsplit(dfPairs$Statistic[iPair], " and ", fixed = TRUE)[[1]]
+    expect_true(all(chrGroups %in% chrLabels), label = dfPairs$Statistic[iPair])
+    nHolm <- mHolm[chrGroups[2], chrGroups[1]]
+    if (is.na(nHolm)) nHolm <- mHolm[chrGroups[1], chrGroups[2]]
+    expect_identical(dfPairs$`p-value`[iPair], Output_P(nHolm), label = paste(dfPairs$Statistic[iPair], "Holm p"))
+    expect_identical(dfPairs$Note[iPair], "Exploratory, adjusted (Holm).")
+    lWelch <- stats::t.test(dfRows$y[dfRows$x == chrGroups[1]], dfRows$y[dfRows$x == chrGroups[2]])
+    strInterval <- paste0("95% confidence interval ", Output_Figure(lWelch$conf.int[1]), " to ", Output_Figure(lWelch$conf.int[2]))
+    expect_true(grepl(strInterval, dfPairs$Estimate[iPair], fixed = TRUE), label = paste(dfPairs$Statistic[iPair], "interval"))
+    expect_true(grepl(paste0(": ", Output_Figure(unname(diff(rev(lWelch$estimate))))), dfPairs$Estimate[iPair], fixed = TRUE), label = paste(dfPairs$Statistic[iPair], "difference"))
+  }
+})
+
+test_that("the survival table names each estimate's own method, and the scatter's line gives its slope, intercept and R-squared, as the chart does (#38)", {
+  dfSurvival <- lTableCalls()$stratified_survival()
+  expect_identical(dfSurvival$Method, c("Log-rank test", rep("Kaplan-Meier, survfit() with the log-log interval", 2L), "Cox proportional hazards, coxph()"))
+  dfScatter <- lTableCalls()$association_scatter()
+  lFit <- attr(dfScatter, "results")[[2]]
+  strLine <- dfScatter$Estimate[2]
+  expect_lt(regexpr("Slope:", strLine, fixed = TRUE), regexpr("Intercept:", strLine, fixed = TRUE))
+  nRSquared <- lFit$statistic$value[lFit$statistic$name == "r.squared"]
+  expect_true(endsWith(strLine, paste0("; R-squared: ", Output_Figure(nRSquared))))
+  expect_identical(Output_Figure(nRSquared), "0.4075")
+})
+
+test_that("Write_RTF draws on a device of its own: it leaves no Rplots.pdf and the current device as it was (#38)", {
+  skip_if_not_installed("r2rtf")
+  strDir <- tempfile("rtf-wd")
+  dir.create(strDir)
+  strWas <- setwd(strDir)
+  on.exit(setwd(strWas), add = TRUE)
+  # From no device open, as a fresh session is: r2rtf measures text on the
+  # current device, and with none R would open Rplots.pdf here.
+  grDevices::graphics.off()
+  nBefore <- grDevices::dev.cur()
+  expect_identical(unname(nBefore), 1L)
+  Write_RTF(lTableCalls()$cross_tab(), file.path(strDir, "table.rtf"))
+  expect_identical(grDevices::dev.cur(), nBefore)
+  expect_identical(list.files(strDir), "table.rtf")
+  # With a device of the caller's open, it is still the current one after.
+  grDevices::pdf(NULL)
+  nOpen <- grDevices::dev.cur()
+  on.exit(grDevices::dev.off(nOpen), add = TRUE)
+  Write_RTF(lTableCalls()$cross_tab(), file.path(strDir, "again.rtf"))
+  expect_identical(grDevices::dev.cur(), nOpen)
+})
+
+test_that("Write_RTF refuses an empty table and a folder that does not exist, in a sentence (#38)", {
+  skip_if_not_installed("r2rtf")
+  expect_error(Write_RTF(data.frame(), tempfile()), "dfTable has no rows")
+  expect_error(Write_RTF(lTableCalls()$cross_tab(), file.path(tempfile("nowhere"), "table.rtf")), "folder .* does not exist")
+})
+
+test_that("a table that has no statistic says why: no column of groups, or one group after the filters (#38)", {
+  dfOneArm <- Synthetic_Participants
+  dfOneArm$ARM <- "Placebo"
+  expect_error(
+    Table_GroupComparison(Synthetic_Results, dfOneArm, list(start_value = "IL-6", visits = "Week 4", group_by = "ARM")),
+    "one group"
+  )
+  expect_error(
+    Table_GroupComparison(Synthetic_Results, Synthetic_Participants, list(start_value = "IL-6", visits = "Week 4", group_by = "ARM", test = "none")),
+    "test = 'none'"
+  )
+  expect_error(
+    Table_StratifiedSurvival(Synthetic_Results, dfOneArm, list(group_by = "ARM"), dfOutcomes = Synthetic_Outcomes),
+    "one group"
+  )
+  expect_error(
+    Table_CrossTab(Synthetic_Results, dfOneArm, list(row_by = "ARM", col_by = "RESPONSE")),
+    "one category"
+  )
+  dfOneResponse <- Synthetic_Participants
+  dfOneResponse$RESPONSE <- "Responder"
+  expect_error(
+    Table_CrossTab(Synthetic_Results, dfOneResponse, list(row_by = "ARM", col_by = "RESPONSE")),
+    "the columns have only one category"
+  )
+  expect_error(
+    Table_CrossTab(Synthetic_Results, Synthetic_Participants, list(row_by = "ARM", col_by = "RESPONSE", statistic = NULL)),
+    "'statistic' is NULL"
+  )
+})
+
+test_that("an error from R is a row that says so, and the scatter table fills {n} (#38)", {
+  dfRow <- Table_Row(list(status = "error", reason = "boom", method = NA, counts = 10L, p_value = NA, estimates = data.frame()))
+  expect_identical(dfRow$Note, "R reported an error: boom")
+  expect_identical(dfRow$`p-value`, "")
+  dfScatter <- Table_AssociationScatter(Synthetic_Results, Synthetic_Participants, list(
+    x = list(measure = "TNF-alpha", visit = "Baseline"), y = list(measure = "IL-10", visit = "Baseline"), title = "{n} participants"
+  ))
+  expect_identical(attr(dfScatter, "title"), "200 participants")
+})

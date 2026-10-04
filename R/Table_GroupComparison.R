@@ -65,7 +65,18 @@ Table_GroupComparison <- function(dfResults, dfParticipants = NULL, lSettings = 
     list(Analyze_GroupDifference = Analyze_GroupDifference)
   )
   if (length(lAnswers) == 0L) {
-    Core_Stop("Table_GroupComparison(): the chart tests nothing at these settings")
+    strWhy <- if (is.null(lConfig$statistic)) {
+      "the setting 'statistic' is NULL, which asks R for no test"
+    } else if (identical(lState$test, "none")) {
+      "the setting test = 'none' asks R for no test"
+    } else if (is.null(lState$group_by)) {
+      "there is no column of groups: name one with 'group_by', or give a participant table with a category column"
+    } else if (lModel$groups < 2L) {
+      "the participants drawn are all in one group, and a test compares two or more (look at the filters and 'levels')"
+    } else {
+      "no panel has two groups with values to compare"
+    }
+    Core_Stop("Table_GroupComparison() has no statistic to show: ", strWhy)
   }
   bPanels <- !is.null(lState$panel_by)
   lRows <- list()

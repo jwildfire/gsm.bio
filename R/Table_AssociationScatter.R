@@ -46,14 +46,35 @@ Table_AssociationScatter <- function(dfResults, dfParticipants = NULL, lSettings
   }
   lRequests <- AssociationScatter_Requests(dfResults, dfParticipants, lConfig, lState)
   if (length(lRequests) == 0L) {
-    Core_Stop("Table_AssociationScatter(): the chart asks R nothing at these settings")
+    strWhy <- if (is.null(lConfig$statistic) && !lState$fit %in% chrAssociationScatterFits) {
+      "the setting 'statistic' is NULL and there is no fitted line, which asks R for nothing"
+    } else if (AssociationScatter_FlatAtBaseline(lState$x, dfResults, lConfig) || AssociationScatter_FlatAtBaseline(lState$y, dfResults, lConfig)) {
+      "a change from baseline at the baseline visit is the same for everyone, so there is nothing to relate"
+    } else {
+      "no participant has both variables, after the filters"
+    }
+    Core_Stop("Table_AssociationScatter() has no statistic to show: ", strWhy)
   }
   lAnswers <- Chart_Answer(lRequests, list(Analyze_Correlation = Analyze_Correlation, Analyze_Fit = Analyze_Fit))
   # A coefficient is named as the chart names it.
   chrNames <- c(cor = paste0("Pearson", intToUtf8(0x2019L), "s r"), rho = paste0("Spearman", intToUtf8(0x2019L), "s rho"))
   bPanels <- !is.null(lState$panel_by)
   dfRows <- do.call(rbind, lapply(lAnswers, function(lResult) {
-    dfRow <- Table_Row(lResult$value, if (lResult$name == "Analyze_Fit") "Fitted line" else "Correlation", chrNames)
+    lValue <- lResult$value
+    # A line's estimates as the chart lists them: the slope, the intercept,
+    # and R-squared, which R gives among its statistics.
+    if (lResult$name == "Analyze_Fit" && is.data.frame(lValue$estimates) && nrow(lValue$estimates) > 0L) {
+      dfEstimates <- lValue$estimates[order(match(lValue$estimates$name, c("Slope", "Intercept"))), , drop = FALSE]
+      nRSquared <- lValue$statistic$value[lValue$statistic$name == "r.squared"]
+      if (length(nRSquared) == 1L && !is.na(nRSquared)) {
+        dfEstimates <- rbind(dfEstimates, data.frame(
+          name = "R-squared", group = NA_character_, estimate = nRSquared, lower = NA_real_, upper = NA_real_, level = NA_real_,
+          stringsAsFactors = FALSE
+        ))
+      }
+      lValue$estimates <- dfEstimates
+    }
+    dfRow <- Table_Row(lValue, if (lResult$name == "Analyze_Fit") "Fitted line" else "Correlation", chrNames)
     if (bPanels) cbind(data.frame(Panel = lResult$dataId$panel, stringsAsFactors = FALSE), dfRow) else dfRow
   }))
   lNumbers <- lapply(Chart_Numbers(dfResults, dfParticipants, lConfig), function(strCol) {

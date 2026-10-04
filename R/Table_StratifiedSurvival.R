@@ -50,7 +50,16 @@ Table_StratifiedSurvival <- function(dfResults, dfParticipants = NULL, lSettings
   lTable <- StratifiedSurvival_Table(dfResults, dfParticipants, dfOutcomes, lConfig, lState)
   lRequests <- StratifiedSurvival_Requests(dfResults, dfParticipants, dfOutcomes, lConfig, lState)
   if (length(lRequests) == 0L) {
-    Core_Stop("Table_StratifiedSurvival(): the chart tests nothing at these settings")
+    strWhy <- if (is.null(lConfig$statistic)) {
+      "the setting 'statistic' is NULL, which asks R for no test"
+    } else if (identical(lTable$filtered, 0L)) {
+      "no participant passes the filters"
+    } else if (nrow(lTable$records) == 0L) {
+      "no participant has both a group and an outcome for the endpoint"
+    } else {
+      "the participants drawn are all in one group, and the log-rank test compares two or more"
+    }
+    Core_Stop("Table_StratifiedSurvival() has no statistic to show: ", strWhy)
   }
   lResult <- Chart_Answer(lRequests, list(Analyze_Survival = Analyze_Survival))[[1]]
   lValue <- lResult$value
@@ -65,10 +74,13 @@ Table_StratifiedSurvival <- function(dfResults, dfParticipants = NULL, lSettings
     iOrder <- c(which(bMedian)[order(match(dfEstimates$group[bMedian], lTable$levels))], which(!bMedian))
     for (iRow in iOrder) {
       lRow <- as.list(dfEstimates[iRow, ])
+      # Each estimate by its own method, as R's notes name it: a median is
+      # survfit()'s, the hazard ratio coxph()'s.
+      strMethod <- if (identical(lRow$name, "Median")) "Kaplan-Meier, survfit() with the log-log interval" else "Cox proportional hazards, coxph()"
       if (identical(lRow$name, "Hazard ratio") && Chart_IsCut(lState$group_by)) lRow$name <- "Hazard ratio, high over low"
       dfRows <- rbind(dfRows, data.frame(
         Statistic = paste0(lRow$name, if (is.na(lRow$group)) "" else paste0(" (", lRow$group, ")")),
-        Method = lValue$method, Estimate = Table_Estimate(lRow, FALSE), Counts = "", `p-value` = "", Note = "",
+        Method = strMethod, Estimate = Table_Estimate(lRow, FALSE), Counts = "", `p-value` = "", Note = "",
         check.names = FALSE, stringsAsFactors = FALSE
       ))
     }

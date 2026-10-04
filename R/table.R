@@ -113,7 +113,8 @@ Table_HasR2rtf <- function() {
 #'
 #' @param dfTable `data.frame` A table from [Table_GroupComparison()] or one of
 #'   the functions beside it, with its `title`, `subtitle` and `footnotes`.
-#' @param strFile `character` The file to write.
+#' @param strFile `character` The file to write, in a folder that exists. A
+#'   file already there is replaced.
 #' @param strOrientation `character` `"landscape"` (the default) or
 #'   `"portrait"`.
 #'
@@ -144,8 +145,14 @@ Write_RTF <- function(dfTable, strFile, strOrientation = "landscape") {
   if (!is.data.frame(dfTable)) {
     stop("dfTable is not a data.frame: give it a table that a Table_*() function returned", call. = FALSE)
   }
+  if (nrow(dfTable) == 0L || ncol(dfTable) == 0L) {
+    stop("dfTable has no rows: there is no statistic to write", call. = FALSE)
+  }
   if (!(is.character(strFile) && length(strFile) == 1L && !is.na(strFile) && nzchar(strFile))) {
     stop("strFile must be the name of the file to write", call. = FALSE)
+  }
+  if (!dir.exists(dirname(strFile))) {
+    stop("The folder '", dirname(strFile), "' does not exist: Write_RTF() writes into a folder that does", call. = FALSE)
   }
   if (!(is.character(strOrientation) && length(strOrientation) == 1L && strOrientation %in% c("landscape", "portrait"))) {
     stop("strOrientation must be \"landscape\" or \"portrait\"", call. = FALSE)
@@ -161,34 +168,33 @@ Write_RTF <- function(dfTable, strFile, strOrientation = "landscape") {
   strTitle <- attr(dfTable, "title")
   strSubtitle <- attr(dfTable, "subtitle")
   chrFootnotes <- attr(dfTable, "footnotes")
-  # r2rtf measures text with a graphics device, which warns that it cannot
-  # measure a character outside its font's encoding; the measure only sets a
-  # width, so those warnings are not passed on.
-  withCallingHandlers(
-    {
-      lTable <- r2rtf::rtf_page(dfShown, orientation = strOrientation)
-      if (!is.null(strTitle) || !is.null(strSubtitle)) {
-        lTable <- r2rtf::rtf_title(
-          lTable,
-          title = Table_RtfText(if (is.null(strTitle)) "" else strTitle),
-          subtitle = if (is.null(strSubtitle)) NULL else Table_RtfText(strSubtitle), text_convert = FALSE
-        )
-      }
-      # r2rtf reads "|" as the column separator of a heading.
-      lTable <- r2rtf::rtf_colheader(
-        lTable, colheader = paste(Table_RtfText(gsub("|", "/", names(dfShown), fixed = TRUE)), collapse = " | "),
-        col_rel_width = nWidths, text_convert = FALSE
-      )
-      lTable <- r2rtf::rtf_body(lTable, col_rel_width = nWidths, text_justification = "l", text_convert = FALSE)
-      if (length(chrFootnotes) > 0L) {
-        lTable <- r2rtf::rtf_footnote(lTable, footnote = Table_RtfText(chrFootnotes), text_convert = FALSE)
-      }
-      r2rtf::write_rtf(r2rtf::rtf_encode(lTable), strFile)
-    },
-    warning = function(cndWarning) {
-      if (grepl("^conversion failure on", conditionMessage(cndWarning))) invokeRestart("muffleWarning")
-    }
+  # r2rtf measures text on the current graphics device. It is given one of its
+  # own, which writes no file, and the caller's device is current again after.
+  nCaller <- grDevices::dev.cur()
+  grDevices::pdf(NULL)
+  nOwn <- grDevices::dev.cur()
+  on.exit({
+    grDevices::dev.off(nOwn)
+    if (nCaller > 1L) grDevices::dev.set(nCaller)
+  }, add = TRUE)
+  lTable <- r2rtf::rtf_page(dfShown, orientation = strOrientation)
+  if (!is.null(strTitle) || !is.null(strSubtitle)) {
+    lTable <- r2rtf::rtf_title(
+      lTable,
+      title = Table_RtfText(if (is.null(strTitle)) "" else strTitle),
+      subtitle = if (is.null(strSubtitle)) NULL else Table_RtfText(strSubtitle), text_convert = FALSE
+    )
+  }
+  # r2rtf reads "|" as the column separator of a heading.
+  lTable <- r2rtf::rtf_colheader(
+    lTable, colheader = paste(Table_RtfText(gsub("|", "/", names(dfShown), fixed = TRUE)), collapse = " | "),
+    col_rel_width = nWidths, text_convert = FALSE
   )
+  lTable <- r2rtf::rtf_body(lTable, col_rel_width = nWidths, text_justification = "l", text_convert = FALSE)
+  if (length(chrFootnotes) > 0L) {
+    lTable <- r2rtf::rtf_footnote(lTable, footnote = Table_RtfText(chrFootnotes), text_convert = FALSE)
+  }
+  r2rtf::write_rtf(r2rtf::rtf_encode(lTable), strFile)
   invisible(strFile)
 }
 

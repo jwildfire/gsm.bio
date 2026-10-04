@@ -10,7 +10,8 @@ Write_RTF(dfTable, strFile, strOrientation = "landscape")
 \item{dfTable}{\code{data.frame} A table from \code{\link[=Table_GroupComparison]{Table_GroupComparison()}} or one of
 the functions beside it, with its \code{title}, \code{subtitle} and \code{footnotes}.}
 
-\item{strFile}{\code{character} The file to write.}
+\item{strFile}{\code{character} The file to write, in a folder that exists. A
+file already there is replaced.}
 
 \item{strOrientation}{\code{character} \code{"landscape"} (the default) or
 \code{"portrait"}.}
