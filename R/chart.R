@@ -41,11 +41,16 @@ Chart_Fields <- function(xValue, strSetting) {
 }
 
 # A setting that lists names: one or several, as distinct text. NULL stays NULL.
-Chart_Names <- function(xValue, strSetting) {
+# With `bEmpty`, a list of none is none, an empty vector, as bio.viz takes it
+# for the settings it reads that way (`textList(..., { empty: true })`).
+Chart_Names <- function(xValue, strSetting, bEmpty = FALSE) {
   if (is.null(xValue)) {
     return(NULL)
   }
   xValues <- unlist(xValue)
+  if (bEmpty && length(xValues) == 0L) {
+    return(character(0))
+  }
   if (length(xValues) == 0L || !(is.character(xValues) || is.numeric(xValues)) || anyNA(xValues) || !all(nzchar(trimws(as.character(xValues))))) {
     Core_Stop("Setting '", strSetting, "' must be a name, or several names")
   }

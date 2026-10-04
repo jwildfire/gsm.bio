@@ -117,7 +117,7 @@ CorrelationMatrix_Settings <- function(lSettings = list()) {
     }
   }
   for (strKey in c("baseline_visits", "biomarkers", "visits", "measures")) {
-    lConfig[strKey] <- list(Chart_Names(lConfig[[strKey]], strKey))
+    lConfig[strKey] <- list(Chart_Names(lConfig[[strKey]], strKey, bEmpty = strKey %in% c("biomarkers", "visits")))
   }
   lConfig["filters"] <- list(Chart_Fields(lConfig$filters, "filters"))
   lConfig
@@ -127,8 +127,11 @@ CorrelationMatrix_Settings <- function(lSettings = list()) {
 CorrelationMatrix_State <- function(dfResults, dfParticipants, lConfig) {
   chrMeasures <- Chart_Measures(dfResults, lConfig)
   chrVisits <- Core_Visits(dfResults, Chart_CoreSettings(lConfig))
-  # NULL is every one the control offers.
+  # NULL is every one the control offers; a list of none chooses none.
   Among <- function(chrChosen, chrList) {
+    if (!is.null(chrChosen) && length(chrChosen) == 0L) {
+      return(character(0))
+    }
     chrKept <- chrChosen[chrChosen %in% chrList]
     if (length(chrKept) > 0L) chrKept else NULL
   }

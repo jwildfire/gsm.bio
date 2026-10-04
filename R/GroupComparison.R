@@ -96,8 +96,10 @@ GroupComparison_Settings <- function(lSettings = list()) {
       "or NULL for no statistics line"
     )
   }
+  # No visit named is every visit, and no level named is none drawn, as bio.viz
+  # reads them.
   for (strKey in c("baseline_visits", "visits", "levels", "measures")) {
-    lConfig[strKey] <- list(Chart_Names(lConfig[[strKey]], strKey))
+    lConfig[strKey] <- list(Chart_Names(lConfig[[strKey]], strKey, bEmpty = strKey %in% c("visits", "levels")))
   }
   for (strKey in c("groups", "filters")) {
     lConfig[strKey] <- list(Chart_Fields(lConfig[[strKey]], strKey))

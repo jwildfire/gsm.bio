@@ -1,21 +1,28 @@
 # bio.viz's chart specifications (bio.viz#68; docs/output.md, "Specifications";
 # src/shared/specification.js), read in R: what a chart draws, written as JSON
 # data, so gsm.bio's batch runner can draw the same view as a static figure
-# and a table. The reader makes every check bio.viz's reader makes, in its
-# words, and the settings it returns are the ones bio.viz's reader returns:
-# tests/testthat/test-batch.R holds it to bio.viz's own reader, run on the same
-# specifications from the copied bundle.
+# and a table. tests/testthat/test-batch.R holds the reader to bio.viz's own
+# reader, run on the same specifications from the copied bundle: the format's
+# rules case by case, and every setting of every chart given each of 21 values.
 #
 # Nothing in a specification is ever evaluated. It is read by jsonlite as
 # data (text, numbers, true, false, null, lists and objects), and every value
 # stays that: a title or a setting that looks like code is text. Nothing here
 # calls eval(), parse() or anything that runs text.
 #
-# The one way the reader differs from bio.viz's: a value of a setting is
-# checked by the chart's own rules in R (R/GroupComparison.R and the files
-# beside it) and, for the settings only the browser reads (how a chart draws
-# its listing, its downloads), by the rules bio.viz's charts check them by. A
-# refusal of a value says it in R's words, which are not always bio.viz's.
+# How the reader differs from bio.viz's, each on purpose:
+# - The format's rules, and the shape of a list or object setting, are
+#   refused in bio.viz's words. A value of a setting is checked by the chart's
+#   own rules in R (R/GroupComparison.R and the files beside it) and, for the
+#   settings only the browser reads, by the rules bio.viz's charts check them
+#   by; a refusal of a value says it in R's words, which are not always
+#   bio.viz's. Which values are accepted is the same.
+# - A chart's `statistic`, and the scatter's `fit_statistic`, name the R
+#   function the page asks. bio.viz takes any name; gsm.bio computes each
+#   chart's statistics with one Analyze_*() function, and refuses any other
+#   name with a sentence.
+# - bio.viz's reader checks the depth of a specification given as an object
+#   and not one given as text; gsm.bio checks both.
 
 strSpecFormat <- "bio.viz specification"
 nSpecVersion <- 1L
@@ -245,6 +252,105 @@ Spec_Read <- function(xSpecification) {
   )
 }
 
+# The shapes bio.viz's charts hold their list and object settings to
+# (bio.viz, src/shared/settings.js `textList` and `fieldList`, and each chart's
+# own check), by chart. A name list is a name or a list of names (text or
+# numbers), and is empty only where the chart takes no value as none; a field
+# list is a column's name or { value_col, label }, or a list of them; a chart a
+# row opens is an object of its settings.
+lSpecNameLists <- list(
+  "group-comparison" = c("baseline_visits", "visits", "levels", "measures"),
+  "association-scatter" = c("baseline_visits", "measures"),
+  "correlation-matrix" = c("baseline_visits", "biomarkers", "visits", "measures"),
+  "biomarker-screen" = c("levels", "baseline_visits", "measures"),
+  "cross-tab" = c("baseline_visits", "measures"),
+  "stratified-survival" = c("baseline_visits", "measures")
+)
+lSpecEmptyNameLists <- list(
+  "group-comparison" = c("visits", "levels"),
+  "correlation-matrix" = c("biomarkers", "visits")
+)
+lSpecFieldLists <- list(
+  "group-comparison" = c("groups", "filters", "details", "profile_details"),
+  "association-scatter" = c("numbers", "groups", "filters", "details", "profile_details"),
+  "correlation-matrix" = "filters",
+  "biomarker-screen" = c("groups", "numbers", "filters"),
+  "cross-tab" = c("groups", "filters", "details", "profile_details"),
+  "stratified-survival" = c("groups", "filters", "details", "profile_details")
+)
+lSpecNested <- list(
+  "correlation-matrix" = c(scatter = "`scatter` must be an object of settings for the association scatter, or null."),
+  "biomarker-screen" = c(
+    group_comparison = "`group_comparison` must be an object of settings for the chart a row opens, or null.",
+    association_scatter = "`association_scatter` must be an object of settings for the chart a row opens, or null.",
+    stratified_survival = "`stratified_survival` must be an object of settings for the chart a row opens, or null."
+  )
+)
+lSpecStatistics <- list(
+  "group-comparison" = c(statistic = strGroupComparisonStatistic),
+  "association-scatter" = c(statistic = strAssociationScatterStatistic, fit_statistic = strAssociationScatterFitStatistic),
+  "correlation-matrix" = c(statistic = strCorrelationMatrixStatistic),
+  "biomarker-screen" = c(statistic = strBiomarkerScreenStatistic),
+  "cross-tab" = c(statistic = strCrossTabStatistic),
+  "stratified-survival" = c(statistic = strStratifiedSurvivalStatistic)
+)
+
+# Settings held to bio.viz's shapes, in its words, before the chart's own rules
+# in R read them. Of the settings given only; a default is always its shape.
+Spec_CheckShapes <- function(strChart, lSettings) {
+  Has <- function(strKey) strKey %in% names(lSettings) && !is.null(lSettings[[strKey]])
+  IsEntry <- function(xValue) Spec_IsText(xValue) || (is.numeric(xValue) && length(xValue) == 1L && !is.na(xValue))
+  AsList <- function(xValue) if (Spec_IsArray(xValue)) xValue else list(xValue)
+  for (strKey in lSpecNameLists[[strChart]]) {
+    if (!Has(strKey)) next
+    lList <- AsList(lSettings[[strKey]])
+    bEmpty <- strKey %in% lSpecEmptyNameLists[[strChart]]
+    if ((length(lList) == 0L && !bEmpty) || !all(vapply(lList, IsEntry, logical(1)))) {
+      Spec_Refuse("`", strKey, "` must be a name, or a list of names.")
+    }
+  }
+  for (strKey in lSpecFieldLists[[strChart]]) {
+    if (!Has(strKey)) next
+    bFields <- all(vapply(AsList(lSettings[[strKey]]), function(xEntry) {
+      Spec_IsText(xEntry) || (Spec_IsObject(xEntry) && Spec_IsText(xEntry$value_col))
+    }, logical(1)))
+    if (!bFields) Spec_Refuse("`", strKey, "` holds something that is not a column name or { value_col, label }.")
+  }
+  if (Has("footnotes")) {
+    bTexts <- all(vapply(AsList(lSettings$footnotes), function(xEntry) is.character(xEntry) && length(xEntry) == 1L && !is.na(xEntry), logical(1)))
+    if (!bTexts) Spec_Refuse("`footnotes` must be text, or a list of texts, or null for none.")
+  }
+  chrNested <- lSpecNested[[strChart]]
+  for (strKey in names(chrNested)) {
+    if (Has(strKey) && !Spec_IsObject(lSettings[[strKey]])) Spec_Refuse(chrNested[[strKey]])
+  }
+  if (strChart %in% c("cross-tab", "stratified-survival") && Has("cuts") && !Spec_IsArray(lSettings$cuts)) {
+    Spec_Refuse("`cuts` must be a list of cut variables, or null.")
+  }
+  if (strChart == "stratified-survival" && Has("at_risk_times")) {
+    lTimes <- lSettings$at_risk_times
+    bTimes <- Spec_IsArray(lTimes) && length(lTimes) > 0L &&
+      all(vapply(lTimes, function(xTime) is.numeric(xTime) && length(xTime) == 1L && is.finite(xTime) && xTime >= 0, logical(1)))
+    if (bTimes && length(lTimes) > 1L) bTimes <- all(diff(unlist(lTimes)) > 0)
+    if (!bTimes) Spec_Refuse("`at_risk_times` must be a list of times, none below 0, in ascending order, or null.")
+  }
+  # Where gsm.bio differs from bio.viz on purpose: a chart's statistic names
+  # the R function the page asks, and bio.viz takes any name. gsm.bio computes
+  # each chart's statistics with one Analyze_*() function, and refuses another.
+  chrStatistics <- lSpecStatistics[[strChart]]
+  for (strKey in names(chrStatistics)) {
+    xValue <- lSettings[[strKey]]
+    if (Has(strKey) && Spec_IsText(xValue) && !identical(xValue, chrStatistics[[strKey]])) {
+      Spec_Refuse(
+        "`", strKey, "` names ", xValue, ", which gsm.bio does not compute: gsm.bio computes the ", strChart,
+        " chart", Spec_Apostrophe(), "s ", if (strKey == "fit_statistic") "fit" else "statistics", " with ", chrStatistics[[strKey]],
+        " only, so `", strKey, "` is \"", chrStatistics[[strKey]], "\" or null."
+      )
+    }
+  }
+  invisible(lSettings)
+}
+
 # The settings a specification holds, checked as the chart checks them: by the
 # chart's own rules in R, and the settings only the browser reads by the rules
 # bio.viz checks them by. Returns the settings, unchanged; refuses with a
@@ -256,6 +362,7 @@ Spec_Check <- function(lRead) {
     "correlation-matrix" = CorrelationMatrix_Settings, "biomarker-screen" = BiomarkerScreen_Settings,
     "cross-tab" = CrossTab_Settings, "stratified-survival" = StratifiedSurvival_Settings
   )[[lRead$chart]]
+  Spec_CheckShapes(lRead$chart, lSettings)
   fnSettings(lSettings)
   Output_CheckTitles(Core_Overlay(lOutputTitleDefaults, lSettings[intersect(names(lSettings), names(lOutputTitleDefaults))]))
   Has <- function(strKey) strKey %in% names(lSettings)

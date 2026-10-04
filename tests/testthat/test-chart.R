@@ -257,3 +257,19 @@ test_that("a numeric visit, panel, group or colour column is keyed as text, as t
   expect_identical(lScreen[[1]]$dataId$filters, list(SEXN = list("2")))
   expect_identical(lScreen[[2]]$dataId$visit, "4")
 })
+
+test_that("a list of none is taken where bio.viz takes it: no visit named is every visit, no level named none, and a matrix of no biomarker or visit is none (#39)", {
+  lGroup <- GroupComparison_Settings(list(visits = list(), levels = list()))
+  expect_identical(lGroup$visits, character(0))
+  expect_identical(lGroup$levels, character(0))
+  lVisits <- GroupComparison_Visits(Synthetic_Results, lGroup)
+  expect_identical(lVisits$start, lVisits$all)
+  expect_identical(GroupComparison_State(Synthetic_Results, Synthetic_Participants, lGroup)$levels, character(0))
+  lMatrix <- CorrelationMatrix_Settings(list(biomarkers = list(), visits = list()))
+  lState <- CorrelationMatrix_State(Synthetic_Results, Synthetic_Participants, lMatrix)
+  expect_identical(lState$biomarkers, character(0))
+  expect_identical(lState$visits, character(0))
+  # Elsewhere a list of none is refused, as bio.viz refuses it.
+  expect_error(GroupComparison_Settings(list(measures = list())), "must be a name, or several names")
+  expect_error(BiomarkerScreen_Settings(list(levels = list())), "must be a name, or several names")
+})
