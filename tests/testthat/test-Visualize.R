@@ -5,6 +5,12 @@
 # what it prints, against the Analyze_*() function on rows worked out here from
 # the study's tables and nothing of the figure's; and a snapshot of what it
 # draws (helper-figure.R).
+#
+# The snapshots are of each figure's own data and labels, not SVG files drawn
+# by vdiffr: an SVG depends on the fonts and the graphics engine of the session
+# that drew it, while the data and labels are the same in every locale, on
+# every platform and with every ggplot2 version, so a change in one is a change
+# in what the figure draws.
 
 skip_if_not_installed("ggplot2")
 
