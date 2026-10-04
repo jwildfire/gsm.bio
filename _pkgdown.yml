@@ -37,6 +37,7 @@ reference:
       - Widget_CorrelationMatrix
       - Widget_BiomarkerScreen
       - Widget_CrossTab
+      - Widget_StratifiedSurvival
   - title: Synthetic study
     desc: >
       A made-up biomarker study with three planted effects of known size, for

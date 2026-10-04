@@ -1,0 +1,14 @@
+# Written by data-raw/vendor-bio-viz.R: do not edit by hand.
+dependencies:
+  - name: safety-viz
+    version: 1.9.0
+    src: 'htmlwidgets/lib/safety.viz-1.9.0'
+    script: 'safety.viz.js'
+  - name: bio-viz
+    version: 0.1.0
+    src: 'htmlwidgets/lib/bio.viz-0.1.0'
+    script: 'bio.viz.js'
+  - name: gsm-bio-widget
+    version: 0.1.0.9000
+    src: 'htmlwidgets/shared'
+    script: 'gsm.bio.widget.js'

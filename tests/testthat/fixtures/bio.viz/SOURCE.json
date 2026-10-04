@@ -3,13 +3,13 @@
   "copied_by": "data-raw/vendor-bio-viz.R",
   "repository": "https://github.com/jwildfire/bio.viz",
   "ref": "dev",
-  "commit": "adcdb416f3b56dfafdf317c08d8148cb17969dd9",
+  "commit": "7a28bf2f6b7c2bc4261810d7aba27c599aabdf22",
   "merged_to_dev": true,
   "files": [
     {
       "file": "group-statistics/SOURCE.json",
       "source": "tests/fixtures/group-statistics/SOURCE.json",
-      "sha256": "93851f32c2837e038aebc9459b50e51d94dc217567f0e58fd8474083ac64f457",
+      "sha256": "4c6ae8ea374b78869fab6eac39905591a47ad4754d3eb3311fd5f3123347b4d9",
       "bytes": 5849
     },
     {
@@ -135,7 +135,7 @@
     {
       "file": "association-statistics/SOURCE.json",
       "source": "tests/fixtures/association-statistics/SOURCE.json",
-      "sha256": "634d3d4c8bea2bb04eeb0a8373ad9548cc528fc5578e06269b68d0e042d27ffd",
+      "sha256": "5401f5d1d8e93351aded1128299e78bd51c5d584cd7dd8cc17866a70b89370be",
       "bytes": 7954
     },
     {
@@ -297,7 +297,7 @@
     {
       "file": "matrix-statistics/SOURCE.json",
       "source": "tests/fixtures/matrix-statistics/SOURCE.json",
-      "sha256": "c0da6659586cc69f369fa8ef3da425b828b88d85fa51719452a4d5f6646d4add",
+      "sha256": "12b87799f9a69c8de1fe361c3d3b898c463dd2f2798e45bbc48e7d5809788d6d",
       "bytes": 4154
     },
     {
@@ -375,8 +375,8 @@
     {
       "file": "screen-statistics/SOURCE.json",
       "source": "tests/fixtures/screen-statistics/SOURCE.json",
-      "sha256": "ef59a908d69921bc62aaf40d7499cfc2bc398edb4c7604c4348efcb8531722b0",
-      "bytes": 4256
+      "sha256": "f2779c07fa4f194a4e84d0362fbbeba2f06da4e55c81f05fbaa60b70b6aa0061",
+      "bytes": 6434
     },
     {
       "file": "screen-statistics/difference-week-4-change.csv",
@@ -433,6 +433,42 @@
       "bytes": 17254
     },
     {
+      "file": "screen-statistics/hazard-baseline.csv",
+      "source": "tests/fixtures/screen-statistics/hazard-baseline.csv",
+      "sha256": "fdf984533b80e08f0ec3008fa56e39234f6232b7e875b0f74b205ec1fba76671",
+      "bytes": 18633
+    },
+    {
+      "file": "screen-statistics/hazard-baseline-holm.csv",
+      "source": "tests/fixtures/screen-statistics/hazard-baseline-holm.csv",
+      "sha256": "fdf984533b80e08f0ec3008fa56e39234f6232b7e875b0f74b205ec1fba76671",
+      "bytes": 18633
+    },
+    {
+      "file": "screen-statistics/hazard-baseline-women.csv",
+      "source": "tests/fixtures/screen-statistics/hazard-baseline-women.csv",
+      "sha256": "f38db886ac4d7ef541a0dec5940eb37cf591f3ce98269674e573ce4f0fabcc4b",
+      "bytes": 8522
+    },
+    {
+      "file": "screen-statistics/hazard-baseline-age-35.csv",
+      "source": "tests/fixtures/screen-statistics/hazard-baseline-age-35.csv",
+      "sha256": "9f08dd127860a49c04abccaa36ec6d66b57451aa0934a7e8f17b6f846811a3fc",
+      "bytes": 474
+    },
+    {
+      "file": "screen-statistics/hazard-baseline-30-without-outcome.csv",
+      "source": "tests/fixtures/screen-statistics/hazard-baseline-30-without-outcome.csv",
+      "sha256": "1e6bfbc3d4489ef6dfeb061f514373c1f0545863841eadcb30675a5df683ecc1",
+      "bytes": 18485
+    },
+    {
+      "file": "screen-statistics/hazard-baseline-no-events-in-low-crp.csv",
+      "source": "tests/fixtures/screen-statistics/hazard-baseline-no-events-in-low-crp.csv",
+      "sha256": "8dd10336e58095dc84a9309e16972855b3b9abcaeea773a23853712daeec583a",
+      "bytes": 18633
+    },
+    {
       "file": "screen-statistics/correlation-age.csv",
       "source": "tests/fixtures/screen-statistics/correlation-age.csv",
       "sha256": "e93c79d16033134f4febf034e7663af6401bedc4d88fd45df48ea985f7e0aa78",
@@ -441,14 +477,14 @@
     {
       "file": "screen-statistics/cases.csv",
       "source": "tests/fixtures/screen-statistics/cases.csv",
-      "sha256": "52970287d2d66fab1003cc5fffd0e9e8321f73f85f5743c593a0b427ee939062",
-      "bytes": 2410
+      "sha256": "eaf1e7299a8dd74b07a76a56e7593f6d7ea805d40becf05a838b66893a897e99",
+      "bytes": 3743
     },
     {
       "file": "screen-statistics-r.json",
       "source": "tests/fixtures/screen-statistics-r.json",
-      "sha256": "c1078bcfaad7882453d0d967cffb7979ac980de48942dd0833fe6044cd2aafac",
-      "bytes": 61777
+      "sha256": "665e4ca6279dbdd71412de73817a6dc257a6e985adb2120af0db523a7a5e76e0",
+      "bytes": 97235
     },
     {
       "file": "cut-r.json",
@@ -461,6 +497,12 @@
       "source": "tests/fixtures/cross-tab-r.json",
       "sha256": "c621de108b934a304d7bef6d6c3b8516fe7d79bb8869371611cc773aa04e954f",
       "bytes": 73756
+    },
+    {
+      "file": "stratified-survival-r.json",
+      "source": "tests/fixtures/stratified-survival-r.json",
+      "sha256": "20244ee06d39b9d329b6236f39e3b8c790911f38fe9a7fd801569fd531208475",
+      "bytes": 178430
     }
   ]
 }

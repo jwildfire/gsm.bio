@@ -283,10 +283,27 @@ Widget_Utf8 <- function(xValue) {
   xValue
 }
 
+#' Check the outcomes table a widget is given
+#'
+#' A data frame or `NULL`, and, when it has rows, the columns the settings name.
+#'
+#' @param lConfig `list` The chart's settings in full, with the outcome settings.
+#'
+#' @keywords internal
+#' @noRd
+Widget_CheckOutcomes <- function(dfOutcomes, lConfig) {
+  if (!is.null(dfOutcomes) && !is.data.frame(dfOutcomes)) {
+    stop("dfOutcomes is not a data.frame or NULL", call. = FALSE)
+  }
+  Chart_CheckOutcomes(dfOutcomes, lConfig, "dfOutcomes")
+}
+
 #' Make a widget from its tables, its settings and R's answers
 #'
 #' @param strName `character` The widget's name, which is its binding's.
 #' @param lStored `list` The stored results, as [Chart_Answer()] returns them.
+#' @param dfOutcomes `data.frame` The outcomes table, for a chart that reads
+#'   one, or `NULL`: the payload carries it only when it is given.
 #'
 #' @return An `htmlwidget` whose payload carries the tables, the settings, the
 #'   stored results in the shape the chart's connection reads, and which R
@@ -294,11 +311,14 @@ Widget_Utf8 <- function(xValue) {
 #'
 #' @keywords internal
 #' @noRd
-Widget_Create <- function(strName, dfResults, dfParticipants, lSettings, lStored, width, height, elementId, bDebug) {
-  x <- list(
-    dfResults = dfResults,
-    dfParticipants = dfParticipants,
-    lSettings = lSettings,
+Widget_Create <- function(strName, dfResults, dfParticipants, lSettings, lStored, width, height, elementId, bDebug,
+                          dfOutcomes = NULL) {
+  x <- c(
+    list(dfResults = dfResults, dfParticipants = dfParticipants),
+    if (!is.null(dfOutcomes)) list(dfOutcomes = dfOutcomes),
+    list(lSettings = lSettings)
+  )
+  x <- c(x, list(
     bDebug = bDebug,
     bAutoWidth = is.null(width),
     bAutoHeight = is.null(height),
@@ -311,7 +331,7 @@ Widget_Create <- function(strName, dfResults, dfParticipants, lSettings, lStored
         )
       })
     )
-  )
+  ))
   htmlwidgets::createWidget(
     name = strName,
     x = Widget_Utf8(x),

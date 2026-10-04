@@ -2,20 +2,22 @@
 #
 # The screen asks its connection to R once, for every row, and a click on a row
 # opens that biomarker's own chart in place, the group comparison for a
-# difference or the association scatter for a correlation, which asks for its
-# own statistics through the same connection (bio.viz,
+# difference, the association scatter for a correlation or the stratified
+# survival chart for a hazard ratio, which asks for its own statistics through
+# the same connection (bio.viz,
 # docs/biomarker-screen.md, "What R is asked" and "A row opens its chart"). To
 # ship R's answers with a page, Widget_BiomarkerScreen() has to know, before
 # there is a page, the screen the chart will draw and the chart each of its rows
 # opens. This file follows the chart's own code for that (bio.viz,
 # src/biomarker-screen/): the rows, what the chart opens on, the frame and the
 # one request; and what the screen hands the chart a row opens, whose own rules
-# are R/GroupComparison.R and R/AssociationScatter.R. What every chart shares is
-# R/chart.R.
+# are R/GroupComparison.R, R/AssociationScatter.R and R/StratifiedSurvival.R.
+# What every chart shares is R/chart.R, the outcomes table's rules among it.
 #
 # It computes no statistic. The frame comes from Core_Frame(), one column per
-# biomarker and none of them required, so R counts who each row has; the answer
-# is Analyze_Screen() on that frame. Nothing here is exported.
+# biomarker and none of them required, so R counts who each row has, and for a
+# hazard ratio the outcomes table; the answer is Analyze_Screen() on that
+# frame. Nothing here is exported.
 
 # The settings of the chart that R reads, with the chart's own defaults. The
 # chart has more (the order of its rows, how many a page shows); those pass
@@ -38,6 +40,15 @@ lBiomarkerScreenDefaults <- list(
   levels = NULL,
   with = NULL,
   method = "pearson",
+  # A hazard ratio: the outcomes table's columns (lOutcomeDefaults), and the
+  # endpoint the rows are of.
+  outcome_id_col = NULL,
+  endpoint_col = "PARAMCD",
+  endpoint_label_col = "PARAM",
+  time_col = "AVAL",
+  censor_col = "CNSR",
+  event_col = NULL,
+  endpoint = NULL,
   adjustment = "BH",
   measures = NULL,
   groups = NULL,
@@ -46,7 +57,8 @@ lBiomarkerScreenDefaults <- list(
   filters = NULL,
   statistic = "Analyze_Screen",
   group_comparison = NULL,
-  association_scatter = NULL
+  association_scatter = NULL,
+  stratified_survival = NULL
 )
 
 # The R function the widget stores the screen's result of.
@@ -59,11 +71,13 @@ lBiomarkerScreenCarried <- list(
     "start_value", "visits", "value_type", "group_by", "levels", "test",
     "connection", "waiting_note", "filters", "back"
   ),
-  association_scatter = c("x", "y", "method", "connection", "waiting_note", "filters", "back")
+  association_scatter = c("x", "y", "method", "connection", "waiting_note", "filters", "back"),
+  stratified_survival = c("group_by", "endpoint", "connection", "waiting_note", "filters", "back")
 )
 lBiomarkerScreenCarriedWords <- list(
   group_comparison = "its biomarker, its visit, its value type, its two groups and Welch's test",
-  association_scatter = "its biomarker and its variable, its method"
+  association_scatter = "its biomarker and its variable, its method",
+  stratified_survival = "its biomarker cut at its median, its endpoint"
 )
 
 chrBiomarkerScreenValueWords <- c(
@@ -74,6 +88,8 @@ chrBiomarkerScreenValueWords <- c(
 # The settings R reads, in full: the caller's over the chart's defaults, each
 # checked, in the forms the functions below read them.
 BiomarkerScreen_Settings <- function(lSettings = list()) {
+  # An event column named alone is the flag, as the chart reads it.
+  lSettings <- Chart_FlaggedSettings(lSettings)
   lConfig <- Core_Overlay(
     lBiomarkerScreenDefaults, lSettings[intersect(names(lSettings), names(lBiomarkerScreenDefaults))]
   )
@@ -93,7 +109,7 @@ BiomarkerScreen_Settings <- function(lSettings = list()) {
       Core_Stop("Setting '", strKey, "' must be one of ", paste(chrChoices, collapse = ", "))
     }
   }
-  Choice("comparison", c("difference", "correlation"))
+  Choice("comparison", c("difference", "correlation", "hazard"))
   Choice("value_type", chrCoreValueTypes)
   Choice("method", chrAssociationScatterMethods)
   Choice("adjustment", c("BH", "holm"))
@@ -108,7 +124,8 @@ BiomarkerScreen_Settings <- function(lSettings = list()) {
       "or NULL for no rows"
     )
   }
-  for (strKey in c("group_comparison", "association_scatter")) {
+  Chart_CheckOutcomeSettings(lConfig)
+  for (strKey in c("group_comparison", "association_scatter", "stratified_survival")) {
     lOpened <- lConfig[[strKey]]
     if (!is.null(lOpened) && (!is.list(lOpened) || is.data.frame(lOpened) ||
       (length(lOpened) > 0L && (is.null(names(lOpened)) || !all(nzchar(names(lOpened))))))) {
@@ -155,7 +172,9 @@ BiomarkerScreen_VariableName <- function(lAxis) {
 }
 
 # What the controls open on: the settings, where the tables have what they name.
-BiomarkerScreen_State <- function(dfResults, dfParticipants, lConfig) {
+# A hazard ratio is offered only with an outcomes table that has an endpoint;
+# without one the screen opens on a difference.
+BiomarkerScreen_State <- function(dfResults, dfParticipants, lConfig, dfOutcomes = NULL) {
   chrMeasures <- Chart_Measures(dfResults, lConfig)
   chrVisits <- Core_Visits(dfResults, Chart_CoreSettings(lConfig))
   dfCategories <- Chart_Categories(dfResults, dfParticipants, lConfig)
@@ -189,8 +208,16 @@ BiomarkerScreen_State <- function(dfResults, dfParticipants, lConfig) {
   } else {
     NULL
   }
+  chrEndpoints <- Chart_Endpoints(dfOutcomes, lConfig)$endpoint
+  strEndpoint <- if (!is.null(lConfig$endpoint) && lConfig$endpoint %in% chrEndpoints) {
+    lConfig$endpoint
+  } else {
+    Core_First(chrEndpoints)
+  }
+  if (length(strEndpoint) == 0L) strEndpoint <- NULL
   list(
-    comparison = lConfig$comparison,
+    comparison = if (lConfig$comparison == "hazard" && is.null(strEndpoint)) "difference" else lConfig$comparison,
+    endpoint = strEndpoint,
     visit = if (!is.null(lConfig$visit) && lConfig$visit %in% chrVisits) lConfig$visit else Core_First(chrVisits),
     value_type = lConfig$value_type,
     group_by = strGroupBy,
@@ -208,7 +235,7 @@ BiomarkerScreen_State <- function(dfResults, dfParticipants, lConfig) {
 # A biomarker that is the variable every row is correlated with is not a row of
 # its own. None, with no screen to draw: a change at the one baseline visit, a
 # difference with no column of two groups, a correlation with nothing to
-# correlate with.
+# correlate with, a hazard ratio with no endpoint.
 BiomarkerScreen_Rows <- function(dfResults, lConfig, lState) {
   strValue <- lState$value_type
   lCore <- Chart_CoreSettings(lConfig)
@@ -222,6 +249,10 @@ BiomarkerScreen_Rows <- function(dfResults, lConfig, lState) {
   }
   if (lState$comparison == "difference") {
     if (is.null(lState$group_by) || length(lState$levels) != 2L) {
+      return(list())
+    }
+  } else if (lState$comparison == "hazard") {
+    if (is.null(lState$endpoint)) {
       return(list())
     }
   } else if (is.null(lState$with)) {
@@ -243,25 +274,39 @@ BiomarkerScreen_Rows <- function(dfResults, lConfig, lState) {
 # of the biomarkers, after the filters, with the id, one column per biomarker
 # named by the biomarker, NA where the participant has no value, and beside them
 # the column of groups for a difference or the variable every row is correlated
-# with, named as BiomarkerScreen_VariableName() names it. None of the variables
-# is required: R counts who each row has.
-BiomarkerScreen_Frame <- function(dfResults, dfParticipants, lConfig, lState, lRows) {
+# with, named as BiomarkerScreen_VariableName() names it; for a hazard ratio,
+# the participant's `time` and flag (`censor` or `event`) for the endpoint, NA
+# where there is no outcome to use (bio.viz, src/biomarker-screen/structureData.js,
+# `buildScreen`). None of the variables is required: R counts who each row has.
+BiomarkerScreen_Frame <- function(dfResults, dfParticipants, lConfig, lState, lRows, dfOutcomes = NULL) {
   lKept <- Chart_KeepFiltered(dfResults, dfParticipants, lConfig, lState$filters)
   if (length(lRows) == 0L || nrow(lKept$results) == 0L) {
     return(NULL)
   }
-  strExtra <- if (lState$comparison == "difference") lState$group_by else BiomarkerScreen_VariableName(lState$with)
-  lExtra <- if (lState$comparison == "difference") list(col = lState$group_by) else AssociationScatter_Variable(lState$with)
+  bHazard <- lState$comparison == "hazard"
+  lVariables <- lapply(lRows, AssociationScatter_Variable)
+  if (bHazard) {
+    strExtra <- NULL
+    chrNames <- c(lConfig$id_col, names(lRows), "time", Chart_FlagOf(lConfig)$field)
+  } else {
+    strExtra <- if (lState$comparison == "difference") lState$group_by else BiomarkerScreen_VariableName(lState$with)
+    lExtra <- if (lState$comparison == "difference") list(col = lState$group_by) else AssociationScatter_Variable(lState$with)
+    lVariables <- c(lVariables, stats::setNames(list(lExtra), strExtra))
+    chrNames <- c(lConfig$id_col, names(lRows), strExtra)
+  }
   # A column of the frame named as another would be two columns of one name.
-  chrNames <- c(lConfig$id_col, names(lRows), strExtra)
   if (anyDuplicated(chrNames) > 0L) {
     return(NULL)
   }
-  lVariables <- c(lapply(lRows, AssociationScatter_Variable), stats::setNames(list(lExtra), strExtra))
   dfData <- Core_Frame(
     lKept$results, lKept$participants, lVariables,
     c(Chart_CoreSettings(lConfig), list(required = character(0)))
   )$data
+  if (bHazard) {
+    dfOutcome <- Chart_Outcomes(dfOutcomes, lConfig, lState$endpoint, Core_Text(dfData[[lConfig$id_col]]))
+    dfData$time <- dfOutcome$time
+    dfData[[Chart_FlagOf(lConfig)$field]] <- dfOutcome$flag
+  }
   # A participant with none of the biomarkers gives no row anything.
   dfData <- dfData[rowSums(!is.na(dfData[names(lRows)])) > 0L, , drop = FALSE]
   rownames(dfData) <- NULL
@@ -277,6 +322,7 @@ BiomarkerScreen_Request <- function(dfFrame, lView) {
   if (!is.null(lView$baseline_visits)) lDataId$baseline_visits <- as.list(lView$baseline_visits)
   lDataId$baseline_stat <- lView$baseline_stat
   if (identical(lView$comparison, "correlation")) lDataId$with <- lView$with
+  if (identical(lView$comparison, "hazard")) lDataId$endpoint <- lView$endpoint
   if (length(lView$filters) > 0L) {
     lDataId$filters <- lapply(lView$filters, as.list)
   }
@@ -284,6 +330,10 @@ BiomarkerScreen_Request <- function(dfFrame, lView) {
   if (identical(lView$comparison, "difference")) {
     lArgs$strGroupCol <- lView$group_by
     lArgs$chrGroups <- as.list(lView$groups)
+  } else if (identical(lView$comparison, "hazard")) {
+    # Each biomarker is cut at its median by Analyze_Screen itself.
+    lArgs$strTimeCol <- "time"
+    if (identical(lView$flag, "event")) lArgs$strEventCol <- "event" else lArgs$strCensorCol <- "censor"
   } else {
     lArgs$strWithCol <- lView$with_name
     lArgs$strCorMethod <- lView$method
@@ -294,12 +344,12 @@ BiomarkerScreen_Request <- function(dfFrame, lView) {
 
 # The request the chart makes for its screen in one view, or none when there is
 # no screen to draw.
-BiomarkerScreen_Requests <- function(dfResults, dfParticipants, lConfig, lState) {
+BiomarkerScreen_Requests <- function(dfResults, dfParticipants, lConfig, lState, dfOutcomes = NULL) {
   if (is.null(lConfig$statistic) || nrow(dfResults) == 0L || length(lState$measures) == 0L) {
     return(list())
   }
   lRows <- BiomarkerScreen_Rows(dfResults, lConfig, lState)
-  lFrame <- BiomarkerScreen_Frame(dfResults, dfParticipants, lConfig, lState, lRows)
+  lFrame <- BiomarkerScreen_Frame(dfResults, dfParticipants, lConfig, lState, lRows, dfOutcomes)
   if (is.null(lFrame) || nrow(lFrame$data) == 0L) {
     return(list())
   }
@@ -309,7 +359,8 @@ BiomarkerScreen_Requests <- function(dfResults, dfParticipants, lConfig, lState)
     baseline_visits = lConfig$baseline_visits, baseline_stat = lConfig$baseline_stat,
     with = lState$with, with_name = lFrame$extra, filters = Chart_FiltersInForce(lState$filters),
     biomarkers = names(lRows), group_by = lState$group_by, groups = lState$levels,
-    method = lState$method, adjustment = lState$adjustment
+    method = lState$method, adjustment = lState$adjustment,
+    endpoint = lState$endpoint, flag = Chart_FlagOf(lConfig)$field
   )))
 }
 
@@ -320,19 +371,31 @@ BiomarkerScreen_Requests <- function(dfResults, dfParticipants, lConfig, lState)
 # at the screen's one visit, with its value type, its column of groups and its
 # two groups, and Welch's test. For a correlation the association scatter opens
 # with the biomarker along the bottom and the fixed variable up the side, with
-# the same method. Both get the filters as they are set; the connection and the
-# way back are the page's, and ask R for nothing.
+# the same method. For a hazard ratio the stratified survival chart opens with
+# the screen's outcome settings under the page's, on the biomarker at the
+# screen's visit with its value type, cut at its median, and on the screen's
+# endpoint. All get the filters as they are set; the connection and the way
+# back are the page's, and ask R for nothing.
 BiomarkerScreen_OpenedSettings <- function(lConfig, lState, lFilterSpecs, strBiomarker, lAxis) {
   lSettings <- c(Chart_CoreSettings(lConfig), lConfig[c("unit_col", "measures", "max_levels", "groups")])
   bDifference <- lState$comparison == "difference"
-  if (!bDifference) {
+  bHazard <- lState$comparison == "hazard"
+  if (bHazard) {
+    lSettings <- c(lSettings, lConfig[names(lOutcomeDefaults)])
+  } else if (!bDifference) {
     lSettings["numbers"] <- list(lConfig$numbers)
   }
-  lPage <- if (bDifference) lConfig$group_comparison else lConfig$association_scatter
+  lPage <- if (bDifference) lConfig$group_comparison else if (bHazard) lConfig$stratified_survival else lConfig$association_scatter
   for (strName in names(lPage)) {
     lSettings[strName] <- list(lPage[[strName]])
   }
-  if (bDifference) {
+  if (bHazard) {
+    lGroupBy <- list(measure = strBiomarker, value = lState$value_type)
+    if (lState$value_type != "baseline") lGroupBy$visit <- lState$visit
+    lGroupBy$cut <- "median"
+    lSettings$group_by <- lGroupBy
+    lSettings["endpoint"] <- list(lState$endpoint)
+  } else if (bDifference) {
     lSettings$start_value <- strBiomarker
     lSettings["visits"] <- list(if (lState$value_type == "baseline") NULL else lState$visit)
     lSettings$value_type <- lState$value_type
@@ -353,9 +416,15 @@ BiomarkerScreen_OpenedSettings <- function(lConfig, lState, lFilterSpecs, strBio
 }
 
 # What the chart a row opens asks R when it opens, for one row.
-BiomarkerScreen_OpenedRequests <- function(dfResults, dfParticipants, lConfig, lState, lFilterSpecs, strBiomarker, lAxis) {
+BiomarkerScreen_OpenedRequests <- function(dfResults, dfParticipants, lConfig, lState, lFilterSpecs, strBiomarker, lAxis, dfOutcomes = NULL) {
   lSettings <- BiomarkerScreen_OpenedSettings(lConfig, lState, lFilterSpecs, strBiomarker, lAxis)
-  if (lState$comparison == "difference") {
+  if (lState$comparison == "hazard") {
+    lOpened <- StratifiedSurvival_Settings(lSettings)
+    StratifiedSurvival_Requests(
+      dfResults, dfParticipants, dfOutcomes, lOpened,
+      StratifiedSurvival_State(dfResults, dfParticipants, dfOutcomes, lOpened)
+    )
+  } else if (lState$comparison == "difference") {
     lOpened <- GroupComparison_Settings(lSettings)
     GroupComparison_Requests(dfResults, dfParticipants, lOpened, GroupComparison_State(dfResults, dfParticipants, lOpened))
   } else {
@@ -367,23 +436,23 @@ BiomarkerScreen_OpenedRequests <- function(dfResults, dfParticipants, lConfig, l
 # The stored results a page ships: R's answer for the screen the settings open
 # on, and, for every row of it, exactly what the chart that row opens asks of R
 # when it opens, keyed as that chart keys it.
-BiomarkerScreen_StoredResults <- function(dfResults, dfParticipants, lConfig) {
+BiomarkerScreen_StoredResults <- function(dfResults, dfParticipants, lConfig, dfOutcomes = NULL) {
   if (nrow(dfResults) == 0L) {
     return(list())
   }
-  lState <- BiomarkerScreen_State(dfResults, dfParticipants, lConfig)
-  lRequests <- BiomarkerScreen_Requests(dfResults, dfParticipants, lConfig, lState)
+  lState <- BiomarkerScreen_State(dfResults, dfParticipants, lConfig, dfOutcomes)
+  lRequests <- BiomarkerScreen_Requests(dfResults, dfParticipants, lConfig, lState, dfOutcomes)
   if (length(lRequests) > 0L) {
     lFilterSpecs <- Chart_FilterSpecs(dfResults, dfParticipants, lConfig)
     lRows <- BiomarkerScreen_Rows(dfResults, lConfig, lState)
     for (strBiomarker in names(lRows)) {
       lRequests <- c(lRequests, BiomarkerScreen_OpenedRequests(
-        dfResults, dfParticipants, lConfig, lState, lFilterSpecs, strBiomarker, lRows[[strBiomarker]]
+        dfResults, dfParticipants, lConfig, lState, lFilterSpecs, strBiomarker, lRows[[strBiomarker]], dfOutcomes
       ))
     }
   }
   Chart_Answer(lRequests, list(
     Analyze_Screen = Analyze_Screen, Analyze_GroupDifference = Analyze_GroupDifference,
-    Analyze_Correlation = Analyze_Correlation, Analyze_Fit = Analyze_Fit
+    Analyze_Correlation = Analyze_Correlation, Analyze_Fit = Analyze_Fit, Analyze_Survival = Analyze_Survival
   ))
 }

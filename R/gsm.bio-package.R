@@ -22,9 +22,10 @@
 #' A widget draws a bio.viz chart from R. It computes the chart's statistics
 #' with the functions above when it is made and stores them in the page, so a
 #' saved page shows them with no R and no network: see
-#' [Widget_GroupComparison()], [Widget_AssociationScatter()] and
-#' [Widget_CorrelationMatrix()]. The widgets are the only part of the package
-#' that uses htmlwidgets.
+#' [Widget_GroupComparison()], [Widget_AssociationScatter()],
+#' [Widget_CorrelationMatrix()], [Widget_BiomarkerScreen()], [Widget_CrossTab()]
+#' and [Widget_StratifiedSurvival()]. The widgets are the only part of the
+#' package that uses htmlwidgets.
 #'
 #' @section Status:
 #' Version 0.1.0 is in development: the statistics functions, a synthetic

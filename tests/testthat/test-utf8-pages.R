@@ -119,3 +119,38 @@ test_that("a cross-tabulation saved in a session whose locale is not UTF-8 carri
     expect_identical(lFiltered[[1]]$rows, sum(seq_len(nrow(Synthetic_Participants)) %% 4L == 1L))
   })
 })
+
+test_that("a survival page saved in a session whose locale is not UTF-8 carries its outcomes table's text as UTF-8 (#22, #35)", {
+  WithCLocale(function() {
+    # An endpoint and its label as unmarked bytes, as a C locale reads them.
+    strEndpoint <- rawToChar(as.raw(c(0xc3, 0x96, 0x46, 0x53)))
+    strLabel <- rawToChar(as.raw(c(0xc3, 0x9c, 0x62, 0x65, 0x72, 0x6c, 0x65, 0x62, 0x65, 0x6e)))
+    # The study's endpoint beside a second one of that name, which the
+    # settings name in UTF-8, as R source written in UTF-8 holds it.
+    dfOther <- Synthetic_Outcomes
+    dfOther$PARAMCD <- strEndpoint
+    dfOther$PARAM <- strLabel
+    dfOutcomes <- rbind(Synthetic_Outcomes, dfOther)
+    lWidget <- Widget_StratifiedSurvival(
+      Synthetic_Results, Synthetic_Participants,
+      lSettings = list(group_by = "ARM", endpoint = "\u00d6FS"), dfOutcomes = dfOutcomes
+    )
+    strFile <- file.path(tempfile("utf8"), "page.html")
+    dir.create(dirname(strFile))
+    htmlwidgets::saveWidget(lWidget, file = strFile, selfcontained = bPandoc())
+    chrUtf8 <- c(strEndpoint, strLabel)
+    Encoding(chrUtf8) <- "UTF-8"
+    for (strText in chrUtf8) {
+      expect_true(bPageHas(strFile, charToRaw(strText)), label = paste("the page holds", strText))
+    }
+    for (strEscape in c("<c3>", "<U+00")) {
+      expect_false(bPageHas(strFile, charToRaw(strEscape)), label = paste("the page holds", strEscape))
+    }
+    # The stored key names the endpoint as the chart reads it from the page.
+    lStored <- lWidget$x$lStatistics$results
+    expect_length(lStored, 1L)
+    expect_identical(lStored[[1]]$dataId$endpoint, chrUtf8[1])
+    expect_identical(Encoding(lStored[[1]]$dataId$endpoint), "UTF-8")
+    expect_identical(unique(lWidget$x$dfOutcomes$PARAM), c("Event-free survival (months)", chrUtf8[2]))
+  })
+})
