@@ -233,6 +233,25 @@
 <p><code><a href="reference/Write_RTF.html">Write_RTF()</a></code> writes a table to RTF with the r2rtf package: the title and subtitle above, the footnotes beneath, the table’s own last. r2rtf is suggested, not imported, and <code><a href="reference/Write_RTF.html">Write_RTF()</a></code> says so when it is not installed.</p>
 </div>
 <div class="section level2">
+<h2 id="batch-runs">Batch runs<a class="anchor" aria-label="anchor" href="#batch-runs"></a>
+</h2>
+<p>A bio.viz chart writes what it draws as a specification, JSON data (bio.viz’s docs/output.md, “Specifications”). <code><a href="reference/Run_Specifications.html">Run_Specifications()</a></code> reads a list of them and draws each against a dataset, as a figure by its <code>Visualize_*()</code> function and an RTF table by its <code>Table_*()</code> function and <code><a href="reference/Write_RTF.html">Write_RTF()</a></code>, into a folder, with a manifest. With <code>bAcrossBiomarkers = TRUE</code> one specification is drawn once per biomarker.</p>
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">dfManifest</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/Run_Specifications.html">Run_Specifications</a></span><span class="op">(</span></span>
+<span>  <span class="st">"specifications.json"</span>,</span>
+<span>  <span class="va">Synthetic_Results</span>,</span>
+<span>  <span class="va">Synthetic_Participants</span>,</span>
+<span>  dfOutcomes <span class="op">=</span> <span class="va">Synthetic_Outcomes</span>,</span>
+<span>  strFolder <span class="op">=</span> <span class="st">"output"</span>,</span>
+<span>  bAcrossBiomarkers <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  chrFormats <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"png"</span>, <span class="st">"pdf"</span><span class="op">)</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>A specification is data: nothing in it is evaluated, and a title that looks like code is drawn as text. One that bio.viz would refuse is refused with a sentence and listed in the manifest, and the rest still run. Give the file, the text, or the list <code><a href="https://jeroen.r-universe.dev/jsonlite/reference/read_json.html" class="external-link">jsonlite::read_json()</a></code> reads (or <code>fromJSON(simplifyVector = FALSE)</code>): <code>fromJSON()</code>’s default simplifies the list into a data frame, which is refused with a sentence that says so.</p>
+<p>The reader is held to bio.viz’s own over every setting of every chart. It differs on purpose in two places: a chart’s <code>statistic</code> (and the scatter’s <code>fit_statistic</code>) must be the chart’s own <code>Analyze_*()</code> function or null, since gsm.bio computes nothing else; and a specification given as text is checked for depth as one given as an object is (<a href="https://github.com/jwildfire/bio.viz/issues/74" class="external-link">bio.viz#74</a>).</p>
+<p>The manifest counts the participants each view’s filters keep, and its <code>reason</code> says what was not drawn as asked, in the words of bio.viz’s notices: a setting that names something the tables lack, a filter value its column lacks, a filter on a column that is not a filter. A view that keeps no participant is <code>failed</code> with “No participant passes the filters.” Explicit cut points are applied unchanged to every biomarker of a run across biomarkers, and each row says so.</p>
+<p>A PDF is drawn by cairo where this R can load it. Where it cannot (a Mac without XQuartz, for one), the pdf device draws it and a character beyond Latin-1, such as the sign of a cut, is a dot or a stand-in such as <code>&lt;=</code>; the row says so. A file already in the folder with an output’s name is replaced, and any other file there is left alone. A view that fails part way leaves none of its files.</p>
+</div>
+<div class="section level2">
 <h2 id="synthetic-study">Synthetic study<a class="anchor" aria-label="anchor" href="#synthetic-study"></a>
 </h2>
 <p>The package ships a made-up biomarker study, so that a test can assert an answer known in advance: <code>Synthetic_Results</code> (one row per participant, biomarker and visit), <code>Synthetic_Participants</code> and <code>Synthetic_Outcomes</code>. Three effects are planted in it and every other biomarker is null. <code>Synthetic_Truth</code> holds the true size of each: a difference between arms in change from baseline, a correlation between two biomarkers, and a hazard ratio between high and low baseline levels. The same tables are CSV files under <code>inst/extdata/</code>. No real study data is used.</p>

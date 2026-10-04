@@ -80,6 +80,19 @@ as it does.
   [obot.roadmap#362](https://github.com/jwildfire/obot.roadmap/issues/362),
   [\#37](https://github.com/jwildfire/gsm.bio/issues/37),
   [\#40](https://github.com/jwildfire/gsm.bio/pull/40)
+- **Batch runs of chart specifications.**
+  [`Run_Specifications()`](https://jwildfire.github.io/gsm.bio/reference/Run_Specifications.html)
+  reads the specifications bio.viz’s charts write and draws each against
+  a dataset, as a figure (PNG, PDF or SVG) and an RTF table, into a
+  folder, with a manifest of what was written. One specification can run
+  across every biomarker, one figure and one table each. A specification
+  is data and nothing in it is evaluated; one that cannot be read is
+  refused with bio.viz’s sentence, and the rest still run. The manifest
+  counts the participants each view’s filters keep and says what the
+  tables could not honour, as bio.viz’s notices do.
+  [obot.roadmap#362](https://github.com/jwildfire/obot.roadmap/issues/362),
+  [\#39](https://github.com/jwildfire/gsm.bio/issues/39),
+  [\#42](https://github.com/jwildfire/gsm.bio/pull/42)
 
 ### Also in this release
 

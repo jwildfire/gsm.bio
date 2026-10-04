@@ -25,6 +25,7 @@ var BioViz = (() => {
     core: () => core_exports,
     correlationMatrix: () => correlationMatrix,
     crossTab: () => crossTab,
+    fromSpecification: () => fromSpecification,
     groupComparison: () => groupComparison,
     output: () => output_exports,
     portfolio: () => portfolio_default,
@@ -491,17 +492,17 @@ var BioViz = (() => {
   var isNumber = (value) => typeof value === "number" && Number.isFinite(value);
   function formatEstimate(estimate) {
     const row = estimate && typeof estimate === "object" ? estimate : {};
-    const refuse6 = (what) => ({ status: "refused", text: `Estimate not shown: ${what}.` });
+    const refuse8 = (what) => ({ status: "refused", text: `Estimate not shown: ${what}.` });
     const name = text(row.name);
-    if (!name) return refuse6("it has no name");
-    if (!isNumber(row.estimate)) return refuse6(`${name} is not a number`);
+    if (!name) return refuse8("it has no name");
+    if (!isNumber(row.estimate)) return refuse8(`${name} is not a number`);
     const group = text(row.group);
     const lead = `${name}${group ? ` (${group})` : ""}: ${figure(row.estimate)}`;
     const bounds = [row.lower, row.upper, row.level];
     const absent = (value) => value === void 0 || value === null;
     if (bounds.every(absent)) return { status: "shown", text: `${lead}.` };
     if (!bounds.every(isNumber) || !(row.level > 0 && row.level < 1)) {
-      return refuse6(`the interval of ${name} is incomplete`);
+      return refuse8(`the interval of ${name} is incomplete`);
     }
     const percent = Number((row.level * 100).toPrecision(12));
     return {
@@ -511,21 +512,21 @@ var BioViz = (() => {
   }
   function formatMedian(estimate) {
     const row = estimate && typeof estimate === "object" ? estimate : {};
-    const refuse6 = (what) => ({ status: "refused", text: `Estimate not shown: ${what}.` });
+    const refuse8 = (what) => ({ status: "refused", text: `Estimate not shown: ${what}.` });
     const name = text(row.name);
-    if (!name) return refuse6("it has no name");
+    if (!name) return refuse8("it has no name");
     const absent = (value) => value === void 0 || value === null;
     for (const part of ["estimate", "lower", "upper"]) {
-      if (!absent(row[part]) && !isNumber(row[part])) return refuse6(`${name} is not a number`);
+      if (!absent(row[part]) && !isNumber(row[part])) return refuse8(`${name} is not a number`);
     }
-    if (!(row.level > 0 && row.level < 1)) return refuse6(`the interval of ${name} has no level`);
-    const said = (value) => absent(value) ? "not reached" : figure(value);
+    if (!(row.level > 0 && row.level < 1)) return refuse8(`the interval of ${name} has no level`);
+    const said2 = (value) => absent(value) ? "not reached" : figure(value);
     const group = text(row.group);
     const percent = Number((row.level * 100).toPrecision(12));
-    const interval = absent(row.lower) && absent(row.upper) ? "not reached" : `${said(row.lower)} to ${said(row.upper)}`;
+    const interval = absent(row.lower) && absent(row.upper) ? "not reached" : `${said2(row.lower)} to ${said2(row.upper)}`;
     return {
       status: "shown",
-      text: `${name}${group ? ` (${group})` : ""}: ${said(row.estimate)}, ${percent}% confidence interval ${interval}.`
+      text: `${name}${group ? ` (${group})` : ""}: ${said2(row.estimate)}, ${percent}% confidence interval ${interval}.`
     };
   }
   function formatComparison(comparison) {
@@ -588,15 +589,15 @@ var BioViz = (() => {
       counts: counted ? given2.counts : void 0
     });
     if (parts.status !== "shown") return whole(parts.status, parts.text);
-    const refuse6 = (what) => whole("refused", `Estimate not shown: ${what}.`);
-    if (!isNumber(given2.estimate)) return refuse6("the group\u2019s estimate is not a number");
+    const refuse8 = (what) => whole("refused", `Estimate not shown: ${what}.`);
+    if (!isNumber(given2.estimate)) return refuse8("the group\u2019s estimate is not a number");
     const bounds = [given2.lower, given2.upper, given2.level];
     const absent = (value) => value === void 0 || value === null;
     let ends = null;
     let level = null;
     if (!bounds.every(absent)) {
       if (!bounds.every(isNumber) || !(given2.level > 0 && given2.level < 1)) {
-        return refuse6("the interval of the group\u2019s estimate is incomplete");
+        return refuse8("the interval of the group\u2019s estimate is incomplete");
       }
       level = `${Number((given2.level * 100).toPrecision(12))}%`;
       ends = `${figure(given2.lower)} to ${figure(given2.upper)}`;
@@ -625,9 +626,9 @@ var BioViz = (() => {
     const names = [text(given2.x), text(given2.y)];
     const pair = names.every(Boolean) ? names : null;
     const counted = isCount(given2.counts);
-    const whole = (status, said) => ({
+    const whole = (status, said2) => ({
       status,
-      text: said,
+      text: said2,
       pair,
       n: counted ? given2.counts : null,
       estimate: null,
@@ -635,8 +636,8 @@ var BioViz = (() => {
       bounds: null,
       level: null
     });
-    const refuse6 = (what) => whole("refused", `Estimate not shown: ${what}.`);
-    if (!pair) return refuse6("the row does not name its two variables");
+    const refuse8 = (what) => whole("refused", `Estimate not shown: ${what}.`);
+    if (!pair) return refuse8("the row does not name its two variables");
     const counts = counted ? `n = ${given2.counts}` : null;
     const reason = text(given2.reason);
     if (given2.status === "error") {
@@ -648,15 +649,15 @@ var BioViz = (() => {
         withCounts(SAYS_NOT_COMPUTED.test(reason) ? reason : `Not computed, ${reason}`, counts)
       );
     }
-    if (!counted) return refuse6("the pair does not give the number of complete pairs it used");
-    if (!isNumber(given2.estimate)) return refuse6("the pair\u2019s estimate is not a number");
+    if (!counted) return refuse8("the pair does not give the number of complete pairs it used");
+    if (!isNumber(given2.estimate)) return refuse8("the pair\u2019s estimate is not a number");
     const bounds = [given2.lower, given2.upper, given2.level];
     const absent = (value) => value === void 0 || value === null;
     let ends = null;
     let level = null;
     if (!bounds.every(absent)) {
       if (!bounds.every(isNumber) || !(given2.level > 0 && given2.level < 1)) {
-        return refuse6("the interval of the pair\u2019s estimate is incomplete");
+        return refuse8("the interval of the pair\u2019s estimate is incomplete");
       }
       level = `${Number((given2.level * 100).toPrecision(12))}%`;
       ends = `${figure(given2.lower)} to ${figure(given2.upper)}`;
@@ -710,24 +711,24 @@ var BioViz = (() => {
       counts
     });
     if (raw.status !== "shown") return whole(raw.status, raw.text);
-    const refuse6 = (what) => whole("refused", `Row not shown: ${what}.`);
+    const refuse8 = (what) => whole("refused", `Row not shown: ${what}.`);
     const adjustment = adjustmentName(given2.adjustment);
-    if (!adjustment) return refuse6("the row does not name the adjustment of its p-value");
+    if (!adjustment) return refuse8("the row does not name the adjustment of its p-value");
     if (!isCount(given2.adjusted_over) || given2.adjusted_over < 1) {
-      return refuse6("the row does not say how many rows its p-value was adjusted across");
+      return refuse8("the row does not say how many rows its p-value was adjusted across");
     }
     const p = given2.p_value;
     if (typeof p !== "number" || !(p >= 0 && p <= 1)) {
-      return refuse6("the adjusted p-value is not a number between 0 and 1");
+      return refuse8("the adjusted p-value is not a number between 0 and 1");
     }
-    if (!isNumber(given2.estimate)) return refuse6("the estimate is not a number");
+    if (!isNumber(given2.estimate)) return refuse8("the estimate is not a number");
     const bounds = [given2.lower, given2.upper, given2.level];
     const absent = (value) => value === void 0 || value === null;
     let ends = null;
     let level = null;
     if (!bounds.every(absent)) {
       if (!bounds.every(isNumber) || !(given2.level > 0 && given2.level < 1)) {
-        return refuse6("the interval of the estimate is incomplete");
+        return refuse8("the interval of the estimate is incomplete");
       }
       level = `${Number((given2.level * 100).toPrecision(12))}%`;
       ends = `${figure(given2.lower)} to ${figure(given2.upper)}`;
@@ -1386,12 +1387,18 @@ var BioViz = (() => {
   // src/output.js
   var output_exports = {};
   __export(output_exports, {
+    FILTER_OPERATORS: () => FILTER_OPERATORS,
+    SPECIFICATION_FORMAT: () => SPECIFICATION_FORMAT,
+    SPECIFICATION_VERSION: () => SPECIFICATION_VERSION,
     TITLE_DEFAULTS: () => TITLE_DEFAULTS,
     automaticFootnote: () => automaticFootnote,
     countsText: () => countsText,
     fillParts: () => fillParts,
     fillText: () => fillText,
-    placeholdersIn: () => placeholdersIn
+    parseCsv: () => parseCsv,
+    placeholdersIn: () => placeholdersIn,
+    readSpecification: () => readChartSpecification,
+    toCsv: () => toCsv
   });
 
   // src/shared/titles.js
@@ -1403,6 +1410,14 @@ var BioViz = (() => {
   var DEVELOPMENT = true ? true : true;
   var VERSION_SAID = DEVELOPMENT ? `${VERSION} with development changes` : VERSION;
   var TITLE_DEFAULTS = Object.freeze({ title: null, subtitle: null, footnotes: null });
+  var DOWNLOAD_DEFAULTS = Object.freeze({ downloads: true, png_scale: 2 });
+  function checkDownloads(settings) {
+    if (typeof settings.downloads !== "boolean") refuse4("`downloads` must be true or false.");
+    const scale = settings.png_scale;
+    if (typeof scale !== "number" || !Number.isFinite(scale) || scale < 1 || scale > 4) {
+      refuse4("`png_scale` must be a number from 1 to 4: image pixels per CSS pixel.");
+    }
+  }
   var PLACEHOLDER = /\{([A-Za-z_][A-Za-z0-9_]*)\}/g;
   function fillText(template, values = {}) {
     return fillParts(template, values).map((part) => part.text).join("");
@@ -1490,8 +1505,8 @@ var BioViz = (() => {
       if (!entry || typeof entry !== "object") return;
       if (isText3(entry.method) && !methods.includes(entry.method)) methods.push(entry.method);
       if (isText3(entry.adjustment) && entry.adjustment !== "none") {
-        const said = ADJUSTMENT_NAMES[entry.adjustment] || entry.adjustment;
-        if (!adjustments.includes(said)) adjustments.push(said);
+        const said2 = ADJUSTMENT_NAMES[entry.adjustment] || entry.adjustment;
+        if (!adjustments.includes(said2)) adjustments.push(said2);
       }
     };
     take(value);
@@ -1528,15 +1543,167 @@ var BioViz = (() => {
       return failed2 ? `${drawn} Statistics: R reported an error.` : `${drawn} Statistics: unavailable, as the line under the chart says.`;
     }
     const sources = [...new Set(ok.map(sourceText))];
-    const said = ok.map((answer) => answerText(answer, of)).join("; ");
+    const said2 = ok.map((answer) => answerText(answer, of)).join("; ");
     const missing = answers.length - ok.length;
-    return `${drawn} Statistics: ${said}; ${sources.join("; ")}.` + (missing ? ` ${missing} of ${answers.length} could not be computed.` : "");
+    return `${drawn} Statistics: ${said2}; ${sources.join("; ")}.` + (missing ? ` ${missing} of ${answers.length} could not be computed.` : "");
   }
+
+  // src/shared/csv.js
+  var NEEDS_QUOTES = /[",\r\n]/;
+  function csvField(value) {
+    if (value === null || value === void 0) return "";
+    let text2;
+    if (typeof value === "number") {
+      text2 = Number.isNaN(value) ? "NaN" : value === Infinity ? "Inf" : value === -Infinity ? "-Inf" : String(value);
+    } else if (typeof value === "boolean") text2 = value ? "TRUE" : "FALSE";
+    else text2 = String(value);
+    return NEEDS_QUOTES.test(text2) ? `"${text2.replace(/"/g, '""')}"` : text2;
+  }
+  function toCsv(rows, columns) {
+    const lines = [columns.map((column) => csvField(column.label)).join(",")];
+    for (const row of rows) {
+      lines.push(columns.map((column) => csvField(row[column.value_col])).join(","));
+    }
+    return `${lines.join("\r\n")}\r
+`;
+  }
+  function parseCsv(text2) {
+    const records = [];
+    let record = [];
+    let field = "";
+    let quoted = false;
+    let index = 0;
+    const end = () => {
+      record.push(field);
+      field = "";
+    };
+    while (index < text2.length) {
+      const char = text2[index];
+      if (quoted) {
+        if (char === '"' && text2[index + 1] === '"') {
+          field += '"';
+          index += 2;
+          continue;
+        }
+        if (char === '"') quoted = false;
+        else field += char;
+        index += 1;
+        continue;
+      }
+      if (char === '"') quoted = true;
+      else if (char === ",") end();
+      else if (char === "\r" && text2[index + 1] === "\n") {
+        end();
+        records.push(record);
+        record = [];
+        index += 2;
+        continue;
+      } else if (char === "\n") {
+        end();
+        records.push(record);
+        record = [];
+      } else field += char;
+      index += 1;
+    }
+    if (field !== "" || record.length) {
+      end();
+      records.push(record);
+    }
+    return records;
+  }
+  var isObject = (value) => value !== null && typeof value === "object" && !Array.isArray(value);
+  var OWN = ["asked", "function", "part", "item"];
+  var refuse5 = (message) => {
+    throw new TypeError(`bio.viz: ${message}`);
+  };
+  function scalars(value, prefix, out = {}) {
+    const put = (name, entry) => {
+      if (Object.prototype.hasOwnProperty.call(out, name)) {
+        refuse5(`R\u2019s answer has two members written \`${name}\` in the statistics file.`);
+      }
+      out[name] = entry;
+    };
+    if (Array.isArray(value)) {
+      if (value.every((entry) => !isObject(entry) && !Array.isArray(entry))) {
+        if (value.length)
+          put(prefix, value.map((entry) => entry === null ? "NA" : String(entry)).join(" | "));
+        return out;
+      }
+      value.forEach((entry, at) => {
+        const name = `${prefix}/${at + 1}`;
+        if (isObject(entry) || Array.isArray(entry)) scalars(entry, name, out);
+        else put(name, entry);
+      });
+      return out;
+    }
+    for (const [key, entry] of Object.entries(value)) {
+      const name = prefix ? `${prefix}/${key}` : key;
+      if (isObject(entry) || Array.isArray(entry)) scalars(entry, name, out);
+      else put(name, entry);
+    }
+    return out;
+  }
+  function membersOf(object, parts) {
+    const out = {};
+    for (const [key, entry] of Object.entries(object)) {
+      if (OWN.includes(key) || key === "data" || key.startsWith("data/")) {
+        refuse5(`R\u2019s answer has a member \`${key}\`, which the statistics file names itself.`);
+      }
+      if (parts && Array.isArray(entry) && entry.some(isObject)) continue;
+      if (isObject(entry) || Array.isArray(entry)) scalars(entry, key, out);
+      else out[key] = entry;
+    }
+    return out;
+  }
+  function statisticsTable(asked) {
+    const rows = [];
+    asked.forEach((entry, index) => {
+      const answer = entry.answer;
+      if (!answer || answer.status !== "ok" || !isObject(answer.value)) return;
+      const about = {
+        asked: index + 1,
+        function: entry.name,
+        ...isObject(entry.dataId) || Array.isArray(entry.dataId) ? scalars(entry.dataId, "data") : { data: entry.dataId }
+      };
+      const value = answer.value;
+      rows.push({ ...about, part: "result", ...membersOf(value, true) });
+      for (const [key, list] of Object.entries(value)) {
+        if (!Array.isArray(list) || !list.some(isObject)) continue;
+        list.forEach((part, at) => {
+          if (isObject(part))
+            rows.push({ ...about, part: key, item: at + 1, ...membersOf(part, false) });
+        });
+      }
+    });
+    const order2 = [];
+    const seen = /* @__PURE__ */ new Set();
+    for (const row of rows) {
+      for (const key of Object.keys(row)) {
+        if (!seen.has(key)) {
+          seen.add(key);
+          order2.push(key);
+        }
+      }
+    }
+    return { columns: order2.map((key) => ({ value_col: key, label: key })), rows };
+  }
+
+  // src/group-comparison/configure.js
+  var configure_exports = {};
+  __export(configure_exports, {
+    DEFAULT_SETTINGS: () => DEFAULT_SETTINGS2,
+    MARKS: () => MARKS,
+    TESTS: () => TESTS,
+    Y_SCALES: () => Y_SCALES,
+    coreSettings: () => coreSettings,
+    fieldSpec: () => fieldSpec,
+    syncSettings: () => syncSettings
+  });
 
   // src/shared/settings.js
   var isText4 = (value) => typeof value === "string" && value.trim() !== "";
   var isPlainObject4 = (value) => value !== null && typeof value === "object" && !Array.isArray(value);
-  var refuse5 = (message) => {
+  var refuse6 = (message) => {
     throw new TypeError(`bio.viz: ${message}`);
   };
   function fieldSpec(value, setting) {
@@ -1548,7 +1715,7 @@ var BioViz = (() => {
         label: isText4(value.label) ? value.label : value.value_col
       };
     }
-    return refuse5(
+    return refuse6(
       `\`${setting}\` holds something that is not a column name or { value_col, label }.`
     );
   }
@@ -1557,17 +1724,17 @@ var BioViz = (() => {
     const list = Array.isArray(value) ? value : [value];
     return list.map((entry) => fieldSpec(entry, setting));
   }
-  function textList2(value, setting) {
+  function textList2(value, setting, { empty = false } = {}) {
     if (value === null || value === void 0) return null;
     const list = Array.isArray(value) ? value : [value];
-    if (!list.length || !list.every((entry) => isText4(entry) || typeof entry === "number")) {
-      refuse5(`\`${setting}\` must be a name, or a list of names.`);
+    if (!list.length && !empty || !list.every((entry) => isText4(entry) || typeof entry === "number")) {
+      refuse6(`\`${setting}\` must be a name, or a list of names.`);
     }
     return [...new Set(list.map(String))];
   }
   var columnOrNull = (settings, key) => {
     if (settings[key] !== null && !isText4(settings[key])) {
-      refuse5(`\`${key}\` must be the name of a column, or null.`);
+      refuse6(`\`${key}\` must be the name of a column, or null.`);
     }
   };
   function coreSettings(settings) {
@@ -1584,12 +1751,12 @@ var BioViz = (() => {
   }
   function layOver(defaults, overrides, chart) {
     if (overrides !== void 0 && overrides !== null && !isPlainObject4(overrides)) {
-      refuse5(`${chart} takes its settings as an object.`);
+      refuse6(`${chart} takes its settings as an object.`);
     }
     const given2 = overrides || {};
     for (const key of Object.keys(given2)) {
       if (!(key in defaults)) {
-        refuse5(
+        refuse6(
           `\`${key}\` is not a setting of ${chart}. Its settings are ${Object.keys(defaults).join(", ")}.`
         );
       }
@@ -1602,37 +1769,38 @@ var BioViz = (() => {
   }
   function checkShared(settings, baselineStats) {
     for (const key of ["id_col", "measure_col", "value_col", "visit_col"]) {
-      if (!isText4(settings[key])) refuse5(`\`${key}\` must be the name of a column.`);
+      if (!isText4(settings[key])) refuse6(`\`${key}\` must be the name of a column.`);
     }
     if (!baselineStats.includes(settings.baseline_stat)) {
-      refuse5(`\`baseline_stat\` must be one of ${baselineStats.join(", ")}.`);
+      refuse6(`\`baseline_stat\` must be one of ${baselineStats.join(", ")}.`);
     }
     if ("profile" in settings && typeof settings.profile !== "boolean") {
-      refuse5("`profile` must be true or false.");
+      refuse6("`profile` must be true or false.");
     }
     if (settings.waiting_note !== null && !isText4(settings.waiting_note)) {
-      refuse5("`waiting_note` must be a sentence, or null for none.");
+      refuse6("`waiting_note` must be a sentence, or null for none.");
     }
     if (settings.connection !== null && (typeof settings.connection !== "object" || typeof settings.connection.run !== "function")) {
-      refuse5("`connection` must be a connection to R (BioViz.r.createConnection), or null.");
+      refuse6("`connection` must be a connection to R (BioViz.r.createConnection), or null.");
     }
     checkTitles(settings);
+    checkDownloads(settings);
   }
   function checkBack(settings) {
     if (settings.back !== null && (!isPlainObject4(settings.back) || !isText4(settings.back.label) || typeof settings.back.action !== "function")) {
-      refuse5("`back` must be { label, action }, a sentence and a function, or null for none.");
+      refuse6("`back` must be { label, action }, a sentence and a function, or null for none.");
     }
   }
   function variableSetting(value, setting) {
     if (value === null || value === void 0) return null;
     if (!isPlainObject4(value)) {
-      refuse5(
+      refuse6(
         `\`${setting}\` must be a variable: { measure, visit, value } for a biomarker at a visit, or { col } for a participant-level number; or null.`
       );
     }
     const read2 = variable("col" in value && value.col != null ? { ...value, type: "number" } : value);
     if (read2.cut !== void 0) {
-      refuse5(
+      refuse6(
         `\`${setting}\` is read as a number, so it takes no \`cut\`: a cut makes groups. Leave \`cut\` out.`
       );
     }
@@ -1642,6 +1810,392 @@ var BioViz = (() => {
       ...read2.visit === null ? {} : { visit: read2.visit }
     };
   }
+
+  // src/shared/cut.js
+  function writtenCut(spec) {
+    const read2 = variable(spec);
+    const cut = Array.isArray(read2.cut) ? [...read2.cut] : read2.cut;
+    if (read2.kind === "column") return { col: read2.col, type: read2.type, cut };
+    return read2.value === "baseline" ? { measure: read2.measure, value: read2.value, cut } : { measure: read2.measure, visit: read2.visit, value: read2.value, cut };
+  }
+  function checkGrouping(settings, key) {
+    const value = settings[key];
+    if (!isPlainObject4(value)) return;
+    if (value.cut === void 0 || value.cut === null) {
+      refuse6(
+        `\`${key}\` is a variable with no cut. A biomarker or a number makes groups only when it is cut: add \`cut: 'median'\`, 'tertiles', 'quartiles' or the cut points.`
+      );
+    }
+    settings[key] = writtenCut(value);
+  }
+  var isCut = (by) => isPlainObject4(by);
+  function cutOf({ results, participants }, spec, settings) {
+    const made = frame(
+      { results, participants: participants || void 0 },
+      { v: spec },
+      { ...coreSettings(settings), required: [] }
+    );
+    return {
+      spec: writtenCut(spec),
+      ...cutPoints(
+        made.data.map((record) => record.v),
+        spec.cut
+      )
+    };
+  }
+  function groupLabel(value, cut) {
+    const index = cutGroup(value, cut.points);
+    return index === null ? null : cut.labels[index];
+  }
+  var listed2 = (items) => items.length < 2 ? items.join("") : `${items.slice(0, -1).join(", ")} and ${items.at(-1)}`;
+  function cutNote(spec, cut) {
+    const plain5 = writtenCut(spec);
+    delete plain5.cut;
+    const words = label(plain5);
+    if (Array.isArray(cut.cut)) return `${words} is cut at ${listed2(cut.points.map(writePoint))}.`;
+    if (!cut.n) return `${words} has no value to cut, so it makes no groups.`;
+    const asked = cut.asked.map(writePoint);
+    const sentence2 = `${words} is cut at its ${cut.cut}, ${listed2(asked)}, worked out on the ${cut.n} participant${cut.n === 1 ? "" : "s"} with a value.`;
+    const said2 = [sentence2];
+    if (cut.repeated) {
+      said2.push(
+        `The points repeat, so they make ${cut.points.length + 1} groups, not ${cut.asked.length + 1}.`
+      );
+    }
+    if (cut.merged) {
+      said2.push(
+        `The points differ only past four significant digits, so groups with the same bounds are one, as R\u2019s cut() makes them: ${cut.labels.length} groups, not ${cut.points.length + 1}.`
+      );
+    }
+    return said2.join(" ");
+  }
+
+  // src/group-comparison/configure.js
+  var MARKS = Object.freeze(["box", "violin", "points"]);
+  var Y_SCALES = Object.freeze(["linear", "log"]);
+  var TESTS = Object.freeze(["t", "wilcoxon", "anova", "kruskal", "none"]);
+  var DEFAULT_SETTINGS2 = Object.freeze({
+    // Columns of the results table, and of the participant table.
+    id_col: "USUBJID",
+    measure_col: "TEST",
+    value_col: "STRESN",
+    visit_col: "VISIT",
+    visit_order_col: "VISITNUM",
+    unit_col: "STRESU",
+    participant_id_col: null,
+    // How a baseline is found (the core's rules).
+    baseline_visits: null,
+    baseline_stat: "mean",
+    // What the chart opens on.
+    start_value: null,
+    visits: null,
+    value_type: "raw",
+    group_by: null,
+    levels: null,
+    color_by: null,
+    panel_by: null,
+    mark: "box",
+    y_scale: "linear",
+    // What the controls offer.
+    measures: null,
+    groups: null,
+    max_levels: 12,
+    filters: null,
+    // The overview of every biomarker: the most drawn at a time.
+    overview_limit: 12,
+    // The page of the overview it opens on, from 0 (#71 review).
+    page: 0,
+    // The listing of participants.
+    details: null,
+    page_size: 10,
+    // The statistics line.
+    connection: null,
+    statistic: "Analyze_GroupDifference",
+    test: "t",
+    pairwise: false,
+    waiting_note: null,
+    // A way back, when another chart opened this one in its place.
+    back: null,
+    // safety.viz's participant profile.
+    profile: true,
+    profile_details: null,
+    studyday_col: null,
+    normal_col_high: null,
+    normal_col_low: null,
+    // The title, subtitle and footnotes, with placeholders (src/shared/titles.js).
+    ...TITLE_DEFAULTS,
+    // The downloads under the chart, and the PNG's resolution (src/shared/png.js).
+    ...DOWNLOAD_DEFAULTS
+  });
+  function syncSettings(overrides) {
+    const settings = layOver(DEFAULT_SETTINGS2, overrides, "the group comparison chart");
+    checkShared(settings, BASELINE_STATS);
+    checkBack(settings);
+    for (const key of [
+      "visit_order_col",
+      "unit_col",
+      "participant_id_col",
+      "start_value",
+      "color_by",
+      "studyday_col",
+      "normal_col_high",
+      "normal_col_low"
+    ]) {
+      columnOrNull(settings, key);
+    }
+    for (const key of ["group_by", "panel_by"]) {
+      if (isCut(settings[key])) checkGrouping(settings, key);
+      else columnOrNull(settings, key);
+    }
+    if (!VALUE_TYPES.includes(settings.value_type)) {
+      refuse6(`\`value_type\` must be one of ${VALUE_TYPES.join(", ")}.`);
+    }
+    if (!MARKS.includes(settings.mark)) refuse6(`\`mark\` must be one of ${MARKS.join(", ")}.`);
+    if (!Y_SCALES.includes(settings.y_scale)) {
+      refuse6(`\`y_scale\` must be one of ${Y_SCALES.join(", ")}.`);
+    }
+    for (const key of ["page_size", "max_levels", "overview_limit"]) {
+      if (!Number.isInteger(settings[key]) || settings[key] < 1) {
+        refuse6(`\`${key}\` must be a whole number, one or more.`);
+      }
+    }
+    if (!Number.isInteger(settings.page) || settings.page < 0) {
+      refuse6("`page` must be a whole number, from 0: the page of the overview it opens on.");
+    }
+    if (!TESTS.includes(settings.test)) refuse6(`\`test\` must be one of ${TESTS.join(", ")}.`);
+    if (typeof settings.pairwise !== "boolean") refuse6("`pairwise` must be true or false.");
+    if (settings.statistic !== null && !isText4(settings.statistic)) {
+      refuse6("`statistic` must be the name of an R function, or null for no statistics line.");
+    }
+    settings.baseline_visits = textList2(settings.baseline_visits, "baseline_visits");
+    settings.visits = textList2(settings.visits, "visits", { empty: true });
+    settings.levels = textList2(settings.levels, "levels", { empty: true });
+    settings.measures = textList2(settings.measures, "measures");
+    settings.groups = fieldList(settings.groups, "groups");
+    settings.filters = fieldList(settings.filters, "filters");
+    settings.details = fieldList(settings.details, "details");
+    settings.profile_details = fieldList(settings.profile_details, "profile_details");
+    return settings;
+  }
+
+  // src/association-scatter/configure.js
+  var configure_exports2 = {};
+  __export(configure_exports2, {
+    DEFAULT_SETTINGS: () => DEFAULT_SETTINGS3,
+    FITS: () => FITS,
+    METHODS: () => METHODS,
+    SCALES: () => SCALES,
+    syncSettings: () => syncSettings2
+  });
+  var SCALES = Object.freeze(["linear", "log"]);
+  var FITS = Object.freeze(["none", "identity", "linear", "smooth"]);
+  var METHODS = Object.freeze(["pearson", "spearman"]);
+  var DEFAULT_SETTINGS3 = Object.freeze({
+    // Columns of the results table, and of the participant table.
+    id_col: "USUBJID",
+    measure_col: "TEST",
+    value_col: "STRESN",
+    visit_col: "VISIT",
+    visit_order_col: "VISITNUM",
+    unit_col: "STRESU",
+    participant_id_col: null,
+    // How a baseline is found (the core's rules).
+    baseline_visits: null,
+    baseline_stat: "mean",
+    // What the chart opens on: the variable on each axis.
+    x: null,
+    y: null,
+    color_by: null,
+    panel_by: null,
+    x_scale: "linear",
+    y_scale: "linear",
+    fit: "none",
+    // What the controls offer.
+    measures: null,
+    numbers: null,
+    groups: null,
+    max_levels: 12,
+    filters: null,
+    // The listing of participants.
+    details: null,
+    page_size: 10,
+    // The statistics line.
+    connection: null,
+    statistic: "Analyze_Correlation",
+    method: "pearson",
+    fit_statistic: "Analyze_Fit",
+    waiting_note: null,
+    // A way back, when another chart opened this one.
+    back: null,
+    // safety.viz's participant profile.
+    profile: true,
+    profile_details: null,
+    studyday_col: null,
+    normal_col_high: null,
+    normal_col_low: null,
+    // The title, subtitle and footnotes, with placeholders (src/shared/titles.js).
+    ...TITLE_DEFAULTS,
+    // The downloads under the chart, and the PNG's resolution (src/shared/png.js).
+    ...DOWNLOAD_DEFAULTS
+  });
+  function syncSettings2(overrides) {
+    const settings = layOver(DEFAULT_SETTINGS3, overrides, "the association scatter");
+    checkShared(settings, BASELINE_STATS);
+    for (const key of [
+      "visit_order_col",
+      "unit_col",
+      "participant_id_col",
+      "color_by",
+      "panel_by",
+      "studyday_col",
+      "normal_col_high",
+      "normal_col_low"
+    ]) {
+      columnOrNull(settings, key);
+    }
+    for (const key of ["x_scale", "y_scale"]) {
+      if (!SCALES.includes(settings[key])) {
+        refuse6(`\`${key}\` must be one of ${SCALES.join(", ")}.`);
+      }
+    }
+    if (!FITS.includes(settings.fit)) refuse6(`\`fit\` must be one of ${FITS.join(", ")}.`);
+    if (!METHODS.includes(settings.method)) {
+      refuse6(`\`method\` must be one of ${METHODS.join(", ")}.`);
+    }
+    for (const key of ["page_size", "max_levels"]) {
+      if (!Number.isInteger(settings[key]) || settings[key] < 1) {
+        refuse6(`\`${key}\` must be a whole number, one or more.`);
+      }
+    }
+    if (settings.statistic !== null && !isText4(settings.statistic)) {
+      refuse6("`statistic` must be the name of an R function, or null for no statistics line.");
+    }
+    if (settings.fit_statistic !== null && !isText4(settings.fit_statistic)) {
+      refuse6(
+        "`fit_statistic` must be the name of an R function, or null for no linear or smooth line."
+      );
+    }
+    checkBack(settings);
+    settings.x = variableSetting(settings.x, "x");
+    settings.y = variableSetting(settings.y, "y");
+    settings.baseline_visits = textList2(settings.baseline_visits, "baseline_visits");
+    settings.measures = textList2(settings.measures, "measures");
+    settings.numbers = fieldList(settings.numbers, "numbers");
+    settings.groups = fieldList(settings.groups, "groups");
+    settings.filters = fieldList(settings.filters, "filters");
+    settings.details = fieldList(settings.details, "details");
+    settings.profile_details = fieldList(settings.profile_details, "profile_details");
+    return settings;
+  }
+
+  // src/correlation-matrix/configure.js
+  var configure_exports3 = {};
+  __export(configure_exports3, {
+    DEFAULT_SETTINGS: () => DEFAULT_SETTINGS4,
+    METHODS: () => METHODS2,
+    MODES: () => MODES,
+    SCATTER_LIMIT: () => SCATTER_LIMIT,
+    VIEWS: () => VIEWS,
+    syncSettings: () => syncSettings3
+  });
+  var MODES = Object.freeze(["biomarkers", "visits"]);
+  var VIEWS = Object.freeze(["grid", "scatters"]);
+  var METHODS2 = Object.freeze(["pearson", "spearman"]);
+  var SCATTER_LIMIT = 6;
+  var DEFAULT_SETTINGS4 = Object.freeze({
+    // Columns of the results table, and of the participant table.
+    id_col: "USUBJID",
+    measure_col: "TEST",
+    value_col: "STRESN",
+    visit_col: "VISIT",
+    visit_order_col: "VISITNUM",
+    unit_col: "STRESU",
+    participant_id_col: null,
+    // How a baseline is found (the core's rules).
+    baseline_visits: null,
+    baseline_stat: "mean",
+    // What the chart opens on.
+    mode: "biomarkers",
+    visit: null,
+    biomarkers: null,
+    measure: null,
+    visits: null,
+    value_type: "raw",
+    view: "grid",
+    // The most variables drawn at a time.
+    limit: 12,
+    // What the controls offer.
+    measures: null,
+    max_levels: 12,
+    filters: null,
+    // The statistics.
+    connection: null,
+    statistic: "Analyze_CorrelationMatrix",
+    method: "pearson",
+    min_pairs: null,
+    waiting_note: null,
+    // The association scatter a cell opens.
+    scatter: null,
+    // The title, subtitle and footnotes, with placeholders (src/shared/titles.js).
+    ...TITLE_DEFAULTS,
+    // The downloads under the chart, and the PNG's resolution (src/shared/png.js).
+    ...DOWNLOAD_DEFAULTS
+  });
+  function syncSettings3(overrides) {
+    const settings = layOver(DEFAULT_SETTINGS4, overrides, "the correlation matrix");
+    checkShared(settings, BASELINE_STATS);
+    for (const key of ["visit_order_col", "unit_col", "participant_id_col"]) {
+      columnOrNull(settings, key);
+    }
+    for (const [key, what] of [
+      ["visit", "a visit"],
+      ["measure", "a biomarker"]
+    ]) {
+      if (settings[key] !== null && !isText4(settings[key])) {
+        refuse6(`\`${key}\` must be the name of ${what}, or null.`);
+      }
+    }
+    if (!MODES.includes(settings.mode)) refuse6(`\`mode\` must be one of ${MODES.join(", ")}.`);
+    if (!VIEWS.includes(settings.view)) refuse6(`\`view\` must be one of ${VIEWS.join(", ")}.`);
+    if (!VALUE_TYPES.includes(settings.value_type)) {
+      refuse6(`\`value_type\` must be one of ${VALUE_TYPES.join(", ")}.`);
+    }
+    if (!METHODS2.includes(settings.method)) {
+      refuse6(`\`method\` must be one of ${METHODS2.join(", ")}.`);
+    }
+    if (!Number.isInteger(settings.max_levels) || settings.max_levels < 1) {
+      refuse6("`max_levels` must be a whole number, one or more.");
+    }
+    if (!Number.isInteger(settings.limit) || settings.limit < 2) {
+      refuse6("`limit` must be a whole number, two or more.");
+    }
+    if (settings.min_pairs !== null && !(typeof settings.min_pairs === "number" && Number.isFinite(settings.min_pairs) && settings.min_pairs > 0)) {
+      refuse6("`min_pairs` must be a number above zero, or null for R\u2019s own minimum.");
+    }
+    if (settings.statistic !== null && !isText4(settings.statistic)) {
+      refuse6("`statistic` must be the name of an R function, or null for no coefficients.");
+    }
+    if (settings.scatter !== null && !isPlainObject4(settings.scatter)) {
+      refuse6("`scatter` must be an object of settings for the association scatter, or null.");
+    }
+    settings.baseline_visits = textList2(settings.baseline_visits, "baseline_visits");
+    settings.biomarkers = textList2(settings.biomarkers, "biomarkers", { empty: true });
+    settings.visits = textList2(settings.visits, "visits", { empty: true });
+    settings.measures = textList2(settings.measures, "measures");
+    settings.filters = fieldList(settings.filters, "filters");
+    return settings;
+  }
+
+  // src/biomarker-screen/configure.js
+  var configure_exports4 = {};
+  __export(configure_exports4, {
+    ADJUSTMENTS: () => ADJUSTMENTS2,
+    COMPARISONS: () => COMPARISONS,
+    DEFAULT_SETTINGS: () => DEFAULT_SETTINGS5,
+    METHODS: () => METHODS3,
+    SORTS: () => SORTS,
+    syncSettings: () => syncSettings4
+  });
 
   // src/shared/tables.js
   var isBlank2 = (value) => value === void 0 || value === null || typeof value === "number" && Number.isNaN(value) || typeof value === "string" && value.trim() === "";
@@ -1722,13 +2276,17 @@ var BioViz = (() => {
   function filterColumns({ participants }, settings, categories) {
     if (!participants || !participants.length) return [];
     if (settings.filters) {
-      return settings.filters.filter((spec) => spec.value_col in participants[0]);
+      const id = settings.participant_id_col || settings.id_col;
+      return settings.filters.filter(
+        (spec) => Object.hasOwn(participants[0], spec.value_col) && spec.value_col !== id
+      );
     }
     return categories.filter((column) => column.table === "participants").map(({ value_col, label: label2 }) => ({ value_col, label: label2 }));
   }
   function listVisits(results, settings) {
     const config = coreSettings(settings);
     const all = visits(results, config);
+    if (Array.isArray(settings.visits) && !settings.visits.length) return { all, start: [] };
     const asked = (settings.visits || []).filter((visit) => all.includes(visit));
     return { all, start: asked.length ? asked : all };
   }
@@ -1848,15 +2406,15 @@ var BioViz = (() => {
       columnOrNull(settings, key);
     }
     for (const key of ["endpoint_col", "time_col"]) {
-      if (!isText4(settings[key])) refuse5(`\`${key}\` must be the name of a column.`);
+      if (!isText4(settings[key])) refuse6(`\`${key}\` must be the name of a column.`);
     }
     if (settings.censor_col === null === (settings.event_col === null)) {
-      refuse5(
+      refuse6(
         "Name exactly one of `censor_col` (1 = censored, as ADaM\u2019s CNSR) and `event_col` (1 = event); give the other as null."
       );
     }
     if (settings.endpoint !== null && !isText4(settings.endpoint)) {
-      refuse5("`endpoint` must be the name of an endpoint, or null for the first.");
+      refuse6("`endpoint` must be the name of an endpoint, or null for the first.");
     }
   }
   function flagOf(settings) {
@@ -1876,7 +2434,7 @@ var BioViz = (() => {
     ];
     for (const [key, column] of needed) {
       if (!outcomes.some((row) => column in row)) {
-        refuse5(`the outcomes table has no column \`${column}\` (\`${key}\`).`);
+        refuse6(`the outcomes table has no column \`${column}\` (\`${key}\`).`);
       }
     }
   }
@@ -1934,6 +2492,739 @@ var BioViz = (() => {
     };
     outcomeOf.strangers = strangers;
     return outcomeOf;
+  }
+
+  // src/biomarker-screen/configure.js
+  var COMPARISONS = Object.freeze(["difference", "correlation", "hazard"]);
+  var METHODS3 = Object.freeze(["pearson", "spearman"]);
+  var ADJUSTMENTS2 = Object.freeze(["BH", "holm"]);
+  var SORTS = Object.freeze(["estimate", "name", "adjusted"]);
+  var DEFAULT_SETTINGS5 = Object.freeze({
+    // Columns of the results table, and of the participant table.
+    id_col: "USUBJID",
+    measure_col: "TEST",
+    value_col: "STRESN",
+    visit_col: "VISIT",
+    visit_order_col: "VISITNUM",
+    unit_col: "STRESU",
+    participant_id_col: null,
+    // How a baseline is found (the core's rules).
+    baseline_visits: null,
+    baseline_stat: "mean",
+    // What the chart opens on: every biomarker, at one visit, with one value type.
+    comparison: "difference",
+    visit: null,
+    value_type: "raw",
+    // A difference: the column of groups, and the two groups, first minus second.
+    group_by: null,
+    levels: null,
+    // A correlation: the variable every biomarker is correlated with.
+    with: null,
+    method: "pearson",
+    // A hazard ratio: the outcomes table's columns, read either way round, and
+    // the endpoint the rows are of. Each biomarker is cut at its median, high
+    // against low, as R's Analyze_Screen cuts it.
+    outcome_id_col: OUTCOME_DEFAULTS.outcome_id_col,
+    endpoint_col: OUTCOME_DEFAULTS.endpoint_col,
+    endpoint_label_col: OUTCOME_DEFAULTS.endpoint_label_col,
+    time_col: OUTCOME_DEFAULTS.time_col,
+    censor_col: OUTCOME_DEFAULTS.censor_col,
+    event_col: OUTCOME_DEFAULTS.event_col,
+    endpoint: OUTCOME_DEFAULTS.endpoint,
+    // Across the rows.
+    adjustment: "BH",
+    sort: "estimate",
+    // The most rows on a page.
+    limit: 20,
+    // The page of rows it opens on, from 0 (#71 review).
+    page: 0,
+    // What the controls offer.
+    measures: null,
+    groups: null,
+    numbers: null,
+    max_levels: 12,
+    filters: null,
+    // The statistics.
+    connection: null,
+    statistic: "Analyze_Screen",
+    waiting_note: null,
+    // The charts a row opens, and settings laid under what the screen carries across.
+    group_comparison: null,
+    association_scatter: null,
+    stratified_survival: null,
+    // The title, subtitle and footnotes, with placeholders (src/shared/titles.js).
+    ...TITLE_DEFAULTS,
+    // The downloads under the chart, and the PNG's resolution (src/shared/png.js).
+    ...DOWNLOAD_DEFAULTS
+  });
+  function syncSettings4(overrides) {
+    const settings = layOver(DEFAULT_SETTINGS5, flaggedSettings(overrides), "the biomarker screen");
+    checkShared(settings, BASELINE_STATS);
+    checkOutcomeSettings(settings);
+    for (const key of ["visit_order_col", "unit_col", "participant_id_col", "group_by"]) {
+      columnOrNull(settings, key);
+    }
+    if (settings.visit !== null && !isText4(settings.visit)) {
+      refuse6("`visit` must be the name of a visit, or null.");
+    }
+    if (!COMPARISONS.includes(settings.comparison)) {
+      refuse6(`\`comparison\` must be one of ${COMPARISONS.join(", ")}.`);
+    }
+    if (!VALUE_TYPES.includes(settings.value_type)) {
+      refuse6(`\`value_type\` must be one of ${VALUE_TYPES.join(", ")}.`);
+    }
+    if (!METHODS3.includes(settings.method)) {
+      refuse6(`\`method\` must be one of ${METHODS3.join(", ")}.`);
+    }
+    if (!ADJUSTMENTS2.includes(settings.adjustment)) {
+      refuse6(`\`adjustment\` must be one of ${ADJUSTMENTS2.join(", ")}.`);
+    }
+    if (!SORTS.includes(settings.sort)) refuse6(`\`sort\` must be one of ${SORTS.join(", ")}.`);
+    if (!Number.isInteger(settings.page) || settings.page < 0) {
+      refuse6("`page` must be a whole number, from 0: the page of rows it opens on.");
+    }
+    if (!Number.isInteger(settings.limit) || settings.limit < 1) {
+      refuse6("`limit` must be a whole number, one or more.");
+    }
+    if (!Number.isInteger(settings.max_levels) || settings.max_levels < 1) {
+      refuse6("`max_levels` must be a whole number, one or more.");
+    }
+    if (settings.statistic !== null && !isText4(settings.statistic)) {
+      refuse6("`statistic` must be the name of an R function, or null for no statistics.");
+    }
+    for (const key of ["group_comparison", "association_scatter", "stratified_survival"]) {
+      if (settings[key] !== null && !isPlainObject4(settings[key])) {
+        refuse6(`\`${key}\` must be an object of settings for the chart a row opens, or null.`);
+      }
+    }
+    settings.levels = textList2(settings.levels, "levels");
+    if (settings.levels && settings.levels.length !== 2) {
+      refuse6("`levels` must name two groups, the first and the second, or be null.");
+    }
+    settings.with = variableSetting(settings.with, "with");
+    settings.baseline_visits = textList2(settings.baseline_visits, "baseline_visits");
+    settings.measures = textList2(settings.measures, "measures");
+    settings.groups = fieldList(settings.groups, "groups");
+    settings.numbers = fieldList(settings.numbers, "numbers");
+    settings.filters = fieldList(settings.filters, "filters");
+    return settings;
+  }
+
+  // src/cross-tab/configure.js
+  var configure_exports5 = {};
+  __export(configure_exports5, {
+    DEFAULT_SETTINGS: () => DEFAULT_SETTINGS6,
+    PERCENTS: () => PERCENTS,
+    TESTS: () => TESTS2,
+    syncSettings: () => syncSettings5
+  });
+  var PERCENTS = Object.freeze(["row", "col", "none"]);
+  var TESTS2 = Object.freeze(["chisq", "fisher", "none"]);
+  var DEFAULT_SETTINGS6 = Object.freeze({
+    // Columns of the results table, and of the participant table.
+    id_col: "USUBJID",
+    measure_col: "TEST",
+    value_col: "STRESN",
+    visit_col: "VISIT",
+    visit_order_col: "VISITNUM",
+    unit_col: "STRESU",
+    participant_id_col: null,
+    // How a baseline is found (the core's rules).
+    baseline_visits: null,
+    baseline_stat: "mean",
+    // What the chart opens on: the table's two variables, each a column or a cut
+    // variable, and what the percentages are of.
+    row_by: null,
+    col_by: null,
+    percent: "row",
+    // Cut variables the Rows and Columns controls offer beside the columns.
+    cuts: null,
+    // What the controls offer.
+    measures: null,
+    groups: null,
+    max_levels: 12,
+    filters: null,
+    // The listing of participants.
+    details: null,
+    page_size: 10,
+    // The statistics line.
+    connection: null,
+    statistic: "Analyze_Contingency",
+    test: "chisq",
+    waiting_note: null,
+    // A way back, when another chart opened this one in its place.
+    back: null,
+    // safety.viz's participant profile.
+    profile: true,
+    profile_details: null,
+    studyday_col: null,
+    normal_col_high: null,
+    normal_col_low: null,
+    // The title, subtitle and footnotes, with placeholders (src/shared/titles.js).
+    ...TITLE_DEFAULTS,
+    // The downloads under the chart, and the PNG's resolution (src/shared/png.js).
+    ...DOWNLOAD_DEFAULTS
+  });
+  function syncSettings5(overrides) {
+    const settings = layOver(DEFAULT_SETTINGS6, overrides, "the cross-tabulation");
+    checkShared(settings, BASELINE_STATS);
+    checkBack(settings);
+    for (const key of [
+      "visit_order_col",
+      "unit_col",
+      "participant_id_col",
+      "studyday_col",
+      "normal_col_high",
+      "normal_col_low"
+    ]) {
+      columnOrNull(settings, key);
+    }
+    for (const key of ["row_by", "col_by"]) {
+      if (isCut(settings[key])) checkGrouping(settings, key);
+      else columnOrNull(settings, key);
+    }
+    if (settings.cuts !== null) {
+      if (!Array.isArray(settings.cuts)) refuse6("`cuts` must be a list of cut variables, or null.");
+      settings.cuts = settings.cuts.map((spec, index) => {
+        const holder = { [`cuts[${index}]`]: spec };
+        if (!isCut(spec)) {
+          refuse6(
+            `\`cuts[${index}]\` must be a cut variable: { measure, visit, cut } or { col, type: 'number', cut }.`
+          );
+        }
+        checkGrouping(holder, `cuts[${index}]`);
+        return holder[`cuts[${index}]`];
+      });
+    }
+    if (!PERCENTS.includes(settings.percent)) {
+      refuse6(`\`percent\` must be one of ${PERCENTS.join(", ")}.`);
+    }
+    if (!TESTS2.includes(settings.test)) refuse6(`\`test\` must be one of ${TESTS2.join(", ")}.`);
+    for (const key of ["page_size", "max_levels"]) {
+      if (!Number.isInteger(settings[key]) || settings[key] < 1) {
+        refuse6(`\`${key}\` must be a whole number, one or more.`);
+      }
+    }
+    if (settings.statistic !== null && !isText4(settings.statistic)) {
+      refuse6("`statistic` must be the name of an R function, or null for no statistics line.");
+    }
+    settings.baseline_visits = textList2(settings.baseline_visits, "baseline_visits");
+    settings.measures = textList2(settings.measures, "measures");
+    settings.groups = fieldList(settings.groups, "groups");
+    settings.filters = fieldList(settings.filters, "filters");
+    settings.details = fieldList(settings.details, "details");
+    settings.profile_details = fieldList(settings.profile_details, "profile_details");
+    return settings;
+  }
+
+  // src/stratified-survival/configure.js
+  var configure_exports6 = {};
+  __export(configure_exports6, {
+    DEFAULT_SETTINGS: () => DEFAULT_SETTINGS7,
+    flagOf: () => flagOf,
+    syncSettings: () => syncSettings6
+  });
+  var DEFAULT_SETTINGS7 = Object.freeze({
+    // Columns of the results table, and of the participant table.
+    id_col: "USUBJID",
+    measure_col: "TEST",
+    value_col: "STRESN",
+    visit_col: "VISIT",
+    visit_order_col: "VISITNUM",
+    unit_col: "STRESU",
+    participant_id_col: null,
+    // How a baseline is found (the core's rules).
+    baseline_visits: null,
+    baseline_stat: "mean",
+    // Columns of the outcomes table: one row per participant and endpoint, with
+    // the time and a flag, either way round: censored (ADaM's CNSR, 1 =
+    // censored) or an event (1 = event). Exactly one of the two is named. And
+    // the endpoint the chart opens on: null means the first.
+    outcome_id_col: OUTCOME_DEFAULTS.outcome_id_col,
+    endpoint_col: OUTCOME_DEFAULTS.endpoint_col,
+    endpoint_label_col: OUTCOME_DEFAULTS.endpoint_label_col,
+    time_col: OUTCOME_DEFAULTS.time_col,
+    censor_col: OUTCOME_DEFAULTS.censor_col,
+    event_col: OUTCOME_DEFAULTS.event_col,
+    endpoint: OUTCOME_DEFAULTS.endpoint,
+    // The groups, a column or a cut variable. Null means the first category column.
+    group_by: null,
+    // Cut variables the Group control offers beside the columns.
+    cuts: null,
+    // The times the at-risk strip counts at. Null means the axis's ticks.
+    at_risk_times: null,
+    // What the controls offer.
+    measures: null,
+    groups: null,
+    max_levels: 12,
+    filters: null,
+    // The listing of participants.
+    details: null,
+    page_size: 10,
+    // The statistics line.
+    connection: null,
+    statistic: "Analyze_Survival",
+    waiting_note: null,
+    // A way back, when another chart opened this one in its place.
+    back: null,
+    // safety.viz's participant profile.
+    profile: true,
+    profile_details: null,
+    studyday_col: null,
+    normal_col_high: null,
+    normal_col_low: null,
+    // The title, subtitle and footnotes, with placeholders (src/shared/titles.js).
+    ...TITLE_DEFAULTS,
+    // The downloads under the chart, and the PNG's resolution (src/shared/png.js).
+    ...DOWNLOAD_DEFAULTS
+  });
+  function syncSettings6(overrides) {
+    const settings = layOver(
+      DEFAULT_SETTINGS7,
+      flaggedSettings(overrides),
+      "the stratified survival chart"
+    );
+    checkShared(settings, BASELINE_STATS);
+    checkBack(settings);
+    checkOutcomeSettings(settings);
+    for (const key of [
+      "visit_order_col",
+      "unit_col",
+      "participant_id_col",
+      "studyday_col",
+      "normal_col_high",
+      "normal_col_low"
+    ]) {
+      columnOrNull(settings, key);
+    }
+    if (isCut(settings.group_by)) checkGrouping(settings, "group_by");
+    else columnOrNull(settings, "group_by");
+    if (settings.cuts !== null) {
+      if (!Array.isArray(settings.cuts)) refuse6("`cuts` must be a list of cut variables, or null.");
+      settings.cuts = settings.cuts.map((spec, index) => {
+        const holder = { [`cuts[${index}]`]: spec };
+        if (!isCut(spec)) {
+          refuse6(
+            `\`cuts[${index}]\` must be a cut variable: { measure, visit, cut } or { col, type: 'number', cut }.`
+          );
+        }
+        checkGrouping(holder, `cuts[${index}]`);
+        return holder[`cuts[${index}]`];
+      });
+    }
+    if (settings.at_risk_times !== null) {
+      const times = settings.at_risk_times;
+      if (!Array.isArray(times) || !times.length || !times.every((time) => typeof time === "number" && Number.isFinite(time) && time >= 0) || times.some((time, index) => index > 0 && !(time > times[index - 1]))) {
+        refuse6("`at_risk_times` must be a list of times, none below 0, in ascending order, or null.");
+      }
+      settings.at_risk_times = [...times];
+    }
+    for (const key of ["page_size", "max_levels"]) {
+      if (!Number.isInteger(settings[key]) || settings[key] < 1) {
+        refuse6(`\`${key}\` must be a whole number, one or more.`);
+      }
+    }
+    if (settings.statistic !== null && !isText4(settings.statistic)) {
+      refuse6("`statistic` must be the name of an R function, or null for no statistics line.");
+    }
+    settings.baseline_visits = textList2(settings.baseline_visits, "baseline_visits");
+    settings.measures = textList2(settings.measures, "measures");
+    settings.groups = fieldList(settings.groups, "groups");
+    settings.filters = fieldList(settings.filters, "filters");
+    settings.details = fieldList(settings.details, "details");
+    settings.profile_details = fieldList(settings.profile_details, "profile_details");
+    return settings;
+  }
+
+  // src/shared/png.js
+  var PNG_SIGNATURE = [137, 80, 78, 71, 13, 10, 26, 10];
+  var crcTable = null;
+  function crc32(bytes) {
+    if (!crcTable) {
+      crcTable = new Uint32Array(256);
+      for (let n = 0; n < 256; n += 1) {
+        let c = n;
+        for (let k = 0; k < 8; k += 1) c = c & 1 ? 3988292384 ^ c >>> 1 : c >>> 1;
+        crcTable[n] = c >>> 0;
+      }
+    }
+    let crc = 4294967295;
+    for (const byte of bytes) crc = crcTable[(crc ^ byte) & 255] ^ crc >>> 8;
+    return (crc ^ 4294967295) >>> 0;
+  }
+  var utf8 = (text2) => new TextEncoder().encode(text2);
+  function chunk(type, data) {
+    const body = new Uint8Array(4 + data.length);
+    body.set(utf8(type), 0);
+    body.set(data, 4);
+    const out = new Uint8Array(12 + data.length);
+    const view = new DataView(out.buffer);
+    view.setUint32(0, data.length);
+    out.set(body, 4);
+    view.setUint32(8 + data.length, crc32(body));
+    return out;
+  }
+  function itxt(keyword, text2) {
+    const head = utf8(keyword);
+    const value = utf8(text2);
+    const data = new Uint8Array(head.length + 5 + value.length);
+    data.set(head, 0);
+    data.set([0, 0, 0, 0, 0], head.length);
+    data.set(value, head.length + 5);
+    return chunk("iTXt", data);
+  }
+  function phys(perMetre) {
+    const data = new Uint8Array(9);
+    const view = new DataView(data.buffer);
+    view.setUint32(0, perMetre);
+    view.setUint32(4, perMetre);
+    data[8] = 1;
+    return chunk("pHYs", data);
+  }
+  var CSS_PIXELS_PER_INCH = 96;
+  function pngChunks(png, { scale, text: text2 }) {
+    for (let i = 0; i < PNG_SIGNATURE.length; i += 1) {
+      if (png[i] !== PNG_SIGNATURE[i]) throw new Error("bio.viz: not a PNG.");
+    }
+    const afterHeader = 8 + 25;
+    const extra = [
+      phys(Math.round(scale * CSS_PIXELS_PER_INCH / 0.0254)),
+      ...Object.entries(text2).filter(([, value]) => typeof value === "string" && value !== "").map(([keyword, value]) => itxt(keyword, value))
+    ];
+    const size = extra.reduce((total, part) => total + part.length, png.length);
+    const out = new Uint8Array(size);
+    out.set(png.subarray(0, afterHeader), 0);
+    let at = afterHeader;
+    for (const part of extra) {
+      out.set(part, at);
+      at += part.length;
+    }
+    out.set(png.subarray(afterHeader), at);
+    return out;
+  }
+  var HEIGHTS = /* @__PURE__ */ new Set(["height", "block-size", "max-height", "max-block-size"]);
+  var OVERFLOWS = /* @__PURE__ */ new Set([
+    "overflow",
+    "overflow-x",
+    "overflow-y",
+    "overflow-block",
+    "overflow-inline"
+  ]);
+  var holdsText = (element) => /\S/.test(element.textContent || "");
+  function copyStyles(from, to) {
+    const style = getComputedStyle(from);
+    const reflow = from.tagName !== "CANVAS" && from.tagName !== "IMG" && holdsText(from);
+    let text2 = "";
+    for (let i = 0; i < style.length; i += 1) {
+      const name = style[i];
+      if (reflow && HEIGHTS.has(name)) continue;
+      if (OVERFLOWS.has(name)) continue;
+      text2 += `${name}:${style.getPropertyValue(name)};`;
+    }
+    to.setAttribute("style", `${text2}overflow:visible;`);
+  }
+  function copyTree(from, to) {
+    if (from.nodeType !== 1) return;
+    copyStyles(from, to);
+    if (from.tagName === "CANVAS") return;
+    const a = from.children;
+    const b = to.children;
+    for (let i = 0; i < a.length; i += 1) copyTree(a[i], b[i]);
+  }
+  async function drawFrame(frame2, { leaveOut, scale, text: text2 }) {
+    const copy2 = frame2.cloneNode(true);
+    copyTree(frame2, copy2);
+    const canvases = frame2.querySelectorAll("canvas");
+    const copies = copy2.querySelectorAll("canvas");
+    canvases.forEach((canvas2, i) => {
+      const picture = document.createElement("img");
+      picture.setAttribute("style", copies[i].getAttribute("style") || "");
+      picture.width = canvas2.clientWidth;
+      picture.height = canvas2.clientHeight;
+      picture.src = canvas2.width && canvas2.height ? canvas2.toDataURL("image/png") : "";
+      copies[i].replaceWith(picture);
+    });
+    const all = [...frame2.querySelectorAll("*")];
+    const copied = [...copy2.querySelectorAll("*")];
+    const dropped = all.map((element, i) => element.tagName !== "CANVAS" && leaveOut(element) ? copied[i] : null).filter(Boolean);
+    dropped.forEach((element) => element.remove());
+    copy2.querySelectorAll("[id]").forEach((element) => element.removeAttribute("id"));
+    const width = Math.ceil(frame2.getBoundingClientRect().width);
+    copy2.style.width = `${width}px`;
+    copy2.style.height = "auto";
+    copy2.style.minHeight = "0";
+    copy2.style.margin = "0";
+    copy2.style.background = "#ffffff";
+    const holder = document.createElement("div");
+    holder.setAttribute(
+      "style",
+      `position:absolute;left:-100000px;top:0;width:${width}px;background:#fff`
+    );
+    holder.append(copy2);
+    document.body.append(holder);
+    await Promise.all(
+      [...copy2.querySelectorAll("img")].map(
+        (picture) => picture.complete ? null : new Promise((done) => picture.onload = picture.onerror = done)
+      )
+    );
+    const height = Math.ceil(copy2.getBoundingClientRect().height);
+    const holderBox = holder.getBoundingClientRect();
+    let right = width;
+    for (const element of copy2.querySelectorAll("*")) {
+      const box = element.getBoundingClientRect();
+      if (box.width && box.height) right = Math.max(right, Math.ceil(box.right - holderBox.left));
+    }
+    const drawnWidth = right;
+    holder.remove();
+    const markup = new XMLSerializer().serializeToString(copy2);
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${drawnWidth}" height="${height}"><foreignObject x="0" y="0" width="100%" height="100%"><div xmlns="http://www.w3.org/1999/xhtml" style="width:${width}px;background:#fff">${markup}</div></foreignObject></svg>`;
+    const image = new Image();
+    await new Promise((done, fail) => {
+      image.onload = done;
+      image.onerror = () => fail(
+        new Error("bio.viz: the chart could not be drawn as a picture, as the browser read it.")
+      );
+      image.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+    });
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(drawnWidth * scale);
+    canvas.height = Math.round(height * scale);
+    const context = canvas.getContext("2d");
+    context.fillStyle = "#ffffff";
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.scale(scale, scale);
+    context.drawImage(image, 0, 0, drawnWidth, height);
+    const written = await new Promise((done, fail) => {
+      try {
+        canvas.toBlob(
+          (blob) => blob ? done(blob) : fail(
+            new Error(
+              "bio.viz: the picture could not be written, which a browser does when it is too large. Try a smaller png_scale."
+            )
+          ),
+          "image/png"
+        );
+      } catch (error) {
+        fail(new Error(`bio.viz: the picture could not be read back (${error.message}).`));
+      }
+    });
+    const bytes = pngChunks(new Uint8Array(await written.arrayBuffer()), { scale, text: text2 });
+    return {
+      blob: new Blob([bytes], { type: "image/png" }),
+      width: canvas.width,
+      height: canvas.height
+    };
+  }
+
+  // src/shared/specification.js
+  var SPECIFICATION_FORMAT = "bio.viz specification";
+  var SPECIFICATION_VERSION = 1;
+  var FILTER_OPERATORS = Object.freeze(["in"]);
+  var PAGE_SETTINGS = Object.freeze(["connection", "back"]);
+  var NO_COLUMN = Object.freeze(["__proto__", "constructor", "prototype"]);
+  var MOST_NESTED = 64;
+  var refuse7 = (message) => {
+    throw new TypeError(`bio.viz: ${message}`);
+  };
+  var isPlainObject5 = (value) => value !== null && typeof value === "object" && !Array.isArray(value) && (Object.getPrototypeOf(value) === Object.prototype || Object.getPrototypeOf(value) === null);
+  var isText5 = (value) => typeof value === "string" && value.trim() !== "";
+  function notData(value, where) {
+    if (value === null || typeof value === "boolean" || typeof value === "string") return null;
+    if (typeof value === "number") {
+      return Number.isFinite(value) ? null : `${where} is ${String(value)}, which is not a number JSON holds`;
+    }
+    if (Array.isArray(value)) {
+      for (let i = 0; i < value.length; i += 1) {
+        const found = notData(value[i], `${where}[${i}]`);
+        if (found) return found;
+      }
+      return null;
+    }
+    if (isPlainObject5(value)) {
+      for (const [key, entry] of Object.entries(value)) {
+        const found = notData(entry, `${where}.${key}`);
+        if (found) return found;
+      }
+      return null;
+    }
+    const kind = typeof value === "function" ? "a function" : value === void 0 ? "undefined" : `a ${typeof value === "object" ? value.constructor?.name || "object" : typeof value}`;
+    return `${where} is ${kind}, which is not data: a specification holds only text, numbers, true, false, null, lists and objects`;
+  }
+  var copy = (value) => JSON.parse(JSON.stringify(value));
+  function snapshot(value, where = "the specification", depth = 0) {
+    if (value === null || typeof value !== "object") return value;
+    if (depth > MOST_NESTED) {
+      refuse7(
+        `the specification is nested more than ${MOST_NESTED} deep, which no chart\u2019s settings are.`
+      );
+    }
+    const array = Array.isArray(value);
+    if (!array && !isPlainObject5(value)) {
+      const problem = notData(value, where);
+      if (problem) refuse7(`${problem}.`);
+    }
+    const descriptors = Object.getOwnPropertyDescriptors(value);
+    const read2 = (key, descriptor, at) => {
+      if ("get" in descriptor || "set" in descriptor) {
+        refuse7(
+          `${at} is a getter or a setter, which is not data: a specification holds only text, numbers, true, false, null, lists and objects.`
+        );
+      }
+      return snapshot(descriptor.value, at, depth + 1);
+    };
+    if (array) {
+      const length = descriptors.length ? descriptors.length.value : 0;
+      const out2 = [];
+      for (let i = 0; i < length; i += 1) {
+        const descriptor = descriptors[i];
+        out2.push(descriptor ? read2(i, descriptor, `${where}[${i}]`) : void 0);
+      }
+      return out2;
+    }
+    const out = {};
+    for (const [key, descriptor] of Object.entries(descriptors)) {
+      if (!descriptor.enumerable) continue;
+      Object.defineProperty(out, key, {
+        value: read2(key, descriptor, `${where}.${key}`),
+        enumerable: true,
+        writable: true,
+        configurable: true
+      });
+    }
+    return out;
+  }
+  function writeSpecification({ chart, version: version2, settings, filters = [] }) {
+    const written = {};
+    for (const [key, value] of Object.entries(settings)) {
+      if (PAGE_SETTINGS.includes(key) || notData(value, key)) continue;
+      written[key] = copy(value);
+    }
+    return {
+      format: SPECIFICATION_FORMAT,
+      format_version: SPECIFICATION_VERSION,
+      bio_viz_version: version2,
+      chart,
+      settings: written,
+      filters: filters.map(({ column, values }) => ({
+        column,
+        operator: "in",
+        values: values.map((entry) => typeof entry === "number" ? entry : String(entry))
+      }))
+    };
+  }
+  function readSpecification(specification, charts) {
+    let spec = specification;
+    if (typeof spec !== "string") spec = snapshot(spec);
+    if (typeof spec === "string") {
+      try {
+        spec = JSON.parse(spec);
+      } catch (error) {
+        refuse7(`a specification given as text must be JSON: ${error.message}.`);
+      }
+    }
+    if (!isPlainObject5(spec))
+      refuse7("a specification is an object: { format, chart, settings, filters }.");
+    const problem = notData(spec, "the specification");
+    if (problem) refuse7(`${problem}.`);
+    if (spec.format !== SPECIFICATION_FORMAT) {
+      refuse7(
+        `this is not a bio.viz specification: its \`format\` must be "${SPECIFICATION_FORMAT}".`
+      );
+    }
+    if (spec.format_version !== SPECIFICATION_VERSION) {
+      refuse7(
+        `this specification is of format version ${JSON.stringify(spec.format_version)}, and this version of bio.viz reads version ${SPECIFICATION_VERSION}.`
+      );
+    }
+    const known = ["format", "format_version", "bio_viz_version", "chart", "settings", "filters"];
+    const extra = Object.keys(spec).filter((key) => !known.includes(key));
+    if (extra.length) {
+      refuse7(`a specification has no \`${extra[0]}\`: it holds ${known.join(", ")}.`);
+    }
+    if (!isText5(spec.bio_viz_version)) {
+      refuse7("a specification\u2019s `bio_viz_version` is text, the version that wrote it.");
+    }
+    if (!isText5(spec.chart) || !Object.prototype.hasOwnProperty.call(charts, spec.chart)) {
+      refuse7(
+        `this specification names the chart ${JSON.stringify(spec.chart)}, which bio.viz does not have. Its charts are ${Object.keys(charts).join(", ")}.`
+      );
+    }
+    const defaults = charts[spec.chart];
+    const settings = spec.settings === void 0 ? {} : spec.settings;
+    if (!isPlainObject5(settings)) refuse7("a specification\u2019s `settings` is an object of settings.");
+    const unknown = Object.keys(settings).filter(
+      (key) => !Object.prototype.hasOwnProperty.call(defaults, key) || PAGE_SETTINGS.includes(key)
+    );
+    if (unknown.length) {
+      const names = unknown.map((key) => `\`${key}\``).join(", ");
+      refuse7(
+        `this specification of the ${spec.chart} chart${isText5(spec.bio_viz_version) ? `, written by bio.viz ${spec.bio_viz_version},` : ""} holds ${names}, which ${unknown.length === 1 ? "is not a setting" : "are not settings"} of that chart in this version.`
+      );
+    }
+    if ("filters" in settings && settings.filters !== null && !Array.isArray(settings.filters)) {
+      refuse7("the setting `filters` of a specification is a list of filters, or null.");
+    }
+    for (const [key, value] of Object.entries(settings)) {
+      if (typeof value === "string" && NO_COLUMN.includes(value)) {
+        refuse7(`\`${key}\` names \`${value}\`, which is no column\u2019s name.`);
+      }
+    }
+    const filters = spec.filters === void 0 ? [] : spec.filters;
+    if (!Array.isArray(filters))
+      refuse7("a specification\u2019s `filters` is a list of { column, operator, values }.");
+    const read2 = copy(settings);
+    filters.forEach((filter, index) => {
+      const where = `filter ${index + 1}`;
+      if (!isPlainObject5(filter)) refuse7(`${where} must be { column, operator, values }.`);
+      const keys = Object.keys(filter).filter(
+        (key) => !["column", "operator", "values"].includes(key)
+      );
+      if (keys.length)
+        refuse7(`${where} has \`${keys[0]}\`: a filter is { column, operator, values }.`);
+      if (!isText5(filter.column)) refuse7(`${where} must name its column.`);
+      if (NO_COLUMN.includes(filter.column)) {
+        refuse7(`${where} is on \`${filter.column}\`, which is no column\u2019s name.`);
+      }
+      const before = filters.findIndex((other) => other && other.column === filter.column);
+      if (before < index) {
+        refuse7(
+          `${where} is on ${filter.column}, which filter ${before + 1} is already on: a column is filtered once.`
+        );
+      }
+      if (!FILTER_OPERATORS.includes(filter.operator)) {
+        refuse7(
+          `${where}, on ${filter.column}, has the operator ${JSON.stringify(filter.operator)}; the operators are ${FILTER_OPERATORS.map((entry) => `"${entry}"`).join(", ")}: in, the values it lets through.`
+        );
+      }
+      if (!Array.isArray(filter.values) || !filter.values.every((value) => typeof value === "string" || typeof value === "number")) {
+        refuse7(
+          `${where}, on ${filter.column}, must list the values it lets through: text or numbers.`
+        );
+      }
+      const twice = filter.values.map(String).find((value, at2, all) => all.indexOf(value) !== at2);
+      if (twice !== void 0) {
+        refuse7(`${where}, on ${filter.column}, names ${twice} twice: a value is listed once.`);
+      }
+      const specs = Array.isArray(read2.filters) ? read2.filters : read2.filters ? [read2.filters] : [];
+      const at = specs.findIndex(
+        (entry) => typeof entry === "string" ? entry === filter.column : entry && entry.value_col === filter.column
+      );
+      const values = filter.values.map(String);
+      const started = {
+        ...at >= 0 && typeof specs[at] === "object" ? specs[at] : { value_col: filter.column },
+        start: values.length === 1 ? values[0] : values,
+        ...values.length !== 1 ? { multiple: true } : {}
+      };
+      if (at >= 0) specs[at] = started;
+      else specs.push(started);
+      read2.filters = specs;
+    });
+    return {
+      chart: spec.chart,
+      settings: read2,
+      version: spec.bio_viz_version,
+      filters: filters.map(({ column, values }) => ({ column, values: values.map(String) }))
+    };
   }
 
   // src/shared/chartHost.js
@@ -2004,7 +3295,15 @@ ${root} .bv-titles:empty{display:none}
 ${root} .bv-title{margin:0;font-size:1.05rem;font-weight:600;line-height:1.3;color:#1f2933;overflow-wrap:anywhere}
 ${root} .bv-subtitle{margin:.15rem 0 0;font-size:.9rem;color:#3e4c59;overflow-wrap:anywhere}
 ${root} .bv-foot{margin:.7rem 0 0;padding:.4rem 0 0;border-top:1px solid #e4e8ec;font-size:.75rem;color:#52616f;max-width:100%}
-${root} .bv-foot p{margin:0 0 .2rem;overflow-wrap:anywhere}`;
+${root} .bv-foot p{margin:0 0 .2rem;overflow-wrap:anywhere}
+${root} .bv-downloads{display:flex;flex-wrap:wrap;align-items:center;gap:.4rem .6rem;margin:.6rem 0 0;font-size:.8rem;color:#52616f}
+${root} .bv-downloads[hidden]{display:none}
+${root} .bv-downloads button{font:inherit;padding:.3rem .65rem;border:1px solid #b8c0cc;border-radius:6px;background:#fff;color:#1f2933;cursor:pointer}
+${root} .bv-downloads button:disabled{color:#8a96a3;cursor:default}
+${root} .bv-downloads button:focus-visible{outline:2px solid #0b62a4;outline-offset:1px}
+${root} .bv-notices{margin:0 0 .6rem;padding:.4rem .6rem;border-left:3px solid #d97706;background:#fff8eb;font-size:.8rem;color:#5c3b00}
+${root} .bv-notices:empty{display:none}
+${root} .bv-download-error{flex-basis:100%;margin:.2rem 0 0;color:#9b1c1c;font-weight:600}`;
   function mountShell(chart, { moduleClass, styleId, styles, listingFile }) {
     const { kit } = chart;
     Object.assign(
@@ -2018,10 +3317,18 @@ ${root} .bv-foot p{margin:0 0 .2rem;overflow-wrap:anywhere}`;
     chart.statLine = kit.createElement("div", "bv-statistic");
     chart.statLine.setAttribute("role", "status");
     chart.footnote.after(chart.statLine);
+    chart.footnote.classList.add("bv-no-picture");
+    chart.listingWrap.classList.add("bv-no-picture");
     chart.titleBlock = kit.createElement("div", "bv-titles");
     chart.main.prepend(chart.titleBlock);
+    chart.notices = [];
+    chart.noticeBlock = kit.createElement("div", "bv-notices bv-no-picture");
+    chart.noticeBlock.setAttribute("role", "status");
+    chart.titleBlock.after(chart.noticeBlock);
     chart.footBlock = kit.createElement("div", "bv-foot");
     chart.listingWrap.before(chart.footBlock);
+    chart.module = moduleClass.replace(/^bv-/, "");
+    mountDownloads(chart);
     chart.host = {
       settings: {
         profile: chart.settings.profile,
@@ -2179,6 +3486,15 @@ ${root} .bv-foot p{margin:0 0 .2rem;overflow-wrap:anywhere}`;
     }
     return { ...sharedPlaceholders(chart), ...own };
   }
+  function titlesOf(chart) {
+    const parts = partsOf(chart);
+    const joined = (runs) => runs === null ? null : runs.map((run) => run.text).join("");
+    return {
+      title: joined(parts.title),
+      subtitle: joined(parts.subtitle),
+      footnotes: parts.footnotes.map(joined)
+    };
+  }
   function partsOf(chart) {
     const { settings } = chart;
     const values = placeholderValues(chart);
@@ -2214,27 +3530,212 @@ ${root} .bv-foot p{margin:0 0 .2rem;overflow-wrap:anywhere}`;
   function writeTitles(chart) {
     if (!chart.titleBlock || !chart.footBlock) return;
     const { kit } = chart;
-    const said = partsOf(chart);
+    const said2 = partsOf(chart);
     chart.titleBlock.innerHTML = "";
-    if (said.title !== null) {
+    if (said2.title !== null) {
       const title = kit.createElement("div", "bv-title");
       title.setAttribute("role", "heading");
       title.setAttribute("aria-level", "2");
-      writeRuns(kit, title, said.title);
+      writeRuns(kit, title, said2.title);
       chart.titleBlock.append(title);
     }
-    if (said.subtitle !== null) {
+    if (said2.subtitle !== null) {
       const subtitle = kit.createElement("p", "bv-subtitle");
-      writeRuns(kit, subtitle, said.subtitle);
+      writeRuns(kit, subtitle, said2.subtitle);
       chart.titleBlock.append(subtitle);
     }
     chart.footBlock.innerHTML = "";
-    said.footnotes.forEach((runs, index) => {
+    said2.footnotes.forEach((runs, index) => {
       const line = kit.createElement("p", "bv-foot-line");
       writeRuns(kit, line, runs);
-      if (index === said.footnotes.length - 1) line.dataset.automatic = "true";
+      if (index === said2.footnotes.length - 1) line.dataset.automatic = "true";
       chart.footBlock.append(line);
     });
+    syncDownloads(chart);
+    writeNotices(chart);
+  }
+  var SETTING_NAMES = Object.freeze({
+    row_by: "Rows",
+    col_by: "Columns",
+    group_by: "Groups",
+    color_by: "Colour",
+    panel_by: "Panels",
+    start_value: "Biomarker",
+    measure: "Biomarker",
+    biomarkers: "Biomarkers",
+    visit: "Visit",
+    visits: "Visits",
+    endpoint: "Endpoint",
+    comparison: "Compare",
+    x: "X axis",
+    y: "Y axis",
+    with: "With"
+  });
+  var said = (value) => typeof value === "string" ? value : Array.isArray(value) && value.every((entry) => typeof entry === "string") ? value.join(", ") : JSON.stringify(value);
+  function noticesOf(chart) {
+    const { requested, settings } = chart;
+    if (!requested) return [];
+    const notices = [];
+    const view = typeof chart.viewSettings === "function" ? chart.viewSettings() : {};
+    for (const key of Object.keys(view)) {
+      if (!Object.hasOwn(requested.settings, key)) continue;
+      const asked = settings[key];
+      if (asked === null || asked === void 0) continue;
+      const drawn = view[key];
+      if (JSON.stringify(asked) === JSON.stringify(drawn)) continue;
+      const name = SETTING_NAMES[key] || `\`${key}\``;
+      notices.push({
+        kind: "setting",
+        name: key,
+        asked,
+        drawn,
+        said: `${name}: ${said(asked)} is not in the tables, so the chart draws ${drawn === null || drawn === void 0 ? "none" : said(drawn)}.`
+      });
+    }
+    const id = settings.participant_id_col || settings.id_col;
+    for (const filter of requested.filters || []) {
+      const spec = (chart.filterSpecs || []).find((entry) => entry.value_col === filter.column);
+      if (!spec) {
+        notices.push({
+          kind: "filter",
+          name: filter.column,
+          asked: filter.values,
+          drawn: null,
+          said: filter.column === id ? `Filter ${filter.column}: the participant id is not a filter.` : `Filter ${filter.column}: the participant table has no such column, so it is not a filter.`
+        });
+        continue;
+      }
+      const now = (chart.state.filters || {})[filter.column];
+      const drawn = now === null || now === void 0 || now === "" ? null : (Array.isArray(now) ? now : [now]).map(String);
+      if (drawn !== null && JSON.stringify(drawn) === JSON.stringify(filter.values)) continue;
+      const missing = filter.values.filter((value) => !(drawn || []).includes(value));
+      notices.push({
+        kind: "filter",
+        name: filter.column,
+        asked: filter.values,
+        drawn,
+        said: `Filter ${filter.column}: ${missing.join(", ")} ${missing.length === 1 ? "is not one of its values" : "are not among its values"}, so it is at ${drawn === null ? "All" : drawn.join(", ")}.`
+      });
+    }
+    return notices;
+  }
+  function writeNotices(chart) {
+    if (!chart.noticeBlock) return;
+    if (chart.requested && !chart.noticed && chart.tables && chart.tables.results.length) {
+      chart.noticed = true;
+      chart.notices = noticesOf(chart);
+    }
+    chart.noticeBlock.textContent = chart.notices.length ? `Not drawn as the specification asks: ${chart.notices.map((notice) => notice.said).join(" ")}` : "";
+  }
+  var DOWNLOAD_LABELS = Object.freeze({
+    png: "PNG",
+    statistics: "Statistics (CSV)",
+    table: "Table (CSV)"
+  });
+  var slug = (text2) => String(text2).normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").replace(/^(.{0,60})(?:-.*)?$/, (whole, kept) => whole.length <= 60 ? whole : kept).replace(/-+$/g, "");
+  function downloadName(chart, kind) {
+    const values = placeholderValues(chart);
+    const view = (chart.viewFields || []).map((name) => values[name]).filter((value) => value !== null && value !== void 0 && String(value).trim() !== "").join(" ");
+    const base = ["bio.viz", chart.module, slug(view)].filter(Boolean).join("-");
+    return kind === "png" ? `${base}.png` : `${base}-${kind}.csv`;
+  }
+  async function downloadFile(chart, kind) {
+    const name = downloadName(chart, kind);
+    if (kind === "statistics") {
+      const { columns, rows } = statisticsTable(chart.asked || []);
+      return { name, blob: new Blob([toCsv(rows, columns)], { type: "text/csv;charset=utf-8" }) };
+    }
+    if (kind === "table") {
+      const { columns, rows } = typeof chart.tableOf === "function" ? chart.tableOf() : { columns: [], rows: [] };
+      return { name, blob: new Blob([toCsv(rows, columns)], { type: "text/csv;charset=utf-8" }) };
+    }
+    if (kind === "png") {
+      const said2 = titlesOf(chart);
+      const scale = chart.settings.png_scale;
+      const charts = (chart.charts || []).filter(
+        (made) => made && made.options && typeof made.resize === "function"
+      );
+      const ratios = charts.map((made) => made.options.devicePixelRatio);
+      const sharpen = (ratio) => charts.forEach((made, i) => {
+        made.options.devicePixelRatio = ratio === null ? ratios[i] : ratio;
+        made.resize();
+      });
+      sharpen(Math.max(scale, globalThis.devicePixelRatio || 1));
+      try {
+        const { blob } = await drawFrame(chart.main, {
+          scale,
+          // What a reader works the chart with is marked to be left out.
+          leaveOut: (element) => element.classList.contains("bv-no-picture"),
+          text: {
+            Title: [said2.title, said2.subtitle].filter(Boolean).join(" \u2014 "),
+            Description: said2.footnotes.join("\n"),
+            Software: `bio.viz ${VERSION_SAID}`
+          }
+        });
+        return { name, blob };
+      } finally {
+        sharpen(null);
+      }
+    }
+    throw new TypeError(
+      `bio.viz: a download is \`png\`, \`statistics\` or \`table\`, not \`${kind}\`.`
+    );
+  }
+  function mountDownloads(chart) {
+    const { kit } = chart;
+    chart.downloadBar = kit.createElement("div", "bv-downloads bv-no-picture");
+    chart.downloadBar.append(kit.createElement("span", "bv-downloads-label", "Download:"));
+    chart.downloadButtons = {};
+    for (const [kind, label2] of Object.entries(DOWNLOAD_LABELS)) {
+      const button = kit.createElement("button", null, label2);
+      button.type = "button";
+      button.dataset.download = kind;
+      button.onclick = async () => {
+        button.disabled = true;
+        sayFailure(chart, null);
+        try {
+          const { name, blob } = await downloadFile(chart, kind);
+          saveFile(blob, name);
+        } catch (error) {
+          sayFailure(
+            chart,
+            `The ${kind === "png" ? "PNG" : `${kind} file`} could not be made: ${String(error && error.message || error).replace(/^bio\.viz: /, "")}`
+          );
+          console.error(error);
+        } finally {
+          syncDownloads(chart);
+        }
+      };
+      chart.downloadButtons[kind] = button;
+      chart.downloadBar.append(button);
+    }
+    chart.footBlock.after(chart.downloadBar);
+    chart.fileOf = (kind) => downloadFile(chart, kind);
+  }
+  function sayFailure(chart, said2) {
+    const old = chart.downloadBar.querySelector(".bv-download-error");
+    if (old) old.remove();
+    if (!said2) return;
+    const line = chart.kit.createElement("p", "bv-download-error", said2);
+    line.setAttribute("role", "alert");
+    chart.downloadBar.append(line);
+  }
+  function syncDownloads(chart) {
+    if (!chart.downloadBar) return;
+    chart.downloadBar.hidden = !chart.settings.downloads;
+    const answered = (chart.asked || []).some(
+      (entry) => entry.answer && entry.answer.status === "ok"
+    );
+    const table = typeof chart.tableOf === "function" ? chart.tableOf() : { rows: [] };
+    const { png, statistics } = chart.downloadButtons;
+    if (!(chart.asked || []).length) statistics.remove();
+    else if (!statistics.isConnected) png.after(statistics);
+    const waiting = (chart.asked || []).some((entry) => !entry.answer);
+    statistics.disabled = !answered;
+    statistics.title = answered ? "" : waiting ? "Waiting for R\u2019s answer." : "R returned no statistics for this view.";
+    if (!statistics.title) statistics.removeAttribute("title");
+    chart.downloadButtons.table.disabled = !table.rows.length;
+    chart.downloadButtons.png.disabled = false;
   }
   function syncHost(chart) {
     chart.host.settings.profile = chart.settings.profile;
@@ -2304,7 +3805,7 @@ ${root} .bv-foot p{margin:0 0 .2rem;overflow-wrap:anywhere}`;
     line.innerHTML = "";
     line.append(kit.createElement("p", "bv-stat-result", description.text));
     description.estimates.forEach(
-      (said) => line.append(kit.createElement("p", "bv-stat-estimate", said))
+      (said2) => line.append(kit.createElement("p", "bv-stat-estimate", said2))
     );
     if (description.table) line.append(statTable(description.table, kit));
     description.remarks.forEach(({ kind, text: text2 }) => {
@@ -2349,13 +3850,17 @@ ${root} .bv-foot p{margin:0 0 .2rem;overflow-wrap:anywhere}`;
     chart.kit.resetProfileRail(host);
   }
   function downloadCsv(kit, rows, columns, file) {
-    const blob = new Blob([kit.buildCsv(rows, columns)], { type: "text/csv" });
+    saveFile(new Blob([toCsv(rows, columns)], { type: "text/csv;charset=utf-8" }), file);
+  }
+  function saveFile(blob, name) {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = file;
+    link.download = name;
+    document.body.append(link);
     link.click();
-    URL.revokeObjectURL(url);
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 0);
   }
   function downloadListing(chart, file) {
     const { host, kit } = chart;
@@ -2422,7 +3927,7 @@ ${root} .bv-foot p{margin:0 0 .2rem;overflow-wrap:anywhere}`;
     pager.append(kit.createElement("span", "bv-overview-count", count));
     if (page.pages === 1) return pager;
     const button = (label2, to, name) => {
-      const made = kit.createElement("button", null, label2);
+      const made = kit.createElement("button", "bv-no-picture", label2);
       made.type = "button";
       made.dataset.go = name;
       made.disabled = to < 0 || to >= page.pages;
@@ -2439,7 +3944,7 @@ ${root} .bv-foot p{margin:0 0 .2rem;overflow-wrap:anywhere}`;
   function mountToolbar(chart) {
     const { kit, settings } = chart;
     if (!chart.toolbar) {
-      chart.toolbar = kit.createElement("div", "bv-toolbar");
+      chart.toolbar = kit.createElement("div", "bv-toolbar bv-no-picture");
       chart.notes.before(chart.toolbar);
     }
     chart.toolbar.innerHTML = "";
@@ -2456,173 +3961,55 @@ ${C5} .bv-toolbar:empty{display:none}
 ${C5} .bv-toolbar button{font:inherit;font-size:.85rem;padding:.35rem .75rem;border:1px solid #b8c0cc;border-radius:6px;background:#fff;color:#1f2933;cursor:pointer}
 ${C5} .bv-toolbar button[aria-pressed=true]{border-color:#0b62a4;background:#eaf2fb;color:#0b3d63;box-shadow:inset 0 0 0 1px #0b62a4}
 ${C5} .bv-toolbar button:focus-visible{outline:2px solid #0b62a4;outline-offset:1px}`;
-
-  // src/shared/cut.js
-  function writtenCut(spec) {
-    const read2 = variable(spec);
-    const cut = Array.isArray(read2.cut) ? [...read2.cut] : read2.cut;
-    if (read2.kind === "column") return { col: read2.col, type: read2.type, cut };
-    return read2.value === "baseline" ? { measure: read2.measure, value: read2.value, cut } : { measure: read2.measure, visit: read2.visit, value: read2.value, cut };
-  }
-  function checkGrouping(settings, key) {
-    const value = settings[key];
-    if (!isPlainObject4(value)) return;
-    if (value.cut === void 0 || value.cut === null) {
-      refuse5(
-        `\`${key}\` is a variable with no cut. A biomarker or a number makes groups only when it is cut: add \`cut: 'median'\`, 'tertiles', 'quartiles' or the cut points.`
-      );
-    }
-    settings[key] = writtenCut(value);
-  }
-  var isCut = (by) => isPlainObject4(by);
-  function cutOf({ results, participants }, spec, settings) {
-    const made = frame(
-      { results, participants: participants || void 0 },
-      { v: spec },
-      { ...coreSettings(settings), required: [] }
-    );
-    return {
-      spec: writtenCut(spec),
-      ...cutPoints(
-        made.data.map((record) => record.v),
-        spec.cut
-      )
+  function specificationOf(chart) {
+    const settings = {
+      ...chart.settings,
+      ...typeof chart.viewSettings === "function" ? chart.viewSettings() : {}
     };
+    const specs = chart.filterSpecs || [];
+    if (specs.length || settings.filters !== null) {
+      settings.filters = specs.map((spec) => ({
+        value_col: spec.value_col,
+        label: spec.label,
+        ...spec.all === false ? { all: false } : {},
+        ...spec.multiple ? { multiple: true } : {}
+      }));
+    }
+    const filters = specs.map((spec) => ({
+      column: spec.value_col,
+      selection: (chart.state.filters || {})[spec.value_col]
+    })).filter(({ selection }) => selection !== null && selection !== void 0 && selection !== "").map(({ column, selection }) => ({
+      column,
+      values: (Array.isArray(selection) ? selection : [selection]).map(String)
+    }));
+    return writeSpecification({ chart: chart.module, version: VERSION, settings, filters });
   }
-  function groupLabel(value, cut) {
-    const index = cutGroup(value, cut.points);
-    return index === null ? null : cut.labels[index];
-  }
-  var listed2 = (items) => items.length < 2 ? items.join("") : `${items.slice(0, -1).join(", ")} and ${items.at(-1)}`;
-  function cutNote(spec, cut) {
-    const plain5 = writtenCut(spec);
-    delete plain5.cut;
-    const words = label(plain5);
-    if (Array.isArray(cut.cut)) return `${words} is cut at ${listed2(cut.points.map(writePoint))}.`;
-    if (!cut.n) return `${words} has no value to cut, so it makes no groups.`;
-    const asked = cut.asked.map(writePoint);
-    const sentence2 = `${words} is cut at its ${cut.cut}, ${listed2(asked)}, worked out on the ${cut.n} participant${cut.n === 1 ? "" : "s"} with a value.`;
-    const said = [sentence2];
-    if (cut.repeated) {
-      said.push(
-        `The points repeat, so they make ${cut.points.length + 1} groups, not ${cut.asked.length + 1}.`
-      );
-    }
-    if (cut.merged) {
-      said.push(
-        `The points differ only past four significant digits, so groups with the same bounds are one, as R\u2019s cut() makes them: ${cut.labels.length} groups, not ${cut.points.length + 1}.`
-      );
-    }
-    return said.join(" ");
-  }
-
-  // src/group-comparison/configure.js
-  var MARKS = Object.freeze(["box", "violin", "points"]);
-  var Y_SCALES = Object.freeze(["linear", "log"]);
-  var TESTS = Object.freeze(["t", "wilcoxon", "anova", "kruskal", "none"]);
-  var DEFAULT_SETTINGS2 = Object.freeze({
-    // Columns of the results table, and of the participant table.
-    id_col: "USUBJID",
-    measure_col: "TEST",
-    value_col: "STRESN",
-    visit_col: "VISIT",
-    visit_order_col: "VISITNUM",
-    unit_col: "STRESU",
-    participant_id_col: null,
-    // How a baseline is found (the core's rules).
-    baseline_visits: null,
-    baseline_stat: "mean",
-    // What the chart opens on.
-    start_value: null,
-    visits: null,
-    value_type: "raw",
-    group_by: null,
-    levels: null,
-    color_by: null,
-    panel_by: null,
-    mark: "box",
-    y_scale: "linear",
-    // What the controls offer.
-    measures: null,
-    groups: null,
-    max_levels: 12,
-    filters: null,
-    // The overview of every biomarker: the most drawn at a time.
-    overview_limit: 12,
-    // The listing of participants.
-    details: null,
-    page_size: 10,
-    // The statistics line.
-    connection: null,
-    statistic: "Analyze_GroupDifference",
-    test: "t",
-    pairwise: false,
-    waiting_note: null,
-    // A way back, when another chart opened this one in its place.
-    back: null,
-    // safety.viz's participant profile.
-    profile: true,
-    profile_details: null,
-    studyday_col: null,
-    normal_col_high: null,
-    normal_col_low: null,
-    // The title, subtitle and footnotes, with placeholders (src/shared/titles.js).
-    ...TITLE_DEFAULTS
-  });
-  function syncSettings(overrides) {
-    const settings = layOver(DEFAULT_SETTINGS2, overrides, "the group comparison chart");
-    checkShared(settings, BASELINE_STATS);
-    checkBack(settings);
-    for (const key of [
-      "visit_order_col",
-      "unit_col",
-      "participant_id_col",
-      "start_value",
-      "color_by",
-      "studyday_col",
-      "normal_col_high",
-      "normal_col_low"
-    ]) {
-      columnOrNull(settings, key);
-    }
-    for (const key of ["group_by", "panel_by"]) {
-      if (isCut(settings[key])) checkGrouping(settings, key);
-      else columnOrNull(settings, key);
-    }
-    if (!VALUE_TYPES.includes(settings.value_type)) {
-      refuse5(`\`value_type\` must be one of ${VALUE_TYPES.join(", ")}.`);
-    }
-    if (!MARKS.includes(settings.mark)) refuse5(`\`mark\` must be one of ${MARKS.join(", ")}.`);
-    if (!Y_SCALES.includes(settings.y_scale)) {
-      refuse5(`\`y_scale\` must be one of ${Y_SCALES.join(", ")}.`);
-    }
-    for (const key of ["page_size", "max_levels", "overview_limit"]) {
-      if (!Number.isInteger(settings[key]) || settings[key] < 1) {
-        refuse5(`\`${key}\` must be a whole number, one or more.`);
+  function startFilters(chart) {
+    const state = chart.kit.initFilterState(chart.filterSpecs);
+    for (const spec of chart.settings.filters || []) {
+      if (spec && spec.multiple && Array.isArray(spec.start) && !spec.start.length && Object.hasOwn(state, spec.value_col)) {
+        state[spec.value_col] = [];
       }
     }
-    if (!TESTS.includes(settings.test)) refuse5(`\`test\` must be one of ${TESTS.join(", ")}.`);
-    if (typeof settings.pairwise !== "boolean") refuse5("`pairwise` must be true or false.");
-    if (settings.statistic !== null && !isText4(settings.statistic)) {
-      refuse5("`statistic` must be the name of an R function, or null for no statistics line.");
+    return state;
+  }
+  function cutsOffered(options, drawn) {
+    const written = new Set(drawn.map((entry) => JSON.stringify(entry)));
+    const cuts = [];
+    for (const { spec } of options || []) {
+      const key = JSON.stringify(spec);
+      if (written.has(key) || cuts.some((entry) => JSON.stringify(entry) === key)) continue;
+      cuts.push(spec);
     }
-    settings.baseline_visits = textList2(settings.baseline_visits, "baseline_visits");
-    settings.visits = textList2(settings.visits, "visits");
-    settings.levels = textList2(settings.levels, "levels");
-    settings.measures = textList2(settings.measures, "measures");
-    settings.groups = fieldList(settings.groups, "groups");
-    settings.filters = fieldList(settings.filters, "filters");
-    settings.details = fieldList(settings.details, "details");
-    settings.profile_details = fieldList(settings.profile_details, "profile_details");
-    return settings;
+    return cuts.length ? cuts : null;
   }
 
   // src/shared/statisticLine.js
   var WAITING = "Statistics: waiting for R\u2026";
   var NOT_STORED = "Statistics are unavailable for this view: the page holds no stored result for it, and no R is attached to compute one.";
-  var sentence = (state, said) => ({
+  var sentence = (state, said2) => ({
     state,
-    text: said,
+    text: said2,
     estimates: [],
     remarks: [],
     scope: null
@@ -2654,8 +4041,8 @@ ${C5} .bv-toolbar button:focus-visible{outline:2px solid #0b62a4;outline-offset:
     (entry) => typeof entry === "string" && entry.trim() !== ""
   );
   var remarksOf = (value) => [
-    ...texts(value.warnings).map((said) => ({ kind: "warning", text: `R warned: ${said}` })),
-    ...texts(value.notes).map((said) => ({ kind: "note", text: `R\u2019s note: ${said}` }))
+    ...texts(value.warnings).map((said2) => ({ kind: "warning", text: `R warned: ${said2}` })),
+    ...texts(value.notes).map((said2) => ({ kind: "note", text: `R\u2019s note: ${said2}` }))
   ];
   function failureOf(result) {
     if (result && result.status === "unavailable") {
@@ -2673,11 +4060,11 @@ ${C5} .bv-toolbar button:focus-visible{outline:2px solid #0b62a4;outline-offset:
     connection,
     note = null,
     describe: describe2,
-    waiting = (said) => sentence("waiting", said)
+    waiting = (said2) => sentence("waiting", said2)
   }) {
     let current = 0;
     let retired = false;
-    const withNote = (said) => note && !hasAnswered(connection) ? `${said} ${note}` : said;
+    const withNote = (said2) => note && !hasAnswered(connection) ? `${said2} ${note}` : said2;
     return {
       idle: withNote,
       retire() {
@@ -2790,7 +4177,7 @@ ${C5} .bv-toolbar button:focus-visible{outline:2px solid #0b62a4;outline-offset:
       }))
     };
   }
-  var plain = (state, said) => ({ ...sentence(state, said), pairs: null });
+  var plain = (state, said2) => ({ ...sentence(state, said2), pairs: null });
   function describeAnswer(result, context = {}) {
     if (result && result.status === "ok") {
       const value = result.value && typeof result.value === "object" ? result.value : {};
@@ -2815,24 +4202,24 @@ ${C5} .bv-toolbar button:focus-visible{outline:2px solid #0b62a4;outline-offset:
   }
   function scopeText({ group, n, panel, color, filters = [] }) {
     const named2 = group.includes(",") ? `${group},` : group;
-    const said = [
+    const said2 = [
       `This test compares the levels of ${named2} on the ${n} participant${n === 1 ? "" : "s"} ` + (panel ? `drawn in this panel (${panel}).` : "drawn.")
     ];
     if (panel) {
-      said.push("Each panel has a test of its own, and they are not adjusted for one another.");
+      said2.push("Each panel has a test of its own, and they are not adjusted for one another.");
     }
     if (color) {
-      said.push(`Colour by ${color} is not part of it: each level of ${named2} is tested whole.`);
+      said2.push(`Colour by ${color} is not part of it: each level of ${named2} is tested whole.`);
     }
-    if (filters.length) said.push(filtersSaid(filters));
-    return said.join(" ");
+    if (filters.length) said2.push(filtersSaid(filters));
+    return said2.join(" ");
   }
   function createStatisticDesk({ connection, note = null }) {
     return createDesk({
       connection,
       note,
       describe: describeAnswer,
-      waiting: (said) => plain("waiting", said)
+      waiting: (said2) => plain("waiting", said2)
     });
   }
 
@@ -3360,7 +4747,7 @@ ${toolbarStyles(".bv-group-comparison")}
       return {
         // No biomarker named, or one the table does not have: the overview.
         measure: measures.includes(settings.start_value) ? settings.start_value : null,
-        page: 0,
+        page: settings.page,
         visits: [...this.visits.start],
         valueType: settings.value_type,
         groupBy,
@@ -3371,7 +4758,7 @@ ${toolbarStyles(".bv-group-comparison")}
         yScale: settings.y_scale,
         test: settings.test,
         pairwise: settings.pairwise,
-        filters: this.kit.initFilterState(this.filterSpecs)
+        filters: startFilters(this)
       };
     }
     // After the tables or the settings change, a control may hold something that
@@ -4159,6 +5546,65 @@ ${toolbarStyles(".bv-group-comparison")}
       });
     }
     /**
+     * What the controls now read, as the settings the chart would open on with
+     * them: the part of its specification the controls hold (#68).
+     * @returns {object}
+     */
+    viewSettings() {
+      const { state } = this;
+      return {
+        start_value: state.measure ?? null,
+        visits: [...state.visits],
+        value_type: state.valueType,
+        group_by: state.groupBy ? this.groupingOf(state.groupBy) : null,
+        levels: state.levels ?? null,
+        color_by: state.colorBy || null,
+        panel_by: state.panelBy ? this.groupingOf(state.panelBy) : null,
+        mark: state.mark,
+        y_scale: state.yScale,
+        test: state.test,
+        pairwise: state.pairwise,
+        page: state.page || 0
+      };
+    }
+    /**
+     * The chart's specification: its name, the bio.viz version, every setting
+     * as the controls now read, and every filter in force, as JSON data, which
+     * `BioViz.fromSpecification` makes the same chart from (#68).
+     * @returns {object}
+     */
+    specification() {
+      return specificationOf(this);
+    }
+    /**
+     * The table the chart drew from, one row per participant drawn, for the
+     * table download (#67): which field of a row each column holds, and its
+     * heading.
+     * @returns {{columns: Array<{value_col: string, label: string}>, rows: object[]}}
+     */
+    tableOf() {
+      const { model, state, settings } = this;
+      if (!model || !model.panels) return { columns: [], rows: [] };
+      const visits2 = model.panels.some((panel) => panel.visit !== null && panel.visit !== void 0);
+      const columns = [{ value_col: settings.id_col, label: "Participant" }];
+      if (visits2) columns.push({ value_col: "visit", label: "Visit" });
+      if (state.groupBy) columns.push({ value_col: "x", label: this.labelOf(state.groupBy) });
+      if (state.colorBy) columns.push({ value_col: "color", label: this.labelOf(state.colorBy) });
+      if (state.panelBy) columns.push({ value_col: "panel", label: this.labelOf(state.panelBy) });
+      columns.push({
+        value_col: "y",
+        label: `${state.measure}, ${VALUE_LABELS[state.valueType] || state.valueType}`
+      });
+      const rows = model.panels.flatMap(
+        (panel) => panel.records.map((record) => ({ ...record, visit: panel.visit }))
+      );
+      return { columns, rows };
+    }
+    /** The placeholders a download's file name is made of, after the chart's name. */
+    get viewFields() {
+      return ["measure", "visits", "group"];
+    }
+    /**
      * What the title, subtitle and footnotes' placeholders hold for the view now
      * drawn, beside `{date}`, `{version}` and `{filters}` (#66).
      * @returns {object}
@@ -4289,106 +5735,6 @@ ${toolbarStyles(".bv-group-comparison")}
   };
   function groupComparison(element, settings) {
     return new GroupComparison(element, settings);
-  }
-
-  // src/association-scatter/configure.js
-  var SCALES = Object.freeze(["linear", "log"]);
-  var FITS = Object.freeze(["none", "identity", "linear", "smooth"]);
-  var METHODS = Object.freeze(["pearson", "spearman"]);
-  var DEFAULT_SETTINGS3 = Object.freeze({
-    // Columns of the results table, and of the participant table.
-    id_col: "USUBJID",
-    measure_col: "TEST",
-    value_col: "STRESN",
-    visit_col: "VISIT",
-    visit_order_col: "VISITNUM",
-    unit_col: "STRESU",
-    participant_id_col: null,
-    // How a baseline is found (the core's rules).
-    baseline_visits: null,
-    baseline_stat: "mean",
-    // What the chart opens on: the variable on each axis.
-    x: null,
-    y: null,
-    color_by: null,
-    panel_by: null,
-    x_scale: "linear",
-    y_scale: "linear",
-    fit: "none",
-    // What the controls offer.
-    measures: null,
-    numbers: null,
-    groups: null,
-    max_levels: 12,
-    filters: null,
-    // The listing of participants.
-    details: null,
-    page_size: 10,
-    // The statistics line.
-    connection: null,
-    statistic: "Analyze_Correlation",
-    method: "pearson",
-    fit_statistic: "Analyze_Fit",
-    waiting_note: null,
-    // A way back, when another chart opened this one.
-    back: null,
-    // safety.viz's participant profile.
-    profile: true,
-    profile_details: null,
-    studyday_col: null,
-    normal_col_high: null,
-    normal_col_low: null,
-    // The title, subtitle and footnotes, with placeholders (src/shared/titles.js).
-    ...TITLE_DEFAULTS
-  });
-  function syncSettings2(overrides) {
-    const settings = layOver(DEFAULT_SETTINGS3, overrides, "the association scatter");
-    checkShared(settings, BASELINE_STATS);
-    for (const key of [
-      "visit_order_col",
-      "unit_col",
-      "participant_id_col",
-      "color_by",
-      "panel_by",
-      "studyday_col",
-      "normal_col_high",
-      "normal_col_low"
-    ]) {
-      columnOrNull(settings, key);
-    }
-    for (const key of ["x_scale", "y_scale"]) {
-      if (!SCALES.includes(settings[key])) {
-        refuse5(`\`${key}\` must be one of ${SCALES.join(", ")}.`);
-      }
-    }
-    if (!FITS.includes(settings.fit)) refuse5(`\`fit\` must be one of ${FITS.join(", ")}.`);
-    if (!METHODS.includes(settings.method)) {
-      refuse5(`\`method\` must be one of ${METHODS.join(", ")}.`);
-    }
-    for (const key of ["page_size", "max_levels"]) {
-      if (!Number.isInteger(settings[key]) || settings[key] < 1) {
-        refuse5(`\`${key}\` must be a whole number, one or more.`);
-      }
-    }
-    if (settings.statistic !== null && !isText4(settings.statistic)) {
-      refuse5("`statistic` must be the name of an R function, or null for no statistics line.");
-    }
-    if (settings.fit_statistic !== null && !isText4(settings.fit_statistic)) {
-      refuse5(
-        "`fit_statistic` must be the name of an R function, or null for no linear or smooth line."
-      );
-    }
-    checkBack(settings);
-    settings.x = variableSetting(settings.x, "x");
-    settings.y = variableSetting(settings.y, "y");
-    settings.baseline_visits = textList2(settings.baseline_visits, "baseline_visits");
-    settings.measures = textList2(settings.measures, "measures");
-    settings.numbers = fieldList(settings.numbers, "numbers");
-    settings.groups = fieldList(settings.groups, "groups");
-    settings.filters = fieldList(settings.filters, "filters");
-    settings.details = fieldList(settings.details, "details");
-    settings.profile_details = fieldList(settings.profile_details, "profile_details");
-    return settings;
   }
 
   // src/shared/variables.js
@@ -4640,7 +5986,7 @@ ${toolbarStyles(".bv-group-comparison")}
       rows: panel.records.length
     };
   }
-  var plain2 = (state, said) => ({ ...sentence(state, said), table: null });
+  var plain2 = (state, said2) => ({ ...sentence(state, said2), table: null });
   function groupsTable(value, { color, name }) {
     const rows = Array.isArray(value.rows) ? value.rows.filter((row) => row && "group" in row) : [];
     if (!rows.length) return null;
@@ -4719,21 +6065,21 @@ ${toolbarStyles(".bv-group-comparison")}
     return `${which}: R was given ${given2}. ${ON_A_LOGARITHM[method] || ""}`.trim();
   }
   function scopeText2({ n, panel, color, filters = [] }) {
-    const said = [
+    const said2 = [
       `This coefficient is of the ${n} participant${n === 1 ? "" : "s"} ` + (panel ? `drawn in this panel (${panel}).` : "drawn.")
     ];
     if (panel) {
-      said.push(
+      said2.push(
         "Each panel has a coefficient of its own, and they are not adjusted for one another."
       );
     }
     if (color) {
-      said.push(
+      said2.push(
         `It takes every level of ${color} together; the table gives each level its own, and they are not adjusted for one another.`
       );
     }
-    if (filters.length) said.push(filtersSaid(filters));
-    return said.join(" ");
+    if (filters.length) said2.push(filtersSaid(filters));
+    return said2.join(" ");
   }
   function fitRequest({ name, fit, settings, state, panel }) {
     return {
@@ -4874,7 +6220,7 @@ ${toolbarStyles(".bv-group-comparison")}
       connection,
       note,
       describe: (result, context) => isFit(context) ? describeFit(result, context) : describeCorrelation(result, context),
-      waiting: (said, context) => plain2("waiting", isFit(context) ? said.replace(/^Statistics/, "Fitted line") : said)
+      waiting: (said2, context) => plain2("waiting", isFit(context) ? said2.replace(/^Statistics/, "Fitted line") : said2)
     });
   }
 
@@ -5077,7 +6423,7 @@ ${toolbarStyles(`.${MODULE_CLASS}`)}
         yScale: settings.y_scale,
         fit: settings.fit,
         method: settings.method,
-        filters: this.kit.initFilterState(this.filterSpecs)
+        filters: startFilters(this)
       };
     }
     // After the tables or the settings change, a control may hold something that
@@ -5624,6 +6970,55 @@ ${toolbarStyles(`.${MODULE_CLASS}`)}
       );
     }
     /**
+     * What the controls now read, as the settings the chart would open on with
+     * them: the part of its specification the controls hold (#68).
+     * @returns {object}
+     */
+    viewSettings() {
+      const { state } = this;
+      return {
+        ...state.x ? { x: settingOf(state.x) } : {},
+        ...state.y ? { y: settingOf(state.y) } : {},
+        color_by: state.colorBy || null,
+        panel_by: state.panelBy || null,
+        x_scale: state.xScale,
+        y_scale: state.yScale,
+        fit: state.fit,
+        method: state.method
+      };
+    }
+    /**
+     * The chart's specification: its name, the bio.viz version, every setting
+     * as the controls now read, and every filter in force, as JSON data, which
+     * `BioViz.fromSpecification` makes the same chart from (#68).
+     * @returns {object}
+     */
+    specification() {
+      return specificationOf(this);
+    }
+    /**
+     * The table the chart drew from, one row per participant drawn, for the
+     * table download (#67): which field of a row each column holds, and its
+     * heading.
+     * @returns {{columns: Array<{value_col: string, label: string}>, rows: object[]}}
+     */
+    tableOf() {
+      const { model, state, settings } = this;
+      if (!model || !model.panels) return { columns: [], rows: [] };
+      const columns = [
+        { value_col: settings.id_col, label: "Participant" },
+        { value_col: "x", label: this.titleOf(state.x) },
+        { value_col: "y", label: this.titleOf(state.y) }
+      ];
+      if (state.colorBy) columns.push({ value_col: "color", label: this.labelOf(state.colorBy) });
+      if (state.panelBy) columns.push({ value_col: "panel", label: this.labelOf(state.panelBy) });
+      return { columns, rows: model.panels.flatMap((panel) => panel.records) };
+    }
+    /** The placeholders a download's file name is made of, after the chart's name. */
+    get viewFields() {
+      return ["y", "x"];
+    }
+    /**
      * What the title, subtitle and footnotes' placeholders hold for the view now
      * drawn, beside `{date}`, `{version}` and `{filters}` (#66).
      * @returns {object}
@@ -5913,93 +7308,6 @@ ${toolbarStyles(`.${MODULE_CLASS}`)}
     return new AssociationScatter(element, settings);
   }
 
-  // src/correlation-matrix/configure.js
-  var MODES = Object.freeze(["biomarkers", "visits"]);
-  var VIEWS = Object.freeze(["grid", "scatters"]);
-  var METHODS2 = Object.freeze(["pearson", "spearman"]);
-  var SCATTER_LIMIT = 6;
-  var DEFAULT_SETTINGS4 = Object.freeze({
-    // Columns of the results table, and of the participant table.
-    id_col: "USUBJID",
-    measure_col: "TEST",
-    value_col: "STRESN",
-    visit_col: "VISIT",
-    visit_order_col: "VISITNUM",
-    unit_col: "STRESU",
-    participant_id_col: null,
-    // How a baseline is found (the core's rules).
-    baseline_visits: null,
-    baseline_stat: "mean",
-    // What the chart opens on.
-    mode: "biomarkers",
-    visit: null,
-    biomarkers: null,
-    measure: null,
-    visits: null,
-    value_type: "raw",
-    view: "grid",
-    // The most variables drawn at a time.
-    limit: 12,
-    // What the controls offer.
-    measures: null,
-    max_levels: 12,
-    filters: null,
-    // The statistics.
-    connection: null,
-    statistic: "Analyze_CorrelationMatrix",
-    method: "pearson",
-    min_pairs: null,
-    waiting_note: null,
-    // The association scatter a cell opens.
-    scatter: null,
-    // The title, subtitle and footnotes, with placeholders (src/shared/titles.js).
-    ...TITLE_DEFAULTS
-  });
-  function syncSettings3(overrides) {
-    const settings = layOver(DEFAULT_SETTINGS4, overrides, "the correlation matrix");
-    checkShared(settings, BASELINE_STATS);
-    for (const key of ["visit_order_col", "unit_col", "participant_id_col"]) {
-      columnOrNull(settings, key);
-    }
-    for (const [key, what] of [
-      ["visit", "a visit"],
-      ["measure", "a biomarker"]
-    ]) {
-      if (settings[key] !== null && !isText4(settings[key])) {
-        refuse5(`\`${key}\` must be the name of ${what}, or null.`);
-      }
-    }
-    if (!MODES.includes(settings.mode)) refuse5(`\`mode\` must be one of ${MODES.join(", ")}.`);
-    if (!VIEWS.includes(settings.view)) refuse5(`\`view\` must be one of ${VIEWS.join(", ")}.`);
-    if (!VALUE_TYPES.includes(settings.value_type)) {
-      refuse5(`\`value_type\` must be one of ${VALUE_TYPES.join(", ")}.`);
-    }
-    if (!METHODS2.includes(settings.method)) {
-      refuse5(`\`method\` must be one of ${METHODS2.join(", ")}.`);
-    }
-    if (!Number.isInteger(settings.max_levels) || settings.max_levels < 1) {
-      refuse5("`max_levels` must be a whole number, one or more.");
-    }
-    if (!Number.isInteger(settings.limit) || settings.limit < 2) {
-      refuse5("`limit` must be a whole number, two or more.");
-    }
-    if (settings.min_pairs !== null && !(typeof settings.min_pairs === "number" && Number.isFinite(settings.min_pairs) && settings.min_pairs > 0)) {
-      refuse5("`min_pairs` must be a number above zero, or null for R\u2019s own minimum.");
-    }
-    if (settings.statistic !== null && !isText4(settings.statistic)) {
-      refuse5("`statistic` must be the name of an R function, or null for no coefficients.");
-    }
-    if (settings.scatter !== null && !isPlainObject4(settings.scatter)) {
-      refuse5("`scatter` must be an object of settings for the association scatter, or null.");
-    }
-    settings.baseline_visits = textList2(settings.baseline_visits, "baseline_visits");
-    settings.biomarkers = textList2(settings.biomarkers, "biomarkers");
-    settings.visits = textList2(settings.visits, "visits");
-    settings.measures = textList2(settings.measures, "measures");
-    settings.filters = fieldList(settings.filters, "filters");
-    return settings;
-  }
-
   // src/correlation-matrix/structureData.js
   var RELATIVE3 = /* @__PURE__ */ new Set(["change", "fold_change", "percent_change"]);
   var VALUE_WORDS2 = {
@@ -6199,7 +7507,7 @@ ${toolbarStyles(`.${MODULE_CLASS}`)}
       rows: model.records.length
     };
   }
-  var plain3 = (state, said) => ({ ...sentence(state, said), table: null, pairs: null });
+  var plain3 = (state, said2) => ({ ...sentence(state, said2), table: null, pairs: null });
   function pairsOf2(value) {
     const rows = Array.isArray(value && value.rows) ? value.rows : [];
     const pairs = /* @__PURE__ */ new Map();
@@ -6250,22 +7558,22 @@ ${toolbarStyles(`.${MODULE_CLASS}`)}
     const lead = `${labels.row} and ${labels.column}`;
     if (!pair) return `${lead}.`;
     const { formatted, warning } = pair;
-    const said = formatted.status === "shown" ? `${lead}: ${name} ${formatted.text}` : `${lead}: ${formatted.text}`;
-    return warning ? `${said} R warned: ${warning}.` : said;
+    const said2 = formatted.status === "shown" ? `${lead}: ${name} ${formatted.text}` : `${lead}: ${formatted.text}`;
+    return warning ? `${said2} R warned: ${warning}.` : said2;
   }
   function scopeText3({ n, filters = [] }) {
-    const said = [
+    const said2 = [
       `${n} participant${n === 1 ? " is" : "s are"} in the frame. A cell is of the ones who have both of its values, so each cell has its own count, and the cells are not adjusted for one another.`
     ];
-    if (filters.length) said.push(filtersSaid(filters));
-    return said.join(" ");
+    if (filters.length) said2.push(filtersSaid(filters));
+    return said2.join(" ");
   }
   function createStatisticDesk3({ connection, note = null }) {
     return createDesk({
       connection,
       note,
       describe: describeMatrix,
-      waiting: (said) => plain3("waiting", said)
+      waiting: (said2) => plain3("waiting", said2)
     });
   }
 
@@ -6469,6 +7777,7 @@ ${C}.sv-collapsed .sv-sidebar{padding:.5rem .9rem}
     seedState() {
       const { settings, measures, visits: visits2 } = this;
       const among = (chosen, list) => {
+        if (Array.isArray(chosen) && !chosen.length) return [];
         const kept = (chosen || []).filter((entry) => list.includes(entry));
         return kept.length ? kept : null;
       };
@@ -6484,7 +7793,7 @@ ${C}.sv-collapsed .sv-sidebar{padding:.5rem .9rem}
         view: settings.view,
         method: settings.method,
         minPairs: settings.min_pairs,
-        filters: this.kit.initFilterState(this.filterSpecs)
+        filters: startFilters(this)
       };
     }
     // After the tables or the settings change, a control may hold something that
@@ -6874,9 +8183,9 @@ ${C}.sv-collapsed .sv-sidebar{padding:.5rem .9rem}
         const labels = { row: row.label, column: column.label };
         button.innerHTML = "";
         button.dataset.status = pair ? pair.formatted.status : "empty";
-        const said = `${cellText(pair, labels, name)} Open the scatter.`;
-        button.setAttribute("aria-label", said);
-        button.title = said;
+        const said2 = `${cellText(pair, labels, name)} Open the scatter.`;
+        button.setAttribute("aria-label", said2);
+        button.title = said2;
         const mini = scatters && button.dataset.side === "mark";
         if (mini) {
           const wrap = kit.createElement("span", "bv-mini");
@@ -7062,7 +8371,7 @@ ${C}.sv-collapsed .sv-sidebar{padding:.5rem .9rem}
           `Every pair, with its count: ${rows.length}, in the order R returned them`
         )
       );
-      const tools = kit.createElement("div", "bv-pairs-tools");
+      const tools = kit.createElement("div", "bv-pairs-tools bv-no-picture");
       const download = kit.createElement("button", null, "Download: CSV");
       download.type = "button";
       download.onclick = () => downloadCsv(
@@ -7112,6 +8421,55 @@ ${C}.sv-collapsed .sv-sidebar{padding:.5rem .9rem}
         details.append(note);
       });
       this.listingWrap.append(details);
+    }
+    /**
+     * What the controls now read, as the settings the chart would open on with
+     * them: the part of its specification the controls hold (#68).
+     * @returns {object}
+     */
+    viewSettings() {
+      const { state } = this;
+      return {
+        mode: state.mode,
+        visit: state.visit,
+        biomarkers: state.biomarkers ? [...state.biomarkers] : null,
+        measure: state.measure,
+        visits: state.visits ? [...state.visits] : null,
+        value_type: state.valueType,
+        view: state.view,
+        method: state.method,
+        min_pairs: state.minPairs
+      };
+    }
+    /**
+     * The chart's specification: its name, the bio.viz version, every setting
+     * as the controls now read, and every filter in force, as JSON data, which
+     * `BioViz.fromSpecification` makes the same chart from (#68).
+     * @returns {object}
+     */
+    specification() {
+      return specificationOf(this);
+    }
+    /**
+     * The table the chart drew from, one row per participant drawn, for the
+     * table download (#67): which field of a row each column holds, and its
+     * heading.
+     * @returns {{columns: Array<{value_col: string, label: string}>, rows: object[]}}
+     */
+    tableOf() {
+      const { model, settings } = this;
+      if (!model || !model.records || !model.variables) return { columns: [], rows: [] };
+      return {
+        columns: [
+          { value_col: settings.id_col, label: "Participant" },
+          ...model.variables.map((variable2) => ({ value_col: variable2.name, label: variable2.label }))
+        ],
+        rows: model.records
+      };
+    }
+    /** The placeholders a download's file name is made of, after the chart's name. */
+    get viewFields() {
+      return ["heading"];
     }
     /**
      * What the title, subtitle and footnotes' placeholders hold for the view now
@@ -7268,117 +8626,6 @@ ${C}.sv-collapsed .sv-sidebar{padding:.5rem .9rem}
     return new CorrelationMatrix(element, settings);
   }
 
-  // src/stratified-survival/configure.js
-  var DEFAULT_SETTINGS5 = Object.freeze({
-    // Columns of the results table, and of the participant table.
-    id_col: "USUBJID",
-    measure_col: "TEST",
-    value_col: "STRESN",
-    visit_col: "VISIT",
-    visit_order_col: "VISITNUM",
-    unit_col: "STRESU",
-    participant_id_col: null,
-    // How a baseline is found (the core's rules).
-    baseline_visits: null,
-    baseline_stat: "mean",
-    // Columns of the outcomes table: one row per participant and endpoint, with
-    // the time and a flag, either way round: censored (ADaM's CNSR, 1 =
-    // censored) or an event (1 = event). Exactly one of the two is named. And
-    // the endpoint the chart opens on: null means the first.
-    outcome_id_col: OUTCOME_DEFAULTS.outcome_id_col,
-    endpoint_col: OUTCOME_DEFAULTS.endpoint_col,
-    endpoint_label_col: OUTCOME_DEFAULTS.endpoint_label_col,
-    time_col: OUTCOME_DEFAULTS.time_col,
-    censor_col: OUTCOME_DEFAULTS.censor_col,
-    event_col: OUTCOME_DEFAULTS.event_col,
-    endpoint: OUTCOME_DEFAULTS.endpoint,
-    // The groups, a column or a cut variable. Null means the first category column.
-    group_by: null,
-    // Cut variables the Group control offers beside the columns.
-    cuts: null,
-    // The times the at-risk strip counts at. Null means the axis's ticks.
-    at_risk_times: null,
-    // What the controls offer.
-    measures: null,
-    groups: null,
-    max_levels: 12,
-    filters: null,
-    // The listing of participants.
-    details: null,
-    page_size: 10,
-    // The statistics line.
-    connection: null,
-    statistic: "Analyze_Survival",
-    waiting_note: null,
-    // A way back, when another chart opened this one in its place.
-    back: null,
-    // safety.viz's participant profile.
-    profile: true,
-    profile_details: null,
-    studyday_col: null,
-    normal_col_high: null,
-    normal_col_low: null,
-    // The title, subtitle and footnotes, with placeholders (src/shared/titles.js).
-    ...TITLE_DEFAULTS
-  });
-  function syncSettings4(overrides) {
-    const settings = layOver(
-      DEFAULT_SETTINGS5,
-      flaggedSettings(overrides),
-      "the stratified survival chart"
-    );
-    checkShared(settings, BASELINE_STATS);
-    checkBack(settings);
-    checkOutcomeSettings(settings);
-    for (const key of [
-      "visit_order_col",
-      "unit_col",
-      "participant_id_col",
-      "studyday_col",
-      "normal_col_high",
-      "normal_col_low"
-    ]) {
-      columnOrNull(settings, key);
-    }
-    if (isCut(settings.group_by)) checkGrouping(settings, "group_by");
-    else columnOrNull(settings, "group_by");
-    if (settings.cuts !== null) {
-      if (!Array.isArray(settings.cuts)) refuse5("`cuts` must be a list of cut variables, or null.");
-      settings.cuts = settings.cuts.map((spec, index) => {
-        const holder = { [`cuts[${index}]`]: spec };
-        if (!isCut(spec)) {
-          refuse5(
-            `\`cuts[${index}]\` must be a cut variable: { measure, visit, cut } or { col, type: 'number', cut }.`
-          );
-        }
-        checkGrouping(holder, `cuts[${index}]`);
-        return holder[`cuts[${index}]`];
-      });
-    }
-    if (settings.at_risk_times !== null) {
-      const times = settings.at_risk_times;
-      if (!Array.isArray(times) || !times.length || !times.every((time) => typeof time === "number" && Number.isFinite(time) && time >= 0) || times.some((time, index) => index > 0 && !(time > times[index - 1]))) {
-        refuse5("`at_risk_times` must be a list of times, none below 0, in ascending order, or null.");
-      }
-      settings.at_risk_times = [...times];
-    }
-    for (const key of ["page_size", "max_levels"]) {
-      if (!Number.isInteger(settings[key]) || settings[key] < 1) {
-        refuse5(`\`${key}\` must be a whole number, one or more.`);
-      }
-    }
-    if (settings.statistic !== null && !isText4(settings.statistic)) {
-      refuse5("`statistic` must be the name of an R function, or null for no statistics line.");
-    }
-    settings.baseline_visits = textList2(settings.baseline_visits, "baseline_visits");
-    settings.measures = textList2(settings.measures, "measures");
-    settings.groups = fieldList(settings.groups, "groups");
-    settings.filters = fieldList(settings.filters, "filters");
-    settings.details = fieldList(settings.details, "details");
-    settings.profile_details = fieldList(settings.profile_details, "profile_details");
-    return settings;
-  }
-
   // src/stratified-survival/drag.js
   var dropPoint = (value) => Number(writePoint(value));
   function movePoints(points, index, value, { drop = false, min = -Infinity, max = Infinity } = {}) {
@@ -7462,9 +8709,9 @@ ${C}.sv-collapsed .sv-sidebar{padding:.5rem .9rem}
     return sentence(failure.state, failure.text);
   }
   function scopeText4({ n, endpoint, filters = [] }) {
-    const said = [`This test is of the ${n} participant${n === 1 ? "" : "s"} drawn, on ${endpoint}.`];
-    if (filters.length) said.push(filtersSaid(filters));
-    return said.join(" ");
+    const said2 = [`This test is of the ${n} participant${n === 1 ? "" : "s"} drawn, on ${endpoint}.`];
+    if (filters.length) said2.push(filtersSaid(filters));
+    return said2.join(" ");
   }
   function createStatisticDesk4({ connection, note = null }) {
     return createDesk({ connection, note, describe: describeAnswer2 });
@@ -7558,6 +8805,8 @@ ${C}.sv-collapsed .sv-sidebar{padding:.5rem .9rem}
       records.push({
         [idCol]: id,
         group: cut ? groupLabel(record.group, cut) : String(record.group),
+        // The value a cut was made from, for the table download (#70 review).
+        ...cut ? { value: record.group } : {},
         time: outcome.time,
         flag: outcome.flag,
         event: outcome.event
@@ -7648,7 +8897,7 @@ ${C2} .bv-control-note{display:block;margin:.2rem 0 0;font-size:.75rem;color:#52
       if (!this.element) {
         throw new Error(`bio.viz: stratified survival target not found: ${element}`);
       }
-      this.settings = syncSettings4(settings);
+      this.settings = syncSettings6(settings);
       this.tables = { results: [], participants: null, outcomes: null };
       this.charts = [];
       this.model = null;
@@ -7717,7 +8966,7 @@ ${C2} .bv-control-note{display:block;margin:.2rem 0 0;font-size:.75rem;color:#52
      * @returns {StratifiedSurvival} The chart, for chaining.
      */
     setData(data, settings) {
-      const next = settings === void 0 || settings === null ? this.settings : syncSettings4(laidOver(this.settings, settings));
+      const next = settings === void 0 || settings === null ? this.settings : syncSettings6(laidOver(this.settings, settings));
       const given2 = Array.isArray(data) ? { results: data } : data || {};
       const read2 = readGiven(this, given2, next);
       const outcomes = readOutcomesGiven(this, given2.outcomes, next);
@@ -7739,7 +8988,7 @@ ${C2} .bv-control-note{display:block;margin:.2rem 0 0;font-size:.75rem;color:#52
      */
     setSettings(settings) {
       const given2 = settings || {};
-      const next = syncSettings4(laidOver(this.settings, given2));
+      const next = syncSettings6(laidOver(this.settings, given2));
       checkTables(this.tables, next);
       if (this.tables.outcomes) checkOutcomes(this.tables.outcomes, next);
       this.settings = next;
@@ -7822,7 +9071,7 @@ ${C2} .bv-control-note{display:block;margin:.2rem 0 0;font-size:.75rem;color:#52
       return {
         endpoint: named2 ? named2.endpoint : endpoints[0] ? endpoints[0].endpoint : null,
         groupBy,
-        filters: this.kit.initFilterState(this.filterSpecs)
+        filters: startFilters(this)
       };
     }
     repairState(opening) {
@@ -8016,13 +9265,13 @@ ${C2} .bv-control-note{display:block;margin:.2rem 0 0;font-size:.75rem;color:#52
     }
     cutNotes(model) {
       if (!model.cut) return [];
-      const said = [cutNote(model.cut.spec, model.cut)];
+      const said2 = [cutNote(model.cut.spec, model.cut)];
       if (!Array.isArray(model.cut.cut)) {
-        said.push(
+        said2.push(
           "Only participants with an outcome for the endpoint are cut, as R\u2019s Analyze_Screen cuts them."
         );
       }
-      return said;
+      return said2;
     }
     colorOf(index) {
       return PALETTE[index % PALETTE.length];
@@ -8534,6 +9783,56 @@ ${C2} .bv-control-note{display:block;margin:.2rem 0 0;font-size:.75rem;color:#52
       return railSettings(this, "linear");
     }
     /**
+     * What the controls now read, as the settings the chart would open on with
+     * them: the part of its specification the controls hold (#68).
+     * @returns {object}
+     */
+    viewSettings() {
+      const { state } = this;
+      const group = state.groupBy ? this.groupingOf(state.groupBy) : null;
+      return {
+        endpoint: state.endpoint,
+        group_by: group,
+        // Every cut the Groups control offers stays offered, the one a moved line
+        // left among them (#71 review).
+        cuts: cutsOffered(this.cutOptions, [group])
+      };
+    }
+    /**
+     * The chart's specification: its name, the bio.viz version, every setting
+     * as the controls now read, and every filter in force, as JSON data, which
+     * `BioViz.fromSpecification` makes the same chart from (#68).
+     * @returns {object}
+     */
+    specification() {
+      return specificationOf(this);
+    }
+    /**
+     * The table the chart drew from, one row per participant drawn, for the
+     * table download (#67): which field of a row each column holds, and its
+     * heading.
+     * @returns {{columns: Array<{value_col: string, label: string}>, rows: object[]}}
+     */
+    tableOf() {
+      const { model, state, settings } = this;
+      if (!model || !model.records) return { columns: [], rows: [] };
+      const valued = model.cut ? (({ cut, ...variable2 }) => variable2)(model.cut.spec) : null;
+      return {
+        columns: [
+          { value_col: settings.id_col, label: "Participant" },
+          { value_col: "group", label: this.labelOf(state.groupBy) },
+          ...valued ? [{ value_col: "value", label: label(valued) }] : [],
+          { value_col: "time", label: "Time" },
+          { value_col: "event", label: "Event" }
+        ],
+        rows: model.records
+      };
+    }
+    /** The placeholders a download's file name is made of, after the chart's name. */
+    get viewFields() {
+      return ["endpoint", "group"];
+    }
+    /**
      * What the title, subtitle and footnotes' placeholders hold for the view now
      * drawn, beside `{date}`, `{version}` and `{filters}` (#66).
      * @returns {object}
@@ -8584,115 +9883,6 @@ ${C2} .bv-control-note{display:block;margin:.2rem 0 0;font-size:.75rem;color:#52
   };
   function stratifiedSurvival(element, settings) {
     return new StratifiedSurvival(element, settings);
-  }
-
-  // src/biomarker-screen/configure.js
-  var COMPARISONS = Object.freeze(["difference", "correlation", "hazard"]);
-  var METHODS3 = Object.freeze(["pearson", "spearman"]);
-  var ADJUSTMENTS2 = Object.freeze(["BH", "holm"]);
-  var SORTS = Object.freeze(["estimate", "name", "adjusted"]);
-  var DEFAULT_SETTINGS6 = Object.freeze({
-    // Columns of the results table, and of the participant table.
-    id_col: "USUBJID",
-    measure_col: "TEST",
-    value_col: "STRESN",
-    visit_col: "VISIT",
-    visit_order_col: "VISITNUM",
-    unit_col: "STRESU",
-    participant_id_col: null,
-    // How a baseline is found (the core's rules).
-    baseline_visits: null,
-    baseline_stat: "mean",
-    // What the chart opens on: every biomarker, at one visit, with one value type.
-    comparison: "difference",
-    visit: null,
-    value_type: "raw",
-    // A difference: the column of groups, and the two groups, first minus second.
-    group_by: null,
-    levels: null,
-    // A correlation: the variable every biomarker is correlated with.
-    with: null,
-    method: "pearson",
-    // A hazard ratio: the outcomes table's columns, read either way round, and
-    // the endpoint the rows are of. Each biomarker is cut at its median, high
-    // against low, as R's Analyze_Screen cuts it.
-    outcome_id_col: OUTCOME_DEFAULTS.outcome_id_col,
-    endpoint_col: OUTCOME_DEFAULTS.endpoint_col,
-    endpoint_label_col: OUTCOME_DEFAULTS.endpoint_label_col,
-    time_col: OUTCOME_DEFAULTS.time_col,
-    censor_col: OUTCOME_DEFAULTS.censor_col,
-    event_col: OUTCOME_DEFAULTS.event_col,
-    endpoint: OUTCOME_DEFAULTS.endpoint,
-    // Across the rows.
-    adjustment: "BH",
-    sort: "estimate",
-    // The most rows on a page.
-    limit: 20,
-    // What the controls offer.
-    measures: null,
-    groups: null,
-    numbers: null,
-    max_levels: 12,
-    filters: null,
-    // The statistics.
-    connection: null,
-    statistic: "Analyze_Screen",
-    waiting_note: null,
-    // The charts a row opens, and settings laid under what the screen carries across.
-    group_comparison: null,
-    association_scatter: null,
-    stratified_survival: null,
-    // The title, subtitle and footnotes, with placeholders (src/shared/titles.js).
-    ...TITLE_DEFAULTS
-  });
-  function syncSettings5(overrides) {
-    const settings = layOver(DEFAULT_SETTINGS6, flaggedSettings(overrides), "the biomarker screen");
-    checkShared(settings, BASELINE_STATS);
-    checkOutcomeSettings(settings);
-    for (const key of ["visit_order_col", "unit_col", "participant_id_col", "group_by"]) {
-      columnOrNull(settings, key);
-    }
-    if (settings.visit !== null && !isText4(settings.visit)) {
-      refuse5("`visit` must be the name of a visit, or null.");
-    }
-    if (!COMPARISONS.includes(settings.comparison)) {
-      refuse5(`\`comparison\` must be one of ${COMPARISONS.join(", ")}.`);
-    }
-    if (!VALUE_TYPES.includes(settings.value_type)) {
-      refuse5(`\`value_type\` must be one of ${VALUE_TYPES.join(", ")}.`);
-    }
-    if (!METHODS3.includes(settings.method)) {
-      refuse5(`\`method\` must be one of ${METHODS3.join(", ")}.`);
-    }
-    if (!ADJUSTMENTS2.includes(settings.adjustment)) {
-      refuse5(`\`adjustment\` must be one of ${ADJUSTMENTS2.join(", ")}.`);
-    }
-    if (!SORTS.includes(settings.sort)) refuse5(`\`sort\` must be one of ${SORTS.join(", ")}.`);
-    if (!Number.isInteger(settings.limit) || settings.limit < 1) {
-      refuse5("`limit` must be a whole number, one or more.");
-    }
-    if (!Number.isInteger(settings.max_levels) || settings.max_levels < 1) {
-      refuse5("`max_levels` must be a whole number, one or more.");
-    }
-    if (settings.statistic !== null && !isText4(settings.statistic)) {
-      refuse5("`statistic` must be the name of an R function, or null for no statistics.");
-    }
-    for (const key of ["group_comparison", "association_scatter", "stratified_survival"]) {
-      if (settings[key] !== null && !isPlainObject4(settings[key])) {
-        refuse5(`\`${key}\` must be an object of settings for the chart a row opens, or null.`);
-      }
-    }
-    settings.levels = textList2(settings.levels, "levels");
-    if (settings.levels && settings.levels.length !== 2) {
-      refuse5("`levels` must name two groups, the first and the second, or be null.");
-    }
-    settings.with = variableSetting(settings.with, "with");
-    settings.baseline_visits = textList2(settings.baseline_visits, "baseline_visits");
-    settings.measures = textList2(settings.measures, "measures");
-    settings.groups = fieldList(settings.groups, "groups");
-    settings.numbers = fieldList(settings.numbers, "numbers");
-    settings.filters = fieldList(settings.filters, "filters");
-    return settings;
   }
 
   // src/biomarker-screen/statistic.js
@@ -8748,7 +9938,7 @@ ${C2} .bv-control-note{display:block;margin:.2rem 0 0;font-size:.75rem;color:#52
       rows: model.records.length
     };
   }
-  var plain4 = (state, said) => ({ ...sentence(state, said), table: null, rows: null });
+  var plain4 = (state, said2) => ({ ...sentence(state, said2), table: null, rows: null });
   function rowsOf(value, groups = null) {
     const rows = Array.isArray(value && value.rows) ? value.rows : [];
     const number = (given2) => typeof given2 === "number" && Number.isFinite(given2) ? given2 : null;
@@ -8816,18 +10006,18 @@ ${C2} .bv-control-note{display:block;margin:.2rem 0 0;font-size:.75rem;color:#52
     return described;
   }
   function scopeText5({ n, filters = [] }) {
-    const said = [
+    const said2 = [
       `${n} participant${n === 1 ? " is" : "s are"} in the frame. A row is of the ones who have its biomarker, so each row has its own counts.`
     ];
-    if (filters.length) said.push(filtersSaid(filters));
-    return said.join(" ");
+    if (filters.length) said2.push(filtersSaid(filters));
+    return said2.join(" ");
   }
   function createStatisticDesk5({ connection, note = null }) {
     return createDesk({
       connection,
       note,
       describe: describeScreen,
-      waiting: (said) => plain4("waiting", said)
+      waiting: (said2) => plain4("waiting", said2)
     });
   }
 
@@ -9080,7 +10270,7 @@ ${C3}.sv-collapsed .sv-sidebar{padding:.5rem .9rem}
       this.kit = findKit("the biomarker screen");
       this.element = typeof element === "string" ? document.querySelector(element) : element;
       if (!this.element) throw new Error(`bio.viz: biomarker screen target not found: ${element}`);
-      this.settings = syncSettings5(settings);
+      this.settings = syncSettings4(settings);
       this.tables = { results: [], participants: null, outcomes: null };
       this.model = null;
       this.endpoints = [];
@@ -9147,7 +10337,7 @@ ${C3}.sv-collapsed .sv-sidebar{padding:.5rem .9rem}
           outcomes: readOutcomesGiven(this, given2.outcomes, this.settings)
         };
       } else {
-        const next = syncSettings5(laidOver(this.settings, settings));
+        const next = syncSettings4(laidOver(this.settings, settings));
         this.tables = {
           ...readGiven(this, given2, next),
           outcomes: readOutcomesGiven(this, given2.outcomes, next)
@@ -9170,7 +10360,7 @@ ${C3}.sv-collapsed .sv-sidebar{padding:.5rem .9rem}
      */
     setSettings(settings) {
       const given2 = settings || {};
-      const next = syncSettings5(laidOver(this.settings, given2));
+      const next = syncSettings4(laidOver(this.settings, given2));
       checkTables(this.tables, next);
       if (this.tables.outcomes) checkOutcomes(this.tables.outcomes, next);
       this.close();
@@ -9249,6 +10439,7 @@ ${C3}.sv-collapsed .sv-sidebar{padding:.5rem .9rem}
       const given2 = settings.with ? axisOf(settings.with) : null;
       const fallback = this.numbers.length ? axisOf({ col: this.numbers[0].value_col }) : this.measures.length && visits2.length ? axisOf({ measure: this.measures[0], value: "raw", visit: visits2[0] }) : null;
       const endpoint = this.endpoints.some((entry) => entry.endpoint === settings.endpoint) ? settings.endpoint : this.endpoints[0] ? this.endpoints[0].endpoint : null;
+      this.pageFromSettings = true;
       return {
         comparison: this.comparisons().includes(settings.comparison) ? settings.comparison : "difference",
         endpoint,
@@ -9260,8 +10451,8 @@ ${C3}.sv-collapsed .sv-sidebar{padding:.5rem .9rem}
         method: settings.method,
         adjustment: settings.adjustment,
         sort: settings.sort,
-        page: 0,
-        filters: this.kit.initFilterState(this.filterSpecs)
+        page: settings.page,
+        filters: startFilters(this)
       };
     }
     // After the tables or the settings change, a control may hold something that
@@ -9485,7 +10676,8 @@ ${C3}.sv-collapsed .sv-sidebar{padding:.5rem .9rem}
       const round = this.desk.begin();
       this.asked = [];
       this.answer = null;
-      this.state.page = 0;
+      if (this.pageFromSettings) this.pageFromSettings = false;
+      else this.state.page = 0;
       this.notes.innerHTML = "";
       this.screenWrap.innerHTML = "";
       this.screenWrap.hidden = true;
@@ -9646,7 +10838,7 @@ ${C3}.sv-collapsed .sv-sidebar{padding:.5rem .9rem}
       const list = kit.createElement("div", "bv-screen-rows");
       page.items.forEach((row) => list.append(this.rowOf(row, range)));
       wrap.append(list);
-      const tools = kit.createElement("div", "bv-screen-tools");
+      const tools = kit.createElement("div", "bv-screen-tools bv-no-picture");
       const download = kit.createElement("button", null, "Download: CSV");
       download.type = "button";
       download.onclick = () => this.download(sorted2);
@@ -9754,6 +10946,63 @@ ${C3}.sv-collapsed .sv-sidebar{padding:.5rem .9rem}
         ],
         "bio.viz-biomarker-screen-rows.csv"
       );
+    }
+    /**
+     * What the controls now read, as the settings the chart would open on with
+     * them: the part of its specification the controls hold (#68).
+     * @returns {object}
+     */
+    viewSettings() {
+      const { state } = this;
+      return {
+        comparison: state.comparison,
+        endpoint: state.endpoint,
+        visit: state.visit,
+        value_type: state.valueType,
+        group_by: state.groupBy,
+        levels: state.levels ? [...state.levels] : null,
+        with: state.with ? settingOf(state.with) : null,
+        method: state.method,
+        adjustment: state.adjustment,
+        sort: state.sort,
+        page: state.page || 0
+      };
+    }
+    /**
+     * The chart's specification: its name, the bio.viz version, every setting
+     * as the controls now read, and every filter in force, as JSON data, which
+     * `BioViz.fromSpecification` makes the same chart from (#68).
+     * @returns {object}
+     */
+    specification() {
+      return specificationOf(this);
+    }
+    /**
+     * The table the chart drew from, one row per participant drawn, for the
+     * table download (#67): which field of a row each column holds, and its
+     * heading.
+     * @returns {{columns: Array<{value_col: string, label: string}>, rows: object[]}}
+     */
+    tableOf() {
+      const { model, settings } = this;
+      if (!model || !model.records || !model.rows) return { columns: [], rows: [] };
+      const OUTCOME = { time: "Time", censor: "Censored", event: "Event" };
+      return {
+        columns: [
+          { value_col: settings.id_col, label: "Participant" },
+          ...model.rows.map((row) => ({ value_col: row.name, label: row.name })),
+          ...model.extra ? [{ value_col: model.extra, label: model.extra }] : [],
+          ...(model.outcomeFields || []).map((field) => ({
+            value_col: field,
+            label: OUTCOME[field] || field
+          }))
+        ],
+        rows: model.records
+      };
+    }
+    /** The placeholders a download's file name is made of, after the chart's name. */
+    get viewFields() {
+      return ["heading"];
     }
     /**
      * What the title, subtitle and footnotes' placeholders hold for the view now
@@ -9934,104 +11183,6 @@ ${C3}.sv-collapsed .sv-sidebar{padding:.5rem .9rem}
     return new BiomarkerScreen(element, settings);
   }
 
-  // src/cross-tab/configure.js
-  var PERCENTS = Object.freeze(["row", "col", "none"]);
-  var TESTS2 = Object.freeze(["chisq", "fisher", "none"]);
-  var DEFAULT_SETTINGS7 = Object.freeze({
-    // Columns of the results table, and of the participant table.
-    id_col: "USUBJID",
-    measure_col: "TEST",
-    value_col: "STRESN",
-    visit_col: "VISIT",
-    visit_order_col: "VISITNUM",
-    unit_col: "STRESU",
-    participant_id_col: null,
-    // How a baseline is found (the core's rules).
-    baseline_visits: null,
-    baseline_stat: "mean",
-    // What the chart opens on: the table's two variables, each a column or a cut
-    // variable, and what the percentages are of.
-    row_by: null,
-    col_by: null,
-    percent: "row",
-    // Cut variables the Rows and Columns controls offer beside the columns.
-    cuts: null,
-    // What the controls offer.
-    measures: null,
-    groups: null,
-    max_levels: 12,
-    filters: null,
-    // The listing of participants.
-    details: null,
-    page_size: 10,
-    // The statistics line.
-    connection: null,
-    statistic: "Analyze_Contingency",
-    test: "chisq",
-    waiting_note: null,
-    // A way back, when another chart opened this one in its place.
-    back: null,
-    // safety.viz's participant profile.
-    profile: true,
-    profile_details: null,
-    studyday_col: null,
-    normal_col_high: null,
-    normal_col_low: null,
-    // The title, subtitle and footnotes, with placeholders (src/shared/titles.js).
-    ...TITLE_DEFAULTS
-  });
-  function syncSettings6(overrides) {
-    const settings = layOver(DEFAULT_SETTINGS7, overrides, "the cross-tabulation");
-    checkShared(settings, BASELINE_STATS);
-    checkBack(settings);
-    for (const key of [
-      "visit_order_col",
-      "unit_col",
-      "participant_id_col",
-      "studyday_col",
-      "normal_col_high",
-      "normal_col_low"
-    ]) {
-      columnOrNull(settings, key);
-    }
-    for (const key of ["row_by", "col_by"]) {
-      if (isCut(settings[key])) checkGrouping(settings, key);
-      else columnOrNull(settings, key);
-    }
-    if (settings.cuts !== null) {
-      if (!Array.isArray(settings.cuts)) refuse5("`cuts` must be a list of cut variables, or null.");
-      settings.cuts = settings.cuts.map((spec, index) => {
-        const holder = { [`cuts[${index}]`]: spec };
-        if (!isCut(spec)) {
-          refuse5(
-            `\`cuts[${index}]\` must be a cut variable: { measure, visit, cut } or { col, type: 'number', cut }.`
-          );
-        }
-        checkGrouping(holder, `cuts[${index}]`);
-        return holder[`cuts[${index}]`];
-      });
-    }
-    if (!PERCENTS.includes(settings.percent)) {
-      refuse5(`\`percent\` must be one of ${PERCENTS.join(", ")}.`);
-    }
-    if (!TESTS2.includes(settings.test)) refuse5(`\`test\` must be one of ${TESTS2.join(", ")}.`);
-    for (const key of ["page_size", "max_levels"]) {
-      if (!Number.isInteger(settings[key]) || settings[key] < 1) {
-        refuse5(`\`${key}\` must be a whole number, one or more.`);
-      }
-    }
-    if (settings.statistic !== null && !isText4(settings.statistic)) {
-      refuse5("`statistic` must be the name of an R function, or null for no statistics line.");
-    }
-    settings.baseline_visits = textList2(settings.baseline_visits, "baseline_visits");
-    settings.measures = textList2(settings.measures, "measures");
-    settings.groups = fieldList(settings.groups, "groups");
-    settings.filters = fieldList(settings.filters, "filters");
-    settings.details = fieldList(settings.details, "details");
-    settings.profile_details = fieldList(settings.profile_details, "profile_details");
-    return settings;
-  }
-
   // src/cross-tab/statistic.js
   var TEST_LABELS2 = Object.freeze({
     chisq: "Chi-square test",
@@ -10097,9 +11248,9 @@ ${C3}.sv-collapsed .sv-sidebar{padding:.5rem .9rem}
     return sentence(failure.state, failure.text);
   }
   function scopeText6({ n, filters = [] }) {
-    const said = [`This test is of the ${n} participant${n === 1 ? "" : "s"} in the table.`];
-    if (filters.length) said.push(filtersSaid(filters));
-    return said.join(" ");
+    const said2 = [`This test is of the ${n} participant${n === 1 ? "" : "s"} in the table.`];
+    if (filters.length) said2.push(filtersSaid(filters));
+    return said2.join(" ");
   }
   function createStatisticDesk6({ connection, note = null }) {
     return createDesk({ connection, note, describe: describeAnswer3 });
@@ -10125,6 +11276,7 @@ ${C3}.sv-collapsed .sv-sidebar{padding:.5rem .9rem}
       total: 0,
       percents: { row: [], col: [] },
       cuts: {},
+      cutValues: { row: null, col: null },
       participants: kept ? kept.length : 0,
       dropped: [],
       unused: [],
@@ -10143,10 +11295,13 @@ ${C3}.sv-collapsed .sv-sidebar{padding:.5rem .9rem}
       { row: grouping2(state.rowBy), col: grouping2(state.colBy) },
       config
     );
+    const cutValues = { row: null, col: null };
+    for (const field of ["row", "col"]) if (cuts[field]) cutValues[field] = {};
     const records = made.data.map((record) => {
       const out = { [config.id_col]: record[config.id_col] };
       for (const field of ["row", "col"]) {
         out[field] = cuts[field] ? groupLabel(record[field], cuts[field]) : String(record[field]);
+        if (cuts[field]) cutValues[field][record[config.id_col]] = record[field];
       }
       return out;
     });
@@ -10164,6 +11319,7 @@ ${C3}.sv-collapsed .sv-sidebar{padding:.5rem .9rem}
     return {
       ...empty,
       records,
+      cutValues,
       rowLevels,
       colLevels,
       counts,
@@ -10214,7 +11370,7 @@ ${C4} .bv-control-note{display:block;margin:.2rem 0 0;font-size:.75rem;color:#52
       this.kit = findKit("the cross-tabulation");
       this.element = typeof element === "string" ? document.querySelector(element) : element;
       if (!this.element) throw new Error(`bio.viz: cross-tabulation target not found: ${element}`);
-      this.settings = syncSettings6(settings);
+      this.settings = syncSettings5(settings);
       this.tables = { results: [], participants: null };
       this.charts = [];
       this.model = null;
@@ -10271,7 +11427,7 @@ ${C4} .bv-control-note{display:block;margin:.2rem 0 0;font-size:.75rem;color:#52
       if (settings === void 0 || settings === null) {
         this.tables = readGiven(this, data);
       } else {
-        this.tables = readGiven(this, data, syncSettings6({ ...this.settings, ...settings }));
+        this.tables = readGiven(this, data, syncSettings5({ ...this.settings, ...settings }));
         this.setSettings(settings);
       }
       this.readTables();
@@ -10290,7 +11446,7 @@ ${C4} .bv-control-note{display:block;margin:.2rem 0 0;font-size:.75rem;color:#52
      */
     setSettings(settings) {
       const given2 = settings || {};
-      const next = syncSettings6({ ...this.settings, ...given2 });
+      const next = syncSettings5({ ...this.settings, ...given2 });
       checkTables(this.tables, next);
       this.settings = next;
       syncHost(this);
@@ -10378,7 +11534,7 @@ ${C4} .bv-control-note{display:block;margin:.2rem 0 0;font-size:.75rem;color:#52
         colBy,
         percent: settings.percent,
         test: settings.test,
-        filters: this.kit.initFilterState(this.filterSpecs)
+        filters: startFilters(this)
       };
     }
     // After the tables or the settings change, a control may hold something that
@@ -10767,6 +11923,65 @@ ${C4} .bv-control-note{display:block;margin:.2rem 0 0;font-size:.75rem;color:#52
       return railSettings(this, "linear");
     }
     /**
+     * What the controls now read, as the settings the chart would open on with
+     * them: the part of its specification the controls hold (#68).
+     * @returns {object}
+     */
+    viewSettings() {
+      const { state } = this;
+      const row = this.groupingOf(state.rowBy);
+      const col = this.groupingOf(state.colBy);
+      return {
+        row_by: row,
+        col_by: col,
+        // Every cut the Rows and Columns controls offer stays offered (#71 review).
+        cuts: cutsOffered(this.cutOptions, [row, col]),
+        percent: state.percent,
+        test: state.test
+      };
+    }
+    /**
+     * The chart's specification: its name, the bio.viz version, every setting
+     * as the controls now read, and every filter in force, as JSON data, which
+     * `BioViz.fromSpecification` makes the same chart from (#68).
+     * @returns {object}
+     */
+    specification() {
+      return specificationOf(this);
+    }
+    /**
+     * The table the chart drew from, one row per participant drawn, for the
+     * table download (#67): which field of a row each column holds, and its
+     * heading.
+     * @returns {{columns: Array<{value_col: string, label: string}>, rows: object[]}}
+     */
+    tableOf() {
+      const { model, state, settings } = this;
+      if (!model || !model.records) return { columns: [], rows: [] };
+      const columns = [{ value_col: settings.id_col, label: "Participant" }];
+      const values = model.cutValues || {};
+      for (const [field, by] of [
+        ["row", state.rowBy],
+        ["col", state.colBy]
+      ]) {
+        columns.push({ value_col: field, label: this.labelOf(by) });
+        if (values[field]) {
+          const { cut, ...variable2 } = this.groupingOf(by);
+          columns.push({ value_col: `${field}Value`, label: label(variable2) });
+        }
+      }
+      const rows = model.records.map((record) => ({
+        ...record,
+        ...values.row ? { rowValue: values.row[record[settings.id_col]] } : {},
+        ...values.col ? { colValue: values.col[record[settings.id_col]] } : {}
+      }));
+      return { columns, rows };
+    }
+    /** The placeholders a download's file name is made of, after the chart's name. */
+    get viewFields() {
+      return ["rows", "columns"];
+    }
+    /**
      * What the title, subtitle and footnotes' placeholders hold for the view now
      * drawn, beside `{date}`, `{version}` and `{filters}` (#66).
      * @returns {object}
@@ -10817,6 +12032,42 @@ ${C4} .bv-control-note{display:block;margin:.2rem 0 0;font-size:.75rem;color:#52
   function crossTab(element, settings) {
     return new CrossTab(element, settings);
   }
+
+  // src/specification.js
+  var CHARTS = {
+    "group-comparison": { ...configure_exports, make: groupComparison },
+    "association-scatter": { ...configure_exports2, make: associationScatter },
+    "correlation-matrix": { ...configure_exports3, make: correlationMatrix },
+    "biomarker-screen": { ...configure_exports4, make: biomarkerScreen },
+    "cross-tab": { ...configure_exports5, make: crossTab },
+    "stratified-survival": { ...configure_exports6, make: stratifiedSurvival }
+  };
+  var CHART_SETTINGS = Object.freeze(
+    Object.fromEntries(Object.entries(CHARTS).map(([name, entry]) => [name, entry.DEFAULT_SETTINGS]))
+  );
+  function readChecked(specification) {
+    const read2 = readSpecification(specification, CHART_SETTINGS);
+    CHARTS[read2.chart].syncSettings(JSON.parse(JSON.stringify(read2.settings)));
+    return read2;
+  }
+  function fromSpecification(element, specification, page = {}) {
+    const read2 = readChecked(specification);
+    const { chart, settings } = read2;
+    const given2 = page === null || page === void 0 ? {} : page;
+    const others = Object.keys(given2).filter((key) => !PAGE_SETTINGS.includes(key));
+    if (others.length) {
+      throw new TypeError(
+        `bio.viz: fromSpecification takes the page's ${PAGE_SETTINGS.join(" and ")} beside the specification, and \`${others[0]}\` is not one: give it in the specification's settings.`
+      );
+    }
+    const made = CHARTS[chart].make(element, { ...settings, ...given2 });
+    made.requested = { settings: read2.settings, filters: read2.filters };
+    return made;
+  }
+  var readChartSpecification = (specification) => {
+    const { chart, settings, version: version2 } = readChecked(specification);
+    return { chart, settings, version: version2 };
+  };
 
   // src/data/portfolio.json
   var portfolio_default = {

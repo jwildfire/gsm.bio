@@ -62,6 +62,9 @@
 <li>
 <strong>Titles and footnotes on the widgets.</strong> Every widget takes bio.viz’s <code>title</code>, <code>subtitle</code> and <code>footnotes</code> settings, with the chart’s placeholders. The chart’s own footnote names the R and gsm.bio versions that computed the results stored with the page, which the widget now hands it. <a href="https://github.com/jwildfire/obot.roadmap/issues/362" class="external-link">obot.roadmap#362</a>, <a href="https://github.com/jwildfire/gsm.bio/issues/37" class="external-link">#37</a>, <a href="https://github.com/jwildfire/gsm.bio/pull/40" class="external-link">#40</a>
 </li>
+<li>
+<strong>Batch runs of chart specifications.</strong> <a href="https://jwildfire.github.io/gsm.bio/reference/Run_Specifications.html"><code>Run_Specifications()</code></a> reads the specifications bio.viz’s charts write and draws each against a dataset, as a figure (PNG, PDF or SVG) and an RTF table, into a folder, with a manifest of what was written. One specification can run across every biomarker, one figure and one table each. A specification is data and nothing in it is evaluated; one that cannot be read is refused with bio.viz’s sentence, and the rest still run. The manifest counts the participants each view’s filters keep and says what the tables could not honour, as bio.viz’s notices do. <a href="https://github.com/jwildfire/obot.roadmap/issues/362" class="external-link">obot.roadmap#362</a>, <a href="https://github.com/jwildfire/gsm.bio/issues/39" class="external-link">#39</a>, <a href="https://github.com/jwildfire/gsm.bio/pull/42" class="external-link">#42</a>
+</li>
 </ul></div>
 <div class="section level3">
 <h3 id="also-in-this-release-0-2-0">Also in this release<a class="anchor" aria-label="anchor" href="#also-in-this-release-0-2-0"></a></h3>

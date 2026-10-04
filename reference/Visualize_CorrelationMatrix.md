@@ -61,6 +61,7 @@ many), `{visit}`, `{value}`, `{n}` (the participants in the frame),
 its interactive twin.
 
 Other figures:
+[`Run_Specifications()`](https://jwildfire.github.io/gsm.bio/reference/Run_Specifications.md),
 [`Visualize_AssociationScatter()`](https://jwildfire.github.io/gsm.bio/reference/Visualize_AssociationScatter.md),
 [`Visualize_BiomarkerScreen()`](https://jwildfire.github.io/gsm.bio/reference/Visualize_BiomarkerScreen.md),
 [`Visualize_CrossTab()`](https://jwildfire.github.io/gsm.bio/reference/Visualize_CrossTab.md),

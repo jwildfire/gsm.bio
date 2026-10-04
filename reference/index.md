@@ -90,6 +90,14 @@ suggested, not imported.
 - [`Write_RTF()`](https://jwildfire.github.io/gsm.bio/reference/Write_RTF.md)
   : Write a Statistics Table to RTF
 
+## Batch
+
+bio.viz’s chart specifications run against a dataset to figures and RTF
+tables in a folder, one per specification or one per biomarker.
+
+- [`Run_Specifications()`](https://jwildfire.github.io/gsm.bio/reference/Run_Specifications.md)
+  : Run Chart Specifications to Figures and Tables
+
 ## Synthetic study
 
 A made-up biomarker study with three planted effects of known size, for

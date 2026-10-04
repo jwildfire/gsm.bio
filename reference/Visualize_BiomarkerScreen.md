@@ -74,6 +74,7 @@ many are screened), `{n}` (the participants in the frame), `{filters}`,
 its interactive twin.
 
 Other figures:
+[`Run_Specifications()`](https://jwildfire.github.io/gsm.bio/reference/Run_Specifications.md),
 [`Visualize_AssociationScatter()`](https://jwildfire.github.io/gsm.bio/reference/Visualize_AssociationScatter.md),
 [`Visualize_CorrelationMatrix()`](https://jwildfire.github.io/gsm.bio/reference/Visualize_CorrelationMatrix.md),
 [`Visualize_CrossTab()`](https://jwildfire.github.io/gsm.bio/reference/Visualize_CrossTab.md),

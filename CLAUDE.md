@@ -36,7 +36,8 @@ runs one requirement per session
   it from `dev` to the `gh-pages` branch.
 - `Rscript data-raw/vendor-bio-viz.R` — copies what gsm.bio takes from
   bio.viz’s `dev` again, with its records: the two bundles the widgets
-  load (`inst/htmlwidgets/lib/`), the fixtures the tests hold R to
+  load (`inst/htmlwidgets/lib/`), the specification schema
+  (`inst/specification/`), the fixtures the tests hold R to
   (`tests/testthat/fixtures/bio.viz/`), the frames the copied bundle’s
   own core writes (`tests/testthat/fixtures/core-frames/frames.json`),
   and what its safety.viz kit opens each filter on
@@ -88,6 +89,25 @@ runs one requirement per session
   [`Write_RTF()`](https://jwildfire.github.io/gsm.bio/reference/Write_RTF.md)
   writes one with r2rtf (Suggests), escaping text as RTF itself so the
   file is the same in every locale.
+- `R/specification.R` reads bio.viz’s chart specifications as bio.viz’s
+  reader does (its checks, and its sentences for the format and for a
+  setting’s shape), by the copied schema
+  `inst/specification/specification.schema.json`; `R/batch.R` runs them
+  with
+  [`Run_Specifications()`](https://jwildfire.github.io/gsm.bio/reference/Run_Specifications.md).
+  Its header lists where it differs from bio.viz on purpose.
+  `tests/testthat/test-batch.R` holds it to bio.viz’s own reader run in
+  node, case by case and over every setting of every chart given 21
+  values, with recordings for a session with no node: after the bundle
+  is copied again, run
+  `Rscript data-raw/specifications/record-readers.R`. Nothing in a
+  specification is evaluated: the same file walks every function in the
+  namespace and fails on [`eval()`](https://rdrr.io/r/base/eval.html),
+  [`parse()`](https://rdrr.io/r/base/parse.html) or anything that runs
+  text, and on [`do.call()`](https://rdrr.io/r/base/do.call.html) of
+  anything but `rbind`,
+  [`ggplot2::aes`](https://ggplot2.tidyverse.org/reference/aes.html) and
+  `Chart_Answer()`’s fixed list of statistics functions.
 - A file copied from bio.viz is never edited here: change it in bio.viz
   and copy it again. `tests/testthat/test-vendored.R` fails the suite
   when a copied file and its record disagree.
