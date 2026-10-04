@@ -123,7 +123,7 @@ test_that("a widget names the value an all = FALSE filter opens on as its start,
   expect_identical(Widget_GroupComparison(Synthetic_Results, Synthetic_Participants, lSettings = lGiven)$x$lSettings$filters, lGiven$filters)
 })
 
-test_that("a session whose locale is not UTF-8 makes every widget with text that is not ASCII (#19)", {
+test_that("a session whose locale is not UTF-8 makes every widget with text that is not ASCII (#19, #22)", {
   strCtype <- Sys.getlocale("LC_CTYPE")
   strCollate <- Sys.getlocale("LC_COLLATE")
   on.exit({
@@ -152,7 +152,11 @@ test_that("a session whose locale is not UTF-8 makes every widget with text that
   lStored <- Widget_GroupComparison(Synthetic_Results, dfParticipants, lSettings = list(
     start_value = "IL-6", filters = list(list(value_col = "COUNTRY", all = FALSE), list(value_col = "CITY", start = strCafe))
   ))$x$lStatistics$results
-  expect_identical(lStored[[1]]$dataId$filters, list(COUNTRY = list("France"), CITY = list(strCafe)))
+  # The widget holds the text marked UTF-8, the bytes it was read as (#22).
+  strCafeUtf8 <- strCafe
+  Encoding(strCafeUtf8) <- "UTF-8"
+  expect_identical(lStored[[1]]$dataId$filters, list(COUNTRY = list("France"), CITY = list(strCafeUtf8)))
+  expect_identical(charToRaw(lStored[[1]]$dataId$filters$CITY[[1]]), charToRaw(strCafe))
   # The order is the same as in a UTF-8 session: by the text's UTF-8 bytes.
   for (strAccented in list(strEire, "\u00c9ire")) {
     expect_identical(Core_NaturalCompare("France", strAccented), -1)

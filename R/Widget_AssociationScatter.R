@@ -108,6 +108,11 @@ Widget_AssociationScatter <- function(
     elementId = NULL,
     bDebug = FALSE) {
   Widget_CheckInputs(dfResults, dfParticipants, lSettings, bDebug)
+  # Text as UTF-8, marked so, before anything is computed: the page carries it
+  # so whatever the session's locale.
+  dfResults <- Widget_Utf8(dfResults)
+  dfParticipants <- Widget_Utf8(dfParticipants)
+  lSettings <- Widget_Utf8(lSettings)
   if ("back" %in% names(lSettings)) {
     stop(
       "Setting 'back' cannot be given: it is a way back to a chart that opened this one, and a widget is opened by none",
