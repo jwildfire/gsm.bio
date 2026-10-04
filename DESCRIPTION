@@ -17,6 +17,7 @@ BugReports: https://github.com/jwildfire/gsm.bio/issues
 Depends:
     R (>= 3.5.0)
 Imports:
+    grDevices,
     htmlwidgets,
     stats,
     survival
@@ -25,6 +26,7 @@ Suggests:
     effectsize,
     ggplot2,
     jsonlite,
+    r2rtf,
     rmarkdown,
     testthat (>= 3.0.0)
 Config/testthat/edition: 3

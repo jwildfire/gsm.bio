@@ -155,6 +155,26 @@ Visualize_StratifiedSurvival(
 
 The settings `title`, `subtitle` and `footnotes` are written with the chart's placeholders, by bio.viz's rules: a name in braces is replaced by text, and a name the figure does not have is left as written. The last line under a figure is always its own: the date it was drawn, by gsm.bio, and R's method and counts behind each statistic it printed, with the R and gsm.bio versions. The [gallery](https://jwildfire.github.io/gsm.bio/articles/gallery.html) shows each figure beside its widget.
 
+## Tables
+
+Each chart's statistics also come as a table, for a report: `Table_GroupComparison()`, `Table_AssociationScatter()`, `Table_CorrelationMatrix()`, `Table_BiomarkerScreen()`, `Table_CrossTab()` and `Table_StratifiedSurvival()`. Each takes the same tables and settings as its widget and returns a data frame, one row per statistic R computed for the view the chart opens on. A row gives the method, each estimate with its interval, the counts, and the p-value written by the display rules: three decimals, `p < 0.001` below that, labelled exploratory with its adjustment named, and no stars. A statistic R did not compute carries R's reason instead.
+
+```r
+dfTable <- Table_StratifiedSurvival(
+  Synthetic_Results,
+  Synthetic_Participants,
+  lSettings = list(
+    endpoint = "EFS",
+    group_by = list(measure = "CRP", visit = "Baseline", cut = "median"),
+    title = "{endpoint} by {group}"
+  ),
+  dfOutcomes = Synthetic_Outcomes
+)
+Write_RTF(dfTable, "survival.rtf")
+```
+
+`Write_RTF()` writes a table to RTF with the r2rtf package: the title and subtitle above, the footnotes beneath, the table's own last. r2rtf is suggested, not imported, and `Write_RTF()` says so when it is not installed.
+
 ## Synthetic study
 
 The package ships a made-up biomarker study, so that a test can assert an answer known in advance: `Synthetic_Results` (one row per participant, biomarker and visit), `Synthetic_Participants` and `Synthetic_Outcomes`. Three effects are planted in it and every other biomarker is null. `Synthetic_Truth` holds the true size of each: a difference between arms in change from baseline, a correlation between two biomarkers, and a hazard ratio between high and low baseline levels. The same tables are CSV files under `inst/extdata/`. No real study data is used.

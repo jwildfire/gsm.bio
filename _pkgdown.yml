@@ -50,6 +50,19 @@ reference:
       - Visualize_BiomarkerScreen
       - Visualize_CrossTab
       - Visualize_StratifiedSurvival
+  - title: Tables
+    desc: >
+      The same views' statistics as tables, one row per statistic, written by
+      the program's display rules, and an RTF writer for a report. r2rtf is
+      suggested, not imported.
+    contents:
+      - Table_GroupComparison
+      - Table_AssociationScatter
+      - Table_CorrelationMatrix
+      - Table_BiomarkerScreen
+      - Table_CrossTab
+      - Table_StratifiedSurvival
+      - Write_RTF
   - title: Synthetic study
     desc: >
       A made-up biomarker study with three planted effects of known size, for
