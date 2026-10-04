@@ -31,6 +31,10 @@ test_that("a placeholder is replaced by the text of its value once, left to righ
 
 test_that("a title or subtitle that is not text, or footnotes that are not texts, are refused; one footnote is a list of one, empty ones dropped (#37)", {
   expect_identical(lOutputTitleDefaults, list(title = NULL, subtitle = NULL, footnotes = NULL))
+  # As every chart of the copied bundle has them.
+  for (strSetting in c("fit_statistic", "row_by", "at_risk_times", "start_value")) {
+    expect_identical(lBundleDefaults(strSetting)[names(lOutputTitleDefaults)], lOutputTitleDefaults, label = strSetting)
+  }
   lChecked <- Output_CheckTitles(list(title = "CRP", subtitle = "{n} participants", footnotes = "Synthetic."))
   expect_identical(lChecked$footnotes, "Synthetic.")
   expect_identical(Output_CheckTitles(list(footnotes = list("One.", "", " ", "Two.")))$footnotes, c("One.", "Two."))

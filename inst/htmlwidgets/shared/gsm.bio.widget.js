@@ -79,7 +79,9 @@ window.GsmBioWidget = (function() {
                     try {
                         // The connection is made from the stored results and
                         // nothing else: no R is started and nothing is fetched.
-                        settings.connection = BioViz.r.createConnection({ results: statistics.results });
+                        // The record of which R computed them goes with every stored
+                        // answer, and the chart's own footnote names the versions.
+                        settings.connection = BioViz.r.createConnection({ results: statistics.results, computedBy: statistics.computed_by });
                         instance = make(chart, settings);
                         // The tables the chart is given: the results, the
                         // participants when there are any, and the outcomes

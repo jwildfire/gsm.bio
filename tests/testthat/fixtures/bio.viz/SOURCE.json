@@ -3,13 +3,13 @@
   "copied_by": "data-raw/vendor-bio-viz.R",
   "repository": "https://github.com/jwildfire/bio.viz",
   "ref": "dev",
-  "commit": "7a28bf2f6b7c2bc4261810d7aba27c599aabdf22",
+  "commit": "65a9edbae0e9c7e0742acad8fd2d78162d6244da",
   "merged_to_dev": true,
   "files": [
     {
       "file": "group-statistics/SOURCE.json",
       "source": "tests/fixtures/group-statistics/SOURCE.json",
-      "sha256": "4c6ae8ea374b78869fab6eac39905591a47ad4754d3eb3311fd5f3123347b4d9",
+      "sha256": "6b9eabd05a65c09ee715f5a9718de347d38e0402d1785ba586822f5335d7c963",
       "bytes": 5849
     },
     {
@@ -135,7 +135,7 @@
     {
       "file": "association-statistics/SOURCE.json",
       "source": "tests/fixtures/association-statistics/SOURCE.json",
-      "sha256": "5401f5d1d8e93351aded1128299e78bd51c5d584cd7dd8cc17866a70b89370be",
+      "sha256": "2c06d8cdb60e63f4636281e07e3fe0fb515f42c8d5900076124fb13dfca1f7c4",
       "bytes": 7954
     },
     {
@@ -297,7 +297,7 @@
     {
       "file": "matrix-statistics/SOURCE.json",
       "source": "tests/fixtures/matrix-statistics/SOURCE.json",
-      "sha256": "12b87799f9a69c8de1fe361c3d3b898c463dd2f2798e45bbc48e7d5809788d6d",
+      "sha256": "f92118b98d8f7277d277bb66babbb9c740accc616c53bb3d891d63625c69fb00",
       "bytes": 4154
     },
     {
@@ -375,7 +375,7 @@
     {
       "file": "screen-statistics/SOURCE.json",
       "source": "tests/fixtures/screen-statistics/SOURCE.json",
-      "sha256": "f2779c07fa4f194a4e84d0362fbbeba2f06da4e55c81f05fbaa60b70b6aa0061",
+      "sha256": "95df603311cd7f16b2cc5e38057fba2cc643345798794de113ed1228759a61a6",
       "bytes": 6434
     },
     {

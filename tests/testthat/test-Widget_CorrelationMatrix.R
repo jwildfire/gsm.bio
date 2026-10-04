@@ -221,7 +221,7 @@ test_that("the matrix page records which R computed the results, and is made by 
   expect_identical(lSaved$payload$lStatistics$computed_by, lSaved$widget$x$lStatistics$computed_by)
   strScripts <- strWidgetScripts("Widget_CorrelationMatrix")
   expect_match(strScripts, "BioViz.correlationMatrix(chart, settings)", fixed = TRUE)
-  expect_match(strScripts, "BioViz.r.createConnection({ results: statistics.results })", fixed = TRUE)
+  expect_match(strScripts, "BioViz.r.createConnection({ results: statistics.results, computedBy: statistics.computed_by })", fixed = TRUE)
   for (strNever in c("browser", "webr", "sourceUrl", "http", "fetch(", "import(")) {
     expect_false(grepl(strNever, strScripts, fixed = TRUE), label = paste("the scripts name", strNever))
   }
