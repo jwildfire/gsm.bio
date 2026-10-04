@@ -95,7 +95,8 @@
 #'   and `"svg"`. An SVG needs the svglite package. A PDF is drawn by cairo
 #'   where this R can load it; where it cannot (a Mac without XQuartz, for
 #'   one), by the pdf device, which draws a character beyond Latin-1, such as
-#'   the sign of a cut, as a dot, and the row's `reason` says so. Default:
+#'   the sign of a cut, as a dot or a stand-in such as `<=`, and the row's
+#'   `reason` says so. Default:
 #'   `"png"`.
 #' @param bTables `logical` Whether to write each table to RTF, which needs
 #'   r2rtf. Default: `TRUE`.
@@ -388,7 +389,7 @@ Batch_Slug <- function(strText) {
 }
 
 # One figure file written in one format. Returns TRUE when a PDF drawn without
-# cairo has a character beyond Latin-1, which it draws as a dot.
+# cairo has a character beyond Latin-1, which it draws as a dot or a stand-in.
 Batch_Save <- function(strFile, gg, strFormat, nWidth, nHeight) {
   if (strFormat == "pdf" && Batch_HasCairo()) {
     # A PDF by cairo, which draws every character a figure holds: the sign of
@@ -398,12 +399,13 @@ Batch_Save <- function(strFile, gg, strFormat, nWidth, nHeight) {
   }
   if (strFormat == "pdf") {
     # Without cairo the pdf device draws only Latin-1, and a character beyond
-    # it as a dot: the figure is written, and its row says so.
+    # it as a dot (macOS) or a stand-in such as <= (Linux), and warns from
+    # mbcsToSbcs either way: the figure is written, and its row says so.
     bDots <- FALSE
     withCallingHandlers(
       ggplot2::ggsave(strFile, gg, width = nWidth, height = nHeight, device = "pdf"),
       warning = function(cndWarning) {
-        if (grepl("conversion failure on", conditionMessage(cndWarning), fixed = TRUE)) {
+        if (grepl("'mbcsToSbcs'", conditionMessage(cndWarning), fixed = TRUE)) {
           bDots <<- TRUE
           invokeRestart("muffleWarning")
         }
@@ -474,7 +476,8 @@ Batch_DrawFiles <- function(lRead, dfResults, dfParticipants, dfOutcomes, strFol
     # the table.
     chrWhole <- c(toupper(setdiff(chrFormats, "pdf")), if (!is.null(strTable)) "RTF table")
     chrNotes <- c(chrNotes, paste0(
-      "The PDF was drawn without cairo, which this R cannot load, so a character beyond Latin-1 is a dot in it",
+      "The PDF was drawn without cairo, which this R cannot load, so a character beyond Latin-1 is not drawn as itself in it ",
+      "(it is a dot, or a stand-in such as <= for the sign of a cut)",
       if (length(chrWhole) > 0L) paste0("; the ", paste(chrWhole, collapse = " and the "), if (length(chrWhole) == 1L) " has" else " have", " every character"), "."
     ))
   }

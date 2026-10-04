@@ -45,7 +45,8 @@ every biomarker: one value for all, or one per specification. Default:
 and \code{"svg"}. An SVG needs the svglite package. A PDF is drawn by cairo
 where this R can load it; where it cannot (a Mac without XQuartz, for
 one), by the pdf device, which draws a character beyond Latin-1, such as
-the sign of a cut, as a dot, and the row's \code{reason} says so. Default:
+the sign of a cut, as a dot or a stand-in such as \code{<=}, and the row's
+\code{reason} says so. Default:
 \code{"png"}.}
 
 \item{bTables}{\code{logical} Whether to write each table to RTF, which needs

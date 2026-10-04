@@ -416,15 +416,28 @@ test_that("a PDF drawn without cairo says so, naming only the outputs asked for 
   skip_if_not_installed("ggplot2")
   skip_if_not_installed("r2rtf")
   local_mocked_bindings(Batch_HasCairo = function() FALSE)
-  strDots <- "The PDF was drawn without cairo, which this R cannot load, so a character beyond Latin-1 is a dot in it"
+  # The pdf device draws such a character as a dot (macOS) or as a stand-in
+  # such as <= (Linux), and warns either way; the warning is the row's note.
+  strDots <- "The PDF was drawn without cairo, which this R cannot load, so a character beyond Latin-1 is not drawn as itself in it (it is a dot, or a stand-in such as <= for the sign of a cut)"
   # The survival chart's cut is labelled with its sign, beyond Latin-1.
   lSpec <- lSavedSpecs()[7]
-  dfAlone <- Run_Specifications(strSpecText(lSpec), Synthetic_Results, Synthetic_Participants, dfOutcomes = Synthetic_Outcomes,
-    strFolder = tempfile("batch-pdf"), chrFormats = "pdf", bTables = FALSE)
+  dfAlone <- expect_no_warning(Run_Specifications(strSpecText(lSpec), Synthetic_Results, Synthetic_Participants, dfOutcomes = Synthetic_Outcomes,
+    strFolder = tempfile("batch-pdf"), chrFormats = "pdf", bTables = FALSE))
   expect_identical(dfAlone$reason, paste0(strDots, "."))
   dfBoth <- Run_Specifications(strSpecText(lSpec), Synthetic_Results, Synthetic_Participants, dfOutcomes = Synthetic_Outcomes,
     strFolder = tempfile("batch-pdf-png"), chrFormats = c("pdf", "png"))
   expect_identical(dfBoth$reason, paste0(strDots, "; the PNG and the RTF table have every character."))
+  # Each platform's warning is taken as the note, and no other warning is.
+  for (strWarning in c(
+    "conversion failure on '<U+2264> 2.783' in 'mbcsToSbcs': dot substituted for <e2>",
+    "for '<U+2264> 2.783 (n = 100)' in 'mbcsToSbcs': <= substituted for <U+2264> (U+2264)"
+  )) {
+    local_mocked_bindings(ggsave = function(...) warning(strWarning), .package = "ggplot2")
+    expect_true(expect_no_warning(Batch_Save(tempfile(fileext = ".pdf"), NULL, "pdf", 1, 1)), label = strWarning)
+  }
+  local_mocked_bindings(ggsave = function(...) warning("something else"), .package = "ggplot2")
+  expect_warning(bDots <- Batch_Save(tempfile(fileext = ".pdf"), NULL, "pdf", 1, 1), "something else")
+  expect_false(bDots)
 })
 
 test_that("specifications jsonlite simplified are refused with a sentence that says how to read them (#39)", {
