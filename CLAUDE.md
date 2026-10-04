@@ -65,20 +65,22 @@ runs one requirement per session
   `Analyze_*` function’s answer. It is named `Widget_<Chart>()` and
   takes its tables, then `lSettings`, a list under bio.viz’s own setting
   names, then `width`, `height`, `elementId` and `bDebug`, as
-  gsm.safety’s widgets do.
+  gsm.safety’s widgets do. The outcomes table, which came after v0.1.0,
+  is `dfOutcomes`, after `lSettings` and before `width`, in every widget
+  that reads one, so a released widget’s positional calls keep working.
 - A file copied from bio.viz is never edited here: change it in bio.viz
   and copy it again. `tests/testthat/test-vendored.R` fails the suite
   when a copied file and its record disagree.
 - `R/core.R`, `R/chart.R` and one file per chart (`R/GroupComparison.R`,
   `R/AssociationScatter.R`, `R/CorrelationMatrix.R`,
-  `R/BiomarkerScreen.R`, `R/CrossTab.R`) are bio.viz’s rules written a
-  second time, so that R computes on the rows the chart draws: which
-  participants are in a panel, and how the chart asks for a panel’s
-  result. `R/core.R` is bio.viz’s core, `R/chart.R` what every chart
-  shares (bio.viz’s `src/shared/`), and a chart’s own file its own
-  rules. They are the only such copies. The tests hold them to frames
-  and requests written by bio.viz’s own code, so change them only to
-  follow bio.viz.
+  `R/BiomarkerScreen.R`, `R/CrossTab.R`, `R/StratifiedSurvival.R`) are
+  bio.viz’s rules written a second time, so that R computes on the rows
+  the chart draws: which participants are in a panel, and how the chart
+  asks for a panel’s result. `R/core.R` is bio.viz’s core, `R/chart.R`
+  what every chart shares (bio.viz’s `src/shared/`, the outcomes table’s
+  rules among it), and a chart’s own file its own rules. They are the
+  only such copies. The tests hold them to frames and requests written
+  by bio.viz’s own code, so change them only to follow bio.viz.
 - A widget’s binding names its chart and nothing more:
   `inst/htmlwidgets/shared/gsm.bio.widget.js` is the script every
   binding is made with, and `R/utils-widget.R` what every `Widget_*()`

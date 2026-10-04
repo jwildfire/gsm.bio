@@ -43,6 +43,12 @@
 <li>
 <strong>Cross-tabulation widget.</strong> <a href="https://jwildfire.github.io/gsm.bio/reference/Widget_CrossTab.html"><code>Widget_CrossTab()</code></a>: a two-way table of counts of two columns or cut biomarkers, with R’s chi-square and Fisher’s exact test stored in the page, and each cell’s participants a click away. <a href="https://github.com/jwildfire/obot.roadmap/issues/359" class="external-link">obot.roadmap#359</a>, <a href="https://github.com/jwildfire/gsm.bio/issues/18" class="external-link">#18</a>, <a href="https://github.com/jwildfire/gsm.bio/pull/31" class="external-link">#31</a>
 </li>
+<li>
+<strong>Stratified survival widget.</strong> <a href="https://jwildfire.github.io/gsm.bio/reference/Widget_StratifiedSurvival.html"><code>Widget_StratifiedSurvival()</code></a>: Kaplan-Meier curves by a column or a cut biomarker on one endpoint of an outcomes table, with the number at risk, and R’s log-rank test, medians and hazard ratio stored in the page. The outcomes table is read as ADaM holds time to event, censored or event flag either way round. <a href="https://github.com/jwildfire/obot.roadmap/issues/360" class="external-link">obot.roadmap#360</a>, <a href="https://github.com/jwildfire/gsm.bio/issues/35" class="external-link">#35</a>, <a href="https://github.com/jwildfire/gsm.bio/pull/36" class="external-link">#36</a>
+</li>
+<li>
+<strong>Hazard ratios in the biomarker screen.</strong> Given an outcomes table, <code><a href="../reference/Widget_BiomarkerScreen.html">Widget_BiomarkerScreen()</a></code> offers a hazard ratio of high against low on an endpoint, each biomarker cut at its median, and every row opens its survival curves with R’s test stored too. The outcomes table is a new argument, <code>dfOutcomes</code>, after <code>lSettings</code>, so a call written for v0.1.0 works as it did. <a href="https://github.com/jwildfire/obot.roadmap/issues/360" class="external-link">obot.roadmap#360</a>, <a href="https://github.com/jwildfire/gsm.bio/issues/35" class="external-link">#35</a>, <a href="https://github.com/jwildfire/gsm.bio/pull/36" class="external-link">#36</a>
+</li>
 </ul></div>
 <div class="section level3">
 <h3 id="also-in-this-release-0-2-0">Also in this release<a class="anchor" aria-label="anchor" href="#also-in-this-release-0-2-0"></a></h3>

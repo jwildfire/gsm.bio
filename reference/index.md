@@ -47,6 +47,8 @@ saved page shows them with no R and no network.
   : Biomarker Screen Widget
 - [`Widget_CrossTab()`](https://jwildfire.github.io/gsm.bio/reference/Widget_CrossTab.md)
   : Cross-Tabulation Widget
+- [`Widget_StratifiedSurvival()`](https://jwildfire.github.io/gsm.bio/reference/Widget_StratifiedSurvival.md)
+  : Stratified Survival Widget
 
 ## Synthetic study
 

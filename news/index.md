@@ -28,6 +28,26 @@ as it does.
   [obot.roadmap#359](https://github.com/jwildfire/obot.roadmap/issues/359),
   [\#18](https://github.com/jwildfire/gsm.bio/issues/18),
   [\#31](https://github.com/jwildfire/gsm.bio/pull/31)
+- **Stratified survival widget.**
+  [`Widget_StratifiedSurvival()`](https://jwildfire.github.io/gsm.bio/reference/Widget_StratifiedSurvival.html):
+  Kaplan-Meier curves by a column or a cut biomarker on one endpoint of
+  an outcomes table, with the number at risk, and R’s log-rank test,
+  medians and hazard ratio stored in the page. The outcomes table is
+  read as ADaM holds time to event, censored or event flag either way
+  round.
+  [obot.roadmap#360](https://github.com/jwildfire/obot.roadmap/issues/360),
+  [\#35](https://github.com/jwildfire/gsm.bio/issues/35),
+  [\#36](https://github.com/jwildfire/gsm.bio/pull/36)
+- **Hazard ratios in the biomarker screen.** Given an outcomes table,
+  [`Widget_BiomarkerScreen()`](https://jwildfire.github.io/gsm.bio/reference/Widget_BiomarkerScreen.md)
+  offers a hazard ratio of high against low on an endpoint, each
+  biomarker cut at its median, and every row opens its survival curves
+  with R’s test stored too. The outcomes table is a new argument,
+  `dfOutcomes`, after `lSettings`, so a call written for v0.1.0 works as
+  it did.
+  [obot.roadmap#360](https://github.com/jwildfire/obot.roadmap/issues/360),
+  [\#35](https://github.com/jwildfire/gsm.bio/issues/35),
+  [\#36](https://github.com/jwildfire/gsm.bio/pull/36)
 
 ### Also in this release
 
