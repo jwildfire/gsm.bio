@@ -99,6 +99,18 @@ Widget_BiomarkerScreen(
 
 It stores `Analyze_Screen()`'s answer for the screen the settings open on and, for every row, exactly what the chart that row opens asks of R: for a difference the group comparison at the screen's one visit, of the two groups, with Welch's test; for a correlation the scatter with the biomarker along the bottom and the variable up the side. On the synthetic study, Placebo against Treatment, that is one screen and twelve group comparisons.
 
+`Widget_CrossTab()` draws bio.viz's cross-tabulation: a two-way table of counts with its totals and percentages, beside stacked bars, and R's chi-square or Fisher's exact test under it. A click on a count lists that cell's participants.
+
+```r
+Widget_CrossTab(
+  Synthetic_Results,
+  Synthetic_Participants,
+  lSettings = list(row_by = "RESPONSE", col_by = list(measure = "CRP", visit = "Baseline", cut = "median"))
+)
+```
+
+It stores `Analyze_Contingency()`'s answer for the table the settings open on, by both tests. Either variable of the table, and the groups or the panels of `Widget_GroupComparison()`, can be a biomarker or a number cut into groups at its median, tertiles, quartiles or typed points, by the cut rule bio.viz uses in every chart: `quantile()` with its default for the points, and `cut()` with a value on a point in the lower group.
+
 Every widget carries two JavaScript bundles, both copied from bio.viz with the commit and a checksum per file recorded in `inst/htmlwidgets/lib/SOURCE.json`: bio.viz v0.1.0, and safety.viz v1.9.0, the first safety.viz with the kit bio.viz's charts are built from. The safety.viz copy is the one bio.viz takes from safety.viz's `dev` branch at its v1.9.0 release preparation, and its commit is recorded too. gsm.safety carries an earlier safety.viz without the kit; once it carries v1.9.0, the widgets can take the bundle from there instead of carrying their own copy.
 
 ## Synthetic study

@@ -79,8 +79,11 @@ strSavedPage <- function(lWidget, bSelfContained = bPandoc()) {
   strDir <- tempfile("Widget_GroupComparison")
   dir.create(strDir)
   strFile <- file.path(strDir, "group-comparison.html")
+  # The page is UTF-8, so it is read back as UTF-8 whatever the session's
+  # locale; read in the locale's own encoding, a cut group's sign \u2264 would
+  # not read back as itself.
   htmlwidgets::saveWidget(lWidget, file = strFile, selfcontained = bSelfContained)
-  paste(readLines(strFile, warn = FALSE), collapse = "\n")
+  paste(readLines(strFile, warn = FALSE, encoding = "UTF-8"), collapse = "\n")
 }
 
 # The payload a saved page carries for its widget, read back out of the page.
@@ -164,4 +167,10 @@ lBundleDefaults <- function(strSetting) {
     }
   }
   NULL
+}
+
+# A value as it reads back from the JSON a page is written in: a typed cut
+# point is a number, whole or not, as the chart reads it.
+lJsonRoundTrip <- function(xValue) {
+  jsonlite::fromJSON(jsonlite::toJSON(xValue, auto_unbox = TRUE, digits = NA), simplifyVector = FALSE)
 }

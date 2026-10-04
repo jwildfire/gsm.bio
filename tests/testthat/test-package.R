@@ -14,10 +14,12 @@ chrDependencies <- function(strField) {
   sort(sub("\\s*\\(.*\\)$", "", chrEntries))
 }
 
-test_that("the package loads and reports the version its milestone ships (#1)", {
+test_that("the package loads and reports its version: a development version after the v0.1.0 release (#1, #18)", {
   expect_true(isNamespaceLoaded("gsm.bio"))
   expect_identical(utils::packageDescription("gsm.bio")$Package, "gsm.bio")
-  expect_identical(as.character(utils::packageVersion("gsm.bio")), "0.1.0")
+  # Between releases dev carries a development version, the last release with
+  # .9000; the release of v0.2.0 sets 0.2.0.
+  expect_identical(as.character(utils::packageVersion("gsm.bio")), "0.1.0.9000")
 })
 
 test_that("the package imports stats and survival for the statistics, and htmlwidgets for the widgets (#1, #9)", {
@@ -33,13 +35,14 @@ test_that("what only a test needs is suggested, not imported (#1, #9)", {
   expect_identical(utils::packageDescription("gsm.bio")[["Config/testthat/edition"]], "3")
 })
 
-test_that("the package exports the seven statistics functions and the widgets, and ships the synthetic study as its only data (#1, #2, #3, #4, #9, #12, #13, #16)", {
+test_that("the package exports the seven statistics functions and the widgets, and ships the synthetic study as its only data (#1, #2, #3, #4, #9, #12, #13, #16, #18)", {
   expect_setequal(
     getNamespaceExports("gsm.bio"),
     c(
       "Analyze_GroupDifference", "Analyze_Correlation", "Analyze_CorrelationMatrix", "Analyze_Fit",
       "Analyze_Contingency", "Analyze_Survival", "Analyze_Screen", "Widget_GroupComparison",
-      "Widget_AssociationScatter", "Widget_CorrelationMatrix", "Widget_BiomarkerScreen"
+      "Widget_AssociationScatter", "Widget_CorrelationMatrix", "Widget_BiomarkerScreen",
+      "Widget_CrossTab"
     )
   )
   expect_setequal(

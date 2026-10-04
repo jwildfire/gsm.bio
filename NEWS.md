@@ -9,6 +9,11 @@ publishes from the section verbatim.
 
 The next version of gsm.bio. Its work lands on `dev` and is listed here as it does.
 
+## What's new
+
+- **A biomarker cut into groups.** A cut variable, `list(measure, visit, cut)` or `list(col, type = "number", cut)`, makes groups at the median, the tertiles, the quartiles or typed points, by the same rule as bio.viz: `quantile()` with its default, and `cut()` with a value on a point in the lower group. `Widget_GroupComparison()` takes one as its groups or its panels, and hands R the groups low to high. [obot.roadmap#359](https://github.com/jwildfire/obot.roadmap/issues/359), [#18](https://github.com/jwildfire/gsm.bio/issues/18), [#31](https://github.com/jwildfire/gsm.bio/pull/31)
+- **Cross-tabulation widget.** [`Widget_CrossTab()`](https://jwildfire.github.io/gsm.bio/reference/Widget_CrossTab.html): a two-way table of counts of two columns or cut biomarkers, with R's chi-square and Fisher's exact test stored in the page, and each cell's participants a click away. [obot.roadmap#359](https://github.com/jwildfire/obot.roadmap/issues/359), [#18](https://github.com/jwildfire/gsm.bio/issues/18), [#31](https://github.com/jwildfire/gsm.bio/pull/31)
+
 ## Also in this release
 
 - **Pages carry text as UTF-8 in any locale.** A widget made in an R session whose locale is not UTF-8 (`Rscript` started with no `LANG`) wrote text that is not ASCII, such as a category "Ödem", into its page as escapes. The chart showed "<c3><96>dem", and a view keyed by it said statistics are unavailable. Every widget now marks its tables', settings' and results' text as UTF-8 before it computes or writes anything. [#22](https://github.com/jwildfire/gsm.bio/issues/22), [#34](https://github.com/jwildfire/gsm.bio/pull/34)

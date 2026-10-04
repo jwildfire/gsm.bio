@@ -170,6 +170,7 @@ row opens.
 Other widgets: 
 \code{\link{Widget_AssociationScatter}()},
 \code{\link{Widget_CorrelationMatrix}()},
+\code{\link{Widget_CrossTab}()},
 \code{\link{Widget_GroupComparison}()}
 }
 \concept{widgets}

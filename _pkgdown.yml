@@ -36,6 +36,7 @@ reference:
       - Widget_AssociationScatter
       - Widget_CorrelationMatrix
       - Widget_BiomarkerScreen
+      - Widget_CrossTab
   - title: Synthetic study
     desc: >
       A made-up biomarker study with three planted effects of known size, for

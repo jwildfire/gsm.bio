@@ -3,7 +3,8 @@
   "copied_by": "data-raw/vendor-bio-viz.R",
   "repository": "https://github.com/jwildfire/bio.viz",
   "ref": "dev",
-  "commit": "8054114d9a8166b1418e8a1be2dcd3480a037669",
+  "commit": "adcdb416f3b56dfafdf317c08d8148cb17969dd9",
+  "merged_to_dev": true,
   "files": [
     {
       "file": "group-statistics/SOURCE.json",
@@ -128,8 +129,8 @@
     {
       "file": "group-statistics-r.json",
       "source": "tests/fixtures/group-statistics-r.json",
-      "sha256": "bf4fd81e2ad5f77c8feaeb5f32f84edbe37fc7f9c3d5d40c5d3e5abac4f463be",
-      "bytes": 27420
+      "sha256": "5056202ec11f8478591c1d04f07b19b272451ac229aaf1ab3af1c17f46924878",
+      "bytes": 36759
     },
     {
       "file": "association-statistics/SOURCE.json",
@@ -448,6 +449,18 @@
       "source": "tests/fixtures/screen-statistics-r.json",
       "sha256": "c1078bcfaad7882453d0d967cffb7979ac980de48942dd0833fe6044cd2aafac",
       "bytes": 61777
+    },
+    {
+      "file": "cut-r.json",
+      "source": "tests/fixtures/cut-r.json",
+      "sha256": "19f1641a644946626145c2e61b27f0eaadabd92f971cb38ff86fddc110d618ce",
+      "bytes": 50890
+    },
+    {
+      "file": "cross-tab-r.json",
+      "source": "tests/fixtures/cross-tab-r.json",
+      "sha256": "c621de108b934a304d7bef6d6c3b8516fe7d79bb8869371611cc773aa04e954f",
+      "bytes": 73756
     }
   ]
 }

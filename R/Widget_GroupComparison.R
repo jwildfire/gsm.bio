@@ -145,6 +145,7 @@ Widget_GroupComparison <- function(
   Widget_CheckColumns(lConfig, dfResults, dfParticipants)
   lNamed <- Widget_NameBaseline(lConfig, lSettings, dfResults)
   lNamed <- Widget_NameFilters(lNamed$config, lNamed$settings, dfResults, dfParticipants)
+  lNamed$settings <- Widget_NameCuts(lNamed$config, lNamed$settings, c("group_by", "panel_by"))
 
   Widget_Create(
     "Widget_GroupComparison", dfResults, dfParticipants, lNamed$settings,

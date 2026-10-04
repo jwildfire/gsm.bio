@@ -65,6 +65,27 @@ strCommit <- if (grepl("^[0-9a-f]{40}$", strRef)) {
 }
 if (!grepl("^[0-9a-f]{40}$", strCommit)) stop("could not resolve ", strRef, " to a commit")
 
+# Whether the commit is on bio.viz's dev branch: dev is it, or has it among its
+# ancestors. A copy from a branch that is not merged yet says so in its record,
+# and is copied again from dev once the branch lands.
+bMergedToDev <- local({
+  strFile <- tempfile()
+  on.exit(unlink(strFile))
+  utils::download.file(
+    sprintf("https://api.github.com/repos/jwildfire/bio.viz/compare/dev...%s", strCommit), strFile,
+    quiet = TRUE
+  )
+  jsonlite::fromJSON(strFile)$status %in% c("identical", "behind")
+})
+strUnmergedNote <- if (bMergedToDev) {
+  NULL
+} else {
+  paste0(
+    "Copied from bio.viz's branch ", strRef, ", which is not merged to bio.viz's dev branch at this commit. ",
+    "When it lands there, copy again from dev (Rscript data-raw/vendor-bio-viz.R) and rerun the tests."
+  )
+}
+
 # One file of bio.viz at the commit, as bytes.
 ReadAt <- function(strPath) {
   strUrl <- sprintf("https://raw.githubusercontent.com/jwildfire/bio.viz/%s/%s", strCommit, strPath)
@@ -89,6 +110,8 @@ Place <- function(rawBytes, strRoot, strFile, strSource, ...) {
 }
 
 WriteJson <- function(lValue, strPath) {
+  # A member that is not set is left out.
+  lValue <- Filter(Negate(is.null), lValue)
   writeLines(jsonlite::toJSON(lValue, auto_unbox = TRUE, pretty = TRUE, null = "null"), strPath, useBytes = TRUE)
 }
 
@@ -128,6 +151,8 @@ WriteJson(list(
   repository = strRepository,
   ref = strRef,
   commit = strCommit,
+  merged_to_dev = bMergedToDev,
+  note = strUnmergedNote,
   files = lBundles,
   safety_viz = list(
     stand_in = TRUE,
@@ -148,7 +173,10 @@ WriteJson(list(
 # own, so a page holding widgets of both packages loads one copy of safety.viz.
 # Last, the package's own script, which every binding is made with
 # (inst/htmlwidgets/shared/, not copied from anywhere).
-chrWidgets <- c("Widget_GroupComparison", "Widget_AssociationScatter", "Widget_CorrelationMatrix", "Widget_BiomarkerScreen")
+chrWidgets <- c(
+  "Widget_GroupComparison", "Widget_AssociationScatter", "Widget_CorrelationMatrix", "Widget_BiomarkerScreen",
+  "Widget_CrossTab"
+)
 strPackageVersion <- read.dcf("DESCRIPTION", fields = "Version")[[1]]
 for (strWidget in chrWidgets) {
   writeLines(c(
@@ -193,6 +221,14 @@ for (strSet in chrFixtureSets) {
   )))
 }
 
+# And single files, with no rows of their own: what desktop R makes of the
+# shared cut rule (cut-r.json), and the cross-tabulation's tables with R's
+# answers (cross-tab-r.json), each worked out from the study by bio.viz's tools.
+for (strFile in c("cut-r.json", "cross-tab-r.json")) {
+  strSource <- paste0("tests/fixtures/", strFile)
+  lFixtures <- c(lFixtures, list(Place(ReadAt(strSource), strFixtures, strFile, strSource)))
+}
+
 WriteJson(list(
   what = paste(
     "Fixtures copied from bio.viz byte for byte, a set per chart: the rows bio.viz's own core wrote",
@@ -203,6 +239,8 @@ WriteJson(list(
   repository = strRepository,
   ref = strRef,
   commit = strCommit,
+  merged_to_dev = bMergedToDev,
+  note = strUnmergedNote,
   files = lFixtures
 ), file.path(strFixtures, "SOURCE.json"))
 

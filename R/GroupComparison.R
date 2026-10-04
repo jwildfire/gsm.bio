@@ -62,7 +62,7 @@ GroupComparison_Settings <- function(lSettings = list()) {
     }
   }
   for (strKey in c(
-    "visit_order_col", "unit_col", "participant_id_col", "start_value", "group_by", "color_by", "panel_by",
+    "visit_order_col", "unit_col", "participant_id_col", "start_value", "color_by",
     "studyday_col", "normal_col_high", "normal_col_low"
   )) {
     if (!is.null(lConfig[[strKey]]) && !IsName(lConfig[[strKey]])) {
@@ -73,6 +73,11 @@ GroupComparison_Settings <- function(lSettings = list()) {
     if (!IsName(lConfig[[strKey]]) || !lConfig[[strKey]] %in% chrChoices) {
       Core_Stop("Setting '", strKey, "' must be one of ", paste(chrChoices, collapse = ", "))
     }
+  }
+  # The groups and the panels: a column, or a biomarker or a number cut into
+  # groups by the shared cut rule.
+  for (strKey in c("group_by", "panel_by")) {
+    lConfig[strKey] <- list(Chart_Grouping(lConfig[[strKey]], strKey))
   }
   Choice("value_type", chrCoreValueTypes)
   Choice("y_scale", c("linear", "log"))
@@ -129,12 +134,18 @@ GroupComparison_VisitsDrawn <- function(chrVisits, strValueType, chrBaselineVisi
 GroupComparison_State <- function(dfResults, dfParticipants, lConfig) {
   dfCategories <- Chart_Categories(dfResults, dfParticipants, lConfig)
   chrMeasures <- Chart_Measures(dfResults, lConfig)
-  Has <- function(strColumn) !is.null(strColumn) && strColumn %in% dfCategories$value_col
+  Has <- function(strColumn) !is.null(strColumn) && !Chart_IsCut(strColumn) && strColumn %in% dfCategories$value_col
+  # A cut variable the settings name is offered as it is: of a biomarker or a
+  # column the tables have.
+  Chart_CheckCut(lConfig$group_by, "group_by", dfResults, dfParticipants, lConfig)
+  Chart_CheckCut(lConfig$panel_by, "panel_by", dfResults, dfParticipants, lConfig)
   list(
     measure = if (!is.null(lConfig$start_value) && lConfig$start_value %in% chrMeasures) lConfig$start_value else NULL,
     visits = GroupComparison_Visits(dfResults, lConfig)$start,
     value_type = lConfig$value_type,
-    group_by = if (Has(lConfig$group_by)) {
+    group_by = if (Chart_IsCut(lConfig$group_by)) {
+      lConfig$group_by
+    } else if (Has(lConfig$group_by)) {
       lConfig$group_by
     } else if (nrow(dfCategories) > 0L) {
       dfCategories$value_col[1L]
@@ -143,7 +154,7 @@ GroupComparison_State <- function(dfResults, dfParticipants, lConfig) {
     },
     levels = lConfig$levels,
     color_by = if (Has(lConfig$color_by)) lConfig$color_by else NULL,
-    panel_by = if (Has(lConfig$panel_by)) lConfig$panel_by else NULL,
+    panel_by = if (Chart_IsCut(lConfig$panel_by) || Has(lConfig$panel_by)) lConfig$panel_by else NULL,
     y_scale = lConfig$y_scale,
     test = lConfig$test,
     pairwise = lConfig$pairwise,
@@ -194,16 +205,30 @@ GroupComparison_Panels <- function(dfResults, dfParticipants, lConfig, lState) {
   }
   chrDrawn <- GroupComparison_VisitsDrawn(lState$visits, lState$value_type, chrBaselineVisits)
   lVisits <- if (bNeedsVisit) as.list(chrDrawn) else list(NULL)
+  # A cut variable's points are worked out once, on every participant the
+  # filters keep who has a value of it, whether or not they have a value to
+  # draw: so the groups are the same in every visit's panel.
+  lCuts <- list()
+  for (strField in c("x", "panel")) {
+    xBy <- if (strField == "x") lState$group_by else lState$panel_by
+    if (Chart_IsCut(xBy)) {
+      lCuts[[strField]] <- Chart_Cut(dfResults, dfParticipants, lConfig, lState$filters, xBy)
+    }
+  }
   lFramed <- lapply(lVisits, function(strVisit) {
     lVariables <- list(y = if (bNeedsVisit) {
       list(measure = lState$measure, visit = strVisit, value = lState$value_type)
     } else {
       list(measure = lState$measure, value = "baseline")
     })
-    if (!is.null(lState$group_by)) lVariables$x <- list(col = lState$group_by)
+    if (!is.null(lState$group_by)) lVariables$x <- Chart_GroupingVariable(lState$group_by)
     if (!is.null(lState$color_by)) lVariables$color <- list(col = lState$color_by)
-    if (!is.null(lState$panel_by)) lVariables$panel <- list(col = lState$panel_by)
+    if (!is.null(lState$panel_by)) lVariables$panel <- Chart_GroupingVariable(lState$panel_by)
     dfData <- Core_Frame(dfRows, dfKept, lVariables, lCore)$data
+    # A cut variable's number, as its group's label.
+    for (strField in names(lCuts)) {
+      dfData[[strField]] <- Core_CutGroups(dfData[[strField]], lCuts[[strField]]$points)
+    }
     # A logarithmic axis has no place for zero or less.
     if (lState$y_scale == "log") {
       dfData <- dfData[dfData$y > 0, , drop = FALSE]
@@ -211,15 +236,25 @@ GroupComparison_Panels <- function(dfResults, dfParticipants, lConfig, lState) {
     dfData
   })
 
+  # A cut's groups, low to high, those with someone in them.
+  CutLevels <- function(strField) {
+    chrIn <- unlist(lapply(lFramed, function(dfData) dfData[[strField]]))
+    lCuts[[strField]]$labels[lCuts[[strField]]$labels %in% chrIn]
+  }
   # The levels drawn are the ones in the rows of every panel together.
   chrLevels <- if (is.null(lState$group_by)) {
     character(0)
+  } else if (!is.null(lCuts$x)) {
+    CutLevels("x")
   } else {
     Core_Levels(unlist(lapply(lFramed, function(dfData) Core_Text(dfData$x))))
   }
-  chrShown <- if (is.null(lState$levels)) chrLevels else chrLevels[chrLevels %in% lState$levels]
+  # Every group a cut makes is drawn: the levels are for a column.
+  chrShown <- if (is.null(lState$levels) || !is.null(lCuts$x)) chrLevels else chrLevels[chrLevels %in% lState$levels]
   lPanelLevels <- if (is.null(lState$panel_by)) {
     list(NULL)
+  } else if (!is.null(lCuts$panel)) {
+    as.list(CutLevels("panel"))
   } else {
     as.list(Core_Levels(unlist(lapply(lFramed, function(dfData) Core_Text(dfData$panel)))))
   }
@@ -234,7 +269,11 @@ GroupComparison_Panels <- function(dfResults, dfParticipants, lConfig, lState) {
       }
       dfRecords <- dfData[bIn, , drop = FALSE]
       rownames(dfRecords) <- NULL
-      lPanels[[length(lPanels) + 1L]] <- list(visit = lVisits[[iVisit]], panel = strPanel, records = dfRecords)
+      lPanels[[length(lPanels) + 1L]] <- list(
+        visit = lVisits[[iVisit]], panel = strPanel, records = dfRecords,
+        # A cut's groups in this panel's rows, low to high.
+        cut_groups = if (is.null(lCuts$x)) NULL else chrShown[chrShown %in% dfRecords$x]
+      )
     }
   }
   list(panels = lPanels, groups = if (is.null(lState$group_by)) 0L else length(chrShown))
@@ -263,18 +302,20 @@ GroupComparison_Key <- function(dfRecords, lView) {
     lDataId$filters <- lapply(lView$filters, as.list)
   }
   if (identical(lView$y_scale, "log")) lDataId$positive_only <- TRUE
-  list(
-    name = lView$statistic,
-    args = list(
-      strValueCol = "y",
-      strGroupCol = "x",
-      strMethod = lView$test,
-      # Pairs exist only among more than two groups.
-      bPairwise = isTRUE(lView$pairwise) && length(chrGroups) > 2L
-    ),
-    dataId = lDataId,
-    rows = nrow(dfRecords)
+  lArgs <- list(
+    strValueCol = "y",
+    strGroupCol = "x",
+    strMethod = lView$test,
+    # Pairs exist only among more than two groups.
+    bPairwise = isTRUE(lView$pairwise) && length(chrGroups) > 2L
   )
+  # A cut's groups are handed to R low to high, the order they are drawn in, so
+  # R names them in that order and a difference is the lower group less the
+  # higher. A column's are left to R, which sorts them as the identity does.
+  if (!is.null(lView$cut_groups)) {
+    lArgs$chrGroups <- as.list(lView$cut_groups)
+  }
+  list(name = lView$statistic, args = lArgs, dataId = lDataId, rows = nrow(dfRecords))
 }
 
 # Every request the chart makes in one view: one per panel that has a test.
@@ -302,6 +343,7 @@ GroupComparison_Requests <- function(dfResults, dfParticipants, lConfig, lState)
       measure = lState$measure, value_type = lState$value_type, visit = lPanel$visit,
       baseline_visits = lConfig$baseline_visits, baseline_stat = lConfig$baseline_stat,
       group_by = lState$group_by, color_by = lState$color_by, panel_by = lState$panel_by, panel = lPanel$panel,
+      cut_groups = lPanel$cut_groups,
       filters = Chart_FiltersInForce(lState$filters), y_scale = lState$y_scale
     ))
     lRequests[[length(lRequests) + 1L]] <- c(lKey, list(data = lPanel$records))
