@@ -107,3 +107,53 @@ test_that("the filters and the variables are said in the chart's words (#37)", {
   expect_identical(Output_AxisTitle(Synthetic_Results, lConfig, list(measure = "IL-6", visit = "Week 4", value = "percent_change")), "IL-6 at Week 4, percent change from baseline (%)")
   expect_identical(Output_AxisTitle(Synthetic_Results, lConfig, list(col = "AGE"), list(list(value_col = "AGE", label = "Age"))), "Age")
 })
+
+test_that("the figure's own footnote names every method R used and every adjustment, as bio.viz's final rules do (#37)", {
+  lGroup <- lReadJson(testthat::test_path("fixtures", "bio.viz"), "group-statistics-r.json")$results
+  lScreen <- lReadJson(testthat::test_path("fixtures", "bio.viz"), "screen-statistics-r.json")$results
+  ValueOf <- function(lResults, strCase) Filter(function(lResult) lResult$case == strCase, lResults)[[1]]$value
+  strBy <- Output_ComputedBy()
+  Say <- function(lValue, strOf = "groups") Output_AutomaticFootnote(list(lValue), strOf, strDate = "2026-10-04", strVersion = "0.2.0")
+  strDrawn <- "Drawn on 2026-10-04 by gsm.bio 0.2.0."
+  # bio.viz's EXP-AUTO-004, on the same recorded answers.
+  expect_identical(
+    Say(ValueOf(lGroup, "kruskal-pairwise")),
+    paste0(
+      strDrawn, " Statistics: Kruskal-Wallis rank sum test, with Wilcoxon rank sum test with continuity correction and ",
+      "Wilcoxon rank sum exact test (Placebo F n = 42, Placebo M n = 53, Treatment F n = 42, Treatment M n = 49), ",
+      "p-values adjusted by Holm; ", strBy, "."
+    )
+  )
+  expect_match(
+    Say(ValueOf(lScreen, "difference-week-4-change"), "biomarkers"),
+    "Statistics: Welch Two Sample t-test \\(n = [0-9]+ to [0-9]+ across 12 biomarkers\\), p-values adjusted by Benjamini-Hochberg; "
+  )
+  expect_match(Say(ValueOf(lScreen, "difference-week-4-change-holm"), "biomarkers"), ", p-values adjusted by Holm; ", fixed = TRUE)
+  lWelch <- list(method = "Welch Two Sample t-test", counts = list(Placebo = 95L, Treatment = 91L))
+  expect_false(grepl("adjusted", Say(lWelch)))
+  # The same on an answer as R returns it, its rows a data frame.
+  dfThree <- data.frame(y = c(1:10, 3:12, 6:15) + 0.5, x = rep(c("a", "b", "c"), each = 10))
+  lLive <- Analyze_GroupDifference(dfThree, "y", "x", strMethod = "anova", bPairwise = TRUE)
+  expect_match(Say(lLive), "Statistics: One-way analysis of variance, with Welch Two Sample t-test (a n = 10, b n = 10, c n = 10), p-values adjusted by Holm; ", fixed = TRUE)
+  # bio.viz's EXP-AUTO-006: four groups named, five summarised, numeric text read as a number.
+  lFour <- list(a = 1, b = 2, c = 3, d = 4)
+  expect_identical(Output_CountsText(lFour), "a n = 1, b n = 2, c n = 3, d n = 4")
+  expect_identical(Output_CountsText(c(lFour, list(e = 5))), "n = 1 to 5 across 5 groups")
+  expect_identical(Output_CountsText("200"), "n = 200")
+  expect_identical(Output_CountsText(list(a = "7", b = 9)), "a n = 7, b n = 9")
+  expect_null(Output_CountsText("many"))
+  # An answer R could not compute is said as R said it; R's error is said so,
+  # and counted when another answer was computed.
+  expect_identical(Say(list(status = "too_small", counts = list(a = 2L, b = 198L))), paste0(strDrawn, " Statistics: no statistic (a n = 2, b n = 198); ", strBy, "."))
+  expect_identical(Say(list(status = "error", method = "m", reason = "boom")), paste(strDrawn, "Statistics: R reported an error."))
+  expect_identical(
+    Output_AutomaticFootnote(list(lWelch, list(status = "error", reason = "boom")), strDate = "2026-10-04", strVersion = "0.2.0"),
+    paste0(strDrawn, " Statistics: Welch Two Sample t-test (Placebo n = 95, Treatment n = 91); ", strBy, ". 1 of 2 could not be computed.")
+  )
+})
+
+test_that("a title or subtitle of only white space is no title (#37)", {
+  lTitles <- Output_Titles(list(title = "   ", subtitle = "\n\t", footnotes = NULL), list(date = "2026-10-04"), list())
+  expect_null(lTitles$title)
+  expect_null(lTitles$subtitle)
+})

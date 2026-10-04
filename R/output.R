@@ -7,10 +7,31 @@
 # always last, saying when and by what the figure was drawn and what stands
 # behind each statistic it printed.
 #
-# The one difference is who drew it: the chart's footnote names bio.viz and
-# says a stored result was "stored with the page"; a figure is drawn here, by
-# gsm.bio, from R's answers computed in the same session, and its footnote
-# says so. Nothing here computes a statistic, and nothing is exported.
+# The rules are bio.viz's as merged to its dev with bio.viz#69. Where a figure
+# or a table differs from a chart, it is because of what drew it, and each
+# difference is listed here:
+#
+# - Who drew it. The chart's footnote says "by bio.viz {version}", the version
+#   said with "with development changes" off a release; a figure's says "by
+#   gsm.bio {version}", gsm.bio's own version, whose .9000 says the same, and
+#   `{version}` is gsm.bio's.
+# - Who computed it. The chart names its connection's form: "computed by R in
+#   this browser", or "computed by R x with gsm.bio y on {date}, stored with
+#   the page". A figure's answers are computed when it is drawn, in the session
+#   that draws it, so it says "computed by R x with gsm.bio y", with no date and
+#   nothing stored.
+# - What did not answer. The chart counts an answer its connection could not
+#   give (no R attached, a failure) as not computed: "unavailable", "R reported
+#   an error", "N of M could not be computed". R always answers a figure, and
+#   reports a failure in the answer itself, so a figure counts an answer whose
+#   status is "error" as R reporting an error. Any other answer, computed or
+#   not, is said as R said it, as the chart says it: its method, or "no
+#   statistic", with its counts.
+# - Text only. The chart writes each placeholder's value as a run of its own,
+#   so a page can isolate its direction (bio.viz's fillParts); a figure is text
+#   in a graphic, and fills the template whole.
+#
+# Nothing here computes a statistic, and nothing is exported.
 
 # The settings every chart has for its title, subtitle and footnotes.
 lOutputTitleDefaults <- list(title = NULL, subtitle = NULL, footnotes = NULL)
@@ -78,15 +99,24 @@ Output_CheckTitles <- function(lConfig) {
 # Treatment n = 91` for up to four groups; more as the least and the most with
 # how many there are, `n = 179 to 186 across 12 biomarkers`. NULL with none.
 Output_CountsText <- function(xCounts, strOf = "groups") {
-  if (is.numeric(xCounts) && length(xCounts) == 1L && is.null(names(xCounts)) && is.finite(xCounts)) {
-    return(paste0("n = ", Core_Text(xCounts)))
+  # A count as R returned it: a number, or the text of one.
+  CountOf <- function(xCount) {
+    if (is.numeric(xCount) && length(xCount) == 1L && is.finite(xCount)) {
+      return(as.numeric(xCount))
+    }
+    if (is.character(xCount) && length(xCount) == 1L && !is.na(xCount) && grepl("^\\s*-?[0-9]+(\\.[0-9]+)?\\s*$", xCount)) {
+      return(as.numeric(xCount))
+    }
+    NULL
+  }
+  if (is.null(names(xCounts)) && !is.list(xCounts) && !is.null(CountOf(xCounts))) {
+    return(paste0("n = ", Core_Text(CountOf(xCounts))))
   }
   if (is.null(xCounts) || length(xCounts) == 0L || is.null(names(xCounts))) {
     return(NULL)
   }
-  lCounts <- as.list(xCounts)
-  bNamed <- vapply(lCounts, function(xCount) is.numeric(xCount) && length(xCount) == 1L && is.finite(xCount), logical(1))
-  lCounts <- lCounts[bNamed]
+  lCounts <- lapply(as.list(xCounts), CountOf)
+  lCounts <- lCounts[!vapply(lCounts, is.null, logical(1))]
   if (length(lCounts) == 0L) {
     return(NULL)
   }
@@ -122,25 +152,72 @@ Output_AutomaticFootnote <- function(lAnswers, strOf = "groups", strDate = Outpu
   if (length(lAnswers) == 0L) {
     return(paste(strDrawn, "No statistic was asked of R."))
   }
-  chrSaid <- vapply(lAnswers, function(lAnswer) {
-    strMethod <- if (is.character(lAnswer$method) && length(lAnswer$method) == 1L && !Core_IsBlank(lAnswer$method)) {
-      lAnswer$method
-    } else {
-      "no statistic"
+  bError <- vapply(lAnswers, function(lAnswer) identical(lAnswer$status, "error"), logical(1))
+  if (all(bError)) {
+    return(paste(strDrawn, "Statistics: R reported an error."))
+  }
+  chrSaid <- vapply(lAnswers[!bError], Output_AnswerText, character(1), strOf = strOf)
+  paste0(
+    strDrawn, " Statistics: ", paste(chrSaid, collapse = "; "), "; ", Output_ComputedBy(), ".",
+    if (any(bError)) paste0(" ", sum(bError), " of ", length(lAnswers), " could not be computed.") else ""
+  )
+}
+
+# Every method R named in its answer, the answer's own first, then each part's
+# (a pairwise test, a screen's rows), each once; and every adjustment of its
+# p-values, in words (bio.viz, `methodsOf`). A part is a row of a table in the
+# answer, as R returns it (a data frame) or as JSON reads it (a list of rows).
+Output_MethodsOf <- function(lValue) {
+  chrMethods <- character(0)
+  chrAdjustments <- character(0)
+  Take <- function(xMethod, xAdjustment) {
+    if (is.character(xMethod) && length(xMethod) == 1L && !is.na(xMethod) && !Core_IsBlank(xMethod) && !xMethod %in% chrMethods) {
+      chrMethods <<- c(chrMethods, xMethod)
     }
-    strCounts <- Output_CountsText(lAnswer$counts, strOf)
-    if (is.null(strCounts)) strMethod else paste0(strMethod, " (", strCounts, ")")
-  }, character(1))
-  paste0(strDrawn, " Statistics: ", paste(chrSaid, collapse = "; "), "; ", Output_ComputedBy(), ".")
+    if (is.character(xAdjustment) && length(xAdjustment) == 1L && !is.na(xAdjustment) && !Core_IsBlank(xAdjustment) && xAdjustment != "none") {
+      strSaid <- if (xAdjustment %in% names(chrOutputAdjustments)) chrOutputAdjustments[[xAdjustment]] else xAdjustment
+      if (!strSaid %in% chrAdjustments) chrAdjustments <<- c(chrAdjustments, strSaid)
+    }
+  }
+  Take(lValue$method, lValue$adjustment)
+  for (xPart in lValue) {
+    if (is.data.frame(xPart)) {
+      for (iRow in seq_len(nrow(xPart))) Take(xPart$method[iRow], xPart$adjustment[iRow])
+    } else if (is.list(xPart) && is.null(names(xPart))) {
+      for (lRow in xPart) if (is.list(lRow)) Take(lRow$method, lRow$adjustment)
+    }
+  }
+  list(methods = chrMethods, adjustments = chrAdjustments)
+}
+
+# One answer as the footnote says it: every method R used, its counts, and
+# every adjustment (bio.viz, `answerText`).
+Output_AnswerText <- function(lValue, strOf = "groups") {
+  lUsed <- Output_MethodsOf(lValue)
+  chrMethods <- lUsed$methods
+  strMethod <- if (length(chrMethods) == 0L) {
+    "no statistic"
+  } else if (length(chrMethods) == 1L) {
+    chrMethods
+  } else {
+    paste0(chrMethods[1], ", with ", paste(chrMethods[-1], collapse = " and "))
+  }
+  strCounts <- Output_CountsText(lValue$counts, strOf)
+  paste0(
+    if (is.null(strCounts)) strMethod else paste0(strMethod, " (", strCounts, ")"),
+    if (length(lUsed$adjustments) > 0L) paste0(", p-values adjusted by ", paste(lUsed$adjustments, collapse = " and ")) else ""
+  )
 }
 
 # The title, subtitle and footnotes as they read for one figure: the settings'
 # templates filled from `lValues`, with the footnote the figure writes last.
 Output_Titles <- function(lConfig, lValues, lAnswers, strOf = "groups") {
   Filled <- function(strTemplate) if (is.null(strTemplate)) NULL else Output_FillText(strTemplate, lValues)
+  # A title or subtitle of only white space is none.
+  Heading <- function(strTemplate) if (is.null(strTemplate) || Core_IsBlank(strTemplate)) NULL else Filled(strTemplate)
   list(
-    title = Filled(lConfig$title),
-    subtitle = Filled(lConfig$subtitle),
+    title = Heading(lConfig$title),
+    subtitle = Heading(lConfig$subtitle),
     footnotes = c(
       vapply(as.list(lConfig$footnotes), Filled, character(1)),
       Output_AutomaticFootnote(lAnswers, strOf, strDate = lValues$date)

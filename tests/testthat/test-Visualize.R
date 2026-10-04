@@ -87,7 +87,7 @@ test_that("each of the six figures is a ggplot of its chart's opening view, titl
     # The figure's own footnote is last.
     chrUnder <- strsplit(gg$labels$caption, "\n", fixed = TRUE)[[1]]
     expect_match(strFigureCaption(gg), paste0("Drawn on ", Output_DateDrawn(), " by gsm.bio "), fixed = TRUE)
-    expect_match(chrUnder[length(chrUnder)], "gsm\\.bio [0-9.]+\\.$")
+    expect_match(strFigureCaption(gg), "gsm\\.bio [0-9.]+\\.$")
   }
   lFigures <- lapply(lFigureCalls(), function(fnFigure) fnFigure())
   expect_identical(lFigures$group_comparison$labels$title, "IL-6: Change from baseline by Arm")

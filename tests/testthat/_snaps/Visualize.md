@@ -82,7 +82,7 @@
       title: Change from baseline at Week 4: Placebo against Treatment, standardised difference
       subtitle: 12 biomarkers, 187 participants
       x: Standardised difference (Hedges<U+2019> g)
-      caption: Welch Two Sample t-test, one row per biomarker: 12 of 12 computed. The adjusted p-values are adjusted by Benjamini-Hochberg across the 12 biomarkers that have a p-value. Each row: Standardised difference (Hedges<U+2019> g), Placebo less Treatment, with its 95% confidence interval on one axis without units. p: Welch Two Sample t-test, unadjusted, and adjusted by Benjamini-Hochberg across the 12 biomarkers with a p-value. Exploratory, adjusted (Benjamini-Hochberg). Drawn on <date> by gsm.bio <version>. Statistics: Welch Two Sample t-test (n = 179 to 186 across 12 biomarkers); computed by R <version> with gsm.bio <version>.
+      caption: Welch Two Sample t-test, one row per biomarker: 12 of 12 computed. The adjusted p-values are adjusted by Benjamini-Hochberg across the 12 biomarkers that have a p-value. Each row: Standardised difference (Hedges<U+2019> g), Placebo less Treatment, with its 95% confidence interval on one axis without units. p: Welch Two Sample t-test, unadjusted, and adjusted by Benjamini-Hochberg across the 12 biomarkers with a p-value. Exploratory, adjusted (Benjamini-Hochberg). Drawn on <date> by gsm.bio <version>. Statistics: Welch Two Sample t-test (n = 179 to 186 across 12 biomarkers), p-values adjusted by Benjamini-Hochberg; computed by R <version> with gsm.bio <version>.
       data:
         rows: 12
         biomarker: CRP x1 | D-dimer x1 | Ferritin x1 | IFN-gamma x1 | IL-10 x1 | IL-1beta x1 | IL-2 x1 | IL-6 x1 | IL-8 x1 | LDH x1 | TNF-alpha x1 | VEGF x1
