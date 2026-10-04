@@ -213,6 +213,52 @@ Widget_NameFilters <- function(lConfig, lSettings, dfResults, dfParticipants) {
   list(config = lConfig, settings = lSettings)
 }
 
+#' Text as UTF-8, marked so, in tables, lists and factors
+#'
+#' A widget's tables, settings and stored results are written into its page as
+#' JSON, and jsonlite writes text R holds unmarked and not ASCII as escapes
+#' ("<c3><96>dem" for an O with an umlaut, then "dem") in a session whose locale is not UTF-8. So text is
+#' marked UTF-8 before anything is computed or written: text held as its
+#' UTF-8 bytes is marked so, text marked Latin-1 is converted, and other
+#' unmarked text is converted from the session's own encoding. ASCII text,
+#' numbers and logicals are left as they are.
+#'
+#' @keywords internal
+#' @noRd
+Widget_Utf8 <- function(xValue) {
+  Mark <- function(chrText) {
+    bWide <- !is.na(chrText) & grepl("[^ -~\t\n\v\f\r]", chrText, useBytes = TRUE)
+    if (!any(bWide)) {
+      return(chrText)
+    }
+    bUnknown <- bWide & Encoding(chrText) == "unknown"
+    bBytes <- bUnknown & validUTF8(chrText)
+    Encoding(chrText[bBytes]) <- "UTF-8"
+    bConvert <- (bWide & Encoding(chrText) == "latin1") | (bUnknown & !bBytes)
+    chrText[bConvert] <- enc2utf8(chrText[bConvert])
+    chrText
+  }
+  if (is.factor(xValue)) {
+    levels(xValue) <- Mark(levels(xValue))
+    return(xValue)
+  }
+  if (is.character(xValue)) {
+    return(Mark(xValue))
+  }
+  if (is.data.frame(xValue)) {
+    xValue[] <- lapply(xValue, Widget_Utf8)
+    names(xValue) <- Mark(names(xValue))
+    return(xValue)
+  }
+  if (is.list(xValue)) {
+    lNames <- names(xValue)
+    xValue <- lapply(xValue, Widget_Utf8)
+    if (!is.null(lNames)) names(xValue) <- Mark(lNames)
+    return(xValue)
+  }
+  xValue
+}
+
 #' Make a widget from its tables, its settings and R's answers
 #'
 #' @param strName `character` The widget's name, which is its binding's.
@@ -244,7 +290,7 @@ Widget_Create <- function(strName, dfResults, dfParticipants, lSettings, lStored
   )
   htmlwidgets::createWidget(
     name = strName,
-    x = x,
+    x = Widget_Utf8(x),
     width = width,
     height = height,
     package = "gsm.bio",

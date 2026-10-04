@@ -9,6 +9,10 @@ publishes from the section verbatim.
 
 The next version of gsm.bio. Its work lands on `dev` and is listed here as it does.
 
+## Also in this release
+
+- **Pages carry text as UTF-8 in any locale.** A widget made in an R session whose locale is not UTF-8 (`Rscript` started with no `LANG`) wrote text that is not ASCII, such as a category "Ödem", into its page as escapes. The chart showed "<c3><96>dem", and a view keyed by it said statistics are unavailable. Every widget now marks its tables', settings' and results' text as UTF-8 before it computes or writes anything. [#22](https://github.com/jwildfire/gsm.bio/issues/22), [#34](https://github.com/jwildfire/gsm.bio/pull/34)
+
 # gsm.bio v0.1.0
 
 **See it move:** the [annotated v0.1.0 demo](https://jwildfire.github.io/obot.roadmap/reports/biomarker-v0.1-demo/) has captures and try-it steps for everything below.
