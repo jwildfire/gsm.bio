@@ -52,6 +52,7 @@ Visualize_GroupComparison <- function(dfResults, dfParticipants = NULL, lSetting
   Widget_CheckColumns(lConfig, dfResults, dfParticipants)
   lConfig <- Widget_NameFilters(Widget_NameBaseline(lConfig, lSettings, dfResults)$config, lSettings, dfResults, dfParticipants)$config
   lState <- GroupComparison_State(dfResults, dfParticipants, lConfig)
+  Chart_StopIfNobody("Visualize_GroupComparison", dfResults, dfParticipants, lConfig, lState$filters)
   if (is.null(lState$measure)) {
     Core_Stop("Visualize_GroupComparison() draws one biomarker: name one the results table has with the setting 'start_value'")
   }

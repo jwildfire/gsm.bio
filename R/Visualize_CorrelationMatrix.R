@@ -39,6 +39,7 @@ Visualize_CorrelationMatrix <- function(dfResults, dfParticipants = NULL, lSetti
   Widget_CheckColumns(lConfig, dfResults, dfParticipants)
   lConfig <- Widget_NameFilters(Widget_NameBaseline(lConfig, lSettings, dfResults)$config, lSettings, dfResults, dfParticipants)$config
   lState <- CorrelationMatrix_State(dfResults, dfParticipants, lConfig)
+  Chart_StopIfNobody("Visualize_CorrelationMatrix", dfResults, dfParticipants, lConfig, lState$filters)
   lVariables <- CorrelationMatrix_Variables(dfResults, lConfig, lState)
   lRequests <- CorrelationMatrix_Requests(dfResults, dfParticipants, lConfig, lState)
   if (length(lRequests) == 0L) {

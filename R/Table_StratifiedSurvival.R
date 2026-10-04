@@ -47,6 +47,7 @@ Table_StratifiedSurvival <- function(dfResults, dfParticipants = NULL, lSettings
   Widget_CheckOutcomes(dfOutcomes, lConfig)
   lConfig <- Widget_NameFilters(Widget_NameBaseline(lConfig, lSettings, dfResults)$config, lSettings, dfResults, dfParticipants)$config
   lState <- StratifiedSurvival_State(dfResults, dfParticipants, dfOutcomes, lConfig)
+  Chart_StopIfNobody("Table_StratifiedSurvival", dfResults, dfParticipants, lConfig, lState$filters)
   lTable <- StratifiedSurvival_Table(dfResults, dfParticipants, dfOutcomes, lConfig, lState)
   lRequests <- StratifiedSurvival_Requests(dfResults, dfParticipants, dfOutcomes, lConfig, lState)
   if (length(lRequests) == 0L) {

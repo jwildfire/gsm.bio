@@ -44,6 +44,7 @@ Visualize_AssociationScatter <- function(dfResults, dfParticipants = NULL, lSett
   Widget_CheckColumns(lConfig, dfResults, dfParticipants)
   lConfig <- Widget_NameFilters(Widget_NameBaseline(lConfig, lSettings, dfResults)$config, lSettings, dfResults, dfParticipants)$config
   lState <- AssociationScatter_State(dfResults, dfParticipants, lConfig)
+  Chart_StopIfNobody("Visualize_AssociationScatter", dfResults, dfParticipants, lConfig, lState$filters)
   if (is.null(lState$x) || is.null(lState$y)) {
     Core_Stop("Visualize_AssociationScatter(): the tables have no two variables to draw against each other")
   }

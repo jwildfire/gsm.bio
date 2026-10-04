@@ -43,6 +43,7 @@ Visualize_CrossTab <- function(dfResults, dfParticipants = NULL, lSettings = lis
   Widget_CheckColumns(lConfig, dfResults, dfParticipants)
   lConfig <- Widget_NameFilters(Widget_NameBaseline(lConfig, lSettings, dfResults)$config, lSettings, dfResults, dfParticipants)$config
   lState <- CrossTab_State(dfResults, dfParticipants, lConfig)
+  Chart_StopIfNobody("Visualize_CrossTab", dfResults, dfParticipants, lConfig, lState$filters)
   lTable <- CrossTab_Table(dfResults, dfParticipants, lConfig, lState)
   if (lTable$total == 0L) {
     Core_Stop("Visualize_CrossTab(): there is no table to draw at these settings")

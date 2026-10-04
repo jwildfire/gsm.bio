@@ -41,6 +41,7 @@ Visualize_BiomarkerScreen <- function(dfResults, dfParticipants = NULL, lSetting
   Widget_CheckOutcomes(dfOutcomes, lConfig)
   lConfig <- Widget_NameFilters(Widget_NameBaseline(lConfig, lSettings, dfResults)$config, lSettings, dfResults, dfParticipants)$config
   lState <- BiomarkerScreen_State(dfResults, dfParticipants, lConfig, dfOutcomes)
+  Chart_StopIfNobody("Visualize_BiomarkerScreen", dfResults, dfParticipants, lConfig, lState$filters)
   lRequests <- BiomarkerScreen_Requests(dfResults, dfParticipants, lConfig, lState, dfOutcomes)
   if (length(lRequests) == 0L) {
     Core_Stop("Visualize_BiomarkerScreen(): there is no screen to draw at these settings")

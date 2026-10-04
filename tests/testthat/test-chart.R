@@ -64,6 +64,23 @@ test_that("the filters open on what the bundles open them on: a start the data l
   expect_true(any(grepl("opens without it", chrWarnings, fixed = TRUE)))
 })
 
+test_that("a filter of several values given no value opens on none, as bio.viz's startFilters opens it, and lets nobody through (#39)", {
+  lCase <- Filter(function(lCase) identical(lCase$case, "multiple-with-an-empty-start"), lFilterCases())[[1]]
+  lOpened <- lFilterOpened(lCase)
+  expect_identical(lOpened$state$RESPONSE, character(0))
+  lKept <- Chart_KeepFiltered(Synthetic_Results, Synthetic_Participants, lOpened$config, lOpened$state)
+  expect_identical(nrow(lKept$participants), 0L)
+  expect_identical(nrow(lKept$results), 0L)
+  # It is in force, and named in no title: bio.viz's filtersInForce leaves out
+  # a filter of no value.
+  expect_identical(Chart_FiltersInForce(lOpened$state), list())
+  # A filter of one value given none, or one set to all, still lets everyone through.
+  lAll <- Chart_KeepFiltered(Synthetic_Results, Synthetic_Participants, lOpened$config, list(RESPONSE = NULL))
+  expect_identical(nrow(lAll$participants), nrow(Synthetic_Participants))
+  lSingle <- Chart_Filters(Synthetic_Participants, GroupComparison_Settings(list(filters = list(list(value_col = "RESPONSE", start = list())))), NULL)
+  expect_null(lSingle$RESPONSE)
+})
+
 test_that("a control offers the values the chart lists: text that is only white space is a value, and only empty text is none (#19)", {
   lCases <- lFilterCases()
   lStates <- lFilterStates()$states

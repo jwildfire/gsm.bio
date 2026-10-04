@@ -122,6 +122,35 @@ lAsJson <- function(xValue) {
   jsonlite::fromJSON(jsonlite::toJSON(xValue, auto_unbox = TRUE, null = "null", digits = NA), simplifyVector = FALSE)
 }
 
+# Every call in an environment's functions that evaluates text or calls what
+# it is handed: eval(), parse() and the like by name, and do.call() on anything
+# but the functions the package calls it on. By function, the calls deparsed.
+lEvaluatingCalls <- function(envFunctions) {
+  chrForbidden <- c(
+    "eval", "evalq", "eval.parent", "parse", "str2lang", "str2expression", "match.fun", "get", "get0", "mget",
+    "getFunction", "source", "sys.source", "system", "system2", "shell", "Recall", "body<-", "environment<-", "assign", "makeActiveBinding"
+  )
+  chrDoCall <- c("rbind", "ggplot2::aes", "lFunctions[[lRequest$name]]")
+  Walk <- function(xCode) {
+    if (is.function(xCode)) return(c(Walk(formals(xCode)), Walk(body(xCode))))
+    if (is.pairlist(xCode) || is.list(xCode)) return(unlist(lapply(as.list(xCode), function(x) if (missing(x)) NULL else Walk(x))))
+    if (!is.call(xCode)) return(character(0))
+    xHead <- xCode[[1]]
+    strHead <- if (is.name(xHead)) as.character(xHead) else if (is.call(xHead) && as.character(xHead[[1]]) %in% c("::", ":::")) as.character(xHead[[3]]) else ""
+    bBad <- strHead %in% chrForbidden || (identical(strHead, "do.call") && !paste(deparse(xCode[[2]]), collapse = "") %in% chrDoCall)
+    c(if (bBad) paste(deparse(xCode), collapse = " "), unlist(lapply(as.list(xCode), function(x) if (missing(x)) NULL else Walk(x))))
+  }
+  lFound <- list()
+  for (strName in sort(ls(envFunctions, all.names = TRUE))) {
+    xValue <- get(strName, envir = envFunctions)
+    if (is.function(xValue) && !is.primitive(xValue)) {
+      chrCalls <- Walk(xValue)
+      if (length(chrCalls) > 0L) lFound[[strName]] <- chrCalls
+    }
+  }
+  lFound
+}
+
 test_that("gsm.bio reads every specification bio.viz's charts wrote, with its filter laid onto the chart's own (#39)", {
   lSpecs <- lSavedSpecs()
   expect_identical(vapply(lSpecs, `[[`, character(1), "chart"), c(
@@ -199,13 +228,15 @@ test_that("a specification is data: code-like text is read and drawn as text, an
   expect_true(grepl("$\\{1 + 1\\} <script>alert(1)</script> \\{\\{x\\}\\}", strRtf, fixed = TRUE))
   expect_false(file.exists(file.path(strDir, "PWNED")))
   expect_false(file.exists("PWNED"))
-  # The reader and the runner call nothing that evaluates text.
-  chrCode <- unlist(lapply(c("Spec_Read", "Spec_Check", "Spec_ReadChecked", "Spec_Expand", "Run_Specifications", "Spec_Parse", "Spec_FromText", "Spec_Tidy", "Batch_Draw"), function(strName) {
-    deparse(get(strName, envir = asNamespace("gsm.bio")))
-  }))
-  for (strCall in c("eval(", "parse(", "str2lang(", "str2expression(", "do.call(", "match.fun(", "source(", "system(")) {
-    expect_false(any(grepl(strCall, chrCode, fixed = TRUE)), label = paste("the reader calls", strCall))
-  }
+  # Nothing in the package evaluates text: every function in the namespace is
+  # walked, call by call. do.call() is called only on rbind, on ggplot2::aes
+  # with names, and in Chart_Answer() on a statistics function from the fixed
+  # list its caller hands it.
+  expect_identical(lEvaluatingCalls(asNamespace("gsm.bio")), list())
+  envMutant <- new.env()
+  envMutant$Batch_Slug <- function(strText) eval(parse(text = strText))
+  envMutant$Other <- function(x) do.call(x, list())
+  expect_identical(names(lEvaluatingCalls(envMutant)), c("Batch_Slug", "Other"))
 })
 
 test_that("a batch run writes a figure and a table for each specification bio.viz wrote, and a manifest, returned and saved (#39)", {
@@ -288,4 +319,45 @@ test_that("a specification gsm.bio cannot read is refused with a sentence, and t
   expect_error(Run_Specifications("{\"format\": ", Synthetic_Results, strFolder = strFolder), "must be JSON")
   expect_error(Run_Specifications("[]", Synthetic_Results, strFolder = strFolder), "no specification")
   expect_error(Run_Specifications(strList, Synthetic_Results, strFolder = strFolder, chrFormats = "gif"), "chrFormats")
+})
+
+test_that("a filter of no value lets nobody through, as bio.viz's chart opens it: each row counts no participant and says none passes the filters (#39)", {
+  skip_if_not_installed("ggplot2")
+  skip_if_not_installed("r2rtf")
+  strFolder <- tempfile("batch-nobody")
+  lSpecs <- lapply(lSavedSpecs(), function(lSpec) {
+    lSpec$filters <- list(list(column = "ARM", operator = "in", values = list()))
+    lSpec
+  })
+  expect_identical(Spec_Read(strSpecText(lSpecs[[6]]))$settings$filters[[1]]$start, character(0))
+  dfManifest <- Run_Specifications(strSpecText(lSpecs), Synthetic_Results, Synthetic_Participants, dfOutcomes = Synthetic_Outcomes, strFolder = strFolder)
+  expect_identical(dfManifest$participants, rep(0L, 7L))
+  expect_identical(dfManifest$status, rep("failed", 7L))
+  for (strReason in dfManifest$reason) {
+    expect_match(strReason, "No participant passes the filters.", fixed = TRUE)
+  }
+  expect_true(all(is.na(dfManifest$figure)))
+  expect_setequal(list.files(strFolder), "manifest.json")
+  # Each figure and table says so too, before any other reason it has nothing
+  # to show, as the chart's footnote does.
+  lFunctions <- list(
+    "group-comparison" = "GroupComparison", "association-scatter" = "AssociationScatter", "correlation-matrix" = "CorrelationMatrix",
+    "biomarker-screen" = "BiomarkerScreen", "cross-tab" = "CrossTab", "stratified-survival" = "StratifiedSurvival"
+  )
+  for (lSpec in lSpecs) {
+    lSettings <- Spec_Read(strSpecText(lSpec))$settings
+    for (strKind in c("Visualize_", "Table_")) {
+      strFunction <- paste0(strKind, lFunctions[[lSpec$chart]])
+      lArgs <- list(Synthetic_Results, Synthetic_Participants, lSettings)
+      if ("dfOutcomes" %in% names(formals(get(strFunction)))) lArgs$dfOutcomes <- Synthetic_Outcomes
+      expect_error(
+        do.call(strFunction, lArgs),
+        paste0(strFunction, "(): no participant passes the filters"),
+        fixed = TRUE
+      )
+    }
+  }
+  # The filters the saved specifications were written with keep their own count.
+  dfSaved <- Run_Specifications(strSpecFixture("charts.json"), Synthetic_Results, Synthetic_Participants, dfOutcomes = Synthetic_Outcomes, strFolder = tempfile("batch-counted"), bTables = FALSE)
+  expect_identical(dfSaved$participants[1:2], c(200L, sum(Synthetic_Participants$SEX == "F")))
 })

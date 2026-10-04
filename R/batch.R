@@ -73,6 +73,7 @@
 #'   - `status`: `"written"`, `"refused"` (the specification could not be
 #'     read), or `"failed"` (it was read and could not be drawn);
 #'   - `reason`;
+#'   - `participants`: how many participants the filters keep;
 #'   - `title` and `subtitle`, filled;
 #'   - `statistics`: the lines printed under the figure;
 #'   - `figure`: the figure's files, separated by `;`;
@@ -146,9 +147,10 @@ Run_Specifications <- function(
   }
 
   lRows <- list()
-  Row <- function(iSpec, strChart, strBiomarker, strStatus, strReason = NA_character_, lDrawn = list()) {
+  Row <- function(iSpec, strChart, strBiomarker, strStatus, strReason = NA_character_, lDrawn = list(), nPassing = NA_integer_) {
     data.frame(
       specification = iSpec, chart = strChart, biomarker = strBiomarker, status = strStatus, reason = strReason,
+      participants = as.integer(nPassing),
       title = if (is.null(lDrawn$title)) NA_character_ else lDrawn$title,
       subtitle = if (is.null(lDrawn$subtitle)) NA_character_ else lDrawn$subtitle,
       statistics = if (is.null(lDrawn$statistics)) NA_character_ else lDrawn$statistics,
@@ -168,21 +170,46 @@ Run_Specifications <- function(
     for (iView in seq_along(lViews)) {
       strBiomarker <- names(lViews)[iView]
       strStem <- sprintf("%02d-%s%s", iSpec, lRead$chart, if (is.na(strBiomarker)) "" else paste0("-", Batch_Slug(strBiomarker)))
+      nPassing <- Batch_Passing(lViews[[iView]], dfResults, dfParticipants)
+      if (identical(nPassing, 0L)) {
+        # The chart draws nobody, and says so in its footnote.
+        lRows[[length(lRows) + 1L]] <- Row(iSpec, lRead$chart, strBiomarker, "failed", "No participant passes the filters.", nPassing = 0L)
+        next
+      }
       lDrawn <- tryCatch(
         Batch_Draw(lViews[[iView]], dfResults, dfParticipants, dfOutcomes, strFolder, strStem, chrFormats, bTables, nWidth, nHeight),
         error = function(cndError) conditionMessage(cndError)
       )
       lRows[[length(lRows) + 1L]] <- if (is.character(lDrawn)) {
-        Row(iSpec, lRead$chart, strBiomarker, "failed", lDrawn)
+        Row(iSpec, lRead$chart, strBiomarker, "failed", lDrawn, nPassing = nPassing)
       } else {
-        Row(iSpec, lRead$chart, strBiomarker, "written", lDrawn$reason, lDrawn)
+        Row(iSpec, lRead$chart, strBiomarker, "written", lDrawn$reason, lDrawn, nPassing)
       }
     }
   }
-  dfManifest <- Reduce(rbind, lRows)
+  dfManifest <- do.call(rbind, lRows)
   rownames(dfManifest) <- NULL
   jsonlite::write_json(dfManifest, file.path(strFolder, "manifest.json"), dataframe = "rows", na = "null", auto_unbox = TRUE, pretty = TRUE)
   dfManifest
+}
+
+# A chart's settings as R reads them, with each default.
+Batch_Settings <- function(strChart, lSettings) {
+  switch(strChart,
+    "group-comparison" = GroupComparison_Settings(lSettings),
+    "association-scatter" = AssociationScatter_Settings(lSettings),
+    "correlation-matrix" = CorrelationMatrix_Settings(lSettings),
+    "biomarker-screen" = BiomarkerScreen_Settings(lSettings),
+    "cross-tab" = CrossTab_Settings(lSettings),
+    "stratified-survival" = StratifiedSurvival_Settings(lSettings)
+  )
+}
+
+# How many participants a view's filters keep, as its chart opens them.
+Batch_Passing <- function(lRead, dfResults, dfParticipants) {
+  lConfig <- Batch_Settings(lRead$chart, lRead$settings)
+  lFilters <- Chart_Filters(dfParticipants, lConfig, Chart_Categories(dfResults, dfParticipants, lConfig))
+  as.integer(Chart_Passing(dfResults, dfParticipants, lConfig, lFilters))
 }
 
 # A biomarker's name as part of a file's name.

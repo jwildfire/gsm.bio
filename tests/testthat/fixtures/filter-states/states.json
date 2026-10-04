@@ -15,6 +15,7 @@
     {"case":"multiple-with-starts","state":{"RESPONSE":["Responder","Non-responder"]},"offered":{"RESPONSE":2},"warnings":[]},
     {"case":"multiple-with-one-start-the-data-lacks","state":{"RESPONSE":["Responder"]},"offered":{"RESPONSE":2},"warnings":["The [ RESPONSE ] filter value [ Nope ] does not exist in the data, so the filter opens without it."]},
     {"case":"multiple-with-every-start-lacking","state":{"RESPONSE":null},"offered":{"RESPONSE":2},"warnings":["The [ RESPONSE ] filter value [ Nope ] does not exist in the data, so the filter opens without it."]},
+    {"case":"multiple-with-an-empty-start","state":{"RESPONSE":[]},"offered":{"RESPONSE":2},"warnings":[]},
     {"case":"multiple-all-false-with-no-start","state":{"SEX":null},"offered":{"SEX":2},"warnings":[]},
     {"case":"the-id-is-no-filter","state":{"SEX":"M"},"offered":{"SEX":2},"warnings":[]},
     {"case":"a-blank-looking-value-with-all-false","state":{"SEX":" "},"offered":{"SEX":3},"warnings":[]},
