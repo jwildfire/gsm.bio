@@ -35,6 +35,11 @@
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.2.0" id="gsmbio-v020-upcoming">gsm.bio v0.2.0 (Upcoming)<a class="anchor" aria-label="anchor" href="#gsmbio-v020-upcoming"></a></h2>
 <p>The next version of gsm.bio. Its work lands on <code>dev</code> and is listed here as it does.</p>
+<div class="section level3">
+<h3 id="also-in-this-release-0-2-0">Also in this release<a class="anchor" aria-label="anchor" href="#also-in-this-release-0-2-0"></a></h3>
+<ul><li>
+<strong>Pages carry text as UTF-8 in any locale.</strong> A widget made in an R session whose locale is not UTF-8 (<code>Rscript</code> started with no <code>LANG</code>) wrote text that is not ASCII, such as a category “Ödem”, into its page as escapes. The chart showed “<c3>&lt;96&gt;dem”, and a view keyed by it said statistics are unavailable. Every widget now marks its tables’, settings’ and results’ text as UTF-8 before it computes or writes anything. <a href="https://github.com/jwildfire/gsm.bio/issues/22" class="external-link">#22</a>, <a href="https://github.com/jwildfire/gsm.bio/pull/34" class="external-link">#34</a></c3></li>
+</ul></div>
 </div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.1.0" id="gsmbio-v010">gsm.bio v0.1.0<a class="anchor" aria-label="anchor" href="#gsmbio-v010"></a></h2>
