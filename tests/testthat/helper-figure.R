@@ -16,6 +16,10 @@ chrFigureDescription <- function(gg) {
     # the session's locale counts a character.
     Line("caption", gsub("\n", " ", lLabels$caption, fixed = TRUE))
   )
+  # Four significant digits, a value that lies on a half rounded up: a sum of
+  # values with three decimals can be a half exactly, and the last bit of it
+  # differs between platforms.
+  Rounded <- function(nValues) signif(round(nValues, 9) * (1 + 1e-9), 4)
   Summary <- function(dfData) {
     if (!is.data.frame(dfData)) {
       return("  (the plot's data)")
@@ -28,7 +32,7 @@ chrFigureDescription <- function(gg) {
           nShown <- xColumn[is.finite(xColumn)]
           paste0(
             "  ", strColumn, ": ", sum(is.na(xColumn)), " NA; ",
-            if (length(nShown)) paste(signif(c(min(nShown), max(nShown), mean(nShown), sum(nShown)), 4), collapse = " / ") else "none"
+            if (length(nShown)) paste(Rounded(c(min(nShown), max(nShown), mean(nShown), sum(nShown))), collapse = " / ") else "none"
           )
         } else {
           # In the factor's order, or by code point: never by the locale's.
