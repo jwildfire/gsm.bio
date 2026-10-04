@@ -136,6 +136,11 @@ Widget_GroupComparison <- function(
     elementId = NULL,
     bDebug = FALSE) {
   Widget_CheckInputs(dfResults, dfParticipants, lSettings, bDebug)
+  # Text as UTF-8, marked so, before anything is computed: the page carries it
+  # so whatever the session's locale.
+  dfResults <- Widget_Utf8(dfResults)
+  dfParticipants <- Widget_Utf8(dfParticipants)
+  lSettings <- Widget_Utf8(lSettings)
   lConfig <- GroupComparison_Settings(lSettings)
   Widget_CheckColumns(lConfig, dfResults, dfParticipants)
   lNamed <- Widget_NameBaseline(lConfig, lSettings, dfResults)
