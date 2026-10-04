@@ -50,8 +50,9 @@ attributes of
 
 ## Titles and footnotes
 
-As for `Visualize_AssociationScatter()`: `{x}`, `{y}`, `{n}`,
-`{filters}`, `{date}` and `{version}`.
+As for
+[`Visualize_AssociationScatter()`](https://jwildfire.github.io/gsm.bio/reference/Visualize_AssociationScatter.md):
+`{x}`, `{y}`, `{n}`, `{filters}`, `{date}` and `{version}`.
 
 ## Display rules
 
@@ -63,7 +64,8 @@ not compute has no p-value, and its note is R's reason.
 
 ## See also
 
-`Visualize_AssociationScatter()` and
+[`Visualize_AssociationScatter()`](https://jwildfire.github.io/gsm.bio/reference/Visualize_AssociationScatter.md)
+and
 [`Widget_AssociationScatter()`](https://jwildfire.github.io/gsm.bio/reference/Widget_AssociationScatter.md).
 
 Other tables:

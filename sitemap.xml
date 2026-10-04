@@ -2,6 +2,8 @@
 <url><loc>https://jwildfire.github.io/gsm.bio/404.html</loc></url>
 <url><loc>https://jwildfire.github.io/gsm.bio/CLAUDE.html</loc></url>
 <url><loc>https://jwildfire.github.io/gsm.bio/LICENSE-text.html</loc></url>
+<url><loc>https://jwildfire.github.io/gsm.bio/articles/gallery.html</loc></url>
+<url><loc>https://jwildfire.github.io/gsm.bio/articles/index.html</loc></url>
 <url><loc>https://jwildfire.github.io/gsm.bio/authors.html</loc></url>
 <url><loc>https://jwildfire.github.io/gsm.bio/index.html</loc></url>
 <url><loc>https://jwildfire.github.io/gsm.bio/news/index.html</loc></url>
@@ -23,6 +25,12 @@
 <url><loc>https://jwildfire.github.io/gsm.bio/reference/Table_CrossTab.html</loc></url>
 <url><loc>https://jwildfire.github.io/gsm.bio/reference/Table_GroupComparison.html</loc></url>
 <url><loc>https://jwildfire.github.io/gsm.bio/reference/Table_StratifiedSurvival.html</loc></url>
+<url><loc>https://jwildfire.github.io/gsm.bio/reference/Visualize_AssociationScatter.html</loc></url>
+<url><loc>https://jwildfire.github.io/gsm.bio/reference/Visualize_BiomarkerScreen.html</loc></url>
+<url><loc>https://jwildfire.github.io/gsm.bio/reference/Visualize_CorrelationMatrix.html</loc></url>
+<url><loc>https://jwildfire.github.io/gsm.bio/reference/Visualize_CrossTab.html</loc></url>
+<url><loc>https://jwildfire.github.io/gsm.bio/reference/Visualize_GroupComparison.html</loc></url>
+<url><loc>https://jwildfire.github.io/gsm.bio/reference/Visualize_StratifiedSurvival.html</loc></url>
 <url><loc>https://jwildfire.github.io/gsm.bio/reference/Widget_AssociationScatter.html</loc></url>
 <url><loc>https://jwildfire.github.io/gsm.bio/reference/Widget_BiomarkerScreen.html</loc></url>
 <url><loc>https://jwildfire.github.io/gsm.bio/reference/Widget_CorrelationMatrix.html</loc></url>

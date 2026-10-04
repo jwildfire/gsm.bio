@@ -48,6 +48,18 @@ as it does.
   [obot.roadmap#360](https://github.com/jwildfire/obot.roadmap/issues/360),
   [\#35](https://github.com/jwildfire/gsm.bio/issues/35),
   [\#36](https://github.com/jwildfire/gsm.bio/pull/36)
+- **Static figures.** Six `Visualize_*()` functions, one per chart,
+  return a ggplot2 figure of the view its chart opens on, from the same
+  settings, with the same `Analyze_*()` statistics printed under it.
+  Titles, subtitles and footnotes take the chart’s placeholders, and the
+  figure writes its own footnote last, with R’s method and counts. The
+  survival figure draws R’s own `survfit()` curves with their bands.
+  ggplot2 is suggested, not imported. The
+  [gallery](https://jwildfire.github.io/gsm.bio/articles/gallery.html)
+  shows each figure beside its widget.
+  [obot.roadmap#362](https://github.com/jwildfire/obot.roadmap/issues/362),
+  [\#37](https://github.com/jwildfire/gsm.bio/issues/37),
+  [\#40](https://github.com/jwildfire/gsm.bio/pull/40)
 - **Statistics tables and RTF.** Six `Table_*()` functions, one per
   chart, return the statistics of the view the chart opens on as a data
   frame, one row per statistic. Each row has its method, estimate and
@@ -60,6 +72,14 @@ as it does.
   [obot.roadmap#362](https://github.com/jwildfire/obot.roadmap/issues/362),
   [\#38](https://github.com/jwildfire/gsm.bio/issues/38),
   [\#41](https://github.com/jwildfire/gsm.bio/pull/41)
+- **Titles and footnotes on the widgets.** Every widget takes bio.viz’s
+  `title`, `subtitle` and `footnotes` settings, with the chart’s
+  placeholders. The chart’s own footnote names the R and gsm.bio
+  versions that computed the results stored with the page, which the
+  widget now hands it.
+  [obot.roadmap#362](https://github.com/jwildfire/obot.roadmap/issues/362),
+  [\#37](https://github.com/jwildfire/gsm.bio/issues/37),
+  [\#40](https://github.com/jwildfire/gsm.bio/pull/40)
 
 ### Also in this release
 

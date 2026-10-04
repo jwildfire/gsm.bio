@@ -56,8 +56,9 @@ A `data.frame` of text: `Statistic`, `Method`, `Estimate`, `Counts`,
 
 ## Titles and footnotes
 
-As for `Visualize_StratifiedSurvival()`: `{endpoint}`, `{group}`, `{n}`,
-`{filters}`, `{date}` and `{version}`.
+As for
+[`Visualize_StratifiedSurvival()`](https://jwildfire.github.io/gsm.bio/reference/Visualize_StratifiedSurvival.md):
+`{endpoint}`, `{group}`, `{n}`, `{filters}`, `{date}` and `{version}`.
 
 ## Display rules
 
@@ -69,7 +70,8 @@ not compute has no p-value, and its note is R's reason.
 
 ## See also
 
-`Visualize_StratifiedSurvival()` and
+[`Visualize_StratifiedSurvival()`](https://jwildfire.github.io/gsm.bio/reference/Visualize_StratifiedSurvival.md)
+and
 [`Widget_StratifiedSurvival()`](https://jwildfire.github.io/gsm.bio/reference/Widget_StratifiedSurvival.md).
 
 Other tables:

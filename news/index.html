@@ -15,7 +15,11 @@
     </button>
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
-      <ul class="navbar-nav me-auto"><li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
+      <ul class="navbar-nav me-auto"><li class="nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/gallery.html">Gallery</a></li>
+  </ul></li>
+<li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="active nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
@@ -50,7 +54,13 @@
 <strong>Hazard ratios in the biomarker screen.</strong> Given an outcomes table, <code><a href="../reference/Widget_BiomarkerScreen.html">Widget_BiomarkerScreen()</a></code> offers a hazard ratio of high against low on an endpoint, each biomarker cut at its median, and every row opens its survival curves with R’s test stored too. The outcomes table is a new argument, <code>dfOutcomes</code>, after <code>lSettings</code>, so a call written for v0.1.0 works as it did. <a href="https://github.com/jwildfire/obot.roadmap/issues/360" class="external-link">obot.roadmap#360</a>, <a href="https://github.com/jwildfire/gsm.bio/issues/35" class="external-link">#35</a>, <a href="https://github.com/jwildfire/gsm.bio/pull/36" class="external-link">#36</a>
 </li>
 <li>
+<strong>Static figures.</strong> Six <code>Visualize_*()</code> functions, one per chart, return a ggplot2 figure of the view its chart opens on, from the same settings, with the same <code>Analyze_*()</code> statistics printed under it. Titles, subtitles and footnotes take the chart’s placeholders, and the figure writes its own footnote last, with R’s method and counts. The survival figure draws R’s own <code>survfit()</code> curves with their bands. ggplot2 is suggested, not imported. The <a href="https://jwildfire.github.io/gsm.bio/articles/gallery.html">gallery</a> shows each figure beside its widget. <a href="https://github.com/jwildfire/obot.roadmap/issues/362" class="external-link">obot.roadmap#362</a>, <a href="https://github.com/jwildfire/gsm.bio/issues/37" class="external-link">#37</a>, <a href="https://github.com/jwildfire/gsm.bio/pull/40" class="external-link">#40</a>
+</li>
+<li>
 <strong>Statistics tables and RTF.</strong> Six <code>Table_*()</code> functions, one per chart, return the statistics of the view the chart opens on as a data frame, one row per statistic. Each row has its method, estimate and interval, counts, the p-value by the display rules (exploratory, adjustment named, no stars) and R’s reason where it was not computed. The numbers come from the same <code>Analyze_*()</code> calls the charts make. <a href="https://jwildfire.github.io/gsm.bio/reference/Write_RTF.html"><code>Write_RTF()</code></a> writes a table, with its title and footnotes, to RTF through r2rtf, which is suggested, not imported. <a href="https://github.com/jwildfire/obot.roadmap/issues/362" class="external-link">obot.roadmap#362</a>, <a href="https://github.com/jwildfire/gsm.bio/issues/38" class="external-link">#38</a>, <a href="https://github.com/jwildfire/gsm.bio/pull/41" class="external-link">#41</a>
+</li>
+<li>
+<strong>Titles and footnotes on the widgets.</strong> Every widget takes bio.viz’s <code>title</code>, <code>subtitle</code> and <code>footnotes</code> settings, with the chart’s placeholders. The chart’s own footnote names the R and gsm.bio versions that computed the results stored with the page, which the widget now hands it. <a href="https://github.com/jwildfire/obot.roadmap/issues/362" class="external-link">obot.roadmap#362</a>, <a href="https://github.com/jwildfire/gsm.bio/issues/37" class="external-link">#37</a>, <a href="https://github.com/jwildfire/gsm.bio/pull/40" class="external-link">#40</a>
 </li>
 </ul></div>
 <div class="section level3">

@@ -251,6 +251,45 @@ recorded too. gsm.safety carries an earlier safety.viz without the kit;
 once it carries v1.9.0, the widgets can take the bundle from there
 instead of carrying their own copy.
 
+## Figures
+
+Each chart also has a static figure, for a report or a slide:
+[`Visualize_GroupComparison()`](https://jwildfire.github.io/gsm.bio/reference/Visualize_GroupComparison.md),
+[`Visualize_AssociationScatter()`](https://jwildfire.github.io/gsm.bio/reference/Visualize_AssociationScatter.md),
+[`Visualize_CorrelationMatrix()`](https://jwildfire.github.io/gsm.bio/reference/Visualize_CorrelationMatrix.md),
+[`Visualize_BiomarkerScreen()`](https://jwildfire.github.io/gsm.bio/reference/Visualize_BiomarkerScreen.md),
+[`Visualize_CrossTab()`](https://jwildfire.github.io/gsm.bio/reference/Visualize_CrossTab.md)
+and
+[`Visualize_StratifiedSurvival()`](https://jwildfire.github.io/gsm.bio/reference/Visualize_StratifiedSurvival.md).
+Each takes the same tables and settings as its widget and returns a
+`ggplot`. The statistics printed under it come from the same
+`Analyze_*()` call on the same rows. ggplot2 is suggested, not imported:
+install it to draw figures.
+
+``` r
+
+Visualize_StratifiedSurvival(
+  Synthetic_Results,
+  Synthetic_Participants,
+  lSettings = list(
+    endpoint = "EFS",
+    group_by = list(measure = "CRP", visit = "Baseline", cut = "median"),
+    title = "{endpoint} by {group}",
+    subtitle = "{n} participants"
+  ),
+  dfOutcomes = Synthetic_Outcomes
+)
+```
+
+The settings `title`, `subtitle` and `footnotes` are written with the
+chart’s placeholders, by bio.viz’s rules: a name in braces is replaced
+by text, and a name the figure does not have is left as written. The
+last line under a figure is always its own: the date it was drawn, by
+gsm.bio, and R’s method and counts behind each statistic it printed,
+with the R and gsm.bio versions. The
+[gallery](https://jwildfire.github.io/gsm.bio/articles/gallery.html)
+shows each figure beside its widget.
+
 ## Tables
 
 Each chart’s statistics also come as a table, for a report:

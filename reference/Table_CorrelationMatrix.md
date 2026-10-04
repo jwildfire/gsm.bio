@@ -44,8 +44,10 @@ attributes of
 
 ## Titles and footnotes
 
-As for `Visualize_CorrelationMatrix()`: `{heading}`, `{variables}`,
-`{visit}`, `{value}`, `{n}`, `{filters}`, `{date}` and `{version}`.
+As for
+[`Visualize_CorrelationMatrix()`](https://jwildfire.github.io/gsm.bio/reference/Visualize_CorrelationMatrix.md):
+`{heading}`, `{variables}`, `{visit}`, `{value}`, `{n}`, `{filters}`,
+`{date}` and `{version}`.
 
 ## Display rules
 
@@ -57,7 +59,8 @@ not compute has no p-value, and its note is R's reason.
 
 ## See also
 
-`Visualize_CorrelationMatrix()` and
+[`Visualize_CorrelationMatrix()`](https://jwildfire.github.io/gsm.bio/reference/Visualize_CorrelationMatrix.md)
+and
 [`Widget_CorrelationMatrix()`](https://jwildfire.github.io/gsm.bio/reference/Widget_CorrelationMatrix.md).
 
 Other tables:

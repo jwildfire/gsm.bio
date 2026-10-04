@@ -31,6 +31,12 @@
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto">
+<li class="nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
+<li><a class="dropdown-item" href="articles/gallery.html">Gallery</a></li>
+  </ul>
+</li>
 <li class="nav-item"><a class="nav-link" href="reference/index.html">Reference</a></li>
 <li class="nav-item"><a class="nav-link" href="news/index.html">Changelog</a></li>
       </ul>
@@ -191,10 +197,28 @@
 <p>Every widget carries two JavaScript bundles, both copied from bio.viz with the commit and a checksum per file recorded in <code>inst/htmlwidgets/lib/SOURCE.json</code>: bio.viz v0.1.0, and safety.viz v1.9.0, the first safety.viz with the kit bio.viz’s charts are built from. The safety.viz copy is the one bio.viz takes from safety.viz’s <code>dev</code> branch at its v1.9.0 release preparation, and its commit is recorded too. gsm.safety carries an earlier safety.viz without the kit; once it carries v1.9.0, the widgets can take the bundle from there instead of carrying their own copy.</p>
 </div>
 <div class="section level2">
+<h2 id="figures">Figures<a class="anchor" aria-label="anchor" href="#figures"></a>
+</h2>
+<p>Each chart also has a static figure, for a report or a slide: <code><a href="reference/Visualize_GroupComparison.html">Visualize_GroupComparison()</a></code>, <code><a href="reference/Visualize_AssociationScatter.html">Visualize_AssociationScatter()</a></code>, <code><a href="reference/Visualize_CorrelationMatrix.html">Visualize_CorrelationMatrix()</a></code>, <code><a href="reference/Visualize_BiomarkerScreen.html">Visualize_BiomarkerScreen()</a></code>, <code><a href="reference/Visualize_CrossTab.html">Visualize_CrossTab()</a></code> and <code><a href="reference/Visualize_StratifiedSurvival.html">Visualize_StratifiedSurvival()</a></code>. Each takes the same tables and settings as its widget and returns a <code>ggplot</code>. The statistics printed under it come from the same <code>Analyze_*()</code> call on the same rows. ggplot2 is suggested, not imported: install it to draw figures.</p>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="reference/Visualize_StratifiedSurvival.html">Visualize_StratifiedSurvival</a></span><span class="op">(</span></span>
+<span>  <span class="va">Synthetic_Results</span>,</span>
+<span>  <span class="va">Synthetic_Participants</span>,</span>
+<span>  lSettings <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
+<span>    endpoint <span class="op">=</span> <span class="st">"EFS"</span>,</span>
+<span>    group_by <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>measure <span class="op">=</span> <span class="st">"CRP"</span>, visit <span class="op">=</span> <span class="st">"Baseline"</span>, cut <span class="op">=</span> <span class="st">"median"</span><span class="op">)</span>,</span>
+<span>    title <span class="op">=</span> <span class="st">"{endpoint} by {group}"</span>,</span>
+<span>    subtitle <span class="op">=</span> <span class="st">"{n} participants"</span></span>
+<span>  <span class="op">)</span>,</span>
+<span>  dfOutcomes <span class="op">=</span> <span class="va">Synthetic_Outcomes</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>The settings <code>title</code>, <code>subtitle</code> and <code>footnotes</code> are written with the chart’s placeholders, by bio.viz’s rules: a name in braces is replaced by text, and a name the figure does not have is left as written. The last line under a figure is always its own: the date it was drawn, by gsm.bio, and R’s method and counts behind each statistic it printed, with the R and gsm.bio versions. The <a href="https://jwildfire.github.io/gsm.bio/articles/gallery.html">gallery</a> shows each figure beside its widget.</p>
+</div>
+<div class="section level2">
 <h2 id="tables">Tables<a class="anchor" aria-label="anchor" href="#tables"></a>
 </h2>
 <p>Each chart’s statistics also come as a table, for a report: <code><a href="reference/Table_GroupComparison.html">Table_GroupComparison()</a></code>, <code><a href="reference/Table_AssociationScatter.html">Table_AssociationScatter()</a></code>, <code><a href="reference/Table_CorrelationMatrix.html">Table_CorrelationMatrix()</a></code>, <code><a href="reference/Table_BiomarkerScreen.html">Table_BiomarkerScreen()</a></code>, <code><a href="reference/Table_CrossTab.html">Table_CrossTab()</a></code> and <code><a href="reference/Table_StratifiedSurvival.html">Table_StratifiedSurvival()</a></code>. Each takes the same tables and settings as its widget and returns a data frame, one row per statistic R computed for the view the chart opens on. A row gives the method, each estimate with its interval, the counts, and the p-value written by the display rules: three decimals, <code>p &lt; 0.001</code> below that, labelled exploratory with its adjustment named, and no stars. A statistic R did not compute carries R’s reason instead.</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">dfTable</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/Table_StratifiedSurvival.html">Table_StratifiedSurvival</a></span><span class="op">(</span></span>
 <span>  <span class="va">Synthetic_Results</span>,</span>
 <span>  <span class="va">Synthetic_Participants</span>,</span>

@@ -50,6 +50,25 @@ saved page shows them with no R and no network.
 - [`Widget_StratifiedSurvival()`](https://jwildfire.github.io/gsm.bio/reference/Widget_StratifiedSurvival.md)
   : Stratified Survival Widget
 
+## Figures
+
+The same views as static ggplot2 figures, for a report or a slide, with
+the same statistics from the functions above, and the chart’s title,
+subtitle and footnotes. ggplot2 is suggested, not imported.
+
+- [`Visualize_GroupComparison()`](https://jwildfire.github.io/gsm.bio/reference/Visualize_GroupComparison.md)
+  : Group Comparison Figure
+- [`Visualize_AssociationScatter()`](https://jwildfire.github.io/gsm.bio/reference/Visualize_AssociationScatter.md)
+  : Association Scatter Figure
+- [`Visualize_CorrelationMatrix()`](https://jwildfire.github.io/gsm.bio/reference/Visualize_CorrelationMatrix.md)
+  : Correlation Matrix Figure
+- [`Visualize_BiomarkerScreen()`](https://jwildfire.github.io/gsm.bio/reference/Visualize_BiomarkerScreen.md)
+  : Biomarker Screen Figure
+- [`Visualize_CrossTab()`](https://jwildfire.github.io/gsm.bio/reference/Visualize_CrossTab.md)
+  : Cross-Tabulation Figure
+- [`Visualize_StratifiedSurvival()`](https://jwildfire.github.io/gsm.bio/reference/Visualize_StratifiedSurvival.md)
+  : Stratified Survival Figure
+
 ## Tables
 
 The same views’ statistics as tables, one row per statistic, written by

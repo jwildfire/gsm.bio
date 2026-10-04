@@ -43,8 +43,9 @@ A `data.frame` of text: `Statistic`, `Method`, `Estimate`, `Counts`,
 
 ## Titles and footnotes
 
-As for `Visualize_CrossTab()`: `{rows}`, `{columns}`, `{n}`,
-`{filters}`, `{date}` and `{version}`.
+As for
+[`Visualize_CrossTab()`](https://jwildfire.github.io/gsm.bio/reference/Visualize_CrossTab.md):
+`{rows}`, `{columns}`, `{n}`, `{filters}`, `{date}` and `{version}`.
 
 ## Display rules
 
@@ -56,7 +57,8 @@ not compute has no p-value, and its note is R's reason.
 
 ## See also
 
-`Visualize_CrossTab()` and
+[`Visualize_CrossTab()`](https://jwildfire.github.io/gsm.bio/reference/Visualize_CrossTab.md)
+and
 [`Widget_CrossTab()`](https://jwildfire.github.io/gsm.bio/reference/Widget_CrossTab.md).
 
 Other tables:

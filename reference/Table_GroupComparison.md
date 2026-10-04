@@ -62,14 +62,16 @@ not compute has no p-value, and its note is R's reason.
 ## Titles and footnotes
 
 The settings `title`, `subtitle` and `footnotes` are text with named
-placeholders, as for `Visualize_GroupComparison()`: `{measure}`,
-`{visits}`, `{value}`, `{group}`, `{n}`, `{filters}`, `{date}` and
-`{version}`. They are the table's attributes `title`, `subtitle` and
-`footnotes`, the last footnote always the table's own.
+placeholders, as for
+[`Visualize_GroupComparison()`](https://jwildfire.github.io/gsm.bio/reference/Visualize_GroupComparison.md):
+`{measure}`, `{visits}`, `{value}`, `{group}`, `{n}`, `{filters}`,
+`{date}` and `{version}`. They are the table's attributes `title`,
+`subtitle` and `footnotes`, the last footnote always the table's own.
 
 ## See also
 
-`Visualize_GroupComparison()` and
+[`Visualize_GroupComparison()`](https://jwildfire.github.io/gsm.bio/reference/Visualize_GroupComparison.md)
+and
 [`Widget_GroupComparison()`](https://jwildfire.github.io/gsm.bio/reference/Widget_GroupComparison.md),
 the same view as a figure and as a widget.
 

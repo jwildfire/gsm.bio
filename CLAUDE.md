@@ -70,6 +70,16 @@ runs one requirement per session
   gsm.safety’s widgets do. The outcomes table, which came after v0.1.0,
   is `dfOutcomes`, after `lSettings` and before `width`, in every widget
   that reads one, so a released widget’s positional calls keep working.
+- A static figure is `Visualize_<Chart>()`, takes the same arguments as
+  its widget less the sizes, and returns a `ggplot`. It draws the view
+  its chart opens on from the same rules, prints statistics only from
+  `Analyze_*()` on the same rows, and writes its title and footnotes
+  with `R/output.R`. ggplot2 is in Suggests: `R/figure.R` says so when
+  it is missing, and every ggplot2 call is `ggplot2::`. Its snapshot
+  (`tests/testthat/_snaps/Visualize.md`) is of the figure’s own data and
+  labels, the same in every locale and ggplot2 version; accept a change
+  with `testthat::snapshot_accept("Visualize")` only after looking at
+  it.
 - A statistics table is `Table_<Chart>()`, takes the same arguments as
   its widget less the sizes, and returns a data frame of text, one row
   per statistic, whose numbers are `Analyze_*()` answers on the request
@@ -83,14 +93,16 @@ runs one requirement per session
   when a copied file and its record disagree.
 - `R/core.R`, `R/chart.R` and one file per chart (`R/GroupComparison.R`,
   `R/AssociationScatter.R`, `R/CorrelationMatrix.R`,
-  `R/BiomarkerScreen.R`, `R/CrossTab.R`, `R/StratifiedSurvival.R`) are
-  bio.viz’s rules written a second time, so that R computes on the rows
-  the chart draws: which participants are in a panel, and how the chart
-  asks for a panel’s result. `R/core.R` is bio.viz’s core, `R/chart.R`
-  what every chart shares (bio.viz’s `src/shared/`, the outcomes table’s
-  rules among it), and a chart’s own file its own rules. They are the
-  only such copies. The tests hold them to frames and requests written
-  by bio.viz’s own code, so change them only to follow bio.viz.
+  `R/BiomarkerScreen.R`, `R/CrossTab.R`, `R/StratifiedSurvival.R`) and
+  `R/output.R` (bio.viz’s rules for titles, footnotes and the statistics
+  line) are bio.viz’s rules written a second time, so that R computes on
+  the rows the chart draws: which participants are in a panel, and how
+  the chart asks for a panel’s result. `R/core.R` is bio.viz’s core,
+  `R/chart.R` what every chart shares (bio.viz’s `src/shared/`, the
+  outcomes table’s rules among it), and a chart’s own file its own
+  rules. They are the only such copies. The tests hold them to frames
+  and requests written by bio.viz’s own code, so change them only to
+  follow bio.viz.
 - A widget’s binding names its chart and nothing more:
   `inst/htmlwidgets/shared/gsm.bio.widget.js` is the script every
   binding is made with, and `R/utils-widget.R` what every `Widget_*()`

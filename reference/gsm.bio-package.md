@@ -45,6 +45,13 @@ and
 [`Widget_StratifiedSurvival()`](https://jwildfire.github.io/gsm.bio/reference/Widget_StratifiedSurvival.md).
 The widgets are the only part of the package that uses htmlwidgets.
 
+## Figures
+
+Each chart has a static ggplot2 figure too, `Visualize_<Chart>()`, from
+the same settings and with the same statistics: see
+[`Visualize_GroupComparison()`](https://jwildfire.github.io/gsm.bio/reference/Visualize_GroupComparison.md)
+and the functions beside it. ggplot2 is suggested, not imported.
+
 ## Status
 
 Version 0.1.0 is in development: the statistics functions, a synthetic

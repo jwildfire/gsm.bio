@@ -59,9 +59,10 @@ attributes of
 
 ## Titles and footnotes
 
-As for `Visualize_BiomarkerScreen()`: `{heading}`, `{comparison}`,
-`{visit}`, `{endpoint}`, `{biomarkers}`, `{n}`, `{filters}`, `{date}`
-and `{version}`.
+As for
+[`Visualize_BiomarkerScreen()`](https://jwildfire.github.io/gsm.bio/reference/Visualize_BiomarkerScreen.md):
+`{heading}`, `{comparison}`, `{visit}`, `{endpoint}`, `{biomarkers}`,
+`{n}`, `{filters}`, `{date}` and `{version}`.
 
 ## Display rules
 
@@ -73,7 +74,8 @@ not compute has no p-value, and its note is R's reason.
 
 ## See also
 
-`Visualize_BiomarkerScreen()` and
+[`Visualize_BiomarkerScreen()`](https://jwildfire.github.io/gsm.bio/reference/Visualize_BiomarkerScreen.md)
+and
 [`Widget_BiomarkerScreen()`](https://jwildfire.github.io/gsm.bio/reference/Widget_BiomarkerScreen.md).
 
 Other tables:
