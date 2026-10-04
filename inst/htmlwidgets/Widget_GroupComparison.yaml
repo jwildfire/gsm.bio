@@ -9,6 +9,6 @@ dependencies:
     src: 'htmlwidgets/lib/bio.viz-0.1.0'
     script: 'bio.viz.js'
   - name: gsm-bio-widget
-    version: 0.1.0.9000
+    version: 0.2.0
     src: 'htmlwidgets/shared'
     script: 'gsm.bio.widget.js'
