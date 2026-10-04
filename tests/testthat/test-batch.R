@@ -426,3 +426,15 @@ test_that("a PDF drawn without cairo says so, naming only the outputs asked for 
     strFolder = tempfile("batch-pdf-png"), chrFormats = c("pdf", "png"))
   expect_identical(dfBoth$reason, paste0(strDots, "; the PNG and the RTF table have every character."))
 })
+
+test_that("specifications jsonlite simplified are refused with a sentence that says how to read them (#39)", {
+  strFile <- strSpecFixture("charts.json")
+  strHow <- "read_json() or fromJSON(simplifyVector = FALSE)"
+  expect_error(Run_Specifications(jsonlite::fromJSON(strFile), Synthetic_Results, strFolder = tempfile("batch-df")), strHow, fixed = TRUE)
+  expect_error(Run_Specifications(jsonlite::fromJSON(strFile), Synthetic_Results, strFolder = tempfile("batch-df")), "a data frame", fixed = TRUE)
+  lSimplified <- jsonlite::fromJSON(strSpecText(lSavedSpecs()[[1]]))
+  expect_error(Spec_Read(lSimplified), strHow, fixed = TRUE)
+  # Read as data, the same specifications run.
+  expect_identical(Spec_Read(jsonlite::read_json(strFile)[[1]])$chart, "group-comparison")
+  expect_length(Spec_Parse(jsonlite::fromJSON(strFile, simplifyVector = FALSE)), 7L)
+})

@@ -19,8 +19,9 @@ Run_Specifications(
 }
 \arguments{
 \item{xSpecifications}{The specifications: a JSON file, JSON text, or the
-list jsonlite reads one as. A JSON array of specifications, or one
-specification.}
+list \code{jsonlite::read_json()} (or \code{jsonlite::fromJSON(simplifyVector = FALSE)}) reads one as. A JSON array of specifications, or one
+specification. \code{fromJSON()}'s default simplifies them into a data frame
+or vectors, which are refused with a sentence that says so.}
 
 \item{dfResults}{\code{data.frame} The results table, one row per participant,
 biomarker and visit.}
@@ -32,14 +33,20 @@ Default: \code{NULL}.}
 survival chart and the screen's hazard ratio, or \code{NULL}. Default: \code{NULL}.}
 
 \item{strFolder}{\code{character} The folder to write into, made if it is not
-there. A file already there with an output's name is replaced.}
+there. A file already there with an output's name is replaced, and any
+other file there is left as it is: a run does not empty the folder. A
+view that fails part way leaves none of its files.}
 
 \item{bAcrossBiomarkers}{\code{logical} Whether to run each specification across
 every biomarker: one value for all, or one per specification. Default:
 \code{FALSE}.}
 
 \item{chrFormats}{\code{character} The figure's formats, any of \code{"png"}, \code{"pdf"}
-and \code{"svg"}. An SVG needs the svglite package. Default: \code{"png"}.}
+and \code{"svg"}. An SVG needs the svglite package. A PDF is drawn by cairo
+where this R can load it; where it cannot (a Mac without XQuartz, for
+one), by the pdf device, which draws a character beyond Latin-1, such as
+the sign of a cut, as a dot, and the row's \code{reason} says so. Default:
+\code{"png"}.}
 
 \item{bTables}{\code{logical} Whether to write each table to RTF, which needs
 r2rtf. Default: \code{TRUE}.}
@@ -56,15 +63,22 @@ columns:
 \item \code{biomarker}: \code{NA} when the view is not one of several;
 \item \code{status}: \code{"written"}, \code{"refused"} (the specification could not be
 read), or \code{"failed"} (it was read and could not be drawn);
-\item \code{reason};
+\item \code{reason}: why a specification was refused or a view failed; for a
+view written, what was not drawn as asked, a note of explicit cut
+points, a table that could not be made, or a PDF drawn without cairo;
+\code{NA} when there is nothing to say;
+\item \code{participants}: how many participants the view's filters keep;
 \item \code{title} and \code{subtitle}, filled;
 \item \code{statistics}: the lines printed under the figure;
 \item \code{figure}: the figure's files, separated by \verb{;};
 \item \code{table}: the RTF table's file.
 }
 
-File names are relative to \code{strFolder}. The manifest is also written there
-as \code{manifest.json}.
+File names are relative to \code{strFolder}, each output's its own: the
+specification's place, the chart, and the biomarker's name as a file name
+can hold it (its place among the views when nothing of the name can be
+kept), numbered \code{-2}, \code{-3} and on when two would be the same. The manifest
+is also written there as \code{manifest.json}.
 }
 \description{
 Reads a list of bio.viz chart specifications, the format a bio.viz chart
@@ -79,7 +93,10 @@ per biomarker.
 
 A specification is read by jsonlite as data: text, numbers, \code{true}, \code{false},
 \code{null}, lists and objects. Nothing in it is evaluated. A title or a setting
-that looks like code is text, filled and drawn as text.
+that looks like code is text, filled and drawn as text. No name in a
+specification chooses a function: a chart's statistics are computed by
+calling its own \verb{Analyze_*()} functions from a fixed list (the one place the
+package calls a function it is handed, through \code{do.call()}).
 
 Each specification is read as bio.viz reads one, and refused, with a
 sentence naming why, as bio.viz refuses it:
@@ -92,11 +109,26 @@ does not have;
 \item a filter whose operator is not \verb{in}, that names no column or a column
 another filter is on, or that lists a value twice;
 \item \verb{__proto__}, \code{constructor} or \code{prototype} as a column;
-\item nesting deeper than 64.
+\item nesting deeper than 64;
+\item a list or object setting of a shape the chart does not take, in bio.viz's
+words.
 }
 
 A refused specification is a row of the manifest with its reason. The rest
-still run.
+still run. The tests hold the reader to bio.viz's own, run in node on the
+same specifications, over every setting of every chart. It differs on
+purpose in two places:
+\itemize{
+\item a chart's \code{statistic}, and the scatter's \code{fit_statistic}, must be the
+chart's own \verb{Analyze_*()} function or \code{null}: bio.viz takes the name of
+any R function, and gsm.bio computes only its own;
+\item a specification given as text is checked for depth, as one given as an
+object is; bio.viz checks only an object (bio.viz#74).
+}
+
+A refusal of a value the chart's own rules check (a choice it does not
+have, a number out of range) is in R's words, which are not always
+bio.viz's; which values are refused is the same.
 
 The filters in force, \verb{\{ column, operator: "in", values \}}, are laid onto the
 chart's \code{filters} setting as where each starts, as bio.viz does. A value is
@@ -116,7 +148,22 @@ each biomarker the chart offers in turn:
 }
 
 A chart that is already of every biomarker, such as the screen or a matrix
-across biomarkers, or one with no biomarker to take, is one view.
+across biomarkers, or one with no biomarker to take, is one view. The
+scatter's other axis keeps its own biomarker out of the views only when the
+two axes are at the same visit. A cut named by its rule (a median, tertiles)
+is worked out on each biomarker's values; explicit cut points are applied
+to every biomarker unchanged, and each row's \code{reason} says so.
+}
+
+\section{What the tables cannot honour}{
+
+A view is drawn as its chart draws it from the tables given. Where a
+setting names something the tables lack (a column, a biomarker, a visit),
+or a filter is on a column that is not a filter or on a value its column
+lacks, the chart draws what it falls back to, and the row's \code{reason} says
+what was not drawn as asked, in the words of bio.viz's notices; its status
+stays \code{"written"}. A view whose filters keep no participant is \code{"failed"}
+with "No participant passes the filters.", as the chart's footnote says.
 }
 
 \examples{

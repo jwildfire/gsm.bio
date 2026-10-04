@@ -22,7 +22,7 @@
 #   chart's statistics with one Analyze_*() function, and refuses any other
 #   name with a sentence.
 # - bio.viz's reader checks the depth of a specification given as an object
-#   and not one given as text; gsm.bio checks both.
+#   and not one given as text (bio.viz#74); gsm.bio checks both.
 
 strSpecFormat <- "bio.viz specification"
 nSpecVersion <- 1L
@@ -84,9 +84,22 @@ Spec_Refuse <- function(...) {
   stop(paste0(...), call. = FALSE)
 }
 
+# How a specification read by jsonlite with its simplifying, fromJSON()'s
+# default, is read as data instead.
+strSpecSimplified <- paste(
+  "jsonlite simplifies JSON when it reads it with fromJSON()'s default: a list of specifications becomes",
+  "a data frame, and a list of values a vector. Read the specifications with jsonlite::read_json() or",
+  "fromJSON(simplifyVector = FALSE), or give Run_Specifications() the file or the text."
+)
+
 # A JSON object read with a member twice keeps the last, as JavaScript's
 # JSON.parse() does; and nesting deeper than any chart's settings is refused.
+# A data frame, or a vector of several values, is JSON simplified, which a
+# specification read as data never holds.
 Spec_Tidy <- function(xValue, nDepth = 0L) {
+  if (is.data.frame(xValue) || (is.atomic(xValue) && length(xValue) != 1L && !is.null(xValue))) {
+    Spec_Refuse("the specification holds ", if (is.data.frame(xValue)) "a data frame" else "a vector of several values", ". ", strSpecSimplified)
+  }
   if (!is.list(xValue)) {
     return(xValue)
   }
@@ -127,8 +140,11 @@ Spec_Parse <- function(xSpecifications) {
     }
     xSpecifications <- Spec_FromText(strText)
   }
+  if (is.data.frame(xSpecifications)) {
+    Spec_Refuse("xSpecifications is a data frame. ", strSpecSimplified)
+  }
   if (!is.list(xSpecifications)) {
-    Spec_Refuse("xSpecifications must be a JSON file, JSON text or a list of specifications as jsonlite reads them")
+    Spec_Refuse("xSpecifications must be a JSON file, JSON text or a list of specifications as jsonlite::read_json() reads them")
   }
   lSpecs <- if (Spec_IsObject(xSpecifications)) list(xSpecifications) else xSpecifications
   if (length(lSpecs) == 0L) {
