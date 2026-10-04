@@ -49,6 +49,9 @@
 <li>
 <strong>Hazard ratios in the biomarker screen.</strong> Given an outcomes table, <code><a href="../reference/Widget_BiomarkerScreen.html">Widget_BiomarkerScreen()</a></code> offers a hazard ratio of high against low on an endpoint, each biomarker cut at its median, and every row opens its survival curves with R’s test stored too. The outcomes table is a new argument, <code>dfOutcomes</code>, after <code>lSettings</code>, so a call written for v0.1.0 works as it did. <a href="https://github.com/jwildfire/obot.roadmap/issues/360" class="external-link">obot.roadmap#360</a>, <a href="https://github.com/jwildfire/gsm.bio/issues/35" class="external-link">#35</a>, <a href="https://github.com/jwildfire/gsm.bio/pull/36" class="external-link">#36</a>
 </li>
+<li>
+<strong>Statistics tables and RTF.</strong> Six <code>Table_*()</code> functions, one per chart, return the statistics of the view the chart opens on as a data frame, one row per statistic. Each row has its method, estimate and interval, counts, the p-value by the display rules (exploratory, adjustment named, no stars) and R’s reason where it was not computed. The numbers come from the same <code>Analyze_*()</code> calls the charts make. <a href="https://jwildfire.github.io/gsm.bio/reference/Write_RTF.html"><code>Write_RTF()</code></a> writes a table, with its title and footnotes, to RTF through r2rtf, which is suggested, not imported. <a href="https://github.com/jwildfire/obot.roadmap/issues/362" class="external-link">obot.roadmap#362</a>, <a href="https://github.com/jwildfire/gsm.bio/issues/38" class="external-link">#38</a>, <a href="https://github.com/jwildfire/gsm.bio/pull/41" class="external-link">#41</a>
+</li>
 </ul></div>
 <div class="section level3">
 <h3 id="also-in-this-release-0-2-0">Also in this release<a class="anchor" aria-label="anchor" href="#also-in-this-release-0-2-0"></a></h3>

@@ -48,6 +48,18 @@ as it does.
   [obot.roadmap#360](https://github.com/jwildfire/obot.roadmap/issues/360),
   [\#35](https://github.com/jwildfire/gsm.bio/issues/35),
   [\#36](https://github.com/jwildfire/gsm.bio/pull/36)
+- **Statistics tables and RTF.** Six `Table_*()` functions, one per
+  chart, return the statistics of the view the chart opens on as a data
+  frame, one row per statistic. Each row has its method, estimate and
+  interval, counts, the p-value by the display rules (exploratory,
+  adjustment named, no stars) and R’s reason where it was not computed.
+  The numbers come from the same `Analyze_*()` calls the charts make.
+  [`Write_RTF()`](https://jwildfire.github.io/gsm.bio/reference/Write_RTF.html)
+  writes a table, with its title and footnotes, to RTF through r2rtf,
+  which is suggested, not imported.
+  [obot.roadmap#362](https://github.com/jwildfire/obot.roadmap/issues/362),
+  [\#38](https://github.com/jwildfire/gsm.bio/issues/38),
+  [\#41](https://github.com/jwildfire/gsm.bio/pull/41)
 
 ### Also in this release
 

@@ -251,6 +251,45 @@ recorded too. gsm.safety carries an earlier safety.viz without the kit;
 once it carries v1.9.0, the widgets can take the bundle from there
 instead of carrying their own copy.
 
+## Tables
+
+Each chart’s statistics also come as a table, for a report:
+[`Table_GroupComparison()`](https://jwildfire.github.io/gsm.bio/reference/Table_GroupComparison.md),
+[`Table_AssociationScatter()`](https://jwildfire.github.io/gsm.bio/reference/Table_AssociationScatter.md),
+[`Table_CorrelationMatrix()`](https://jwildfire.github.io/gsm.bio/reference/Table_CorrelationMatrix.md),
+[`Table_BiomarkerScreen()`](https://jwildfire.github.io/gsm.bio/reference/Table_BiomarkerScreen.md),
+[`Table_CrossTab()`](https://jwildfire.github.io/gsm.bio/reference/Table_CrossTab.md)
+and
+[`Table_StratifiedSurvival()`](https://jwildfire.github.io/gsm.bio/reference/Table_StratifiedSurvival.md).
+Each takes the same tables and settings as its widget and returns a data
+frame, one row per statistic R computed for the view the chart opens on.
+A row gives the method, each estimate with its interval, the counts, and
+the p-value written by the display rules: three decimals, `p < 0.001`
+below that, labelled exploratory with its adjustment named, and no
+stars. A statistic R did not compute carries R’s reason instead.
+
+``` r
+
+dfTable <- Table_StratifiedSurvival(
+  Synthetic_Results,
+  Synthetic_Participants,
+  lSettings = list(
+    endpoint = "EFS",
+    group_by = list(measure = "CRP", visit = "Baseline", cut = "median"),
+    title = "{endpoint} by {group}"
+  ),
+  dfOutcomes = Synthetic_Outcomes
+)
+Write_RTF(dfTable, "survival.rtf")
+```
+
+[`Write_RTF()`](https://jwildfire.github.io/gsm.bio/reference/Write_RTF.md)
+writes a table to RTF with the r2rtf package: the title and subtitle
+above, the footnotes beneath, the table’s own last. r2rtf is suggested,
+not imported, and
+[`Write_RTF()`](https://jwildfire.github.io/gsm.bio/reference/Write_RTF.md)
+says so when it is not installed.
+
 ## Synthetic study
 
 The package ships a made-up biomarker study, so that a test can assert

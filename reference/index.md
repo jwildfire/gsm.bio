@@ -50,6 +50,27 @@ saved page shows them with no R and no network.
 - [`Widget_StratifiedSurvival()`](https://jwildfire.github.io/gsm.bio/reference/Widget_StratifiedSurvival.md)
   : Stratified Survival Widget
 
+## Tables
+
+The same views’ statistics as tables, one row per statistic, written by
+the program’s display rules, and an RTF writer for a report. r2rtf is
+suggested, not imported.
+
+- [`Table_GroupComparison()`](https://jwildfire.github.io/gsm.bio/reference/Table_GroupComparison.md)
+  : Group Comparison Table
+- [`Table_AssociationScatter()`](https://jwildfire.github.io/gsm.bio/reference/Table_AssociationScatter.md)
+  : Association Scatter Table
+- [`Table_CorrelationMatrix()`](https://jwildfire.github.io/gsm.bio/reference/Table_CorrelationMatrix.md)
+  : Correlation Matrix Table
+- [`Table_BiomarkerScreen()`](https://jwildfire.github.io/gsm.bio/reference/Table_BiomarkerScreen.md)
+  : Biomarker Screen Table
+- [`Table_CrossTab()`](https://jwildfire.github.io/gsm.bio/reference/Table_CrossTab.md)
+  : Cross-Tabulation Table
+- [`Table_StratifiedSurvival()`](https://jwildfire.github.io/gsm.bio/reference/Table_StratifiedSurvival.md)
+  : Stratified Survival Table
+- [`Write_RTF()`](https://jwildfire.github.io/gsm.bio/reference/Write_RTF.md)
+  : Write a Statistics Table to RTF
+
 ## Synthetic study
 
 A made-up biomarker study with three planted effects of known size, for

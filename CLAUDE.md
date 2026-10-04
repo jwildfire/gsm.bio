@@ -49,10 +49,12 @@ runs one requirement per session
 
 - Every `test_that()` name ends with the issue it proves, `(#N)`;
   `tests/testthat/test-qcthat-convention.R` fails the suite otherwise.
-- Imports are stats and survival for the statistics, and htmlwidgets for
-  the widgets, and nothing else; `tests/testthat/test-package.R` fails
-  the suite otherwise. A package needed only to check a result goes
-  under Suggests.
+- Imports are stats and survival for the statistics, htmlwidgets for the
+  widgets, and grDevices (part of R) for the device
+  [`Write_RTF()`](https://jwildfire.github.io/gsm.bio/reference/Write_RTF.md)
+  measures text on, and nothing else; `tests/testthat/test-package.R`
+  fails the suite otherwise. A package needed only to check a result
+  goes under Suggests.
 - A statistic is a thin wrapper around the base R function the design
   names. Nothing is reimplemented except the standardised difference.
 - The statistics have one definition: `inst/statistics/statistics.R`.
@@ -68,6 +70,14 @@ runs one requirement per session
   gsm.safety’s widgets do. The outcomes table, which came after v0.1.0,
   is `dfOutcomes`, after `lSettings` and before `width`, in every widget
   that reads one, so a released widget’s positional calls keep working.
+- A statistics table is `Table_<Chart>()`, takes the same arguments as
+  its widget less the sizes, and returns a data frame of text, one row
+  per statistic, whose numbers are `Analyze_*()` answers on the request
+  the chart makes, written by `R/output.R`’s display rules; its R
+  answers are its attribute `results`.
+  [`Write_RTF()`](https://jwildfire.github.io/gsm.bio/reference/Write_RTF.md)
+  writes one with r2rtf (Suggests), escaping text as RTF itself so the
+  file is the same in every locale.
 - A file copied from bio.viz is never edited here: change it in bio.viz
   and copy it again. `tests/testthat/test-vendored.R` fails the suite
   when a copied file and its record disagree.
