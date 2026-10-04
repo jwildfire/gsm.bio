@@ -1,0 +1,104 @@
+---
+title: "Gallery"
+description: >
+  Each of the six charts twice: as the static figure a Visualize_* function
+  draws with ggplot2, and as the interactive widget, from the same settings,
+  with the same statistics from R.
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, fig.width = 9, fig.height = 5.5, out.width = "100%")
+library(gsm.bio)
+lColumns <- list(
+  list(value_col = "ARM", label = "Arm"),
+  list(value_col = "SEX", label = "Sex"),
+  list(value_col = "RESPONSE", label = "Response")
+)
+```
+
+Each chart is shown twice, from one list of settings. First the static figure, a `ggplot` that `Visualize_*()` returns, for a report or a slide. Then the widget, `Widget_*()`, which draws the same view in the browser and lets a reader move it.
+
+The two share their settings. The figure also takes its title, subtitle and footnotes; the widgets take those once bio.viz's charts have them ([bio.viz#69](https://github.com/jwildfire/bio.viz/pull/69)).
+
+Both take their statistics from the same `Analyze_*()` call on the same rows. The number printed under the figure is the one stored in the widget, so the two say the same thing. The figure's title, subtitle and footnotes are written with the chart's placeholders (`{measure}`, `{n}`, `{filters}` and the rest), and the figure always writes its own footnote last: the date it was drawn, by gsm.bio, and R's method and counts behind each statistic it printed. Everything here is the synthetic study, `Synthetic_Results`, `Synthetic_Participants` and `Synthetic_Outcomes`.
+
+## Group comparison
+
+IL-6's change from Baseline by arm, the difference the study plants, with Welch's test of each visit.
+
+```{r group-comparison}
+lSettings <- list(
+  start_value = "IL-6", visits = c("Week 4", "Week 8"), value_type = "change", baseline_visits = "Baseline",
+  group_by = "ARM", groups = lColumns, filters = lColumns
+)
+lTitles <- list(title = "{measure}: {value} by {group}", subtitle = "{n} participants, at {visits}")
+Visualize_GroupComparison(Synthetic_Results, Synthetic_Participants, c(lSettings, lTitles))
+Widget_GroupComparison(Synthetic_Results, Synthetic_Participants, lSettings = lSettings)
+```
+
+## Association scatter
+
+TNF-alpha against IL-10 at Baseline, the correlation the study plants, with R's linear fit and its band.
+
+```{r association-scatter}
+lSettings <- list(
+  x = list(measure = "TNF-alpha", visit = "Baseline"), y = list(measure = "IL-10", visit = "Baseline"),
+  fit = "linear", filters = lColumns
+)
+lTitles <- list(title = "{y} against {x}", subtitle = "{n} participants")
+Visualize_AssociationScatter(Synthetic_Results, Synthetic_Participants, c(lSettings, lTitles))
+Widget_AssociationScatter(Synthetic_Results, Synthetic_Participants, lSettings = lSettings)
+```
+
+## Correlation matrix
+
+Every biomarker against every other at Baseline. The figure writes each coefficient above the diagonal, to two decimals as the grid does.
+
+```{r correlation-matrix, fig.height = 7}
+lSettings <- list(visit = "Baseline", filters = lColumns)
+lTitles <- list(title = "{heading}", subtitle = "{variables} biomarkers, {n} participants")
+Visualize_CorrelationMatrix(Synthetic_Results, Synthetic_Participants, c(lSettings, lTitles))
+Widget_CorrelationMatrix(Synthetic_Results, Synthetic_Participants, lSettings = lSettings)
+```
+
+## Biomarker screen
+
+Every biomarker's change to Week 4, Placebo against Treatment, as a standardised difference with both p-values. The widget opens any row in its group comparison.
+
+```{r biomarker-screen}
+lSettings <- list(
+  visit = "Week 4", value_type = "change", group_by = "ARM", baseline_visits = "Baseline",
+  groups = lColumns, filters = lColumns, group_comparison = list(groups = lColumns)
+)
+lTitles <- list(title = "{heading}", subtitle = "{biomarkers} biomarkers, {n} participants")
+Visualize_BiomarkerScreen(Synthetic_Results, Synthetic_Participants, c(lSettings, lTitles))
+Widget_BiomarkerScreen(Synthetic_Results, Synthetic_Participants, lSettings = lSettings)
+```
+
+## Cross-tabulation
+
+Response by CRP at Baseline cut at its median, with R's chi-square test.
+
+```{r cross-tab}
+lSettings <- list(
+  row_by = "RESPONSE", col_by = list(measure = "CRP", visit = "Baseline", cut = "median"),
+  groups = lColumns, filters = lColumns
+)
+lTitles <- list(title = "{rows} by {columns}", subtitle = "{n} participants")
+Visualize_CrossTab(Synthetic_Results, Synthetic_Participants, c(lSettings, lTitles))
+Widget_CrossTab(Synthetic_Results, Synthetic_Participants, lSettings = lSettings)
+```
+
+## Stratified survival
+
+Event-free survival by CRP at Baseline cut at its median, the survival effect the study plants. The figure draws R's own `survfit()` curves with their confidence bands. The widget draws the same curves and lets a reader drag the cut line.
+
+```{r stratified-survival}
+lSettings <- list(
+  endpoint = "EFS", group_by = list(measure = "CRP", visit = "Baseline", cut = "median"),
+  groups = lColumns, filters = lColumns
+)
+lTitles <- list(title = "{endpoint} by {group}", subtitle = "{n} participants")
+Visualize_StratifiedSurvival(Synthetic_Results, Synthetic_Participants, c(lSettings, lTitles), Synthetic_Outcomes)
+Widget_StratifiedSurvival(Synthetic_Results, Synthetic_Participants, lSettings = lSettings, dfOutcomes = Synthetic_Outcomes)
+```

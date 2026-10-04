@@ -23,6 +23,7 @@ Imports:
 Suggests:
     digest,
     effectsize,
+    ggplot2,
     jsonlite,
     rmarkdown,
     testthat (>= 3.0.0)
