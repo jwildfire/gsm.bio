@@ -74,7 +74,10 @@ Visualize_CrossTab <- function(dfResults, dfParticipants = NULL, lSettings = lis
     list(rows = strRows, columns = strColumns, n = lTable$total)
   )
   lFilled <- Output_Titles(lTitles, lValues, lapply(lAnswers, `[[`, "value"))
-  chrStatistics <- vapply(lAnswers, function(lResult) Output_StatisticText(lResult$value), character(1))
+  # Each answer as the chart's line prints it (bio.viz, src/cross-tab/statistic.js,
+  # `describeAnswer`): the test, then each estimate with an interval, Fisher's
+  # odds ratio named by the categories R was handed.
+  chrStatistics <- unlist(lapply(lAnswers, function(lResult) CrossTab_Lines(lResult)))
 
   gg <- ggplot2::ggplot(dfCells, Figure_Aes(x = "share", y = "row", fill = "col")) +
     ggplot2::geom_col(position = ggplot2::position_stack(reverse = TRUE), width = 0.7) +

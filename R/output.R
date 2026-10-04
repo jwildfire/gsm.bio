@@ -444,8 +444,32 @@ Output_StatisticText <- function(lValue) {
   paste0(strMethod, ": ", Output_P(nP), " (", strCounts, "). ", strLabel)
 }
 
+# A bound as the line writes it: its four figures, or R's infinity in words
+# (bio.viz, src/r/formatStatistic.js, `bound`).
+Output_Bound <- function(nValue) {
+  if (is.numeric(nValue) && length(nValue) == 1L && is.infinite(nValue)) {
+    return(if (nValue > 0) "infinity" else "minus infinity")
+  }
+  Output_Figure(nValue)
+}
+
+# Which way round Fisher's odds ratio of a two-by-two table is: R's
+# fisher.test() estimates it for the table in the order it was handed it, the
+# odds of the first column against the second in the first row over the same
+# in the second. The line names it so (bio.viz, src/cross-tab/statistic.js,
+# `oriented`), from the categories R was handed. Returns the row, named.
+Output_Oriented <- function(lRow, chrRows, chrCols) {
+  bGroup <- !is.null(lRow$group) && length(lRow$group) == 1L && !is.na(lRow$group) && !Core_IsBlank(lRow$group)
+  if (!identical(lRow$name, "odds ratio") || bGroup || length(chrRows) != 2L || length(chrCols) != 2L) {
+    return(lRow)
+  }
+  lRow$group <- paste0(chrRows[1], " / ", chrRows[2], ", odds of ", chrCols[1], " against ", chrCols[2])
+  lRow
+}
+
 # One estimate as the line writes it: its name and group, the estimate, and
-# its interval. A median that was not reached says so.
+# its interval. A median that was not reached says so. An infinite estimate is
+# `infinite` (`minus infinity` below), and an infinite bound `infinity`.
 Output_EstimateText <- function(lRow) {
   Present <- function(xValue) !is.null(xValue) && length(xValue) == 1L && !is.na(xValue)
   strGroup <- if (Present(lRow$group) && !Core_IsBlank(lRow$group)) paste0(" (", lRow$group, ")") else ""
@@ -455,9 +479,10 @@ Output_EstimateText <- function(lRow) {
     strInterval <- if (!Present(lRow$lower) && !Present(lRow$upper)) "not reached" else paste(Said(lRow$lower), "to", Said(lRow$upper))
     return(paste0(lRow$name, strGroup, ": ", Said(lRow$estimate), ", ", strPercent, "% confidence interval ", strInterval, "."))
   }
-  strLead <- paste0(lRow$name, strGroup, ": ", Output_Figure(lRow$estimate))
+  strEstimate <- if (identical(lRow$estimate, Inf)) "infinite" else Output_Bound(lRow$estimate)
+  strLead <- paste0(lRow$name, strGroup, ": ", strEstimate)
   if (!Present(lRow$lower) && !Present(lRow$upper) && !Present(lRow$level)) {
     return(paste0(strLead, "."))
   }
-  paste0(strLead, ", ", strPercent, "% confidence interval ", Output_Figure(lRow$lower), " to ", Output_Figure(lRow$upper), ".")
+  paste0(strLead, ", ", strPercent, "% confidence interval ", Output_Bound(lRow$lower), " to ", Output_Bound(lRow$upper), ".")
 }

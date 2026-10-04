@@ -55,7 +55,7 @@ Table_CrossTab <- function(dfResults, dfParticipants = NULL, lSettings = list())
     Core_Stop("Table_CrossTab() has no statistic to show: ", strWhy)
   }
   lAnswers <- Chart_Answer(lRequests, list(Analyze_Contingency = Analyze_Contingency))
-  dfRows <- do.call(rbind, lapply(lAnswers, function(lResult) Table_Row(lResult$value, "Test of the table")))
+  dfRows <- do.call(rbind, lapply(lAnswers, function(lResult) Table_Row(CrossTab_Oriented(lResult), "Test of the table")))
   lValues <- c(
     Output_SharedPlaceholders(lState$filters, lConfig$filters),
     list(

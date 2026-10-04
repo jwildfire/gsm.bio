@@ -203,3 +203,84 @@ test_that("every widget hands its chart which R computed the stored results, so 
   expect_true(all(c("r_version", "gsm_bio_version", "computed_at") %in% names(lBy)))
   expect_true(all(vapply(lBy[c("r_version", "gsm_bio_version", "computed_at")], is.character, logical(1))))
 })
+
+# The study's participants with two columns whose names sort one way by code
+# point and another by name: a dose, and a letter in either case.
+dfDoseParticipants <- function() {
+  dfParticipants <- Synthetic_Participants
+  dfParticipants$DOSE <- ifelse(seq_len(nrow(dfParticipants)) %% 2L == 0L, "10 mg", "2 mg")
+  dfParticipants$LETTER <- ifelse(seq_len(nrow(dfParticipants)) %% 3L == 0L, "B", "a")
+  dfParticipants
+}
+
+test_that("a column's categories are keyed in the order the chart draws them, by name with numbers as numbers, so the chart finds its stored results (#44)", {
+  dfParticipants <- dfDoseParticipants()
+  lResults <- Widget_CrossTab(Synthetic_Results, dfParticipants, lSettings = list(row_by = "DOSE", col_by = "LETTER"))$x$lStatistics$results
+  expect_length(lResults, 2L)
+  for (lResult in lResults) {
+    # bio.viz draws a column's categories in gsm.bio's own order (its
+    # `categoryOrder`, Core_NaturalCompare) and asks for them so.
+    expect_identical(lResult$args$chrRowGroups, list("2 mg", "10 mg"))
+    expect_identical(lResult$args$chrColGroups, list("a", "B"))
+    expect_identical(unlist(lResult$args$chrRowGroups), Core_Levels(dfParticipants$DOSE))
+    expect_identical(lResult$value$status, "ok")
+  }
+  # The figure and the table read the table in the same order.
+  skip_if_not_installed("ggplot2")
+  lTable <- CrossTab_Table(Synthetic_Results, dfParticipants, CrossTab_Settings(list(row_by = "DOSE", col_by = "LETTER")),
+    CrossTab_State(Synthetic_Results, dfParticipants, CrossTab_Settings(list(row_by = "DOSE", col_by = "LETTER"))))
+  expect_identical(lTable$row_levels, c("2 mg", "10 mg"))
+  expect_identical(lTable$col_levels, c("a", "B"))
+})
+
+# Forty participants in a two-by-two with an empty cell: A has 17 x and 3 y,
+# B has no x and 20 y, so Fisher's odds ratio is infinite and its lower bound
+# 14.86.
+lEmptyCell <- function() {
+  dfParticipants <- Synthetic_Participants[1:40, ]
+  dfParticipants$ROWV <- rep(c("A", "B"), each = 20L)
+  dfParticipants$COLV <- c(rep("x", 17L), rep("y", 23L))
+  list(
+    results = Synthetic_Results[Synthetic_Results$USUBJID %in% dfParticipants$USUBJID, ],
+    participants = dfParticipants,
+    settings = list(row_by = "ROWV", col_by = "COLV", test = "fisher"),
+    rows = data.frame(row = dfParticipants$ROWV, col = dfParticipants$COLV, stringsAsFactors = FALSE)
+  )
+}
+
+test_that("an infinite odds ratio is stored as the text Inf, which bio.viz reads back as infinity, and not lost as null (#44)", {
+  lCase <- lEmptyCell()
+  lWidget <- Widget_CrossTab(lCase$results, lCase$participants, lSettings = lCase$settings)
+  lTheirs <- Analyze_Contingency(lCase$rows, "row", "col", strMethod = "fisher", chrRowGroups = c("A", "B"), chrColGroups = c("x", "y"))
+  expect_identical(lTheirs$estimates$estimate, Inf)
+  expect_equal(lTheirs$estimates$lower, 14.85639, tolerance = 1e-6)
+  lPage <- lPagePayload(strSavedPage(lWidget))$lStatistics$results[[1]]
+  expect_identical(lPage$args$strMethod, "fisher")
+  lEstimate <- lPage$value$estimates[[1]]
+  expect_identical(lEstimate$estimate, "Inf")
+  expect_identical(lEstimate$upper, "Inf")
+  expect_equal(lEstimate$lower, lTheirs$estimates$lower, tolerance = 1e-12)
+  # Read back by bio.viz's rule, the page holds R's answer member by member.
+  ExpectInPage(lPage$value, lTheirs, "the empty-cell table")
+  # Each of R's non-finite numbers has its own spelling; a missing value is null.
+  expect_identical(StoredValue(c(-Inf, NaN, NA, 1)), list("-Inf", "NaN", NULL, 1))
+  expect_identical(StoredValue(Inf), "Inf")
+})
+
+test_that("the figure and the table name the odds ratio by its rows and columns, and print an infinite one in words, as the chart does (#44)", {
+  skip_if_not_installed("ggplot2")
+  lCase <- lEmptyCell()
+  strInfinite <- "odds ratio (A / B, odds of x against y): infinite, 95% confidence interval 14.86 to infinity"
+  gg <- Visualize_CrossTab(lCase$results, lCase$participants, lCase$settings)
+  expect_match(gg$labels$caption, paste0(strInfinite, "."), fixed = TRUE)
+  dfTable <- Table_CrossTab(lCase$results, lCase$participants, lCase$settings)
+  expect_identical(dfTable$Estimate, strInfinite)
+  # A finite one is named the same way.
+  dfArm <- Table_CrossTab(Synthetic_Results, Synthetic_Participants, list(row_by = "ARM", col_by = "RESPONSE", test = "fisher"))
+  expect_match(dfArm$Estimate, "^odds ratio \\(Placebo / Treatment, odds of Non-responder against Responder\\): [0-9.]+, 95% confidence interval [0-9.]+ to [0-9.]+$")
+  expect_match(Visualize_CrossTab(Synthetic_Results, Synthetic_Participants, list(row_by = "ARM", col_by = "RESPONSE", test = "fisher"))$labels$caption,
+    "odds ratio (Placebo / Treatment, odds of Non-responder against Responder): ", fixed = TRUE)
+  # A table bigger than two by two has no odds ratio to name; minus infinity is in words too.
+  expect_identical(Output_EstimateText(list(name = "odds ratio", group = NA, estimate = -Inf, lower = -Inf, upper = 2, level = 0.95)),
+    "odds ratio: minus infinity, 95% confidence interval minus infinity to 2.")
+})

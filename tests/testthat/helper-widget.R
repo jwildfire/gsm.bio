@@ -124,7 +124,10 @@ chrPageDifferences <- function(xPage, xValue, strLabel) {
   if (length(xValue) != 1L) {
     return(paste(strLabel, "is not a single value in R"))
   }
-  bSame <- if (is.na(xValue)) {
+  bSame <- if (is.numeric(xValue) && (is.nan(xValue) || is.infinite(xValue))) {
+    # R's non-finite numbers, as bio.viz's connection reads them back.
+    identical(xPage, if (is.nan(xValue)) "NaN" else if (xValue > 0) "Inf" else "-Inf")
+  } else if (is.na(xValue)) {
     is.null(xPage)
   } else if (is.numeric(xValue)) {
     is.numeric(xPage) && length(xPage) == 1L && isTRUE(all.equal(as.numeric(xPage), as.numeric(xValue), tolerance = 1e-12))
