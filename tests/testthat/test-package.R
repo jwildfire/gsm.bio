@@ -28,21 +28,24 @@ test_that("the package imports stats and survival for the statistics, and htmlwi
   expect_identical(chrDependencies("Remotes"), character(0))
 })
 
-test_that("what only a test needs is suggested, not imported (#1, #9)", {
+test_that("what only a test or the RTF writer needs is suggested, not imported (#1, #9, #38)", {
   # effectsize checks the standardised difference; digest, jsonlite and
-  # rmarkdown check the vendored files and read a saved page back.
-  expect_identical(chrDependencies("Suggests"), c("digest", "effectsize", "jsonlite", "rmarkdown", "testthat"))
+  # rmarkdown check the vendored files and read a saved page back; r2rtf writes
+  # a table to RTF, and Write_RTF() says so when it is not installed.
+  expect_identical(chrDependencies("Suggests"), c("digest", "effectsize", "jsonlite", "r2rtf", "rmarkdown", "testthat"))
   expect_identical(utils::packageDescription("gsm.bio")[["Config/testthat/edition"]], "3")
 })
 
-test_that("the package exports the seven statistics functions and the widgets, and ships the synthetic study as its only data (#1, #2, #3, #4, #9, #12, #13, #16, #18, #35)", {
+test_that("the package exports the seven statistics functions, the widgets and the tables, and ships the synthetic study as its only data (#1, #2, #3, #4, #9, #12, #13, #16, #18, #35, #38)", {
   expect_setequal(
     getNamespaceExports("gsm.bio"),
     c(
       "Analyze_GroupDifference", "Analyze_Correlation", "Analyze_CorrelationMatrix", "Analyze_Fit",
       "Analyze_Contingency", "Analyze_Survival", "Analyze_Screen", "Widget_GroupComparison",
       "Widget_AssociationScatter", "Widget_CorrelationMatrix", "Widget_BiomarkerScreen",
-      "Widget_CrossTab", "Widget_StratifiedSurvival"
+      "Widget_CrossTab", "Widget_StratifiedSurvival",
+      "Table_GroupComparison", "Table_AssociationScatter", "Table_CorrelationMatrix",
+      "Table_BiomarkerScreen", "Table_CrossTab", "Table_StratifiedSurvival", "Write_RTF"
     )
   )
   expect_setequal(
