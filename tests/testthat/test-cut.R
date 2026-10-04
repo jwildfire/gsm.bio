@@ -132,6 +132,13 @@ test_that("text is blank as the chart trims it: Unicode white space, as JavaScri
     " ", " ", " ", "　", "﻿"
   )
   expect_true(all(Core_IsBlank(enc2utf8(chrSpaces))))
+  # They are the code points bio.viz's cross-tabulation recipe blanks.
+  nBlank <- unlist(lReadJson(testthat::test_path("fixtures", "bio.viz"), "cross-tab-r.json")$blank_code_points)
+  expect_identical(as.integer(nBlank), utf8ToInt(paste(chrSpaces, collapse = "")))
+  expect_true(all(Core_IsBlank(vapply(nBlank, intToUtf8, character(1)))))
+  # Any other code point below U+3001 is a character.
+  nOthers <- setdiff(c(1:8, 14:31, 33:159, 161:12289), nBlank)
+  expect_false(any(Core_IsBlank(vapply(nOthers, intToUtf8, character(1)))))
   expect_true(Core_IsBlank(enc2utf8(paste0("    "))))
   expect_false(any(Core_IsBlank(enc2utf8(c("a", " a ", "Ödem", "​")))))
   expect_identical(Core_Levels(enc2utf8(c("B", " ", "a", "  "))), c("a", "B"))

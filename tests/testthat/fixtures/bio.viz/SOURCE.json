@@ -2,10 +2,9 @@
   "what": "Fixtures copied from bio.viz byte for byte, a set per chart: the rows bio.viz's own core wrote for panels of the chart's demo (a folder), and the request the chart makes for each with what desktop R answered (the JSON file beside it).",
   "copied_by": "data-raw/vendor-bio-viz.R",
   "repository": "https://github.com/jwildfire/bio.viz",
-  "ref": "44-cross-tab",
-  "commit": "3ea731f9ccac03e86bfc9e9d7c64ca9d02bc08c7",
-  "merged_to_dev": false,
-  "note": "Copied from bio.viz's branch 44-cross-tab, which is not merged to bio.viz's dev branch at this commit. When it lands there, copy again from dev (Rscript data-raw/vendor-bio-viz.R) and rerun the tests.",
+  "ref": "dev",
+  "commit": "adcdb416f3b56dfafdf317c08d8148cb17969dd9",
+  "merged_to_dev": true,
   "files": [
     {
       "file": "group-statistics/SOURCE.json",
@@ -460,8 +459,8 @@
     {
       "file": "cross-tab-r.json",
       "source": "tests/fixtures/cross-tab-r.json",
-      "sha256": "89201f2641f64382e0391b34d52d92c134b03ee1e6933884f1e84fbb6c77841f",
-      "bytes": 73611
+      "sha256": "c621de108b934a304d7bef6d6c3b8516fe7d79bb8869371611cc773aa04e954f",
+      "bytes": 73756
     }
   ]
 }

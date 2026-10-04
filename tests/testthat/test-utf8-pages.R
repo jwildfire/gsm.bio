@@ -87,3 +87,35 @@ test_that("text that is not ASCII is marked UTF-8 for the page and otherwise lef
     expect_identical(Widget_Utf8(Synthetic_Participants), Synthetic_Participants)
   })
 })
+
+test_that("a cross-tabulation saved in a session whose locale is not UTF-8 carries its categories as UTF-8 (#18, #22)", {
+  WithCLocale(function() {
+    lWidget <- Widget_CrossTab(Synthetic_Results, dfStages(), lSettings = list(
+      row_by = "STAGE", col_by = list(measure = "CRP", visit = "Baseline", cut = "median")
+    ))
+    strFile <- file.path(tempfile("utf8"), "page.html")
+    dir.create(dirname(strFile))
+    htmlwidgets::saveWidget(lWidget, file = strFile, selfcontained = bPandoc())
+    for (strText in c(chrStagesUtf8(), enc2utf8("≤"))) {
+      expect_true(bPageHas(strFile, charToRaw(strText)), label = paste("the page holds", strText))
+    }
+    for (strEscape in c("<c3>", "<e2>", "<U+00", "<U+22", "<e9>")) {
+      expect_false(bPageHas(strFile, charToRaw(strEscape)), label = paste("the page holds", strEscape))
+    }
+    # The stored key hands R the categories by code point, as UTF-8.
+    lStored <- lWidget$x$lStatistics$results
+    expect_length(lStored, 2L)
+    expect_identical(unlist(lStored[[1]]$args$chrRowGroups), Core_SortText(chrStagesUtf8()))
+    chrGroups <- unlist(lStored[[1]]$args$chrRowGroups)
+    expect_true(all(Encoding(chrGroups[chrGroups != "Week 1"]) == "UTF-8"))
+    # A filter set in R to start on a category, written as UTF-8, finds the
+    # category the table holds as the bytes it was read as: R keys the table
+    # under that filter, as the chart opens on it.
+    strOdem <- chrStagesUtf8()[1]
+    lFiltered <- Widget_CrossTab(Synthetic_Results, dfStages(), lSettings = list(
+      row_by = "ARM", col_by = "RESPONSE", filters = list(list(value_col = "STAGE", start = strOdem))
+    ))$x$lStatistics$results
+    expect_identical(lFiltered[[1]]$dataId$filters, list(STAGE = list(strOdem)))
+    expect_identical(lFiltered[[1]]$rows, sum(seq_len(nrow(Synthetic_Participants)) %% 4L == 1L))
+  })
+})
