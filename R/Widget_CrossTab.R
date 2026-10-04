@@ -89,6 +89,7 @@ Widget_CrossTab <- function(
   Widget_CheckColumns(lConfig, dfResults, dfParticipants)
   lNamed <- Widget_NameBaseline(lConfig, lSettings, dfResults)
   lNamed <- Widget_NameFilters(lNamed$config, lNamed$settings, dfResults, dfParticipants)
+  lNamed$settings <- Widget_NameCuts(lNamed$config, lNamed$settings, c("row_by", "col_by"))
 
   Widget_Create(
     "Widget_CrossTab", dfResults, dfParticipants, lNamed$settings,

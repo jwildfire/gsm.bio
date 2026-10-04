@@ -50,13 +50,19 @@ test_that("the record says the safety.viz copy is a stand-in, and carries where 
   expect_identical(lTheirs$ref, "dev")
   expect_match(lTheirs$commit, "^[0-9a-f]{40}$")
   expect_true(lTheirs$merged_to_dev)
-  # And ours: bio.viz's dev branch, at a recorded commit; or a branch not
-  # merged to dev yet, which the record says, with a note to copy again (#18).
+  # And ours: bio.viz's dev branch, at a recorded commit. A copy from a branch
+  # not merged to dev yet says so, with a note to copy again, and is allowed
+  # only while the package is at a development version: a release never
+  # carries one (#18).
   expect_match(lRecord$commit, "^[0-9a-f]{40}$")
   expect_true(is.logical(lRecord$merged_to_dev))
+  strVersion <- as.character(utils::packageVersion("gsm.bio"))
+  bDevelopment <- length(unclass(package_version(strVersion))[[1]]) > 3L
   if (isTRUE(lRecord$merged_to_dev)) {
+    expect_identical(lRecord$ref, "dev")
     expect_null(lRecord$note)
   } else {
+    expect_true(bDevelopment, label = sprintf("version %s is a development version, so it may carry an unmerged copy", strVersion))
     expect_false(identical(lRecord$ref, "dev"))
     expect_match(lRecord$note, "not merged to bio.viz's dev branch", fixed = TRUE)
     expect_match(lRecord$note, "copy again from dev", fixed = TRUE)

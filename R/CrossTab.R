@@ -132,7 +132,7 @@ CrossTab_State <- function(dfResults, dfParticipants, lConfig) {
 # with text that is only white space blanked, as nothing was written.
 CrossTab_Category <- function(xValue) {
   chrText <- Core_Text(xValue)
-  chrText[!is.na(chrText) & !nzchar(trimws(chrText))] <- NA_character_
+  chrText[Core_IsBlank(chrText)] <- NA_character_
   chrText
 }
 

@@ -86,13 +86,36 @@ Core_Text <- function(xValue) {
 }
 
 # Nothing was written in the cell: a missing value, or text that is empty or
-# only white space.
+# only white space, as JavaScript's trim() strips it: its WhiteSpace and
+# LineTerminator characters, the no-break space and the other Unicode spaces
+# among them, which trimws() does not strip.
 Core_IsBlank <- function(xValue) {
   if (is.character(xValue) || is.factor(xValue)) {
     chrText <- as.character(xValue)
-    return(is.na(chrText) | !nzchar(trimws(chrText)))
+    return(is.na(chrText) | Core_BlankText(chrText))
   }
   is.na(xValue)
+}
+
+# The characters JavaScript's String.prototype.trim() strips, as a PCRE class.
+strCoreSpaces <- paste0(
+  "\\x{0009}-\\x{000D}\\x{0020}\\x{00A0}\\x{1680}\\x{2000}-\\x{200A}",
+  "\\x{2028}\\x{2029}\\x{202F}\\x{205F}\\x{3000}\\x{FEFF}"
+)
+
+# Whether text holds nothing but white space. Text that is all ASCII is read
+# as it is; other text as UTF-8 (Core_Utf8()), marked so whatever the locale.
+Core_BlankText <- function(chrText) {
+  bBlank <- !is.na(chrText) & !grepl("[^\t\n\v\f\r ]", chrText, useBytes = TRUE)
+  bWide <- !is.na(chrText) & !bBlank & grepl("[^ -~\t\n\v\f\r]", chrText, useBytes = TRUE)
+  if (any(bWide)) {
+    chrWide <- Core_Utf8(chrText[bWide])
+    bUnknown <- Encoding(chrWide) == "unknown" & validUTF8(chrWide)
+    Encoding(chrWide[bUnknown]) <- "UTF-8"
+    bValid <- validUTF8(chrWide)
+    bBlank[bWide][bValid] <- !grepl(paste0("[^", strCoreSpaces, "]"), chrWide[bValid], perl = TRUE)
+  }
+  bBlank
 }
 
 # A finite number, or text that reads as one; otherwise NA. A table read from a
@@ -434,6 +457,10 @@ Core_CutPoints <- function(nValues, xCut) {
 
 # The group each value is in, by its label; NA for a missing value.
 Core_CutGroups <- function(nValues, nPoints) {
+  # With no point there is no value to cut, and no group.
+  if (length(nPoints) == 0L) {
+    return(rep(NA_character_, length(nValues)))
+  }
   as.character(cut(nValues, breaks = c(-Inf, nPoints, Inf), right = TRUE, labels = Core_BoundLabels(nPoints)))
 }
 

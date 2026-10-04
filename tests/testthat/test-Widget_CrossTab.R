@@ -161,3 +161,32 @@ test_that("the cross-tabulation widget saves as one self-contained file that hol
   expect_false(grepl("cross-tab_files", strPage, fixed = TRUE))
   expect_identical(length(lPagePayload(strPage)$lStatistics$results), 2L)
 })
+
+test_that("a cut is handed to the page as R reads it: a single typed point as a list, which the chart takes (#18)", {
+  lSettings <- list(
+    row_by = list(measure = "CRP", visit = "Baseline", cut = 3), col_by = "RESPONSE",
+    cuts = list(list(col = "AGE", type = "number", cut = 50))
+  )
+  lWidget <- lCrossTabWidget(lSettings)
+  lPage <- lPagePayload(strSavedPage(lWidget))
+  expect_identical(lPage$lSettings$row_by, list(measure = "CRP", visit = "Baseline", value = "raw", cut = list(3L)))
+  expect_identical(lPage$lSettings$cuts, list(list(col = "AGE", type = "number", cut = list(50L))))
+  expect_identical(lPage$lSettings$col_by, "RESPONSE")
+  expect_length(lPage$lStatistics$results, 2L)
+  expect_identical(lPage$lStatistics$results[[1]]$dataId$row_by, lPage$lSettings$row_by)
+})
+
+test_that("a cut with no value to cut stores nothing and stops nothing (#18)", {
+  dfAgeless <- Synthetic_Participants
+  dfAgeless$AGE <- NA_integer_
+  dfNoCrp <- Synthetic_Results
+  dfNoCrp$STRESN[dfNoCrp$TEST == "CRP" & dfNoCrp$VISIT == "Baseline"] <- NA
+  for (lCase in list(
+    list(results = Synthetic_Results, participants = Synthetic_Participants, col_by = list(measure = "CRP", visit = "Week 99", cut = "median")),
+    list(results = dfNoCrp, participants = Synthetic_Participants, col_by = list(measure = "CRP", visit = "Baseline", cut = "median")),
+    list(results = Synthetic_Results, participants = dfAgeless, col_by = list(col = "AGE", type = "number", cut = "median"))
+  )) {
+    lWidget <- Widget_CrossTab(lCase$results, lCase$participants, lSettings = list(row_by = "ARM", col_by = lCase$col_by))
+    expect_identical(lWidget$x$lStatistics$results, list())
+  }
+})

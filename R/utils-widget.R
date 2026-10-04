@@ -213,6 +213,30 @@ Widget_NameFilters <- function(lConfig, lSettings, dfResults, dfParticipants) {
   list(config = lConfig, settings = lSettings)
 }
 
+#' Hand the page the cut variables as R reads them
+#'
+#' A cut variable a setting names is written back into the page's settings in
+#' the form R read it (Core_WrittenCut()): with its value type, and its typed
+#' points a list, as the chart takes them. A single typed point written as a
+#' number, `cut = 3`, is then the list the chart requires, `[3]`. A setting
+#' that names a column is left as it was given.
+#'
+#' @param chrKeys `character` The settings that make groups.
+#'
+#' @keywords internal
+#' @noRd
+Widget_NameCuts <- function(lConfig, lSettings, chrKeys) {
+  for (strKey in chrKeys) {
+    if (Chart_IsCut(lConfig[[strKey]])) {
+      lSettings[strKey] <- list(lConfig[[strKey]])
+    }
+  }
+  if (!is.null(lConfig$cuts)) {
+    lSettings$cuts <- lConfig$cuts
+  }
+  lSettings
+}
+
 #' Make a widget from its tables, its settings and R's answers
 #'
 #' @param strName `character` The widget's name, which is its binding's.

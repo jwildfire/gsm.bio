@@ -109,3 +109,37 @@ test_that("a variable takes a cut, checked as bio.viz checks it, and is written 
   # A bound is written to four significant digits, in full.
   expect_identical(Core_CutBound(c(2.0625, 123456.7, 1.2345e-5, 3.382e21)), c("2.062", "123500", "0.00001234", "3382000000000000000000"))
 })
+
+test_that("a cut with no value to cut makes no groups, and stops nothing (#18)", {
+  for (xCut in list("median", "tertiles", "quartiles")) {
+    lCut <- Core_CutPoints(c(NA_real_, NA_real_), xCut)
+    expect_identical(lCut$n, 0L)
+    expect_identical(lCut$points, numeric(0))
+    expect_identical(lCut$labels, character(0))
+    expect_identical(Core_CutGroups(c(NA_real_, NA_real_), lCut$points), c(NA_character_, NA_character_))
+  }
+  expect_identical(Core_CutGroups(numeric(0), numeric(0)), character(0))
+  # Typed points make their groups whether or not anyone has a value.
+  expect_identical(Core_CutGroups(c(NA_real_, 4), 3), c(NA_character_, "> 3"))
+})
+
+test_that("text is blank as the chart trims it: Unicode white space, as JavaScript's trim() strips it (#18)", {
+  # Every character JavaScript's String.prototype.trim() strips: its
+  # WhiteSpace and LineTerminator characters.
+  chrSpaces <- c(
+    "\u0009", "\u000a", "\u000b", "\u000c", "\u000d", " ", " ", " ", " ", " ",
+    " ", " ", " ", " ", " ", " ", " ", " ", " ", " ",
+    " ", " ", " ", "　", "﻿"
+  )
+  expect_true(all(Core_IsBlank(enc2utf8(chrSpaces))))
+  expect_true(Core_IsBlank(enc2utf8(paste0("    "))))
+  expect_false(any(Core_IsBlank(enc2utf8(c("a", " a ", "Ödem", "​")))))
+  expect_identical(Core_Levels(enc2utf8(c("B", " ", "a", "  "))), c("a", "B"))
+  # A cross-tab column whose only text is a non-breaking space is no category.
+  dfParticipants <- Synthetic_Participants
+  dfParticipants$SITE <- ifelse(seq_len(nrow(dfParticipants)) %% 5L == 0L, enc2utf8(" "), c("S1", "S2")[seq_len(nrow(dfParticipants)) %% 2L + 1L])
+  lConfig <- CrossTab_Settings(list(row_by = "SITE", col_by = "ARM"))
+  lTable <- CrossTab_Table(Synthetic_Results, dfParticipants, lConfig, CrossTab_State(Synthetic_Results, dfParticipants, lConfig))
+  expect_identical(lTable$row_levels, c("S1", "S2"))
+  expect_identical(nrow(lTable$records), 160L)
+})

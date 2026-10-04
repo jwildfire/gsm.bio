@@ -412,8 +412,8 @@ test_that("the group comparison widget takes a cut category: the groups low to h
   lWidget <- Widget_GroupComparison(Synthetic_Results, Synthetic_Participants, lSettings = list(
     start_value = "IL-6", visits = c("Week 4", "Week 12"), value_type = "change", baseline_visits = "Baseline", group_by = lCut
   ))
-  # The page is given the cut as it was written; the chart reads it as R does.
-  expect_identical(lWidget$x$lSettings$group_by, lCut)
+  # The page is given the cut as R reads it.
+  expect_identical(lWidget$x$lSettings$group_by, list(measure = "CRP", visit = "Baseline", value = "raw", cut = "median"))
   lStored <- lPagePayload(strSavedPage(lWidget))$lStatistics$results
   # Every biomarker the chart can open, at each visit chosen, by the cut.
   expect_length(lStored, 24L)
@@ -440,4 +440,20 @@ test_that("the group comparison widget takes a cut category: the groups low to h
     # The difference is the lower group less the higher.
     expect_identical(lResult$value$estimates[[3]]$group, paste(chrGroups[1], "-", chrGroups[2]))
   }
+})
+
+test_that("a cut category is handed to the page as R reads it, and one with no value to cut stops nothing (#18)", {
+  lWidget <- Widget_GroupComparison(Synthetic_Results, Synthetic_Participants, lSettings = list(
+    start_value = "IL-6", visits = "Week 4", value_type = "change", baseline_visits = "Baseline",
+    group_by = list(measure = "CRP", visit = "Baseline", cut = 3), panel_by = list(col = "AGE", type = "number", cut = 50)
+  ))
+  lPage <- lPagePayload(strSavedPage(lWidget))
+  expect_identical(lPage$lSettings$group_by, list(measure = "CRP", visit = "Baseline", value = "raw", cut = list(3L)))
+  expect_identical(lPage$lSettings$panel_by, list(col = "AGE", type = "number", cut = list(50L)))
+  expect_gt(length(lPage$lStatistics$results), 0L)
+  # A visit nobody has: no value to cut, no groups, nothing stored.
+  lNone <- Widget_GroupComparison(Synthetic_Results, Synthetic_Participants, lSettings = list(
+    start_value = "IL-6", visits = "Week 4", group_by = list(measure = "CRP", visit = "Week 99", cut = "median")
+  ))
+  expect_identical(lNone$x$lStatistics$results, list())
 })
