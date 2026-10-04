@@ -175,6 +175,30 @@ Write_RTF(dfTable, "survival.rtf")
 
 `Write_RTF()` writes a table to RTF with the r2rtf package: the title and subtitle above, the footnotes beneath, the table's own last. r2rtf is suggested, not imported, and `Write_RTF()` says so when it is not installed.
 
+## Batch runs
+
+A bio.viz chart writes what it draws as a specification, JSON data (bio.viz's docs/output.md, "Specifications"). `Run_Specifications()` reads a list of them and draws each against a dataset, as a figure by its `Visualize_*()` function and an RTF table by its `Table_*()` function and `Write_RTF()`, into a folder, with a manifest. With `bAcrossBiomarkers = TRUE` one specification is drawn once per biomarker.
+
+```r
+dfManifest <- Run_Specifications(
+  "specifications.json",
+  Synthetic_Results,
+  Synthetic_Participants,
+  dfOutcomes = Synthetic_Outcomes,
+  strFolder = "output",
+  bAcrossBiomarkers = TRUE,
+  chrFormats = c("png", "pdf")
+)
+```
+
+A specification is data: nothing in it is evaluated, and a title that looks like code is drawn as text. One that bio.viz would refuse is refused with a sentence and listed in the manifest, and the rest still run. Give the file, the text, or the list `jsonlite::read_json()` reads (or `fromJSON(simplifyVector = FALSE)`): `fromJSON()`'s default simplifies the list into a data frame, which is refused with a sentence that says so.
+
+The reader is held to bio.viz's own over every setting of every chart. It differs on purpose in two places: a chart's `statistic` (and the scatter's `fit_statistic`) must be the chart's own `Analyze_*()` function or null, since gsm.bio computes nothing else; and a specification given as text is checked for depth as one given as an object is ([bio.viz#74](https://github.com/jwildfire/bio.viz/issues/74)).
+
+The manifest counts the participants each view's filters keep, and its `reason` says what was not drawn as asked, in the words of bio.viz's notices: a setting that names something the tables lack, a filter value its column lacks, a filter on a column that is not a filter. A view that keeps no participant is `failed` with "No participant passes the filters." Explicit cut points are applied unchanged to every biomarker of a run across biomarkers, and each row says so.
+
+A PDF is drawn by cairo where this R can load it. Where it cannot (a Mac without XQuartz, for one), the pdf device draws it and a character beyond Latin-1, such as the sign of a cut, is a dot or a stand-in such as `<=`; the row says so. A file already in the folder with an output's name is replaced, and any other file there is left alone. A view that fails part way leaves none of its files.
+
 ## Synthetic study
 
 The package ships a made-up biomarker study, so that a test can assert an answer known in advance: `Synthetic_Results` (one row per participant, biomarker and visit), `Synthetic_Participants` and `Synthetic_Outcomes`. Three effects are planted in it and every other biomarker is null. `Synthetic_Truth` holds the true size of each: a difference between arms in change from baseline, a correlation between two biomarkers, and a hazard ratio between high and low baseline levels. The same tables are CSV files under `inst/extdata/`. No real study data is used.

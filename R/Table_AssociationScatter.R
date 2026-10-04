@@ -41,6 +41,7 @@ Table_AssociationScatter <- function(dfResults, dfParticipants = NULL, lSettings
   Widget_CheckColumns(lConfig, dfResults, dfParticipants)
   lConfig <- Widget_NameFilters(Widget_NameBaseline(lConfig, lSettings, dfResults)$config, lSettings, dfResults, dfParticipants)$config
   lState <- AssociationScatter_State(dfResults, dfParticipants, lConfig)
+  Chart_StopIfNobody("Table_AssociationScatter", dfResults, dfParticipants, lConfig, lState$filters)
   if (is.null(lState$x) || is.null(lState$y)) {
     Core_Stop("Table_AssociationScatter(): the tables have no two variables to relate")
   }

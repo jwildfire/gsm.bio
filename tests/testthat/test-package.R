@@ -34,12 +34,12 @@ test_that("what only a test, a static figure or the RTF writer needs is suggeste
   # effectsize checks the standardised difference; digest, jsonlite and
   # rmarkdown check the vendored files and read a saved page back; ggplot2
   # draws the static figures and r2rtf writes a table to RTF, and each says so
-  # when it is not installed.
-  expect_identical(chrDependencies("Suggests"), c("digest", "effectsize", "ggplot2", "jsonlite", "r2rtf", "rmarkdown", "testthat"))
+  # when it is not installed; svglite writes a batch run's SVG figures.
+  expect_identical(chrDependencies("Suggests"), c("digest", "effectsize", "ggplot2", "jsonlite", "r2rtf", "rmarkdown", "svglite", "testthat"))
   expect_identical(utils::packageDescription("gsm.bio")[["Config/testthat/edition"]], "3")
 })
 
-test_that("the package exports the seven statistics functions, the widgets, the figures and the tables, and ships the synthetic study as its only data (#1, #2, #3, #4, #9, #12, #13, #16, #18, #35, #37, #38)", {
+test_that("the package exports the seven statistics functions, the widgets, the figures and the tables, and ships the synthetic study as its only data (#1, #2, #3, #4, #9, #12, #13, #16, #18, #35, #37, #38, #39)", {
   expect_setequal(
     getNamespaceExports("gsm.bio"),
     c(
@@ -50,7 +50,7 @@ test_that("the package exports the seven statistics functions, the widgets, the 
       "Visualize_GroupComparison", "Visualize_AssociationScatter", "Visualize_CorrelationMatrix",
       "Visualize_BiomarkerScreen", "Visualize_CrossTab", "Visualize_StratifiedSurvival",
       "Table_GroupComparison", "Table_AssociationScatter", "Table_CorrelationMatrix",
-      "Table_BiomarkerScreen", "Table_CrossTab", "Table_StratifiedSurvival", "Write_RTF"
+      "Table_BiomarkerScreen", "Table_CrossTab", "Table_StratifiedSurvival", "Write_RTF", "Run_Specifications"
     )
   )
   expect_setequal(

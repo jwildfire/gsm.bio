@@ -1,0 +1,16 @@
+{
+  "what": "The JSON Schema of bio.viz's chart specifications, copied from bio.viz byte for byte.",
+  "copied_by": "data-raw/vendor-bio-viz.R",
+  "repository": "https://github.com/jwildfire/bio.viz",
+  "ref": "dev",
+  "commit": "15cf0ea6b611ab7cbd8055dbc0e2af0e2efa69a1",
+  "merged_to_dev": true,
+  "files": [
+    {
+      "file": "specification.schema.json",
+      "source": "src/data/specification.schema.json",
+      "sha256": "cc15cef26f3329b8489c91fb43e682e9ecf89a754b9d5f84bdec270a85a94db1",
+      "bytes": 29355
+    }
+  ]
+}

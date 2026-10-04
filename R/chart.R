@@ -41,11 +41,16 @@ Chart_Fields <- function(xValue, strSetting) {
 }
 
 # A setting that lists names: one or several, as distinct text. NULL stays NULL.
-Chart_Names <- function(xValue, strSetting) {
+# With `bEmpty`, a list of none is none, an empty vector, as bio.viz takes it
+# for the settings it reads that way (`textList(..., { empty: true })`).
+Chart_Names <- function(xValue, strSetting, bEmpty = FALSE) {
   if (is.null(xValue)) {
     return(NULL)
   }
   xValues <- unlist(xValue)
+  if (bEmpty && length(xValues) == 0L) {
+    return(character(0))
+  }
   if (length(xValues) == 0L || !(is.character(xValues) || is.numeric(xValues)) || anyNA(xValues) || !all(nzchar(trimws(as.character(xValues))))) {
     Core_Stop("Setting '", strSetting, "' must be a name, or several names")
   }
@@ -130,7 +135,7 @@ Chart_Categories <- function(dfResults, dfParticipants, lConfig) {
 # when it opens on its first value. tests/testthat/test-chart.R holds this to
 # the safety.viz kit the widgets ship. Returns a named list of
 # column to the value, or values, the filter opens on; NULL for a filter that
-# opens on all.
+# opens on all, and an empty vector for one that opens on none.
 Chart_Filters <- function(dfParticipants, lConfig, dfCategories) {
   if (is.null(dfParticipants) || nrow(dfParticipants) == 0L) {
     return(list())
@@ -149,6 +154,9 @@ Chart_Filters <- function(dfParticipants, lConfig, dfCategories) {
     xStart <- unlist(lSpec$start)
     bStarted <- length(xStart) > 0L && !(length(xStart) == 1L && (is.na(xStart) || identical(as.character(xStart), "")))
     chrStart <- if (bStarted) Core_Text(xStart) else NULL
+    # A filter of several values whose `start` is an empty list opens on no
+    # value, and lets nobody through, as bio.viz's `startFilters` opens it.
+    if (isTRUE(lSpec$multiple) && !is.null(lSpec$start) && length(lSpec$start) == 0L) chrStart <- character(0)
     lState[lSpec$value_col] <- list(if (isTRUE(lSpec$multiple) || is.null(chrStart)) chrStart else chrStart[1L])
   }
   # The participant's id is no filter: it gets no control, and so no restriction.
@@ -160,13 +168,13 @@ Chart_Filters <- function(dfParticipants, lConfig, dfCategories) {
   # the data lacks is dropped, and the filter opens on All, or, with
   # `all = FALSE`, on its first value; several values keep the ones the data
   # has, and open on All when it has none. The values are listed only when
-  # they decide something.
+  # they decide something. A filter that opens on no value keeps it.
   for (lSpec in lSpecs) {
     strColumn <- lSpec$value_col
     chrSelected <- lState[[strColumn]]
     bAll <- !identical(lSpec$all, FALSE)
     if (isTRUE(lSpec$multiple)) {
-      if (!is.null(chrSelected)) {
+      if (length(chrSelected) > 0L) {
         chrSelected <- chrSelected[chrSelected %in% Chart_FilterValues(dfParticipants, strColumn)]
         if (length(chrSelected) == 0L) chrSelected <- NULL
       }
@@ -209,7 +217,8 @@ Chart_FiltersInForce <- function(lFilters) {
 # filtered out are set aside with their results before a frame is made, so they
 # are not counted as missing from it. With no participant table there is nothing
 # to filter, and the tables come back as they are. `lFilters` is what each
-# filter is set to, by its column, as Chart_Filters() gives it. Returns a list of
+# filter is set to, by its column, as Chart_Filters() gives it: NULL lets
+# everyone through, and an empty vector nobody. Returns a list of
 # `results` and `participants`, which is NULL when there is no participant table.
 Chart_KeepFiltered <- function(dfResults, dfParticipants, lConfig, lFilters) {
   if (is.null(dfParticipants) || nrow(dfParticipants) == 0L) {
@@ -220,7 +229,7 @@ Chart_KeepFiltered <- function(dfResults, dfParticipants, lConfig, lFilters) {
   dfKept <- dfParticipants
   for (strColumn in names(lFilters)) {
     chrSelection <- lFilters[[strColumn]]
-    if (length(chrSelection) > 0L) {
+    if (!is.null(chrSelection)) {
       # A participant with nothing in the column is compared as the chart
       # compares it, by the text of nothing.
       chrText <- Core_Text(dfKept[[strColumn]])
@@ -232,6 +241,27 @@ Chart_KeepFiltered <- function(dfResults, dfParticipants, lConfig, lFilters) {
     results = dfResults[Core_Text(dfResults[[strIdCol]]) %in% Core_Text(dfKept[[strParticipantIdCol]]), , drop = FALSE],
     participants = dfKept
   )
+}
+
+# How many participants the filters keep: the participant table's rows they
+# keep, or, with no participant table, the participants the results hold.
+Chart_Passing <- function(dfResults, dfParticipants, lConfig, lFilters) {
+  lKept <- Chart_KeepFiltered(dfResults, dfParticipants, lConfig, lFilters)
+  if (is.null(lKept$participants)) {
+    chrIds <- Core_Text(lKept$results[[lConfig$id_col]])
+    return(length(unique(chrIds[!is.na(chrIds)])))
+  }
+  nrow(lKept$participants)
+}
+
+# A figure or table of nobody: when the filters keep no participant, bio.viz's
+# chart says "No participant passes the filters." before any other reason it
+# has nothing to draw, and so does R.
+Chart_StopIfNobody <- function(strWho, dfResults, dfParticipants, lConfig, lFilters) {
+  if (!is.null(dfParticipants) && nrow(dfParticipants) > 0L && Chart_Passing(dfResults, dfParticipants, lConfig, lFilters) == 0L) {
+    Core_Stop(strWho, "(): no participant passes the filters")
+  }
+  invisible(NULL)
 }
 
 # The participant-level numbers a chart can take as a variable: columns in which every value

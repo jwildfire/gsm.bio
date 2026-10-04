@@ -51,6 +51,7 @@ Visualize_StratifiedSurvival <- function(dfResults, dfParticipants = NULL, lSett
   Widget_CheckOutcomes(dfOutcomes, lConfig)
   lConfig <- Widget_NameFilters(Widget_NameBaseline(lConfig, lSettings, dfResults)$config, lSettings, dfResults, dfParticipants)$config
   lState <- StratifiedSurvival_State(dfResults, dfParticipants, dfOutcomes, lConfig)
+  Chart_StopIfNobody("Visualize_StratifiedSurvival", dfResults, dfParticipants, lConfig, lState$filters)
   lTable <- StratifiedSurvival_Table(dfResults, dfParticipants, dfOutcomes, lConfig, lState)
   if (nrow(lTable$records) == 0L) {
     Core_Stop("Visualize_StratifiedSurvival(): no participant has a group and an outcome for the endpoint at these settings")

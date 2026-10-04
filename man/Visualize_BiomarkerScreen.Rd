@@ -66,6 +66,7 @@ if (requireNamespace("ggplot2", quietly = TRUE)) {
 \code{\link[=Widget_BiomarkerScreen]{Widget_BiomarkerScreen()}}, its interactive twin.
 
 Other figures: 
+\code{\link{Run_Specifications}()},
 \code{\link{Visualize_AssociationScatter}()},
 \code{\link{Visualize_CorrelationMatrix}()},
 \code{\link{Visualize_CrossTab}()},

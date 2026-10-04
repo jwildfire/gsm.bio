@@ -114,6 +114,16 @@
       ]
     },
     {
+      "case": "multiple-with-an-empty-start",
+      "filters": [
+        {
+          "value_col": "RESPONSE",
+          "multiple": true,
+          "start": []
+        }
+      ]
+    },
+    {
       "case": "multiple-all-false-with-no-start",
       "filters": [
         {

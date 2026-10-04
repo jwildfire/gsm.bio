@@ -35,6 +35,7 @@ Table_CrossTab <- function(dfResults, dfParticipants = NULL, lSettings = list())
   Widget_CheckColumns(lConfig, dfResults, dfParticipants)
   lConfig <- Widget_NameFilters(Widget_NameBaseline(lConfig, lSettings, dfResults)$config, lSettings, dfResults, dfParticipants)$config
   lState <- CrossTab_State(dfResults, dfParticipants, lConfig)
+  Chart_StopIfNobody("Table_CrossTab", dfResults, dfParticipants, lConfig, lState$filters)
   lRequests <- CrossTab_Requests(dfResults, dfParticipants, lConfig, lState)
   if (length(lRequests) == 0L) {
     lTable <- CrossTab_Table(dfResults, dfParticipants, lConfig, lState)

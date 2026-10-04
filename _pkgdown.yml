@@ -63,6 +63,12 @@ reference:
       - Table_CrossTab
       - Table_StratifiedSurvival
       - Write_RTF
+  - title: Batch
+    desc: >
+      bio.viz's chart specifications run against a dataset to figures and RTF
+      tables in a folder, one per specification or one per biomarker.
+    contents:
+      - Run_Specifications
   - title: Synthetic study
     desc: >
       A made-up biomarker study with three planted effects of known size, for
