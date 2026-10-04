@@ -41,7 +41,7 @@ dfNewsVersions <- function(chrLines) {
   )
 }
 
-test_that("README.md gives the install lines for the newest release, whose tag exists or is the release this tree prepares, and for the integration branch (#1, #27, #29, #44)", {
+test_that("README.md gives the install lines for the newest release, whose tag exists, and for the integration branch (#1, #27, #29)", {
   strText <- paste(chrRepositoryFile("README.md"), collapse = "\n")
   dfVersions <- dfNewsVersions(chrRepositoryFile("NEWS.md"))
   strRelease <- dfVersions$version[!dfVersions$upcoming][1]
@@ -50,23 +50,15 @@ test_that("README.md gives the install lines for the newest release, whose tag e
   expect_match(strText, sprintf('remotes::install_github("jwildfire/gsm.bio@v%s")', strRelease), fixed = TRUE)
   expect_match(strText, 'remotes::install_github("jwildfire/gsm.bio@dev")', fixed = TRUE)
   expect_false(grepl("is tagged", strText, fixed = TRUE), label = "a sentence that waits for the tag")
-  # The tag is on GitHub, so the release line installs. The one exception is
-  # the release this tree prepares: its NEWS section is the package's own
-  # version, and its tag is made from main when it ships. Once it ships, dev
-  # moves to a .9000 version, and the tag must be there.
+  # The tag is on GitHub, so the release line installs.
   chrTags <- suppressWarnings(system2(
     "git", c("ls-remote", "--tags", "https://github.com/jwildfire/gsm.bio.git", sprintf("refs/tags/v%s", strRelease)),
     stdout = TRUE, stderr = FALSE
   ))
-  bPreparing <- identical(strRelease, as.character(utils::packageVersion("gsm.bio")))
-  if (!bPreparing) {
-    expect_identical(length(chrTags), 1L, label = sprintf("tag v%s on GitHub", strRelease))
-  } else {
-    expect_lte(length(chrTags), 1L, label = sprintf("tag v%s on GitHub, once at most", strRelease))
-  }
+  expect_identical(length(chrTags), 1L, label = sprintf("tag v%s on GitHub", strRelease))
 })
 
-test_that("NEWS.md opens with the v0.2.0 release notes, the package's own version, above the v0.1.0 release (#1, #29, #44)", {
+test_that("NEWS.md opens with the v0.2.0 section, Upcoming until its tag, above the v0.1.0 release (#1, #29, #44)", {
   strPath <- if (bSourceTree()) {
     testthat::test_path("..", "..", "NEWS.md")
   } else {
@@ -76,8 +68,9 @@ test_that("NEWS.md opens with the v0.2.0 release notes, the package's own versio
   skip_if_not(nzchar(strPath) && file.exists(strPath), "NEWS.md is missing")
 
   chrHeadings <- grep("^# ", readLines(strPath, warn = FALSE), value = TRUE)
-  expect_identical(chrHeadings[1:2], c("# gsm.bio v0.2.0", "# gsm.bio v0.1.0"))
-  expect_identical(sub("^# gsm\\.bio v", "", chrHeadings[1]), as.character(utils::packageVersion("gsm.bio")))
+  # The release step drops "(Upcoming)" when it publishes the tag.
+  expect_true(chrHeadings[1] %in% c("# gsm.bio v0.2.0 (Upcoming)", "# gsm.bio v0.2.0"), label = chrHeadings[1])
+  expect_identical(chrHeadings[2], "# gsm.bio v0.1.0")
   # Only the newest section is ever Upcoming.
   expect_false(any(grepl("(Upcoming)", chrHeadings[-1], fixed = TRUE)))
 })

@@ -8,7 +8,7 @@ Each statistic is a thin wrapper around a function from the stats or survival pa
 
 ```r
 # install.packages("remotes")
-remotes::install_github("jwildfire/gsm.bio@v0.2.0") # the v0.2.0 release, from its tag
+remotes::install_github("jwildfire/gsm.bio@v0.1.0") # the v0.1.0 release, from its tag
 remotes::install_github("jwildfire/gsm.bio@dev")    # what is on dev, the integration branch
 ```
 
@@ -205,7 +205,7 @@ The package ships a made-up biomarker study, so that a test can assert an answer
 
 ## Status
 
-Version 0.2.0 is the second release. It adds widgets for the cross-tabulation and the stratified survival chart, and hazard ratios in the biomarker screen. It also adds output from R: a static figure and a statistics table for every chart, the table written to RTF, and batch runs of the specifications bio.viz's charts write. [Version 0.1.0](https://github.com/jwildfire/gsm.bio/releases/tag/v0.1.0) was the first: seven statistics functions, the synthetic study, and widgets for the group comparison, the association scatter, the correlation matrix and the biomarker screen. [NEWS.md](https://github.com/jwildfire/gsm.bio/blob/dev/NEWS.md) has the notes for each, and the reference site is at <https://jwildfire.github.io/gsm.bio/>.
+[Version 0.1.0](https://github.com/jwildfire/gsm.bio/releases/tag/v0.1.0) is released: seven statistics functions, the synthetic study, and widgets for the group comparison, the association scatter, the correlation matrix and the biomarker screen. Version 0.2.0 is being prepared on `dev`. It adds widgets for the cross-tabulation and the stratified survival chart, and hazard ratios in the biomarker screen. It also adds output from R: a static figure and a statistics table for every chart, the table written to RTF, and batch runs of the specifications bio.viz's charts write. [NEWS.md](https://github.com/jwildfire/gsm.bio/blob/dev/NEWS.md) has the notes for each, and the reference site is at <https://jwildfire.github.io/gsm.bio/>.
 
 The design is on the obot roadmap: [bio.viz and gsm.bio](https://jwildfire.github.io/obot.roadmap/requirements/design/353_design.html).
 
