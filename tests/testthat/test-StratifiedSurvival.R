@@ -122,6 +122,12 @@ test_that("each participant's outcome is read as the chart reads it, and left ou
     chrOutcomeLeftOut["none"]
   )))
   expect_identical(unname(chrOutcomeLeftOut["none"]), "No outcome for the endpoint")
+  # A flag may be logical, or written as one, as Analyze_Survival takes it.
+  expect_identical(Chart_OutcomeNumber(c(TRUE, FALSE, NA)), c(1, 0, NA))
+  expect_identical(Chart_OutcomeNumber(c("TRUE", "true", "FALSE", "false", "True", " 1 ", "x")), c(1, 1, 0, 0, NA, 1, NA))
+  dfLogical <- dfOutcomes[1, ]
+  dfLogical$CNSR <- FALSE
+  expect_identical(Chart_Outcomes(dfLogical, lConfig, "EFS", "A")$event, TRUE)
   # Read the other way round, a flag of 1 is an event.
   lEvent <- StratifiedSurvival_Settings(list(event_col = "CNSR"))
   expect_identical(Chart_Outcomes(dfOutcomes, lEvent, "EFS", c("A", "F"))$event, c(FALSE, TRUE))

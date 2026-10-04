@@ -360,9 +360,19 @@ Chart_CheckCut <- function(xBy, strSetting, dfResults, dfParticipants, lConfig) 
 # `cutOf`): its value for each participant the filters keep, one each, and the
 # points and groups of the cut rule, worked out on those with a value. Returns
 # Core_CutPoints()'s list with `spec`, the variable as the settings write it,
-# and `ids` and `values`, each participant's.
-Chart_Cut <- function(dfResults, dfParticipants, lConfig, lFilters, xBy) {
+# and `ids` and `values`, each participant's. `chrOnly`, when given, keeps the
+# participants the cut is worked out on to those ids: the survival chart cuts
+# only the participants with an outcome, the ones it draws.
+Chart_Cut <- function(dfResults, dfParticipants, lConfig, lFilters, xBy, chrOnly = NULL) {
   lKept <- Chart_KeepFiltered(dfResults, dfParticipants, lConfig, lFilters)
+  if (!is.null(chrOnly)) {
+    if (is.null(lKept$participants)) {
+      lKept$results <- lKept$results[Core_Text(lKept$results[[lConfig$id_col]]) %in% chrOnly, , drop = FALSE]
+    } else {
+      strParticipantIdCol <- if (is.null(lConfig$participant_id_col)) lConfig$id_col else lConfig$participant_id_col
+      lKept$participants <- lKept$participants[Core_Text(lKept$participants[[strParticipantIdCol]]) %in% chrOnly, , drop = FALSE]
+    }
+  }
   dfData <- Core_Frame(
     lKept$results, lKept$participants, list(v = xBy),
     c(Chart_CoreSettings(lConfig), list(required = character(0)))
@@ -509,6 +519,22 @@ Chart_Endpoints <- function(dfOutcomes, lConfig) {
   data.frame(endpoint = chrEndpoints, label = chrLabels, stringsAsFactors = FALSE)
 }
 
+# A time or a flag as the chart reads it: a number, or text that reads as one;
+# a logical, TRUE or FALSE, or text written "TRUE", "true", "FALSE" or
+# "false", is 1 or 0, as Analyze_Survival takes a logical flag. Otherwise NA.
+Chart_OutcomeNumber <- function(xValue) {
+  if (is.logical(xValue)) {
+    return(as.numeric(xValue))
+  }
+  nValue <- Core_Number(xValue)
+  if (is.character(xValue) || is.factor(xValue)) {
+    chrText <- as.character(xValue)
+    nValue[chrText %in% c("TRUE", "true")] <- 1
+    nValue[chrText %in% c("FALSE", "false")] <- 0
+  }
+  nValue
+}
+
 # Each participant's outcome for one endpoint, as the chart reads it
 # (`outcomesOf`): one row per id asked for, with the time, the flag and whether
 # it is an event; or, where there is none to use, NA for each and the reason,
@@ -530,8 +556,8 @@ Chart_Outcomes <- function(dfOutcomes, lConfig, strEndpoint, chrIds) {
   chrOfIds <- Core_Text(dfOf[[strIdCol]])
   nCount <- tabulate(match(chrOfIds, chrIds), nbins = nIds)
   iFirst <- match(chrIds, chrOfIds)
-  nTime <- Core_Number(dfOf[[lConfig$time_col]])[iFirst]
-  nFlag <- Core_Number(dfOf[[lFlag$col]])[iFirst]
+  nTime <- Chart_OutcomeNumber(dfOf[[lConfig$time_col]])[iFirst]
+  nFlag <- Chart_OutcomeNumber(dfOf[[lFlag$col]])[iFirst]
   strReason <- ifelse(
     nCount == 0L, chrOutcomeLeftOut[["none"]],
     ifelse(

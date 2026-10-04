@@ -161,8 +161,16 @@ StratifiedSurvival_Table <- function(dfResults, dfParticipants, dfOutcomes, lCon
   if (nrow(lKept$results) == 0L || is.null(lState$group_by) || is.null(lState$endpoint)) {
     return(lEmpty)
   }
+  # A cut's points are worked out on the participants the filters keep who
+  # have a value of it and an outcome for the endpoint: the ones the curves are
+  # drawn of, so a median cuts them in halves, as Analyze_Screen cuts a
+  # biomarker for its hazard ratio.
   lCut <- if (Chart_IsCut(lState$group_by)) {
-    Chart_Cut(dfResults, dfParticipants, lConfig, lState$filters, lState$group_by)
+    strIdCol <- if (is.null(lKept$participants)) lConfig$id_col else if (is.null(lConfig$participant_id_col)) lConfig$id_col else lConfig$participant_id_col
+    chrKept <- unique(Core_Text((if (is.null(lKept$participants)) lKept$results else lKept$participants)[[strIdCol]]))
+    chrKept <- chrKept[!is.na(chrKept)]
+    chrWithOutcome <- chrKept[is.na(Chart_Outcomes(dfOutcomes, lConfig, lState$endpoint, chrKept)$reason)]
+    Chart_Cut(dfResults, dfParticipants, lConfig, lState$filters, lState$group_by, chrWithOutcome)
   } else {
     NULL
   }
