@@ -81,10 +81,10 @@ Visualize_AssociationScatter <- function(dfResults, dfParticipants = NULL, lSett
 
   # Each panel's coefficient and line, as the statistics line prints them: R's
   # sentence, then each estimate, a coefficient by the name the chart gives it.
-  chrCoefficients <- enc2utf8(c(cor = "Pearson\u2019s r", rho = "Spearman\u2019s rho"))
+  chrCoefficients <- c(cor = paste0("Pearson", intToUtf8(0x2019L), "s r"), rho = paste0("Spearman", intToUtf8(0x2019L), "s rho"))
   chrStatistics <- unlist(lapply(lAnswers, function(lResult) {
     strLead <- if (is.null(lResult$dataId$panel)) "" else paste0(lResult$dataId$panel, ": ")
-    lValue <- lResult$value
+    lValue <- Figure_LineEstimates(lResult)
     chrEstimates <- if (identical(lValue$status, "ok") && nrow(lValue$estimates) > 0L) {
       vapply(seq_len(nrow(lValue$estimates)), function(iRow) {
         lRow <- as.list(lValue$estimates[iRow, ])
@@ -132,4 +132,24 @@ Visualize_AssociationScatter <- function(dfResults, dfParticipants = NULL, lSett
   if (lState$x_scale == "log") gg <- gg + ggplot2::scale_x_log10()
   if (lState$y_scale == "log") gg <- gg + ggplot2::scale_y_log10()
   Figure_Finish(gg, lFilled, chrStatistics)
+}
+
+# A fitted line's estimates as the chart lists them: the slope, the
+# intercept, and R-squared, which R gives among its statistics. Any other
+# answer is as R gave it.
+Figure_LineEstimates <- function(lResult) {
+  lValue <- lResult$value
+  if (!identical(lResult$name, "Analyze_Fit") || !is.data.frame(lValue$estimates) || nrow(lValue$estimates) == 0L) {
+    return(lValue)
+  }
+  dfEstimates <- lValue$estimates[order(match(lValue$estimates$name, c("Slope", "Intercept"))), , drop = FALSE]
+  nRSquared <- lValue$statistic$value[lValue$statistic$name == "r.squared"]
+  if (length(nRSquared) == 1L && !is.na(nRSquared)) {
+    dfEstimates <- rbind(dfEstimates, data.frame(
+      name = "R-squared", group = NA_character_, estimate = nRSquared, lower = NA_real_, upper = NA_real_, level = NA_real_,
+      stringsAsFactors = FALSE
+    ))
+  }
+  lValue$estimates <- dfEstimates
+  lValue
 }

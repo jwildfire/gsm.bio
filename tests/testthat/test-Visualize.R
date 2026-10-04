@@ -116,7 +116,7 @@ test_that("the group comparison prints each visit's test, equal to Analyze_Group
     dfRows <- dfRows[!is.na(dfRows$y), ]
     strTheirs <- Output_StatisticText(Analyze_GroupDifference(dfRows, "y", "x", strMethod = "t"))
     strHeading <- chrHeadings[startsWith(chrHeadings, strVisit)]
-    expect_identical(gsub("\n", " ", strHeading, fixed = TRUE), paste(strVisit, strTheirs))
+    expect_true(startsWith(gsub("\n", " ", strHeading, fixed = TRUE), paste(strVisit, strTheirs)), label = paste(strVisit, "heading"))
     expect_identical(sum(gg$data$heading == strHeading), nrow(dfRows))
   }
   expect_error(
@@ -172,7 +172,8 @@ test_that("the biomarker screen prints each row's estimate and p-values, equal t
     lRow <- dfTheirs[iRow, ]
     strSaid <- paste0(
       lRow$biomarker, "   ", Output_Figure(lRow$estimate), " (", Output_Figure(lRow$lower), " to ", Output_Figure(lRow$upper), "); ",
-      Output_P(lRow$p_unadjusted), ", Benjamini-Hochberg ", Output_P(lRow$p_value)
+      "Unadjusted: ", Output_P(lRow$p_unadjusted), "; Benjamini-Hochberg: ", Output_P(lRow$p_value),
+      "; n, Placebo / Treatment: ", lRow$n_1, " / ", lRow$n_2
     )
     expect_true(strSaid %in% levels(gg$data$row), label = strSaid)
   }
@@ -242,4 +243,93 @@ test_that("each figure draws what its snapshot holds (#37)", {
     gg <- lFigureCalls()[[strFigure]]()
     expect_snapshot(writeLines(strFigureStable(chrFigureDescription(gg))), variant = NULL)
   }
+})
+
+test_that("the group comparison prints each panel's difference with its interval and, with pairs, each pair's Holm-adjusted p-value, as the chart does (#37)", {
+  gg <- lFigureCalls()$group_comparison()
+  chrHeadings <- gsub("\n", " ", levels(gg$data$heading), fixed = TRUE)
+  dfRows <- data.frame(y = nResultAt("IL-6", "Week 4") - nResultAt("IL-6", "Baseline"), x = Synthetic_Participants$ARM, stringsAsFactors = FALSE)
+  dfRows <- dfRows[!is.na(dfRows$y), ]
+  lWelch <- stats::t.test(dfRows$y[dfRows$x == "Placebo"], dfRows$y[dfRows$x == "Treatment"])
+  strDifference <- paste0(
+    "Difference in means (Placebo - Treatment): ", Output_Figure(unname(lWelch$estimate[1] - lWelch$estimate[2])),
+    ", 95% confidence interval ", Output_Figure(lWelch$conf.int[1]), " to ", Output_Figure(lWelch$conf.int[2]), "."
+  )
+  expect_true(grepl(strDifference, chrHeadings[1], fixed = TRUE), label = strDifference)
+  # Three groups, with pairs: CRP at Baseline at its tertiles, Wilcoxon's test.
+  ggPairs <- Visualize_GroupComparison(Synthetic_Results, Synthetic_Participants, list(
+    start_value = "IL-6", visits = "Week 4", value_type = "change", baseline_visits = "Baseline",
+    group_by = list(measure = "CRP", visit = "Baseline", cut = "tertiles"), test = "wilcoxon", pairwise = TRUE
+  ))
+  strHeading <- gsub("\n", " ", levels(ggPairs$data$heading)[1], fixed = TRUE)
+  nCrp <- nResultAt("CRP", "Baseline")
+  nPoints <- stats::quantile(nCrp, c(1, 2) / 3, type = 7, names = FALSE)
+  chrLabels <- Core_CutLabels(nPoints)
+  dfThree <- data.frame(y = nResultAt("IL-6", "Week 4") - nResultAt("IL-6", "Baseline"), x = Core_CutGroups(nCrp, nPoints), stringsAsFactors = FALSE)
+  dfThree <- dfThree[!is.na(dfThree$y) & !is.na(dfThree$x), ]
+  lTheirs <- Analyze_GroupDifference(dfThree, "y", "x", strMethod = "kruskal", bPairwise = TRUE, chrGroups = chrLabels)
+  expect_match(strHeading, Output_StatisticText(lTheirs), fixed = TRUE)
+  expect_match(strHeading, "Pairwise comparisons, each by Wilcoxon rank sum", fixed = TRUE)
+  expect_match(strHeading, "Exploratory, adjusted (Holm).", fixed = TRUE)
+  mHolm <- stats::pairwise.wilcox.test(dfThree$y, factor(dfThree$x, chrLabels), p.adjust.method = "holm", exact = FALSE)$p.value
+  for (iPair in seq_len(nrow(lTheirs$rows))) {
+    lPair <- lTheirs$rows[iPair, ]
+    nHolm <- mHolm[lPair$group_2, lPair$group_1]
+    if (is.na(nHolm)) nHolm <- mHolm[lPair$group_1, lPair$group_2]
+    strPair <- paste0(lPair$group_1, " and ", lPair$group_2, " (n = ", lPair$n_1, ", ", lPair$n_2, "): ", Output_P(nHolm))
+    expect_true(grepl(strPair, strHeading, fixed = TRUE), label = strPair)
+  }
+})
+
+test_that("the scatter's line lists the slope, the intercept and R-squared, as the chart does, and a logarithmic axis draws R's line back on the values (#37)", {
+  gg <- lFigureCalls()$association_scatter()
+  strCaption <- strFigureCaption(gg)
+  dfRows <- data.frame(x = nResultAt("TNF-alpha", "Baseline"), y = nResultAt("IL-10", "Baseline"))
+  dfRows <- dfRows[stats::complete.cases(dfRows), ]
+  lLm <- stats::lm(y ~ x, data = dfRows)
+  expect_lt(regexpr("Slope:", strCaption, fixed = TRUE), regexpr("Intercept:", strCaption, fixed = TRUE))
+  expect_match(strCaption, paste0("R-squared: ", Output_Figure(summary(lLm)$r.squared), "."), fixed = TRUE)
+  # On a logarithmic x axis R is handed log10(x), and its line is drawn back at
+  # the values themselves.
+  ggLog <- Visualize_AssociationScatter(Synthetic_Results, Synthetic_Participants, list(
+    x = list(measure = "CRP", visit = "Baseline"), y = list(measure = "IL-10", visit = "Baseline"), fit = "linear", x_scale = "log"
+  ))
+  dfLog <- data.frame(x = nResultAt("CRP", "Baseline"), y = nResultAt("IL-10", "Baseline"))
+  dfLog <- dfLog[stats::complete.cases(dfLog) & dfLog$x > 0, ]
+  lLog <- stats::lm(y ~ log10(x), data = dfLog)
+  dfLine <- ggLog$layers[[2]]$data
+  expect_equal(dfLine$fit, unname(stats::coef(lLog)[1] + stats::coef(lLog)[2] * log10(dfLine$x)), tolerance = 1e-10)
+  expect_equal(range(dfLine$x), range(dfLog$x), tolerance = 1e-10)
+})
+
+test_that("the screen writes each row and its caption in the chart's words: the interval's level, both p-values by name, and the exploratory label (#37)", {
+  gg <- lFigureCalls()$biomarker_screen()
+  strCaption <- strFigureCaption(gg)
+  expect_match(
+    strCaption,
+    enc2utf8(paste0(
+      "Each row: Standardised difference (Hedges", intToUtf8(0x2019L), " g), Placebo less Treatment, with its 95% confidence interval on one axis without units. ",
+      "p: Welch Two Sample t-test, unadjusted, and adjusted by Benjamini-Hochberg across the 12 biomarkers with a p-value. Exploratory, adjusted (Benjamini-Hochberg)."
+    )),
+    fixed = TRUE
+  )
+  chrRows <- levels(gg$data$row)
+  expect_true(any(grepl("; Unadjusted: p = 0.530; Benjamini-Hochberg: p = 0.636; n, Placebo / Treatment: 94 / 91$", chrRows)))
+})
+
+test_that("R's counts are named group by group up to four, and as a range from five (#37)", {
+  lCounts <- list(A = 10L, B = 12L, C = 9L, D = 11L, E = 8L)
+  expect_identical(Output_CountsText(lCounts[1:3]), "A n = 10, B n = 12, C n = 9")
+  expect_identical(Output_CountsText(lCounts[1:4]), "A n = 10, B n = 12, C n = 9, D n = 11")
+  expect_identical(Output_CountsText(lCounts), "n = 8 to 12 across 5 groups")
+})
+
+test_that("each of the gallery's figures has a text alternative (#37)", {
+  strGallery <- testthat::test_path("..", "..", "vignettes", "articles", "gallery.Rmd")
+  skip_if_not(file.exists(strGallery), "the gallery is in the source tree, not the built package")
+  chrLines <- readLines(strGallery, warn = FALSE)
+  chrChunks <- grep("^```\\{r [a-z-]+", chrLines, value = TRUE)
+  chrFigures <- grep("setup", chrChunks, value = TRUE, invert = TRUE)
+  expect_length(chrFigures, 6L)
+  expect_true(all(grepl("fig.alt = ", chrFigures, fixed = TRUE)), label = paste(chrFigures, collapse = " / "))
 })

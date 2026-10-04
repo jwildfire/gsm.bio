@@ -72,8 +72,8 @@ Visualize_GroupComparison <- function(dfResults, dfParticipants = NULL, lSetting
     lAnswer <- Filter(function(lResult) {
       identical(lResult$dataId$visit, lPanel$visit) && identical(lResult$dataId$panel, lPanel$panel)
     }, lAnswers)
-    strTest <- if (length(lAnswer) > 0L) Output_StatisticText(lAnswer[[1]]$value) else NA_character_
-    strHeading <- if (is.na(strTest)) strName else paste0(strName, "\n", Figure_Wrap(strTest, 60L))
+    strTest <- if (length(lAnswer) > 0L) Figure_GroupLines(lAnswer[[1]]$value) else NA_character_
+    strHeading <- if (is.na(strTest[1])) strName else paste(c(strName, Figure_Wrap(strTest, 60L)), collapse = "\n")
     chrHeadings <- c(chrHeadings, strHeading)
     chrTests <- c(chrTests, strTest)
     dfDrawn <- rbind(dfDrawn, data.frame(
@@ -116,4 +116,36 @@ Visualize_GroupComparison <- function(dfResults, dfParticipants = NULL, lSetting
     gg <- gg + ggplot2::scale_y_log10()
   }
   Figure_Finish(gg, lFilled)
+}
+
+# What the chart prints under a panel for R's answer (bio.viz,
+# src/group-comparison/statistic.js, `describeAnswer`): the test, each estimate
+# that has an interval, and with pairs, their caption and each pair with its
+# counts and adjusted p-value.
+Figure_GroupLines <- function(lValue) {
+  chrLines <- Output_StatisticText(lValue)
+  bShown <- identical(lValue$status, "ok") && (is.null(lValue$reason) || is.na(lValue$reason))
+  if (!bShown) {
+    return(chrLines)
+  }
+  dfEstimates <- lValue$estimates
+  if (is.data.frame(dfEstimates) && nrow(dfEstimates) > 0L) {
+    bInterval <- !is.na(dfEstimates$lower) & !is.na(dfEstimates$upper)
+    chrLines <- c(chrLines, vapply(which(bInterval), function(iRow) Output_EstimateText(as.list(dfEstimates[iRow, ])), character(1)))
+  }
+  dfPairs <- lValue$rows
+  if (is.data.frame(dfPairs) && nrow(dfPairs) > 0L && "group_1" %in% names(dfPairs)) {
+    bOk <- dfPairs$status == "ok" & is.na(dfPairs$reason)
+    chrMethods <- unique(dfPairs$method[bOk])
+    chrAdjustments <- unique(dfPairs$adjustment[bOk])
+    strBy <- if (length(chrMethods) == 1L) paste0(", each by ", chrMethods) else if (length(chrMethods) > 1L) ", each by the test named with it" else ""
+    strLabel <- if (length(chrAdjustments) == 1L) paste0(" ", Table_Note(list(adjustment = chrAdjustments))) else ""
+    chrLines <- c(chrLines, paste0("Pairwise comparisons", strBy, ".", strLabel))
+    chrLines <- c(chrLines, vapply(seq_len(nrow(dfPairs)), function(iPair) {
+      lPair <- as.list(dfPairs[iPair, ])
+      strSaid <- if (bOk[iPair] && !is.na(lPair$p_value)) Output_P(lPair$p_value) else if (is.na(lPair$reason)) "not computed" else lPair$reason
+      paste0(lPair$group_1, " and ", lPair$group_2, " (n = ", lPair$n_1, ", ", lPair$n_2, "): ", strSaid)
+    }, character(1)))
+  }
+  chrLines
 }

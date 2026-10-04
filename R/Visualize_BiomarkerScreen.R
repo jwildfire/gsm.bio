@@ -53,15 +53,24 @@ Visualize_BiomarkerScreen <- function(dfResults, dfParticipants = NULL, lSetting
   # Each row as the screen prints it: the estimate and its interval, and both
   # p-values, or R's reason for none.
   strAdjustment <- if (lState$adjustment %in% names(chrOutputAdjustments)) chrOutputAdjustments[[lState$adjustment]] else lState$adjustment
+  # Each row as the screen prints it: the estimate and its interval, the
+  # p-value unadjusted and adjusted, each by name, and the counts; or R's
+  # reason for none.
+  chrGroups <- if (lState$comparison == "difference") lState$levels else if (bHazard) c("High", "Low") else NULL
   chrSaid <- vapply(seq_len(nrow(dfRows)), function(iRow) {
     lRow <- as.list(dfRows[iRow, ])
     if (!identical(lRow$status, "ok") || is.na(lRow$estimate)) {
       return(if (is.na(lRow$reason)) "not computed" else lRow$reason)
     }
     strInterval <- if (is.na(lRow$lower) || is.na(lRow$upper)) "" else paste0(" (", Output_Figure(lRow$lower), " to ", Output_Figure(lRow$upper), ")")
+    strCounts <- if (!is.null(chrGroups) && !is.na(lRow$n_1) && !is.na(lRow$n_2)) {
+      paste0("n, ", chrGroups[1], " / ", chrGroups[2], ": ", lRow$n_1, " / ", lRow$n_2)
+    } else {
+      paste0("n: ", lRow$counts)
+    }
     paste0(
-      Output_Figure(lRow$estimate), strInterval, "; ", Output_P(lRow$p_unadjusted),
-      if (is.na(lRow$p_value)) "" else paste0(", ", strAdjustment, " ", Output_P(lRow$p_value))
+      Output_Figure(lRow$estimate), strInterval, "; Unadjusted: ", Output_P(lRow$p_unadjusted),
+      if (is.na(lRow$p_value)) "" else paste0("; ", strAdjustment, ": ", Output_P(lRow$p_value)), "; ", strCounts
     )
   }, character(1))
   dfDrawn <- data.frame(
@@ -90,8 +99,8 @@ Visualize_BiomarkerScreen <- function(dfResults, dfParticipants = NULL, lSetting
     hazard = "Hazard ratio, high against low"
   )
   chrEstimates <- c(
-    difference = enc2utf8("Standardised difference (Hedges\u2019 g)"),
-    correlation = enc2utf8(if (lState$method == "spearman") "Spearman\u2019s rho" else "Pearson\u2019s r"),
+    difference = paste0("Standardised difference (Hedges", intToUtf8(0x2019L), " g)"),
+    correlation = paste0(if (lState$method == "spearman") "Spearman" else "Pearson", intToUtf8(0x2019L), if (lState$method == "spearman") "s rho" else "s r"),
     hazard = "Hazard ratio, High / Low"
   )
   lValues <- c(
@@ -111,10 +120,22 @@ Visualize_BiomarkerScreen <- function(dfResults, dfParticipants = NULL, lSetting
       lValue$method, ", one row per biomarker: ", nShown, " of ", nrow(dfRows), " computed.",
       if (is.finite(nOver) && nOver > 0) paste0(" The adjusted p-values are adjusted by ", strAdjustment, " across the ", nOver, " biomarker", if (nOver == 1) "" else "s", " that have a p-value.") else ""
     ),
+    # The screen's caption, in its words (bio.viz, src/biomarker-screen.js).
     paste0(
       "Each row: ", chrEstimates[[lState$comparison]],
       if (lState$comparison == "difference" && length(lState$levels) == 2L) paste0(", ", lState$levels[1], " less ", lState$levels[2]) else "",
-      ", with its interval, and its p-value unadjusted and adjusted."
+      if (bHazard) paste0(", on ", strEndpoint) else "",
+      if (lState$comparison == "correlation") paste0(" with ", BiomarkerScreen_VariableName(lState$with)) else "",
+      if (any(!is.na(dfRows$level))) paste0(", with its ", Core_Text(signif(stats::na.omit(dfRows$level)[1] * 100, 12)), "% confidence interval") else "",
+      if (bHazard) " on one logarithmic axis, with 1, no difference, marked. " else " on one axis without units. ",
+      if (is.finite(nOver) && nOver > 0) {
+        paste0(
+          "p: ", lValue$method, ", unadjusted, and adjusted by ", strAdjustment, " across the ", nOver, " biomarker",
+          if (nOver == 1) "" else "s", " with a p-value. Exploratory, adjusted (", strAdjustment, ")."
+        )
+      } else {
+        ""
+      }
     )
   )
 
