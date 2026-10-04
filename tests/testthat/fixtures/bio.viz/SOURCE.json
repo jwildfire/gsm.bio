@@ -3,7 +3,7 @@
   "copied_by": "data-raw/vendor-bio-viz.R",
   "repository": "https://github.com/jwildfire/bio.viz",
   "ref": "62-screen-hazard",
-  "commit": "752565917a9556c6a325be3e5c43631dad4577b8",
+  "commit": "a94e743dd9dfbe13e44a0db94566e3eec97a1bdf",
   "merged_to_dev": false,
   "note": "Copied from bio.viz's branch 62-screen-hazard, which is not merged to bio.viz's dev branch at this commit. When it lands there, copy again from dev (Rscript data-raw/vendor-bio-viz.R) and rerun the tests.",
   "files": [
@@ -376,8 +376,8 @@
     {
       "file": "screen-statistics/SOURCE.json",
       "source": "tests/fixtures/screen-statistics/SOURCE.json",
-      "sha256": "43f5f6bae80dcd8e0fdea8f57b18bb0acb06f49cab4b5a6a5f679dc451d60b58",
-      "bytes": 5618
+      "sha256": "f2779c07fa4f194a4e84d0362fbbeba2f06da4e55c81f05fbaa60b70b6aa0061",
+      "bytes": 6434
     },
     {
       "file": "screen-statistics/difference-week-4-change.csv",
@@ -458,6 +458,18 @@
       "bytes": 474
     },
     {
+      "file": "screen-statistics/hazard-baseline-30-without-outcome.csv",
+      "source": "tests/fixtures/screen-statistics/hazard-baseline-30-without-outcome.csv",
+      "sha256": "1e6bfbc3d4489ef6dfeb061f514373c1f0545863841eadcb30675a5df683ecc1",
+      "bytes": 18485
+    },
+    {
+      "file": "screen-statistics/hazard-baseline-no-events-in-low-crp.csv",
+      "source": "tests/fixtures/screen-statistics/hazard-baseline-no-events-in-low-crp.csv",
+      "sha256": "8dd10336e58095dc84a9309e16972855b3b9abcaeea773a23853712daeec583a",
+      "bytes": 18633
+    },
+    {
       "file": "screen-statistics/correlation-age.csv",
       "source": "tests/fixtures/screen-statistics/correlation-age.csv",
       "sha256": "e93c79d16033134f4febf034e7663af6401bedc4d88fd45df48ea985f7e0aa78",
@@ -466,14 +478,14 @@
     {
       "file": "screen-statistics/cases.csv",
       "source": "tests/fixtures/screen-statistics/cases.csv",
-      "sha256": "a060f848d01c76a5ef853932c906900b2c4f4e4da7e13a7de06bd5f592589168",
-      "bytes": 3273
+      "sha256": "eaf1e7299a8dd74b07a76a56e7593f6d7ea805d40becf05a838b66893a897e99",
+      "bytes": 3743
     },
     {
       "file": "screen-statistics-r.json",
       "source": "tests/fixtures/screen-statistics-r.json",
-      "sha256": "f439ad8cb441384414d0d08e3d8506d136ec70d19937c7706cb14d70266cb8b1",
-      "bytes": 85156
+      "sha256": "665e4ca6279dbdd71412de73817a6dc257a6e985adb2120af0db523a7a5e76e0",
+      "bytes": 97235
     },
     {
       "file": "cut-r.json",
@@ -490,8 +502,8 @@
     {
       "file": "stratified-survival-r.json",
       "source": "tests/fixtures/stratified-survival-r.json",
-      "sha256": "96f778f3f1ee8e10ad702345cf904ff269473e76e1db58a7be8d8be9e403280c",
-      "bytes": 141435
+      "sha256": "20244ee06d39b9d329b6236f39e3b8c790911f38fe9a7fd801569fd531208475",
+      "bytes": 178430
     }
   ]
 }

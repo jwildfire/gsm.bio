@@ -51,6 +51,25 @@ lScreenDemo <- function() {
   )
 }
 
+# The outcomes table a case is drawn on: the demo's, or the demo's changed as
+# bio.viz's case says (scripts/screen-statistics-lib.mjs, `outcomesFor`), worked
+# out here from the same tables. The cases file names the case, not the rule.
+dfScreenCaseOutcomes <- function(strCase, dfOutcomes) {
+  nCrp <- nResultAt("CRP", "Baseline")
+  if (identical(strCase, "hazard-baseline-30-without-outcome")) {
+    # The thirty participants with the highest CRP at Baseline have no outcome.
+    chrHighest <- Synthetic_Participants$USUBJID[order(-nCrp)][1:30]
+    return(dfOutcomes[!dfOutcomes$USUBJID %in% chrHighest, ])
+  }
+  if (identical(strCase, "hazard-baseline-no-events-in-low-crp")) {
+    # Everyone at or below CRP's median is censored: its Low half has no event.
+    chrLow <- Synthetic_Participants$USUBJID[!is.na(nCrp) & nCrp <= stats::median(nCrp, na.rm = TRUE)]
+    dfOutcomes$CNSR[dfOutcomes$USUBJID %in% chrLow] <- 1L
+    return(dfOutcomes)
+  }
+  dfOutcomes
+}
+
 # What a case says of its view, as the settings R reads; the filters, which no
 # setting opens on in bio.viz's cases, are set as the controls would set them.
 lScreenCaseView <- function(lCase) {
@@ -63,6 +82,7 @@ lScreenCaseView <- function(lCase) {
     }
   }
   lTables <- lScreenDemo()
+  lTables$outcomes <- dfScreenCaseOutcomes(lCase$case, lTables$outcomes)
   lSettings <- lTables$settings
   lSettings$comparison <- lCase$comparison
   lSettings$value_type <- lCase$value_type
@@ -187,8 +207,20 @@ test_that("R keys the screen's stored result exactly as the chart keys its reque
       label = paste(lCase$case, "as JSON")
     )
   }
-  chrKeys <- vapply(lRecorded, function(lResult) Chart_KeyText(lResult[c("name", "args", "dataId")]), character(1))
+  # Two views of one page are two keys. A case drawn on a changed outcomes
+  # table asks with the opening view's key, as a page of those tables would:
+  # the identity names a page's view, not its data.
+  chrChanged <- c("hazard-baseline-30-without-outcome", "hazard-baseline-no-events-in-low-crp")
+  expect_true(all(chrChanged %in% names(lRecorded)))
+  lOwn <- lRecorded[setdiff(names(lRecorded), chrChanged)]
+  chrKeys <- vapply(lOwn, function(lResult) Chart_KeyText(lResult[c("name", "args", "dataId")]), character(1))
   expect_identical(anyDuplicated(chrKeys), 0L)
+  for (strChanged in chrChanged) {
+    expect_identical(
+      Chart_KeyText(lRecorded[[strChanged]][c("name", "args", "dataId")]),
+      Chart_KeyText(lRecorded[["hazard-baseline"]][c("name", "args", "dataId")])
+    )
+  }
 })
 
 test_that("R's answers for those screens are the answers bio.viz recorded from desktop R, row by row (#16)", {
@@ -494,6 +526,17 @@ test_that("a row of a hazard ratio opens the survival chart on its biomarker cut
     as.character(jsonlite::toJSON(lRequests[[1]][c("name", "args", "dataId", "rows")], auto_unbox = TRUE, digits = NA)),
     as.character(jsonlite::toJSON(lRecorded[c("name", "args", "dataId", "rows")], auto_unbox = TRUE, digits = NA))
   )
+  # With the thirty highest-CRP participants' outcomes taken out, the row's
+  # chart cuts the participants it draws, and asks what bio.viz recorded the
+  # survival chart asking of those tables.
+  dfWithout <- dfScreenCaseOutcomes("hazard-baseline-30-without-outcome", lTables$outcomes)
+  lWithout <- BiomarkerScreen_OpenedRequests(lTables$results, lTables$participants, lConfig, lState, lSpecs, "CRP", lAxis, dfWithout)
+  lRecordedWithout <- Filter(function(lCase) lCase$case == "crp-median-30-without-outcome", lReadJson(testthat::test_path("fixtures", "bio.viz"), "stratified-survival-r.json")$cases)[[1]]
+  expect_identical(
+    as.character(jsonlite::toJSON(lWithout[[1]][c("name", "args", "dataId", "rows")], auto_unbox = TRUE, digits = NA)),
+    as.character(jsonlite::toJSON(lRecordedWithout[c("name", "args", "dataId", "rows")], auto_unbox = TRUE, digits = NA))
+  )
+  expect_identical(lWithout[[1]]$rows, 170L)
   # Under the screen's filters, the chart asks of the same participants.
   lState$filters$SEX <- "F"
   lFiltered <- BiomarkerScreen_OpenedRequests(lTables$results, lTables$participants, lConfig, lState, lSpecs, "CRP", lAxis, lTables$outcomes)[[1]]
