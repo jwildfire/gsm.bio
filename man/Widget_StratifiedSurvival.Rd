@@ -7,8 +7,8 @@
 Widget_StratifiedSurvival(
   dfResults,
   dfParticipants = NULL,
-  dfOutcomes = NULL,
   lSettings = list(),
+  dfOutcomes = NULL,
   width = NULL,
   height = NULL,
   elementId = NULL,
@@ -25,11 +25,6 @@ columns of \link{Synthetic_Results}.}
 it the chart has filters, offers its category columns to the Groups
 control, and its numbers can be cut. Default: \code{NULL}.}
 
-\item{dfOutcomes}{\code{data.frame} The outcomes table: one row per participant
-and endpoint, with a time and a flag (see "The outcomes table"), or
-\code{NULL}, when the chart says it needs one and nothing is stored. Default:
-\code{NULL}.}
-
 \item{lSettings}{\code{list} bio.viz stratified survival settings, under
 bio.viz's own names; laid over the chart's defaults in the page, so only
 overrides are needed. For example \code{endpoint}, \code{group_by}, \code{cuts},
@@ -37,6 +32,11 @@ overrides are needed. For example \code{endpoint}, \code{group_by}, \code{cuts},
 columns. The setting \code{connection} cannot be given, and \code{statistic} can
 only be \code{"Analyze_Survival"} or \code{NULL} for no statistics line. Default:
 \code{list()}.}
+
+\item{dfOutcomes}{\code{data.frame} The outcomes table: one row per participant
+and endpoint, with a time and a flag (see "The outcomes table"), or
+\code{NULL}, when the chart says it needs one and nothing is stored. Default:
+\code{NULL}.}
 
 \item{width}{\code{character} Width of the widget as a CSS unit. Default: \code{NULL},
 as wide as its container.}
@@ -153,20 +153,20 @@ from there.
 Widget_StratifiedSurvival(
   Synthetic_Results,
   Synthetic_Participants,
-  Synthetic_Outcomes,
   lSettings = list(
     endpoint = "EFS",
     group_by = list(measure = "CRP", visit = "Baseline", cut = "median"),
     cuts = list(list(measure = "CRP", visit = "Baseline", cut = "tertiles"))
-  )
+  ),
+  dfOutcomes = Synthetic_Outcomes
 )
 
 # The same endpoint by arm.
 Widget_StratifiedSurvival(
   Synthetic_Results,
   Synthetic_Participants,
-  Synthetic_Outcomes,
-  lSettings = list(group_by = "ARM")
+  lSettings = list(group_by = "ARM"),
+  dfOutcomes = Synthetic_Outcomes
 )
 
 }

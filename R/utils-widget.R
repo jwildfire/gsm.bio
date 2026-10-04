@@ -286,8 +286,6 @@ Widget_Utf8 <- function(xValue) {
 #' Check the outcomes table a widget is given
 #'
 #' A data frame or `NULL`, and, when it has rows, the columns the settings name.
-#' A list given in its place is most likely settings given by position, which
-#' come after the outcomes table: the message says so.
 #'
 #' @param lConfig `list` The chart's settings in full, with the outcome settings.
 #'
@@ -295,11 +293,7 @@ Widget_Utf8 <- function(xValue) {
 #' @noRd
 Widget_CheckOutcomes <- function(dfOutcomes, lConfig) {
   if (!is.null(dfOutcomes) && !is.data.frame(dfOutcomes)) {
-    stop(
-      "dfOutcomes is not a data.frame or NULL",
-      if (is.list(dfOutcomes)) ": the outcomes table comes before lSettings, so give lSettings by name" else "",
-      call. = FALSE
-    )
+    stop("dfOutcomes is not a data.frame or NULL", call. = FALSE)
   }
   Chart_CheckOutcomes(dfOutcomes, lConfig, "dfOutcomes")
 }

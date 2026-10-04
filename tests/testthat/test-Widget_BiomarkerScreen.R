@@ -273,7 +273,7 @@ lHazardSettings <- function() {
 }
 
 test_that("with an outcomes table the screen widget stores the hazard rows and each row's survival test (#35)", {
-  lWidget <- Widget_BiomarkerScreen(Synthetic_Results, Synthetic_Participants, Synthetic_Outcomes, lSettings = lHazardSettings())
+  lWidget <- Widget_BiomarkerScreen(Synthetic_Results, Synthetic_Participants, lHazardSettings(), Synthetic_Outcomes)
   expect_named(lWidget$x, c("dfResults", "dfParticipants", "dfOutcomes", "lSettings", "bDebug", "bAutoWidth", "bAutoHeight", "lStatistics"))
   expect_identical(lWidget$x$dfOutcomes, Synthetic_Outcomes)
   lResults <- lWidget$x$lStatistics$results
@@ -306,8 +306,22 @@ test_that("with an outcomes table the screen widget stores the hazard rows and e
   # Without an outcomes table, a hazard screen opens on a difference.
   lNone <- Widget_BiomarkerScreen(Synthetic_Results, Synthetic_Participants, lSettings = c(lHazardSettings(), list(group_by = "ARM")))
   expect_identical(lNone$x$lStatistics$results[[1]]$args$strComparison, "difference")
-  expect_error(
-    Widget_BiomarkerScreen(Synthetic_Results, Synthetic_Participants, list(comparison = "hazard")),
-    "dfOutcomes is not a data.frame or NULL.*lSettings"
-  )
+  expect_error(Widget_BiomarkerScreen(Synthetic_Results, Synthetic_Participants, dfOutcomes = "EFS"), "dfOutcomes is not a data.frame or NULL")
+})
+
+test_that("a call written for v0.1.0, its settings third by position, makes the same screen as before (#16, #35)", {
+  # v0.1.0's signature: (dfResults, dfParticipants, lSettings, width, height,
+  # elementId, bDebug). The outcomes table came later, after the settings.
+  chrFormals <- names(formals(Widget_BiomarkerScreen))
+  expect_identical(chrFormals[1:4], c("dfResults", "dfParticipants", "lSettings", "dfOutcomes"))
+  expect_identical(chrFormals[5:8], c("width", "height", "elementId", "bDebug"))
+  lPositional <- Widget_BiomarkerScreen(Synthetic_Results, Synthetic_Participants, lScreenSettings())
+  lNamed <- lScreenWidget()
+  expect_identical(lPositional$x$lSettings, lScreenSettings())
+  expect_false("dfOutcomes" %in% names(lPositional$x))
+  expect_identical(lPositional$x$lStatistics$results, lNamed$x$lStatistics$results)
+  # The size and the debug switch, by name, as v0.1.0 took them.
+  lSized <- Widget_BiomarkerScreen(Synthetic_Results, Synthetic_Participants, lScreenSettings(), width = "100%", height = "700px", bDebug = TRUE)
+  expect_identical(lSized[c("width", "height")], list(width = "100%", height = "700px"))
+  expect_true(lSized$x$bDebug)
 })

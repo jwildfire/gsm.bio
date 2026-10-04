@@ -51,10 +51,6 @@
 #' @param dfParticipants `data.frame` One row per participant, or `NULL`. With
 #'   it the chart has filters, offers its category columns to the Groups
 #'   control, and its numbers can be cut. Default: `NULL`.
-#' @param dfOutcomes `data.frame` The outcomes table: one row per participant
-#'   and endpoint, with a time and a flag (see "The outcomes table"), or
-#'   `NULL`, when the chart says it needs one and nothing is stored. Default:
-#'   `NULL`.
 #' @param lSettings `list` bio.viz stratified survival settings, under
 #'   bio.viz's own names; laid over the chart's defaults in the page, so only
 #'   overrides are needed. For example `endpoint`, `group_by`, `cuts`,
@@ -62,6 +58,10 @@
 #'   columns. The setting `connection` cannot be given, and `statistic` can
 #'   only be `"Analyze_Survival"` or `NULL` for no statistics line. Default:
 #'   `list()`.
+#' @param dfOutcomes `data.frame` The outcomes table: one row per participant
+#'   and endpoint, with a time and a flag (see "The outcomes table"), or
+#'   `NULL`, when the chart says it needs one and nothing is stored. Default:
+#'   `NULL`.
 #'
 #' @return An `htmlwidget`. Its payload `x` carries `dfResults`,
 #'   `dfParticipants`, `dfOutcomes` when it is given, `lSettings`, `bDebug`,
@@ -77,20 +77,20 @@
 #' Widget_StratifiedSurvival(
 #'   Synthetic_Results,
 #'   Synthetic_Participants,
-#'   Synthetic_Outcomes,
 #'   lSettings = list(
 #'     endpoint = "EFS",
 #'     group_by = list(measure = "CRP", visit = "Baseline", cut = "median"),
 #'     cuts = list(list(measure = "CRP", visit = "Baseline", cut = "tertiles"))
-#'   )
+#'   ),
+#'   dfOutcomes = Synthetic_Outcomes
 #' )
 #'
 #' # The same endpoint by arm.
 #' Widget_StratifiedSurvival(
 #'   Synthetic_Results,
 #'   Synthetic_Participants,
-#'   Synthetic_Outcomes,
-#'   lSettings = list(group_by = "ARM")
+#'   lSettings = list(group_by = "ARM"),
+#'   dfOutcomes = Synthetic_Outcomes
 #' )
 #'
 #' @seealso [Analyze_Survival()], which computes the test, and
@@ -100,8 +100,8 @@
 Widget_StratifiedSurvival <- function(
     dfResults,
     dfParticipants = NULL,
-    dfOutcomes = NULL,
     lSettings = list(),
+    dfOutcomes = NULL,
     width = NULL,
     height = NULL,
     elementId = NULL,

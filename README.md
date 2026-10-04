@@ -97,14 +97,14 @@ Widget_BiomarkerScreen(
 )
 ```
 
-It stores `Analyze_Screen()`'s answer for the screen the settings open on and, for every row, exactly what the chart that row opens asks of R: for a difference the group comparison at the screen's one visit, of the two groups, with Welch's test; for a correlation the scatter with the biomarker along the bottom and the variable up the side; for a hazard ratio the survival curves of the biomarker cut where the screen cut it. On the synthetic study, Placebo against Treatment, that is one screen and twelve group comparisons. The outcomes table comes after the participant table, so give `lSettings` by name:
+It stores `Analyze_Screen()`'s answer for the screen the settings open on and, for every row, exactly what the chart that row opens asks of R: for a difference the group comparison at the screen's one visit, of the two groups, with Welch's test; for a correlation the scatter with the biomarker along the bottom and the variable up the side; for a hazard ratio the survival curves of the biomarker cut where the screen cut it. On the synthetic study, Placebo against Treatment, that is one screen and twelve group comparisons. The outcomes table is `dfOutcomes`, after the settings:
 
 ```r
 Widget_BiomarkerScreen(
   Synthetic_Results,
   Synthetic_Participants,
-  Synthetic_Outcomes,
-  lSettings = list(comparison = "hazard", visit = "Baseline", endpoint = "EFS")
+  lSettings = list(comparison = "hazard", visit = "Baseline", endpoint = "EFS"),
+  dfOutcomes = Synthetic_Outcomes
 )
 ```
 
@@ -126,8 +126,8 @@ It stores `Analyze_Contingency()`'s answer for the table the settings open on, b
 Widget_StratifiedSurvival(
   Synthetic_Results,
   Synthetic_Participants,
-  Synthetic_Outcomes,
-  lSettings = list(endpoint = "EFS", group_by = list(measure = "CRP", visit = "Baseline", cut = "median"))
+  lSettings = list(endpoint = "EFS", group_by = list(measure = "CRP", visit = "Baseline", cut = "median")),
+  dfOutcomes = Synthetic_Outcomes
 )
 ```
 

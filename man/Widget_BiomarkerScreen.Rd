@@ -7,8 +7,8 @@
 Widget_BiomarkerScreen(
   dfResults,
   dfParticipants = NULL,
-  dfOutcomes = NULL,
   lSettings = list(),
+  dfOutcomes = NULL,
   width = NULL,
   height = NULL,
   elementId = NULL,
@@ -25,11 +25,6 @@ columns of \link{Synthetic_Results}.}
 it the chart has filters, and the columns of groups and the numbers it
 offers are read from it. Default: \code{NULL}.}
 
-\item{dfOutcomes}{\code{data.frame} An outcomes table, one row per participant and
-endpoint with a time and a flag, as \code{\link[=Widget_StratifiedSurvival]{Widget_StratifiedSurvival()}} takes
-it, or \code{NULL}. With it the screen offers a hazard ratio. It comes before
-\code{lSettings}, so give \code{lSettings} by name. Default: \code{NULL}.}
-
 \item{lSettings}{\code{list} bio.viz biomarker screen settings, under bio.viz's
 own names; laid over the chart's defaults in the page, so only overrides
 are needed. For example \code{comparison}, \code{visit}, \code{value_type}, \code{group_by},
@@ -44,6 +39,12 @@ group comparison \code{start_value}, \code{visits}, \code{value_type}, \code{gro
 \code{levels} and \code{test}, for the association scatter \code{x}, \code{y} and \code{method},
 for the stratified survival chart \code{group_by} and \code{endpoint}, and for any
 \code{filters}, \code{connection}, \code{waiting_note} or \code{back}. Default: \code{list()}.}
+
+\item{dfOutcomes}{\code{data.frame} An outcomes table, one row per participant and
+endpoint with a time and a flag, as \code{\link[=Widget_StratifiedSurvival]{Widget_StratifiedSurvival()}} takes
+it, or \code{NULL}. With it the screen offers a hazard ratio. It comes after
+\code{lSettings}, so a call written for v0.1.0 works as it did. Default:
+\code{NULL}.}
 
 \item{width}{\code{character} Width of the widget as a CSS unit. Default: \code{NULL},
 as wide as its container.}
@@ -181,14 +182,14 @@ Widget_BiomarkerScreen(
 Widget_BiomarkerScreen(
   Synthetic_Results,
   Synthetic_Participants,
-  Synthetic_Outcomes,
   lSettings = list(
     comparison = "hazard",
     visit = "Baseline",
     endpoint = "EFS",
     groups = lColumns,
     filters = lColumns
-  )
+  ),
+  dfOutcomes = Synthetic_Outcomes
 )
 
 }

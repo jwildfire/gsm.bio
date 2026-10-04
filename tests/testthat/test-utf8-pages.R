@@ -132,8 +132,8 @@ test_that("a survival page saved in a session whose locale is not UTF-8 carries 
     dfOther$PARAM <- strLabel
     dfOutcomes <- rbind(Synthetic_Outcomes, dfOther)
     lWidget <- Widget_StratifiedSurvival(
-      Synthetic_Results, Synthetic_Participants, dfOutcomes,
-      lSettings = list(group_by = "ARM", endpoint = "\u00d6FS")
+      Synthetic_Results, Synthetic_Participants,
+      lSettings = list(group_by = "ARM", endpoint = "\u00d6FS"), dfOutcomes = dfOutcomes
     )
     strFile <- file.path(tempfile("utf8"), "page.html")
     dir.create(dirname(strFile))

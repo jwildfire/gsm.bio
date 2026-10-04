@@ -8,7 +8,7 @@ lSurvivalSettings <- function() {
 }
 
 lSurvivalWidget <- function(lSettings = lSurvivalSettings(), dfOutcomes = Synthetic_Outcomes, ...) {
-  Widget_StratifiedSurvival(Synthetic_Results, Synthetic_Participants, dfOutcomes, lSettings = lSettings, ...)
+  Widget_StratifiedSurvival(Synthetic_Results, Synthetic_Participants, lSettings, dfOutcomes, ...)
 }
 
 # Event-free survival by CRP at Baseline cut at its median, worked out here
