@@ -31,6 +31,13 @@ lCrossTabDemo <- function() {
 lCrossTabView <- function(lCase) {
   lTables <- lCrossTabDemo()
   lSettings <- lTables$settings
+  # A case with tables of its own: those, as records, with no setting that
+  # names the study's columns.
+  if (!is.null(lCase$tables)) {
+    lTables$results <- dfFromRecords(lCase$tables$results)
+    lTables$participants <- dfFromRecords(lCase$tables$participants)
+    lSettings <- list(baseline_visits = "Baseline")
+  }
   lSettings$row_by <- lCase$dataId$row_by
   lSettings$col_by <- lCase$dataId$col_by
   lSettings$test <- lCase$args$strMethod
@@ -60,7 +67,7 @@ test_that("the settings R reads have the defaults of the vendored cross-tabulati
 
 test_that("R draws the table bio.viz recorded for every case: its categories in order, counts and totals (#18)", {
   lCases <- lCrossTabCases()
-  expect_gte(length(lCases), 7L)
+  expect_gte(length(lCases), 9L)
   for (lCase in lCases) {
     lView <- lCrossTabView(lCase)
     lTable <- CrossTab_Table(lView$results, lView$participants, lView$config, lView$state)
@@ -71,6 +78,12 @@ test_that("R draws the table bio.viz recorded for every case: its categories in 
     expect_identical(lTable$total, as.integer(lCase$total), label = paste(lCase$case, "total"))
     expect_identical(nrow(lTable$records), as.integer(lCase$rows), label = paste(lCase$case, "participants"))
   }
+  # Categories are handed to R by code point, whatever the locale, and text
+  # that is only white space is no category.
+  lStage <- Filter(function(lCase) !is.null(lCase$tables), lCases)
+  expect_length(lStage, 1L)
+  expect_identical(unlist(lStage[[1]]$args$chrRowGroups), enc2utf8(c("Week 10", "Week 2", "week 1", "\u00d6dem")))
+  expect_false(" " %in% unlist(lStage[[1]]$args$chrColGroups))
   # The cases reach a column each way, a cut at its median and at a typed
   # point, a change from baseline, a filter, and both tests.
   expect_true(any(vapply(lCases, function(lCase) is.list(lCase$dataId$col_by), logical(1))))
@@ -105,9 +118,11 @@ test_that("R's answer for each table is the answer bio.viz recorded from desktop
     lTheirs <- lCase$value
     ExpectResultShape(lMine)
     expect_identical(lMine$status, lTheirs$status, label = paste(lCase$case, "status"))
-    expect_identical(lMine$method, lTheirs$method, label = paste(lCase$case, "method"))
+    # JSON writes NA as null.
+    expect_identical(lMine$method, if (is.null(lTheirs$method)) NA_character_ else lTheirs$method, label = paste(lCase$case, "method"))
+    expect_identical(lMine$reason, if (is.null(lTheirs$reason)) NA_character_ else lTheirs$reason, label = paste(lCase$case, "reason"))
     expect_identical(lMine$counts, lTheirs$counts, label = paste(lCase$case, "counts"))
-    expect_equal(lMine$p_value, lTheirs$p_value, tolerance = 1e-8, label = paste(lCase$case, "p-value"))
+    expect_equal(lMine$p_value, if (is.null(lTheirs$p_value)) NA_real_ else lTheirs$p_value, tolerance = 1e-8, label = paste(lCase$case, "p-value"))
     expect_equal(
       lMine$statistic$value, vapply(lTheirs$statistic, function(lRow) lRow$value, numeric(1)),
       tolerance = 1e-8, label = paste(lCase$case, "statistic")

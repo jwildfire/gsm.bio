@@ -3,7 +3,7 @@
   "copied_by": "data-raw/vendor-bio-viz.R",
   "repository": "https://github.com/jwildfire/bio.viz",
   "ref": "44-cross-tab",
-  "commit": "9b60fd6110a3ab573d17d8054c890ebd90d0ce37",
+  "commit": "23d206bbbc4dc656c29766c778901dddc8290183",
   "merged_to_dev": false,
   "note": "Copied from bio.viz's branch 44-cross-tab, which is not merged to bio.viz's dev branch at this commit. When it lands there, copy again from dev (Rscript data-raw/vendor-bio-viz.R) and rerun the tests.",
   "files": [
@@ -12,8 +12,8 @@
       "source": "dist/bio.viz-0.1.0/bio.viz.js",
       "library": "bio.viz",
       "version": "0.1.0",
-      "sha256": "783e0fe7b545e65a7f161297e7886447f20db4524e1218bbfe21121b1b505c61",
-      "bytes": 371566
+      "sha256": "6105025c0909fb5d07fc79fcbca9b2619cb7c1bbea2c910da9dfeb007579001c",
+      "bytes": 372987
     },
     {
       "file": "safety.viz-1.9.0/safety.viz.js",
