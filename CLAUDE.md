@@ -71,13 +71,14 @@ runs one requirement per session
   when a copied file and its record disagree.
 - `R/core.R`, `R/chart.R` and one file per chart (`R/GroupComparison.R`,
   `R/AssociationScatter.R`, `R/CorrelationMatrix.R`,
-  `R/BiomarkerScreen.R`) are bio.viz’s rules written a second time, so
-  that R computes on the rows the chart draws: which participants are in
-  a panel, and how the chart asks for a panel’s result. `R/core.R` is
-  bio.viz’s core, `R/chart.R` what every chart shares (bio.viz’s
-  `src/shared/`), and a chart’s own file its own rules. They are the
-  only such copies. The tests hold them to frames and requests written
-  by bio.viz’s own code, so change them only to follow bio.viz.
+  `R/BiomarkerScreen.R`, `R/CrossTab.R`) are bio.viz’s rules written a
+  second time, so that R computes on the rows the chart draws: which
+  participants are in a panel, and how the chart asks for a panel’s
+  result. `R/core.R` is bio.viz’s core, `R/chart.R` what every chart
+  shares (bio.viz’s `src/shared/`), and a chart’s own file its own
+  rules. They are the only such copies. The tests hold them to frames
+  and requests written by bio.viz’s own code, so change them only to
+  follow bio.viz.
 - A widget’s binding names its chart and nothing more:
   `inst/htmlwidgets/shared/gsm.bio.widget.js` is the script every
   binding is made with, and `R/utils-widget.R` what every `Widget_*()`

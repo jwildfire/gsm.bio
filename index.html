@@ -22,7 +22,7 @@
 
     <a class="navbar-brand me-2" href="index.html">gsm.bio</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -164,6 +164,14 @@
 <span>  lSettings <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>visit <span class="op">=</span> <span class="st">"Week 4"</span>, value_type <span class="op">=</span> <span class="st">"change"</span>, group_by <span class="op">=</span> <span class="st">"ARM"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <p>It stores <code><a href="reference/Analyze_Screen.html">Analyze_Screen()</a></code>’s answer for the screen the settings open on and, for every row, exactly what the chart that row opens asks of R: for a difference the group comparison at the screen’s one visit, of the two groups, with Welch’s test; for a correlation the scatter with the biomarker along the bottom and the variable up the side. On the synthetic study, Placebo against Treatment, that is one screen and twelve group comparisons.</p>
+<p><code><a href="reference/Widget_CrossTab.html">Widget_CrossTab()</a></code> draws bio.viz’s cross-tabulation: a two-way table of counts with its totals and percentages, beside stacked bars, and R’s chi-square or Fisher’s exact test under it. A click on a count lists that cell’s participants.</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="reference/Widget_CrossTab.html">Widget_CrossTab</a></span><span class="op">(</span></span>
+<span>  <span class="va">Synthetic_Results</span>,</span>
+<span>  <span class="va">Synthetic_Participants</span>,</span>
+<span>  lSettings <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>row_by <span class="op">=</span> <span class="st">"RESPONSE"</span>, col_by <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>measure <span class="op">=</span> <span class="st">"CRP"</span>, visit <span class="op">=</span> <span class="st">"Baseline"</span>, cut <span class="op">=</span> <span class="st">"median"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>It stores <code><a href="reference/Analyze_Contingency.html">Analyze_Contingency()</a></code>’s answer for the table the settings open on, by both tests. Either variable of the table, and the groups or the panels of <code><a href="reference/Widget_GroupComparison.html">Widget_GroupComparison()</a></code>, can be a biomarker or a number cut into groups at its median, tertiles, quartiles or typed points, by the cut rule bio.viz uses in every chart: <code><a href="https://rdrr.io/r/stats/quantile.html" class="external-link">quantile()</a></code> with its default for the points, and <code><a href="https://rdrr.io/r/base/cut.html" class="external-link">cut()</a></code> with a value on a point in the lower group.</p>
 <p>Every widget carries two JavaScript bundles, both copied from bio.viz with the commit and a checksum per file recorded in <code>inst/htmlwidgets/lib/SOURCE.json</code>: bio.viz v0.1.0, and safety.viz v1.9.0, the first safety.viz with the kit bio.viz’s charts are built from. The safety.viz copy is the one bio.viz takes from safety.viz’s <code>dev</code> branch at its v1.9.0 release preparation, and its commit is recorded too. gsm.safety carries an earlier safety.viz without the kit; once it carries v1.9.0, the widgets can take the bundle from there instead of carrying their own copy.</p>
 </div>
 <div class="section level2">

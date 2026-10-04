@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">gsm.bio</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -35,6 +35,15 @@
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.2.0" id="gsmbio-v020-upcoming">gsm.bio v0.2.0 (Upcoming)<a class="anchor" aria-label="anchor" href="#gsmbio-v020-upcoming"></a></h2>
 <p>The next version of gsm.bio. Its work lands on <code>dev</code> and is listed here as it does.</p>
+<div class="section level3">
+<h3 id="whats-new-0-2-0">What’s new<a class="anchor" aria-label="anchor" href="#whats-new-0-2-0"></a></h3>
+<ul><li>
+<strong>A biomarker cut into groups.</strong> A cut variable, <code>list(measure, visit, cut)</code> or <code>list(col, type = "number", cut)</code>, makes groups at the median, the tertiles, the quartiles or typed points, by the same rule as bio.viz: <code><a href="https://rdrr.io/r/stats/quantile.html" class="external-link">quantile()</a></code> with its default, and <code><a href="https://rdrr.io/r/base/cut.html" class="external-link">cut()</a></code> with a value on a point in the lower group. <code><a href="../reference/Widget_GroupComparison.html">Widget_GroupComparison()</a></code> takes one as its groups or its panels, and hands R the groups low to high. <a href="https://github.com/jwildfire/obot.roadmap/issues/359" class="external-link">obot.roadmap#359</a>, <a href="https://github.com/jwildfire/gsm.bio/issues/18" class="external-link">#18</a>, <a href="https://github.com/jwildfire/gsm.bio/pull/31" class="external-link">#31</a>
+</li>
+<li>
+<strong>Cross-tabulation widget.</strong> <a href="https://jwildfire.github.io/gsm.bio/reference/Widget_CrossTab.html"><code>Widget_CrossTab()</code></a>: a two-way table of counts of two columns or cut biomarkers, with R’s chi-square and Fisher’s exact test stored in the page, and each cell’s participants a click away. <a href="https://github.com/jwildfire/obot.roadmap/issues/359" class="external-link">obot.roadmap#359</a>, <a href="https://github.com/jwildfire/gsm.bio/issues/18" class="external-link">#18</a>, <a href="https://github.com/jwildfire/gsm.bio/pull/31" class="external-link">#31</a>
+</li>
+</ul></div>
 <div class="section level3">
 <h3 id="also-in-this-release-0-2-0">Also in this release<a class="anchor" aria-label="anchor" href="#also-in-this-release-0-2-0"></a></h3>
 <ul><li>

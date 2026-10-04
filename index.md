@@ -176,6 +176,32 @@ test; for a correlation the scatter with the biomarker along the bottom
 and the variable up the side. On the synthetic study, Placebo against
 Treatment, that is one screen and twelve group comparisons.
 
+[`Widget_CrossTab()`](https://jwildfire.github.io/gsm.bio/reference/Widget_CrossTab.md)
+draws bio.viz’s cross-tabulation: a two-way table of counts with its
+totals and percentages, beside stacked bars, and R’s chi-square or
+Fisher’s exact test under it. A click on a count lists that cell’s
+participants.
+
+``` r
+
+Widget_CrossTab(
+  Synthetic_Results,
+  Synthetic_Participants,
+  lSettings = list(row_by = "RESPONSE", col_by = list(measure = "CRP", visit = "Baseline", cut = "median"))
+)
+```
+
+It stores
+[`Analyze_Contingency()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_Contingency.md)’s
+answer for the table the settings open on, by both tests. Either
+variable of the table, and the groups or the panels of
+[`Widget_GroupComparison()`](https://jwildfire.github.io/gsm.bio/reference/Widget_GroupComparison.md),
+can be a biomarker or a number cut into groups at its median, tertiles,
+quartiles or typed points, by the cut rule bio.viz uses in every chart:
+[`quantile()`](https://rdrr.io/r/stats/quantile.html) with its default
+for the points, and [`cut()`](https://rdrr.io/r/base/cut.html) with a
+value on a point in the lower group.
+
 Every widget carries two JavaScript bundles, both copied from bio.viz
 with the commit and a checksum per file recorded in
 `inst/htmlwidgets/lib/SOURCE.json`: bio.viz v0.1.0, and safety.viz

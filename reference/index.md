@@ -45,6 +45,8 @@ saved page shows them with no R and no network.
   : Correlation Matrix Widget
 - [`Widget_BiomarkerScreen()`](https://jwildfire.github.io/gsm.bio/reference/Widget_BiomarkerScreen.md)
   : Biomarker Screen Widget
+- [`Widget_CrossTab()`](https://jwildfire.github.io/gsm.bio/reference/Widget_CrossTab.md)
+  : Cross-Tabulation Widget
 
 ## Synthetic study
 
