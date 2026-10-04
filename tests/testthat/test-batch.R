@@ -294,3 +294,36 @@ test_that("a filter of no value lets nobody through, as bio.viz's chart opens it
   dfSaved <- Run_Specifications(strSpecFixture("charts.json"), Synthetic_Results, Synthetic_Participants, dfOutcomes = Synthetic_Outcomes, strFolder = tempfile("batch-counted"), bTables = FALSE)
   expect_identical(dfSaved$participants[1:2], c(200L, sum(Synthetic_Participants$SEX == "F")))
 })
+
+test_that("a view the tables cannot honour is written as the chart draws it, and its row says what is not drawn as asked, as bio.viz's notices say it (#39)", {
+  skip_if_not_installed("ggplot2")
+  lSpecs <- list(
+    lSpecOf(lSettings = list(row_by = "NOPE", col_by = "RESPONSE")),
+    lSpecOf(lSettings = list(row_by = "ARM", col_by = "RESPONSE"), lFilters = list(list(column = "SEX", operator = "in", values = list("X")))),
+    lSpecOf(lSettings = list(row_by = "ARM", col_by = "RESPONSE"), lFilters = list(list(column = "NOPE", operator = "in", values = list("a")))),
+    lSpecOf(lSettings = list(row_by = "ARM", col_by = "RESPONSE"), lFilters = list(list(column = "USUBJID", operator = "in", values = list("S001")))),
+    lSpecOf(lSettings = list(row_by = "ARM", col_by = "RESPONSE"), lFilters = list(list(column = "SEX", operator = "in", values = list("F", "X")))),
+    lSpecOf("group-comparison", lSettings = list(start_value = "IL-6", visits = list("Week 4", "Week 99"), group_by = "ARM")),
+    lSpecOf("correlation-matrix", lSettings = list(mode = "biomarkers", visit = "Week 99"))
+  )
+  dfManifest <- Run_Specifications(strSpecText(lSpecs), Synthetic_Results, Synthetic_Participants, strFolder = tempfile("batch-notices"), bTables = FALSE)
+  expect_identical(dfManifest$status, rep("written", 7L))
+  strAsks <- "Not drawn as the specification asks: "
+  lState <- CrossTab_State(Synthetic_Results, Synthetic_Participants, CrossTab_Settings(list(row_by = "NOPE", col_by = "RESPONSE")))
+  expect_identical(dfManifest$reason[1], paste0(strAsks, "Rows: NOPE is not in the tables, so the chart draws ", lState$row_by, "."))
+  expect_identical(dfManifest$reason[2], paste0(strAsks, "Filter SEX: X is not one of its values, so it is at All."))
+  expect_identical(dfManifest$reason[3], paste0(strAsks, "Filter NOPE: the participant table has no such column, so it is not a filter."))
+  expect_identical(dfManifest$reason[4], paste0(strAsks, "Filter USUBJID: the participant id is not a filter."))
+  expect_identical(dfManifest$reason[5], paste0(strAsks, "Filter SEX: X is not one of its values, so it is at F."))
+  expect_identical(dfManifest$reason[6], paste0(strAsks, "Visits: Week 4, Week 99 is not in the tables, so the chart draws Week 4."))
+  expect_identical(dfManifest$reason[7], paste0(strAsks, "Visit: Week 99 is not in the tables, so the chart draws Baseline."))
+  # Each is counted as the chart draws it: the filters it could not honour let everyone through.
+  expect_identical(dfManifest$participants[2:4], rep(nrow(Synthetic_Participants), 3L))
+  expect_identical(dfManifest$participants[5], sum(Synthetic_Participants$SEX == "F"))
+  # A view drawn as asked has no notice: every specification bio.viz wrote,
+  # and each biomarker of one.
+  dfSaved <- Run_Specifications(strSpecFixture("charts.json"), Synthetic_Results, Synthetic_Participants, dfOutcomes = Synthetic_Outcomes, strFolder = tempfile("batch-asked"), bTables = FALSE)
+  dfEach <- Run_Specifications(strSpecText(lSavedSpecs()[c(1, 3, 6, 7)]), Synthetic_Results, Synthetic_Participants, dfOutcomes = Synthetic_Outcomes,
+    strFolder = tempfile("batch-asked-each"), bTables = FALSE, bAcrossBiomarkers = TRUE)
+  expect_true(all(is.na(c(dfSaved$reason, dfEach$reason))))
+})

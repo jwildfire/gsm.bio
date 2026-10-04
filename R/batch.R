@@ -170,10 +170,16 @@ Run_Specifications <- function(
     for (iView in seq_along(lViews)) {
       strBiomarker <- names(lViews)[iView]
       strStem <- sprintf("%02d-%s%s", iSpec, lRead$chart, if (is.na(strBiomarker)) "" else paste0("-", Batch_Slug(strBiomarker)))
-      nPassing <- Batch_Passing(lViews[[iView]], dfResults, dfParticipants)
+      lOpened <- Batch_Opened(lViews[[iView]], dfResults, dfParticipants, dfOutcomes)
+      nPassing <- Batch_Passing(lOpened, dfResults, dfParticipants)
+      strNotices <- Batch_Notices(lViews[[iView]], lOpened, dfParticipants)
+      Reason <- function(strMore) {
+        chrReason <- stats::na.omit(c(strNotices, strMore))
+        if (length(chrReason) == 0L) NA_character_ else paste(chrReason, collapse = " ")
+      }
       if (identical(nPassing, 0L)) {
         # The chart draws nobody, and says so in its footnote.
-        lRows[[length(lRows) + 1L]] <- Row(iSpec, lRead$chart, strBiomarker, "failed", "No participant passes the filters.", nPassing = 0L)
+        lRows[[length(lRows) + 1L]] <- Row(iSpec, lRead$chart, strBiomarker, "failed", Reason("No participant passes the filters."), nPassing = 0L)
         next
       }
       lDrawn <- tryCatch(
@@ -181,9 +187,9 @@ Run_Specifications <- function(
         error = function(cndError) conditionMessage(cndError)
       )
       lRows[[length(lRows) + 1L]] <- if (is.character(lDrawn)) {
-        Row(iSpec, lRead$chart, strBiomarker, "failed", lDrawn, nPassing = nPassing)
+        Row(iSpec, lRead$chart, strBiomarker, "failed", Reason(lDrawn), nPassing = nPassing)
       } else {
-        Row(iSpec, lRead$chart, strBiomarker, "written", lDrawn$reason, lDrawn, nPassing)
+        Row(iSpec, lRead$chart, strBiomarker, "written", Reason(lDrawn$reason), lDrawn, nPassing)
       }
     }
   }
@@ -205,11 +211,109 @@ Batch_Settings <- function(strChart, lSettings) {
   )
 }
 
+# What a view's chart opens on, as its figure reads it: the settings, with
+# the names a widget gives, and the state the chart's rules in R open on.
+Batch_Opened <- function(lRead, dfResults, dfParticipants, dfOutcomes) {
+  lSettings <- lRead$settings
+  lConfig <- Batch_Settings(lRead$chart, lSettings)
+  lConfig <- Widget_NameFilters(Widget_NameBaseline(lConfig, lSettings, dfResults)$config, lSettings, dfResults, dfParticipants)$config
+  lState <- switch(lRead$chart,
+    "group-comparison" = GroupComparison_State(dfResults, dfParticipants, lConfig),
+    "association-scatter" = AssociationScatter_State(dfResults, dfParticipants, lConfig),
+    "correlation-matrix" = CorrelationMatrix_State(dfResults, dfParticipants, lConfig),
+    "biomarker-screen" = BiomarkerScreen_State(dfResults, dfParticipants, lConfig, dfOutcomes),
+    "cross-tab" = CrossTab_State(dfResults, dfParticipants, lConfig),
+    "stratified-survival" = StratifiedSurvival_State(dfResults, dfParticipants, dfOutcomes, lConfig)
+  )
+  list(config = lConfig, state = lState)
+}
+
 # How many participants a view's filters keep, as its chart opens them.
-Batch_Passing <- function(lRead, dfResults, dfParticipants) {
-  lConfig <- Batch_Settings(lRead$chart, lRead$settings)
-  lFilters <- Chart_Filters(dfParticipants, lConfig, Chart_Categories(dfResults, dfParticipants, lConfig))
-  as.integer(Chart_Passing(dfResults, dfParticipants, lConfig, lFilters))
+Batch_Passing <- function(lOpened, dfResults, dfParticipants) {
+  as.integer(Chart_Passing(dfResults, dfParticipants, lOpened$config, lOpened$state$filters))
+}
+
+# The settings each chart's notices compare (bio.viz, each chart's
+# `viewSettings`) that the tables can leave undrawn, by the name a notice gives
+# each (bio.viz's SETTING_NAMES), and the field of the chart's state in R that
+# holds what is drawn.
+lBatchViewed <- list(
+  "group-comparison" = c(start_value = "measure", visits = "visits", group_by = "group_by", levels = "levels", color_by = "color_by", panel_by = "panel_by"),
+  "association-scatter" = c(x = "x", y = "y", color_by = "color_by", panel_by = "panel_by"),
+  "correlation-matrix" = c(visit = "visit", biomarkers = "biomarkers", measure = "measure", visits = "visits"),
+  "biomarker-screen" = c(endpoint = "endpoint", visit = "visit", group_by = "group_by", levels = "levels", with = "with"),
+  "cross-tab" = c(row_by = "row_by", col_by = "col_by"),
+  "stratified-survival" = c(endpoint = "endpoint", group_by = "group_by")
+)
+chrBatchSettingNames <- c(
+  row_by = "Rows", col_by = "Columns", group_by = "Groups", color_by = "Colour", panel_by = "Panels", start_value = "Biomarker",
+  measure = "Biomarker", biomarkers = "Biomarkers", visit = "Visit", visits = "Visits", endpoint = "Endpoint", comparison = "Compare",
+  x = "X axis", y = "Y axis", with = "With"
+)
+
+# What the chart draws that the specification asked otherwise, as bio.viz's
+# chart notices say it (bio.viz, src/shared/chartHost.js, `noticesOf`): a
+# setting that names what the tables do not have, so the chart draws another,
+# or none; and a filter on a column that is not a filter, or on a value its
+# column does not have. A view with none draws as asked. Returns the sentence,
+# or NA.
+Batch_Notices <- function(lRead, lOpened, dfParticipants) {
+  lConfig <- lOpened$config
+  lState <- lOpened$state
+  # A value as a notice says it: text as it is, a list of texts joined, and
+  # anything else as JSON.
+  Said <- function(xValue) {
+    if (is.character(xValue) && length(xValue) == 1L) {
+      return(xValue)
+    }
+    if ((is.character(xValue) || is.list(xValue)) && is.null(names(xValue)) && all(vapply(xValue, function(x) is.character(x) && length(x) == 1L, logical(1)))) {
+      return(paste(unlist(xValue), collapse = ", "))
+    }
+    as.character(jsonlite::toJSON(xValue, auto_unbox = TRUE, null = "null", digits = NA))
+  }
+  # A setting compared by what it holds: its values as text, by name.
+  Held <- function(xValue) {
+    xFlat <- unlist(xValue)
+    if (is.null(xFlat)) {
+      return(character(0))
+    }
+    chrHeld <- Core_Text(xFlat)
+    if (!is.null(names(xFlat))) chrHeld <- chrHeld[order(names(xFlat))]
+    stats::setNames(chrHeld, sort(names(xFlat)))
+  }
+  chrNotices <- character(0)
+  chrViewed <- lBatchViewed[[lRead$chart]]
+  for (strKey in names(chrViewed)) {
+    xAsked <- lConfig[[strKey]]
+    if (!strKey %in% names(lRead$settings) || is.null(xAsked)) next
+    xDrawn <- lState[[chrViewed[[strKey]]]]
+    if (identical(Held(xAsked), Held(xDrawn)) && is.null(xDrawn) == is.null(xAsked)) next
+    strName <- if (strKey %in% names(chrBatchSettingNames)) chrBatchSettingNames[[strKey]] else paste0("`", strKey, "`")
+    chrNotices <- c(chrNotices, paste0(
+      strName, ": ", Said(xAsked), " is not in the tables, so the chart draws ", if (is.null(xDrawn)) "none" else Said(xDrawn), "."
+    ))
+  }
+  strIdCol <- if (is.null(lConfig$participant_id_col)) lConfig$id_col else lConfig$participant_id_col
+  for (lFilter in lRead$filters) {
+    strColumn <- lFilter$column
+    if (!strColumn %in% names(lState$filters)) {
+      chrNotices <- c(chrNotices, if (identical(strColumn, strIdCol)) {
+        paste0("Filter ", strColumn, ": the participant id is not a filter.")
+      } else {
+        paste0("Filter ", strColumn, ": the participant table has no such column, so it is not a filter.")
+      })
+      next
+    }
+    xNow <- lState$filters[[strColumn]]
+    chrDrawn <- if (is.null(xNow)) NULL else Core_Text(xNow)
+    if (!is.null(chrDrawn) && identical(unname(chrDrawn), unname(lFilter$values))) next
+    chrMissing <- lFilter$values[!lFilter$values %in% chrDrawn]
+    chrNotices <- c(chrNotices, paste0(
+      "Filter ", strColumn, ": ", paste(chrMissing, collapse = ", "), if (length(chrMissing) == 1L) " is not one of its values" else " are not among its values",
+      ", so it is at ", if (is.null(chrDrawn)) "All" else paste(chrDrawn, collapse = ", "), "."
+    ))
+  }
+  if (length(chrNotices) == 0L) NA_character_ else paste("Not drawn as the specification asks:", paste(chrNotices, collapse = " "))
 }
 
 # A biomarker's name as part of a file's name.
