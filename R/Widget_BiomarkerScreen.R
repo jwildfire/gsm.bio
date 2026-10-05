@@ -74,9 +74,9 @@
 #'   `filters`, `connection`, `waiting_note` or `back`. Default: `list()`.
 #' @param dfOutcomes `data.frame` An outcomes table, one row per participant and
 #'   endpoint with a time and a flag, as [Widget_StratifiedSurvival()] takes
-#'   it, or `NULL`. With it the screen offers a hazard ratio. It comes after
-#'   `lSettings`, so a call written for v0.1.0 works as it did. Default:
-#'   `NULL`.
+#'   it, or `NULL`. With it the screen offers a hazard ratio. It is the last
+#'   argument, after v0.1.0's, so every call written for v0.1.0, by position or
+#'   by name, works as it did; give it by name. Default: `NULL`.
 #'
 #' @return An `htmlwidget`. Its payload `x` carries `dfResults`,
 #'   `dfParticipants`, `dfOutcomes` when it is given, `lSettings`, `bDebug`, whether a width and a height were
@@ -134,11 +134,11 @@ Widget_BiomarkerScreen <- function(
     dfResults,
     dfParticipants = NULL,
     lSettings = list(),
-    dfOutcomes = NULL,
     width = NULL,
     height = NULL,
     elementId = NULL,
-    bDebug = FALSE) {
+    bDebug = FALSE,
+    dfOutcomes = NULL) {
   Widget_CheckInputs(dfResults, dfParticipants, lSettings, bDebug)
   if (!is.null(dfOutcomes) && !is.data.frame(dfOutcomes)) {
     Widget_CheckOutcomes(dfOutcomes, NULL)

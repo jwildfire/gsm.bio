@@ -66,8 +66,10 @@ The rows are \code{row_by} and the columns \code{col_by}: each a column's name, 
 cut variable, \code{list(measure, visit, cut)} for a biomarker or
 \code{list(col, type = "number", cut)} for a number, cut at its \code{"median"},
 \code{"tertiles"}, \code{"quartiles"} or at typed points. With neither named the table
-is of the first two category columns. A column's categories are in order of
-code point; a cut's run low to high, labelled with their bounds. The setting
+is of the first two category columns. A column's categories are in order
+by name, with numbers as numbers (so "2 mg" comes before "10 mg", and "a"
+before "B"), as the chart draws them; a cut's run low to high, labelled with
+their bounds. The setting
 \code{cuts} lists more cut variables the Rows and Columns controls offer.
 }
 

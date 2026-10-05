@@ -16,6 +16,10 @@
 #' participants in the frame), `{filters}`, `{date}` and `{version}`.
 #'
 #' @inheritParams Widget_BiomarkerScreen
+#' @param dfOutcomes `data.frame` An outcomes table, one row per participant and
+#'   endpoint with a time and a flag, as [Widget_StratifiedSurvival()] takes
+#'   it, or `NULL`. With it the screen offers a hazard ratio. It follows
+#'   `lSettings`. Default: `NULL`.
 #' @param lSettings `list` bio.viz biomarker screen settings, as
 #'   [Widget_BiomarkerScreen()] takes them, and `title`, `subtitle` and
 #'   `footnotes`. Default: `list()`.

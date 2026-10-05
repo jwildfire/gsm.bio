@@ -5,6 +5,11 @@
   "ref": "dev",
   "commit": "35ccfd323f49b3afdf1d9b9c20eedff0fe696a3b",
   "merged_to_dev": true,
+  "release": {
+    "tag": "v0.2.0",
+    "commit": "4440a4377935b3cc7263a07cb64db760b2d4a1a5",
+    "note": "Every file copied is byte for byte the same at bio.viz's release tag v0.2.0."
+  },
   "files": [
     {
       "file": "bio.viz-0.2.0/bio.viz.js",

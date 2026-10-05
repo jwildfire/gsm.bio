@@ -451,3 +451,51 @@ test_that("specifications jsonlite simplified are refused with a sentence that s
   expect_identical(Spec_Read(jsonlite::read_json(strFile)[[1]])$chart, "group-comparison")
   expect_length(Spec_Parse(jsonlite::fromJSON(strFile, simplifyVector = FALSE)), 7L)
 })
+
+test_that("a view whose cut names what the tables lack fails on its own row with R's sentence, and the rest still run, across biomarkers too (#48)", {
+  skip_if_not_installed("ggplot2")
+  lGood <- lSpecOf(lSettings = list(row_by = "ARM", col_by = "RESPONSE"))
+  lSpecs <- list(
+    lSpecOf(lSettings = list(row_by = "ARM", col_by = list(col = "NOPE", type = "number", cut = "median"))),
+    lSpecOf(lSettings = list(row_by = "ARM", col_by = list(measure = "NOPE", visit = "Baseline", cut = "median"))),
+    lSpecOf("stratified-survival", lSettings = list(group_by = list(col = "NOPE", type = "number", cut = "median"))),
+    lSpecOf(lSettings = list(row_by = "ARM", col_by = list(col = "__proto__", type = "number", cut = "median"))),
+    lGood
+  )
+  for (bAcross in c(FALSE, TRUE)) {
+    dfManifest <- Run_Specifications(strSpecText(lSpecs), Synthetic_Results, Synthetic_Participants, dfOutcomes = Synthetic_Outcomes,
+      strFolder = tempfile("batch-bad-cut"), bTables = FALSE, bAcrossBiomarkers = bAcross)
+    # Across biomarkers, the cut of a biomarker the tables lack takes each
+    # biomarker they have instead, and is drawn; on its own it fails.
+    chrBad <- if (bAcross) c(1L, 3L, 4L) else 1:4
+    dfBad <- dfManifest[dfManifest$specification %in% chrBad, ]
+    expect_identical(unique(dfBad$status), "failed", label = paste("across", bAcross))
+    expect_true(all(!is.na(dfBad$reason)), label = paste("across", bAcross, "reasons"))
+    expect_match(dfBad$reason[dfBad$specification == 1L], "cuts the column 'NOPE', which neither table has", fixed = TRUE, all = TRUE)
+    if (!bAcross) expect_match(dfBad$reason[dfBad$specification == 2L], "NOPE", fixed = TRUE)
+    if (bAcross) expect_identical(unique(dfManifest$status[dfManifest$specification == 2L]), "written")
+    expect_identical(dfManifest$status[dfManifest$specification == 5L], "written", label = paste("across", bAcross))
+  }
+})
+
+test_that("a specification nested far past the limit is refused with gsm.bio's depth sentence, not R's stack overflow (#48)", {
+  for (nDeep in c(1000L, 100000L)) {
+    strDeep <- paste0('{"format":"bio.viz specification","format_version":1,"bio_viz_version":"0.2.0","chart":"cross-tab","settings":{"title":',
+      strrep("[", nDeep), '"x"', strrep("]", nDeep), "}}")
+    expect_error(Spec_Read(strDeep), "nested more than 64 deep", fixed = TRUE, label = paste(nDeep, "deep"))
+  }
+  # Brackets inside text are text, and do not count.
+  strText <- strSpecText(lSpecOf(lSettings = list(row_by = "ARM", col_by = "RESPONSE", title = strrep("[", 200))))
+  expect_identical(Spec_Read(strText)$settings$title, strrep("[", 200))
+})
+
+test_that("when two biomarkers make one file name, the one whose name is the name keeps it: IL-6 is il-6 before IL 6 (#48)", {
+  skip_if_not_installed("ggplot2")
+  dfResults <- Synthetic_Results
+  dfResults$TEST[dfResults$TEST == "IL-8"] <- "IL 6"
+  dfManifest <- Run_Specifications(strSpecText(lSavedSpecs()[1]), dfResults, Synthetic_Participants,
+    strFolder = tempfile("batch-exact"), bTables = FALSE, bAcrossBiomarkers = TRUE)
+  expect_identical(dfManifest$figure[dfManifest$biomarker == "IL-6"], "01-group-comparison-il-6.png")
+  expect_identical(dfManifest$figure[dfManifest$biomarker == "IL 6"], "01-group-comparison-il-6-2.png")
+  expect_identical(anyDuplicated(dfManifest$figure), 0L)
+})

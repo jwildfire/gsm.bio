@@ -168,3 +168,21 @@ test_that("the specification schema matches the checksum recorded beside it, fro
   expect_identical(strSha256(file.path(strDir, lFile$file)), lFile$sha256)
   expect_setequal(list.files(strDir), c("SOURCE.json", "specification.schema.json"))
 })
+
+test_that("the copy names the bio.viz release it is byte for byte the same as: v0.2.0, in all three records (#48)", {
+  lRecords <- list(
+    lReadJson(system.file("htmlwidgets", "lib", "SOURCE.json", package = "gsm.bio")),
+    lReadJson(system.file("specification", "SOURCE.json", package = "gsm.bio")),
+    lReadJson(testthat::test_path("fixtures", "bio.viz"), "SOURCE.json")
+  )
+  strVersion <- Filter(function(lFile) lFile$library == "bio.viz", lRecords[[1]]$files)[[1]]$version
+  for (lRecord in lRecords) {
+    expect_identical(lRecord$release$tag, paste0("v", strVersion))
+    expect_match(lRecord$release$commit, "^[0-9a-f]{40}$")
+    expect_identical(lRecord$release, lRecords[[1]]$release)
+    # The release beside the commit copied from, which stays dev's.
+    expect_identical(lRecord$ref, "dev")
+  }
+  expect_identical(lRecords[[1]]$release$tag, "v0.2.0")
+  expect_identical(substr(lRecords[[1]]$release$commit, 1, 7), "4440a43")
+})

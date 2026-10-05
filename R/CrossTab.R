@@ -139,8 +139,8 @@ CrossTab_Category <- function(xValue) {
 # The table the chart draws (bio.viz, src/cross-tab/structureData.js,
 # `buildTable`): one record per participant with a category each way, the id,
 # `row` and `col` as text (a cut's as its group's label); the categories each
-# way, a cut's low to high and a column's by code point, those with someone in
-# them; and the counts. `filtered` is how many participants pass the filters,
+# way, a cut's low to high and a column's by name with numbers as numbers
+# (Core_Levels()), those with someone in them; and the counts. `filtered` is how many participants pass the filters,
 # NULL with no participant table.
 CrossTab_Table <- function(dfResults, dfParticipants, lConfig, lState) {
   lKept <- Chart_KeepFiltered(dfResults, dfParticipants, lConfig, lState$filters)

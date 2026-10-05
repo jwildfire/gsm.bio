@@ -68,3 +68,32 @@ test_that("the package-level help page exists (#1)", {
     expect_true(file.exists(testthat::test_path("..", "..", "man", "gsm.bio-package.Rd")))
   }
 })
+
+test_that("every function v0.1.0 exported takes v0.1.0's arguments in v0.1.0's places, so a v0.1.0 call by position works unchanged (#48)", {
+  # The arguments of each v0.1.0 export, in order, as the v0.1.0 tag has them.
+  lV010 <- list(
+    Analyze_Contingency = c("dfData", "strRowCol", "strColCol", "strMethod", "chrRowGroups", "chrColGroups", "nConfLevel", "nMinGroup"),
+    Analyze_Correlation = c("dfData", "strXCol", "strYCol", "strMethod", "strGroupCol", "chrGroups", "nConfLevel", "nMinGroup"),
+    Analyze_CorrelationMatrix = c("dfData", "chrCols", "strMethod", "nConfLevel", "nMinPairs"),
+    Analyze_Fit = c("dfData", "strXCol", "strYCol", "strMethod", "strGroupCol", "chrGroups", "nConfLevel", "nMinGroup", "nPoints"),
+    Analyze_GroupDifference = c("dfData", "strValueCol", "strGroupCol", "strMethod", "chrGroups", "bPairwise", "strPAdjust", "nConfLevel", "nMinGroup"),
+    Analyze_Screen = c(
+      "dfData", "chrCols", "strComparison", "strGroupCol", "chrGroups", "strWithCol", "strCorMethod", "strTimeCol",
+      "strCensorCol", "strEventCol", "strPAdjust", "nConfLevel", "nMinGroup"
+    ),
+    Analyze_Survival = c("dfData", "strTimeCol", "strGroupCol", "strCensorCol", "strEventCol", "chrGroups", "nConfLevel", "nMinGroup"),
+    Widget_AssociationScatter = c("dfResults", "dfParticipants", "lSettings", "width", "height", "elementId", "bDebug"),
+    Widget_BiomarkerScreen = c("dfResults", "dfParticipants", "lSettings", "width", "height", "elementId", "bDebug"),
+    Widget_CorrelationMatrix = c("dfResults", "dfParticipants", "lSettings", "width", "height", "elementId", "bDebug"),
+    Widget_GroupComparison = c("dfResults", "dfParticipants", "lSettings", "width", "height", "elementId", "bDebug")
+  )
+  for (strName in names(lV010)) {
+    chrNow <- names(formals(get(strName, envir = asNamespace("gsm.bio"))))
+    expect_identical(chrNow[seq_along(lV010[[strName]])], lV010[[strName]], label = paste(strName, "arguments"))
+  }
+  # Each v0.1.0 widget, called by position as v0.1.0 took it.
+  for (strWidget in grep("^Widget_", names(lV010), value = TRUE)) {
+    lWidget <- get(strWidget)(Synthetic_Results, Synthetic_Participants, list(), "100%", "500px", "by-position", FALSE)
+    expect_identical(lWidget[c("width", "height", "elementId")], list(width = "100%", height = "500px", elementId = "by-position"), label = strWidget)
+  }
+})

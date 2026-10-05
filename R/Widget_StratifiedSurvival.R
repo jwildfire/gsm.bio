@@ -38,7 +38,8 @@
 #' The chart computes no test. It asks R once for its curves, with one row per
 #' participant drawn: the id, the time, the group and the flag. A cut's groups
 #' are handed to R high to low, so the hazard ratio is the higher group's
-#' hazard over the lower's; a column's are in order of code point. The widget
+#' hazard over the lower's; a column's are in the legend's order, by name with
+#' numbers as numbers (so "2 mg" comes before "10 mg"). The widget
 #' stores R's answer for the view the settings open on. A reader who moves the
 #' endpoint, the groups, a cut line or a filter to a view that was not computed
 #' is told that statistics are unavailable for it; the page never shows one

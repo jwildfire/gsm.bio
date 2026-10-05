@@ -116,9 +116,28 @@ Spec_Tidy <- function(xValue, nDepth = 0L) {
   xValue
 }
 
+# How deep text nests its lists and objects, counted from its brackets outside
+# its strings, so that text nested far past the limit is refused before
+# jsonlite reads it (which, a hundred thousand deep, runs out of R's stack).
+# NA for text that is not UTF-8, which jsonlite then refuses.
+Spec_TextDepth <- function(strText) {
+  strBare <- gsub('"(?:[^"\\\\]++|\\\\.)*+"', '""', strText, perl = TRUE)
+  iCodes <- utf8ToInt(strBare)
+  if (length(iCodes) == 0L || anyNA(iCodes)) {
+    return(NA_integer_)
+  }
+  nStep <- (iCodes == 91L | iCodes == 123L) - (iCodes == 93L | iCodes == 125L)
+  as.integer(max(0L, cumsum(nStep)))
+}
+
 # Text read as JSON, as data.
 Spec_FromText <- function(strText) {
   Spec_NeedJsonlite("Spec_Read")
+  # The outermost object is depth 0 for Spec_Tidy(), and one bracket here.
+  nDepth <- Spec_TextDepth(strText)
+  if (!is.na(nDepth) && nDepth > nSpecMostNested + 1L) {
+    Spec_Refuse("the specification is nested more than ", nSpecMostNested, " deep, which no chart", Spec_Apostrophe(), "s settings are.")
+  }
   tryCatch(
     jsonlite::parse_json(strText, simplifyVector = FALSE),
     error = function(cndError) {
