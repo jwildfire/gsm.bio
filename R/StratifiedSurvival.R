@@ -204,8 +204,8 @@ StratifiedSurvival_ReadsBaseline <- function(xBy) {
 
 # What the chart asks R for its curves: bio.viz's `survival_key` recipe
 # (tools/r-survival.R). A cut's groups are handed to R high to low, so the
-# hazard ratio is the higher group's over the lower's; a column's by code
-# point. The baseline settings are in the identity only when a cut biomarker
+# hazard ratio is the higher group's over the lower's; a column's in the
+# legend's order, by name with numbers as numbers (Core_Levels()). The baseline settings are in the identity only when a cut biomarker
 # reads a baseline.
 StratifiedSurvival_Key <- function(lTable, lView) {
   lDataId <- list(chart = "stratified-survival", endpoint = lView$endpoint, group_by = lView$group_by)
@@ -218,7 +218,7 @@ StratifiedSurvival_Key <- function(lTable, lView) {
   }
   lArgs <- list(strTimeCol = "time", strGroupCol = "group")
   if (lView$flag == "censor") lArgs$strCensorCol <- "censor" else lArgs$strEventCol <- "event"
-  lArgs$chrGroups <- as.list(if (Chart_IsCut(lView$group_by)) rev(lTable$levels) else Core_SortText(lTable$levels))
+  lArgs$chrGroups <- as.list(if (Chart_IsCut(lView$group_by)) rev(lTable$levels) else lTable$levels)
   list(name = lView$statistic, args = lArgs, dataId = lDataId, rows = nrow(lTable$records))
 }
 

@@ -188,3 +188,16 @@ test_that("a cut is handed to the page as R reads it, and so are the cuts the Gr
   # The baseline visits are named to the chart outright.
   expect_identical(lPage$lSettings$baseline_visits, "Baseline")
 })
+
+test_that("a column's groups are handed to R in the order the chart draws its legend, by name with numbers as numbers, so the chart finds its stored results (#44)", {
+  dfParticipants <- Synthetic_Participants
+  dfParticipants$DOSE <- ifelse(seq_len(nrow(dfParticipants)) %% 2L == 0L, "10 mg", "2 mg")
+  dfParticipants$LETTER <- ifelse(seq_len(nrow(dfParticipants)) %% 3L == 0L, "B", "a")
+  lDose <- Widget_StratifiedSurvival(Synthetic_Results, dfParticipants, list(endpoint = "EFS", group_by = "DOSE"), Synthetic_Outcomes)$x$lStatistics$results[[1]]
+  expect_identical(lDose$args$chrGroups, list("2 mg", "10 mg"))
+  expect_identical(lDose$value$status, "ok")
+  lLetter <- Widget_StratifiedSurvival(Synthetic_Results, dfParticipants, list(endpoint = "EFS", group_by = "LETTER"), Synthetic_Outcomes)$x$lStatistics$results[[1]]
+  expect_identical(lLetter$args$chrGroups, list("a", "B"))
+  # A cut's groups are still high to low, as before.
+  expect_identical(unlist(lSurvivalWidget()$x$lStatistics$results[[1]]$args$chrGroups), attr(dfSurvivalRows(), "groups"))
+})

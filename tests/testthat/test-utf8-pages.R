@@ -102,10 +102,12 @@ test_that("a cross-tabulation saved in a session whose locale is not UTF-8 carri
     for (strEscape in c("<c3>", "<e2>", "<U+00", "<U+22", "<e9>")) {
       expect_false(bPageHas(strFile, charToRaw(strEscape)), label = paste("the page holds", strEscape))
     }
-    # The stored key hands R the categories by code point, as UTF-8.
+    # The stored key hands R the categories in the order the chart draws them
+    # (Core_Levels(), by bytes and so the same in any locale), as UTF-8 (#44).
     lStored <- lWidget$x$lStatistics$results
     expect_length(lStored, 2L)
-    expect_identical(unlist(lStored[[1]]$args$chrRowGroups), Core_SortText(chrStagesUtf8()))
+    expect_identical(unlist(lStored[[1]]$args$chrRowGroups), enc2utf8(c("caf\u00e9", "Week 1", "\u00c9ire", "\u00d6dem")))
+    expect_identical(unlist(lStored[[1]]$args$chrRowGroups), Core_Levels(chrStagesUtf8()))
     chrGroups <- unlist(lStored[[1]]$args$chrRowGroups)
     expect_true(all(Encoding(chrGroups[chrGroups != "Week 1"]) == "UTF-8"))
     # A filter set in R to start on a category, written as UTF-8, finds the

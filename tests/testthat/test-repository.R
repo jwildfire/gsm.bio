@@ -58,7 +58,7 @@ test_that("README.md gives the install lines for the newest release, whose tag e
   expect_identical(length(chrTags), 1L, label = sprintf("tag v%s on GitHub", strRelease))
 })
 
-test_that("NEWS.md opens with the upcoming v0.2.0 section, above the v0.1.0 release (#1, #29)", {
+test_that("NEWS.md opens with the v0.2.0 section, Upcoming until its tag, above the v0.1.0 release (#1, #29, #44)", {
   strPath <- if (bSourceTree()) {
     testthat::test_path("..", "..", "NEWS.md")
   } else {
@@ -68,7 +68,9 @@ test_that("NEWS.md opens with the upcoming v0.2.0 section, above the v0.1.0 rele
   skip_if_not(nzchar(strPath) && file.exists(strPath), "NEWS.md is missing")
 
   chrHeadings <- grep("^# ", readLines(strPath, warn = FALSE), value = TRUE)
-  expect_identical(chrHeadings[1:2], c("# gsm.bio v0.2.0 (Upcoming)", "# gsm.bio v0.1.0"))
+  # The release step drops "(Upcoming)" when it publishes the tag.
+  expect_true(chrHeadings[1] %in% c("# gsm.bio v0.2.0 (Upcoming)", "# gsm.bio v0.2.0"), label = chrHeadings[1])
+  expect_identical(chrHeadings[2], "# gsm.bio v0.1.0")
   # Only the newest section is ever Upcoming.
   expect_false(any(grepl("(Upcoming)", chrHeadings[-1], fixed = TRUE)))
 })

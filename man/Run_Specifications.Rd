@@ -170,7 +170,7 @@ with "No participant passes the filters.", as the chart's footnote says.
 \examples{
 if (requireNamespace("ggplot2", quietly = TRUE) && requireNamespace("r2rtf", quietly = TRUE)) {
   strSpecifications <- '[{
-    "format": "bio.viz specification", "format_version": 1, "bio_viz_version": "0.1.0",
+    "format": "bio.viz specification", "format_version": 1, "bio_viz_version": "0.2.0",
     "chart": "group-comparison",
     "settings": {
       "start_value": "IL-6", "visits": ["Week 4"], "value_type": "change",

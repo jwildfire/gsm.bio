@@ -3,7 +3,7 @@
   "copied_by": "data-raw/vendor-bio-viz.R",
   "repository": "https://github.com/jwildfire/bio.viz",
   "ref": "dev",
-  "commit": "15cf0ea6b611ab7cbd8055dbc0e2af0e2efa69a1",
+  "commit": "35ccfd323f49b3afdf1d9b9c20eedff0fe696a3b",
   "merged_to_dev": true,
   "files": [
     {
@@ -495,14 +495,14 @@
     {
       "file": "cross-tab-r.json",
       "source": "tests/fixtures/cross-tab-r.json",
-      "sha256": "c621de108b934a304d7bef6d6c3b8516fe7d79bb8869371611cc773aa04e954f",
-      "bytes": 73756
+      "sha256": "b772c5a08271643cd3be1bc4089c3c1d94a22d768e350641e530863f92d9c8d4",
+      "bytes": 121163
     },
     {
       "file": "stratified-survival-r.json",
       "source": "tests/fixtures/stratified-survival-r.json",
-      "sha256": "20244ee06d39b9d329b6236f39e3b8c790911f38fe9a7fd801569fd531208475",
-      "bytes": 178430
+      "sha256": "e0ed18a20811029d45b151275299a5cc8cde96ad026e7e139259123e272c7744",
+      "bytes": 215452
     }
   ]
 }

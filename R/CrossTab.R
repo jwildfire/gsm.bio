@@ -179,7 +179,9 @@ CrossTab_Table <- function(dfResults, dfParticipants, lConfig, lState) {
     if (!is.null(lCuts[[strField]])) {
       return(lCuts[[strField]]$labels[lCuts[[strField]]$labels %in% dfRecords[[strField]]])
     }
-    Core_SortText(unique(dfRecords[[strField]]))
+    # A column's categories by name, numbers as numbers: the order bio.viz
+    # draws them in (its `categoryOrder`, this rule) and asks for them in.
+    Core_Levels(dfRecords[[strField]])
   }
   chrRows <- Levels("row")
   chrCols <- Levels("col")
@@ -260,4 +262,35 @@ CrossTab_StoredResults <- function(dfResults, dfParticipants, lConfig) {
     CrossTab_Requests(dfResults, dfParticipants, lConfig, lState, chrTests),
     list(Analyze_Contingency = Analyze_Contingency)
   )
+}
+
+# An answer's estimates with Fisher's odds ratio named by the categories R was
+# handed, as the chart's line names it. Returns the answer's value.
+CrossTab_Oriented <- function(lResult) {
+  lValue <- lResult$value
+  dfEstimates <- lValue$estimates
+  if (is.data.frame(dfEstimates) && nrow(dfEstimates) > 0L) {
+    chrRows <- unlist(lResult$args$chrRowGroups)
+    chrCols <- unlist(lResult$args$chrColGroups)
+    for (iRow in seq_len(nrow(dfEstimates))) {
+      lRow <- Output_Oriented(as.list(dfEstimates[iRow, ]), chrRows, chrCols)
+      dfEstimates$group[iRow] <- lRow$group
+    }
+    lValue$estimates <- dfEstimates
+  }
+  lValue
+}
+
+# What the chart prints for one answer under its table: the test, then each
+# estimate with an interval, as `describeAnswer` does, once R computed it.
+CrossTab_Lines <- function(lResult) {
+  lValue <- CrossTab_Oriented(lResult)
+  chrLines <- Output_StatisticText(lValue)
+  bShown <- identical(lValue$status, "ok") && (is.null(lValue$reason) || is.na(lValue$reason))
+  dfEstimates <- lValue$estimates
+  if (bShown && is.data.frame(dfEstimates) && nrow(dfEstimates) > 0L) {
+    bInterval <- !is.na(dfEstimates$lower) & !is.na(dfEstimates$upper)
+    chrLines <- c(chrLines, vapply(which(bInterval), function(iRow) Output_EstimateText(as.list(dfEstimates[iRow, ])), character(1)))
+  }
+  chrLines
 }

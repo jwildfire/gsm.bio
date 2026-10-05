@@ -36,7 +36,12 @@ WidgetSizingPolicy <- function() {
 #' | unnamed vector of length one | itself | a single value |
 #' | unnamed vector of any other length | an unnamed list | an array |
 #' | factor | text | text |
+#' | `Inf`, `-Inf`, `NaN` | the text `"Inf"`, `"-Inf"`, `"NaN"` | that text |
 #' | `NA`, `NULL` | `NULL` | `null` |
+#'
+#' A number R gives as infinite, as Fisher's odds ratio of a table with an
+#' empty cell, would otherwise be written as `null` by the JSON writer and lost;
+#' bio.viz's connection reads those three spellings back as the numbers.
 #'
 #' Nothing is left for the JSON writer to decide: a named vector's names are
 #' kept by making it a list, and a table has one shape whatever its size.
@@ -64,10 +69,16 @@ StoredValue <- function(xValue) {
     lValue <- lapply(xValue, StoredValue)
     return(if (bNamed) lValue else unname(lValue))
   }
-  if (!bNamed && length(xValue) == 1L) {
-    return(if (is.na(xValue)) NULL else xValue)
+  One <- function(xOne) {
+    if (is.numeric(xOne) && !is.finite(xOne) && !(is.na(xOne) && !is.nan(xOne))) {
+      return(if (is.nan(xOne)) "NaN" else if (xOne > 0) "Inf" else "-Inf")
+    }
+    if (is.na(xOne)) NULL else xOne
   }
-  lValue <- lapply(seq_along(xValue), function(iValue) if (is.na(xValue[[iValue]])) NULL else unname(xValue[iValue]))
+  if (!bNamed && length(xValue) == 1L) {
+    return(One(xValue))
+  }
+  lValue <- lapply(seq_along(xValue), function(iValue) One(unname(xValue[iValue])))
   if (bNamed) stats::setNames(lValue, names(xValue)) else lValue
 }
 

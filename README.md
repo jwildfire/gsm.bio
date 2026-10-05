@@ -133,7 +133,7 @@ Widget_StratifiedSurvival(
 
 It stores `Analyze_Survival()`'s answer for the curves the settings open on. A cut's groups are handed to R high to low, so the hazard ratio is the higher group's hazard over the lower's.
 
-Every widget carries two JavaScript bundles, both copied from bio.viz with the commit and a checksum per file recorded in `inst/htmlwidgets/lib/SOURCE.json`: bio.viz v0.1.0, and safety.viz v1.9.0, the first safety.viz with the kit bio.viz's charts are built from. The safety.viz copy is the one bio.viz takes from safety.viz's `dev` branch at its v1.9.0 release preparation, and its commit is recorded too. gsm.safety carries an earlier safety.viz without the kit; once it carries v1.9.0, the widgets can take the bundle from there instead of carrying their own copy.
+Every widget carries two JavaScript bundles, both copied from bio.viz with the commit and a checksum per file recorded in `inst/htmlwidgets/lib/SOURCE.json`: bio.viz v0.2.0, and safety.viz v1.9.0, the first safety.viz with the kit bio.viz's charts are built from. The safety.viz copy is the one bio.viz takes from safety.viz's `dev` branch at its v1.9.0 release preparation, and its commit is recorded too. gsm.safety carries an earlier safety.viz without the kit; once it carries v1.9.0, the widgets can take the bundle from there instead of carrying their own copy.
 
 ## Figures
 
@@ -205,7 +205,7 @@ The package ships a made-up biomarker study, so that a test can assert an answer
 
 ## Status
 
-[Version 0.1.0](https://github.com/jwildfire/gsm.bio/releases/tag/v0.1.0) is released: seven statistics functions, the synthetic study and four widgets, for the group comparison chart, the association scatter, the correlation matrix and the biomarker screen. Version 0.2.0 is in development on `dev`; widgets for the other charts and static figures come in later versions. [NEWS.md](https://github.com/jwildfire/gsm.bio/blob/dev/NEWS.md) lists what has landed, and the reference site is at <https://jwildfire.github.io/gsm.bio/>.
+[Version 0.1.0](https://github.com/jwildfire/gsm.bio/releases/tag/v0.1.0) is released: seven statistics functions, the synthetic study, and widgets for the group comparison, the association scatter, the correlation matrix and the biomarker screen. Version 0.2.0 is being prepared on `dev`. It adds widgets for the cross-tabulation and the stratified survival chart, and hazard ratios in the biomarker screen. It also adds output from R: a static figure and a statistics table for every chart, the table written to RTF, and batch runs of the specifications bio.viz's charts write. [NEWS.md](https://github.com/jwildfire/gsm.bio/blob/dev/NEWS.md) has the notes for each, and the reference site is at <https://jwildfire.github.io/gsm.bio/>.
 
 The design is on the obot roadmap: [bio.viz and gsm.bio](https://jwildfire.github.io/obot.roadmap/requirements/design/353_design.html).
 
