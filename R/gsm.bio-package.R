@@ -34,10 +34,10 @@
 #' suggested, not imported.
 #'
 #' @section Status:
-#' Version 0.2.0 is being prepared: the statistics functions, a synthetic
-#' biomarker study with known planted effects, a widget for each of bio.viz's
-#' six charts, and from R a static figure, a statistics table, RTF and batch
-#' runs of chart specifications. Version 0.1.0 is the latest release.
+#' Version 0.2.0 is released: the statistics functions, a synthetic biomarker
+#' study with known planted effects, a widget for each of bio.viz's six charts,
+#' and from R a static figure, a statistics table, RTF and batch runs of chart
+#' specifications. Version 0.3.0 is in development on `dev`.
 #'
 #' @importFrom stats aov chisq.test cor.test fisher.test kruskal.test p.adjust
 #' @importFrom stats lm loess t.test wilcox.test
