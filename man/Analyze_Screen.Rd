@@ -114,8 +114,9 @@ Its p-value is not computed from it: it is \code{\link[stats:t.test]{stats::t.te
 which does not assume the equal variances that the pooled standard
 deviation does. So when the two groups' spreads differ, a row's interval can
 include zero while its p-value is below 0.05, or exclude zero while it is
-above; the screen's notes say so. Whether the interval should follow Welch is
-an open design question.
+above; the screen's notes say so. Both are kept on purpose, each labelled
+(#25): Hedges' g is defined with the pooled standard deviation, and the Welch
+p-value is the one the group comparison prints when the row is opened.
 
 A row by hazard ratio whose hazard ratio cannot be estimated (see
 \code{\link[=Analyze_Survival]{Analyze_Survival()}}) has \code{status} \code{"error"} and a reason, and no method,
