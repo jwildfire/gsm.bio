@@ -477,3 +477,14 @@ test_that("a view whose cut names what the tables lack fails on its own row with
     expect_identical(dfManifest$status[dfManifest$specification == 5L], "written", label = paste("across", bAcross))
   }
 })
+
+test_that("a specification nested far past the limit is refused with gsm.bio's depth sentence, not R's stack overflow (#48)", {
+  for (nDeep in c(1000L, 100000L)) {
+    strDeep <- paste0('{"format":"bio.viz specification","format_version":1,"bio_viz_version":"0.2.0","chart":"cross-tab","settings":{"title":',
+      strrep("[", nDeep), '"x"', strrep("]", nDeep), "}}")
+    expect_error(Spec_Read(strDeep), "nested more than 64 deep", fixed = TRUE, label = paste(nDeep, "deep"))
+  }
+  # Brackets inside text are text, and do not count.
+  strText <- strSpecText(lSpecOf(lSettings = list(row_by = "ARM", col_by = "RESPONSE", title = strrep("[", 200))))
+  expect_identical(Spec_Read(strText)$settings$title, strrep("[", 200))
+})
