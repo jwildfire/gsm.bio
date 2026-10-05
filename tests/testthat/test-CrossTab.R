@@ -78,12 +78,16 @@ test_that("R draws the table bio.viz recorded for every case: its categories in 
     expect_identical(lTable$total, as.integer(lCase$total), label = paste(lCase$case, "total"))
     expect_identical(nrow(lTable$records), as.integer(lCase$rows), label = paste(lCase$case, "participants"))
   }
-  # Categories are handed to R by code point, whatever the locale, and text
-  # that is only white space is no category.
-  lStage <- Filter(function(lCase) !is.null(lCase$tables), lCases)
+  # A column's categories are handed to R in the order the chart draws them,
+  # gsm.bio's Core_Levels() by name with numbers as numbers, whatever the
+  # locale (#44, bio.viz#79), and text that is only white space is no category.
+  lStage <- Filter(function(lCase) identical(lCase$case, "stage-by-grade-chisq"), lCases)
   expect_length(lStage, 1L)
-  expect_identical(unlist(lStage[[1]]$args$chrRowGroups), enc2utf8(c("Week 10", "Week 2", "week 1", "\u00d6dem")))
+  expect_identical(unlist(lStage[[1]]$args$chrRowGroups), enc2utf8(c("week 1", "Week 2", "Week 10", "\u00d6dem")))
+  expect_identical(unlist(lStage[[1]]$args$chrColGroups), c("a", "B"))
   expect_false(" " %in% unlist(lStage[[1]]$args$chrColGroups))
+  lDose <- Filter(function(lCase) identical(lCase$case, "dose-by-response-fisher"), lCases)
+  expect_identical(unlist(lDose[[1]]$args$chrRowGroups), c("2 mg", "10 mg"))
   # The cases reach a column each way, a cut at its median and at a typed
   # point, a change from baseline, a filter, and both tests.
   expect_true(any(vapply(lCases, function(lCase) is.list(lCase$dataId$col_by), logical(1))))
@@ -128,6 +132,33 @@ test_that("R's answer for each table is the answer bio.viz recorded from desktop
       tolerance = 1e-8, label = paste(lCase$case, "statistic")
     )
   }
+})
+
+test_that("the order bio.viz draws a column's categories in is Core_Levels(), on the sample R wrote for it (#44)", {
+  # bio.viz's `categoryOrder` is held to this sample, written by its
+  # tools/r-order.R from gsm.bio's own rule; R is held to it here.
+  lOrder <- lReadJson(testthat::test_path("fixtures", "bio.viz"), "cross-tab-r.json")$category_order
+  expect_gte(length(lOrder$given), 20L)
+  expect_identical(Core_Levels(enc2utf8(unlist(lOrder$given))), enc2utf8(unlist(lOrder$sorted)))
+})
+
+test_that("an infinite odds ratio is stored as bio.viz's recorded answer writes it, the text Inf (#44)", {
+  lCase <- Filter(function(lCase) identical(lCase$case, "empty-cell-fisher"), lCrossTabCases())[[1]]
+  lView <- lCrossTabView(lCase)
+  lRequest <- CrossTab_Requests(lView$results, lView$participants, lView$config, lView$state)[[1]]
+  lMine <- do.call(Analyze_Contingency, c(list(lRequest$data), lRequest$args))
+  expect_identical(lMine$estimates$estimate, Inf)
+  # As the widget writes it to the page, and as bio.viz's tools/r-json.R wrote
+  # the recorded answer.
+  lStored <- jsonlite::fromJSON(
+    as.character(jsonlite::toJSON(StoredValue(lMine), auto_unbox = TRUE, null = "null", na = "null", digits = NA)),
+    simplifyVector = FALSE
+  )
+  lTheirs <- lCase$value$estimates[[1]]
+  expect_identical(lStored$estimates[[1]][c("name", "estimate", "upper")], lTheirs[c("name", "estimate", "upper")])
+  expect_identical(lTheirs$estimate, "Inf")
+  expect_equal(lStored$estimates[[1]]$lower, lTheirs$lower, tolerance = 1e-10)
+  expect_identical(round(lTheirs$lower, 2), 14.86)
 })
 
 test_that("the table opens on the settings, or the first two columns offered, and asks nothing where there is no test (#18)", {
