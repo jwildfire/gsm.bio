@@ -47,8 +47,7 @@ Table_BiomarkerScreen(
   with a time and a flag, as
   [`Widget_StratifiedSurvival()`](https://jwildfire.github.io/gsm.bio/reference/Widget_StratifiedSurvival.md)
   takes it, or `NULL`. With it the screen offers a hazard ratio. It
-  comes after `lSettings`, so a call written for v0.1.0 works as it did.
-  Default: `NULL`.
+  follows `lSettings`. Default: `NULL`.
 
 ## Value
 

@@ -68,9 +68,12 @@ runs one requirement per session
   `Analyze_*` function’s answer. It is named `Widget_<Chart>()` and
   takes its tables, then `lSettings`, a list under bio.viz’s own setting
   names, then `width`, `height`, `elementId` and `bDebug`, as
-  gsm.safety’s widgets do. The outcomes table, which came after v0.1.0,
-  is `dfOutcomes`, after `lSettings` and before `width`, in every widget
-  that reads one, so a released widget’s positional calls keep working.
+  gsm.safety’s widgets do. The outcomes table is `dfOutcomes`. In a
+  widget that was released before it read one (the biomarker screen), it
+  is the last argument, after `bDebug`, so every released positional
+  call keeps working; in a widget new with it (the stratified survival
+  chart), it follows `lSettings`. `tests/testthat/test-package.R` holds
+  every released export to its released arguments’ places.
 - A static figure is `Visualize_<Chart>()`, takes the same arguments as
   its widget less the sizes, and returns a `ggplot`. It draws the view
   its chart opens on from the same rules, prints statistics only from

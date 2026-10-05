@@ -28,9 +28,10 @@ output prints the same `Analyze_*()` answers its chart does.
   [`Widget_StratifiedSurvival()`](https://jwildfire.github.io/gsm.bio/reference/Widget_StratifiedSurvival.html):
   Kaplan-Meier curves by a column or a cut biomarker on one endpoint of
   an outcomes table, with the number at risk, and R’s log-rank test,
-  medians and hazard ratio stored in the page. The outcomes table is
-  read as ADaM holds time to event, censored or event flag either way
-  round.
+  medians and hazard ratio stored in the page. The outcomes table has
+  one row per participant and endpoint, with the time to the event and a
+  flag. The flag can say the time was censored (1 = censored, as ADaM’s
+  `CNSR`) or that the event happened (1 = event).
   [obot.roadmap#360](https://github.com/jwildfire/obot.roadmap/issues/360),
   [\#35](https://github.com/jwildfire/gsm.bio/issues/35),
   [\#36](https://github.com/jwildfire/gsm.bio/pull/36)
@@ -39,11 +40,12 @@ output prints the same `Analyze_*()` answers its chart does.
   offers a hazard ratio of high against low on an endpoint, each
   biomarker cut at its median, and every row opens its survival curves
   with R’s test stored too. The outcomes table is a new argument,
-  `dfOutcomes`, after `lSettings`, so a call written for v0.1.0 works as
-  it did.
+  `dfOutcomes`, the last one, so every v0.1.0 call, by position or by
+  name, works as it did.
   [obot.roadmap#360](https://github.com/jwildfire/obot.roadmap/issues/360),
   [\#35](https://github.com/jwildfire/gsm.bio/issues/35),
-  [\#36](https://github.com/jwildfire/gsm.bio/pull/36)
+  [\#36](https://github.com/jwildfire/gsm.bio/pull/36),
+  [\#48](https://github.com/jwildfire/gsm.bio/issues/48)
 - **Static figures.** Six `Visualize_*()` functions, one per chart,
   return a ggplot2 figure of the view its chart opens on, from the same
   settings, with the same `Analyze_*()` statistics printed under it.
@@ -93,7 +95,9 @@ output prints the same `Analyze_*()` answers its chart does.
   on a point in the lower group.
   [`Widget_GroupComparison()`](https://jwildfire.github.io/gsm.bio/reference/Widget_GroupComparison.md)
   takes one as its groups or its panels, and hands R the groups low to
-  high.
+  high. The cross-tabulation runs a cut’s groups low to high too. The
+  survival chart hands them to R high to low, so its hazard ratio is the
+  higher group’s over the lower’s.
   [obot.roadmap#359](https://github.com/jwildfire/obot.roadmap/issues/359),
   [\#18](https://github.com/jwildfire/gsm.bio/issues/18),
   [\#31](https://github.com/jwildfire/gsm.bio/pull/31)
@@ -125,8 +129,9 @@ output prints the same `Analyze_*()` answers its chart does.
   now prints each estimate with its interval, as the chart’s line does.
   The figure and the table name Fisher’s odds ratio by its rows and
   columns, for example “odds ratio (A / B, odds of x against y)”, and
-  print an infinite one in words: “infinite, 95% confidence interval
-  14.86 to infinity”.
+  print an infinite one in words. For a two-by-two table with an empty
+  cell they print, as the chart does: “odds ratio (A / B, odds of x
+  against y): infinite, 95% confidence interval 14.86 to infinity.”
   [\#44](https://github.com/jwildfire/gsm.bio/issues/44),
   [\#45](https://github.com/jwildfire/gsm.bio/pull/45)
 - **Pages carry text as UTF-8 in any locale.** A widget made in an R
@@ -137,15 +142,20 @@ output prints the same `Analyze_*()` answers its chart does.
   settings’ and results’ text as UTF-8 before it computes or writes
   anything. [\#22](https://github.com/jwildfire/gsm.bio/issues/22),
   [\#34](https://github.com/jwildfire/gsm.bio/pull/34)
-- **The widgets carry bio.viz v0.2.0,** copied from bio.viz `dev` at its
-  v0.2.0 release preparation, with the specification schema the batch
-  runner reads. safety.viz stays at v1.9.0.
+- **The widgets carry bio.viz v0.2.0,** with the specification schema
+  the batch runner reads. They are copied from bio.viz `dev` at
+  [35ccfd3](https://github.com/jwildfire/bio.viz/commit/35ccfd323f49b3afdf1d9b9c20eedff0fe696a3b),
+  byte for byte the same as bio.viz’s [v0.2.0
+  tag](https://github.com/jwildfire/bio.viz/releases/tag/v0.2.0)
+  ([4440a43](https://github.com/jwildfire/bio.viz/commit/4440a4377935b3cc7263a07cb64db760b2d4a1a5)),
+  and the copy’s records name both. safety.viz stays at v1.9.0.
   [\#44](https://github.com/jwildfire/gsm.bio/issues/44),
-  [\#45](https://github.com/jwildfire/gsm.bio/pull/45)
+  [\#45](https://github.com/jwildfire/gsm.bio/pull/45),
+  [\#48](https://github.com/jwildfire/gsm.bio/issues/48)
 
 ### Tests and provenance
 
-300 tests (34,586 expectations on R 4.3.3) pass from the source tree,
+305 tests (34,632 expectations on R 4.3.3) pass from the source tree,
 where none may skip; `R CMD check` runs them too, skipping the ten that
 read the repository’s own files. Every statistic a widget stores, a
 figure prints or a table holds is held to the `Analyze_*()` function on
