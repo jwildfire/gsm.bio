@@ -488,3 +488,14 @@ test_that("a specification nested far past the limit is refused with gsm.bio's d
   strText <- strSpecText(lSpecOf(lSettings = list(row_by = "ARM", col_by = "RESPONSE", title = strrep("[", 200))))
   expect_identical(Spec_Read(strText)$settings$title, strrep("[", 200))
 })
+
+test_that("when two biomarkers make one file name, the one whose name is the name keeps it: IL-6 is il-6 before IL 6 (#48)", {
+  skip_if_not_installed("ggplot2")
+  dfResults <- Synthetic_Results
+  dfResults$TEST[dfResults$TEST == "IL-8"] <- "IL 6"
+  dfManifest <- Run_Specifications(strSpecText(lSavedSpecs()[1]), dfResults, Synthetic_Participants,
+    strFolder = tempfile("batch-exact"), bTables = FALSE, bAcrossBiomarkers = TRUE)
+  expect_identical(dfManifest$figure[dfManifest$biomarker == "IL-6"], "01-group-comparison-il-6.png")
+  expect_identical(dfManifest$figure[dfManifest$biomarker == "IL 6"], "01-group-comparison-il-6-2.png")
+  expect_identical(anyDuplicated(dfManifest$figure), 0L)
+})

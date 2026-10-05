@@ -223,10 +223,11 @@ Run_Specifications <- function(
       lRows[[length(lRows) + 1L]] <- Row(iSpec, lRead$chart, NA_character_, "failed", lViews)
       next
     }
+    chrViewStems <- Batch_Stems(iSpec, lRead$chart, names(lViews), chrStems)
+    chrStems <- c(chrStems, chrViewStems)
     for (iView in seq_along(lViews)) {
       strBiomarker <- names(lViews)[iView]
-      strStem <- Batch_Stem(iSpec, lRead$chart, strBiomarker, iView, chrStems)
-      chrStems <- c(chrStems, strStem)
+      strStem <- chrViewStems[iView]
       lLooked <- tryCatch(
         {
           lOpened <- Batch_Opened(lViews[[iView]], dfResults, dfParticipants, dfOutcomes)
@@ -404,6 +405,20 @@ Batch_Stem <- function(iSpec, strChart, strBiomarker, iView, chrTaken) {
     strUnique <- paste0(strStem, "-", iCopy)
   }
   strUnique
+}
+
+# The stems of one specification's views, each its own. Where two names make
+# one stem, the name the stem spells exactly (IL-6, before IL 6 or IL_6) has it
+# plain, and the others are numbered in the views' order.
+Batch_Stems <- function(iSpec, strChart, chrBiomarkers, chrTaken) {
+  bExact <- !is.na(chrBiomarkers) & tolower(chrBiomarkers) == vapply(chrBiomarkers, function(strName) {
+    if (is.na(strName)) NA_character_ else Batch_Slug(strName)
+  }, character(1))
+  chrStems <- character(length(chrBiomarkers))
+  for (iView in c(which(bExact), which(!bExact))) {
+    chrStems[iView] <- Batch_Stem(iSpec, strChart, chrBiomarkers[iView], iView, c(chrTaken, chrStems[nzchar(chrStems)]))
+  }
+  chrStems
 }
 
 # A biomarker's name as part of a file's name.
