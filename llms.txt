@@ -359,7 +359,7 @@ A specification is data: nothing in it is evaluated, and a title that
 looks like code is drawn as text. One that bio.viz would refuse is
 refused with a sentence and listed in the manifest, and the rest still
 run. Give the file, the text, or the list
-[`jsonlite::read_json()`](https://jeroen.r-universe.dev/jsonlite/reference/read_json.html)
+[`jsonlite::read_json()`](https://rdrr.io/pkg/jsonlite/man/read_json.html)
 reads (or `fromJSON(simplifyVector = FALSE)`): `fromJSON()`’s default
 simplifies the list into a data frame, which is refused with a sentence
 that says so.
@@ -401,11 +401,13 @@ is used.
 
 ## Status
 
-Version 0.2.0 is the second release. It adds widgets for the
-cross-tabulation and the stratified survival chart, and hazard ratios in
-the biomarker screen. It also adds output from R: a static figure and a
-statistics table for every chart, the table written to RTF, and batch
-runs of the specifications bio.viz’s charts write. [Version
+[Version
+0.2.0](https://github.com/jwildfire/gsm.bio/releases/tag/v0.2.0) is
+released, the second release. It adds widgets for the cross-tabulation
+and the stratified survival chart, and hazard ratios in the biomarker
+screen. It also adds output from R: a static figure and a statistics
+table for every chart, the table written to RTF, and batch runs of the
+specifications bio.viz’s charts write. [Version
 0.1.0](https://github.com/jwildfire/gsm.bio/releases/tag/v0.1.0) was the
 first: seven statistics functions, the synthetic study, and widgets for
 the group comparison, the association scatter, the correlation matrix
