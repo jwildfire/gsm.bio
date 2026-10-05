@@ -211,14 +211,38 @@ Run_Specifications <- function(
       lRows[[length(lRows) + 1L]] <- Row(iSpec, strChart, NA_character_, "refused", lRead)
       next
     }
-    lViews <- if (bAcross[iSpec]) Spec_Expand(lRead, dfResults, dfParticipants) else stats::setNames(list(lRead), NA_character_)
+    # A specification that cannot be laid out across the biomarkers, or a view
+    # the chart's rules in R cannot open (a cut of what the tables lack), is a
+    # failed row with R's sentence, and the rest still run.
+    lViews <- if (bAcross[iSpec]) {
+      tryCatch(Spec_Expand(lRead, dfResults, dfParticipants), error = function(cndError) conditionMessage(cndError))
+    } else {
+      stats::setNames(list(lRead), NA_character_)
+    }
+    if (is.character(lViews)) {
+      lRows[[length(lRows) + 1L]] <- Row(iSpec, lRead$chart, NA_character_, "failed", lViews)
+      next
+    }
     for (iView in seq_along(lViews)) {
       strBiomarker <- names(lViews)[iView]
       strStem <- Batch_Stem(iSpec, lRead$chart, strBiomarker, iView, chrStems)
       chrStems <- c(chrStems, strStem)
-      lOpened <- Batch_Opened(lViews[[iView]], dfResults, dfParticipants, dfOutcomes)
-      nPassing <- Batch_Passing(lOpened, dfResults, dfParticipants)
-      strNotices <- Batch_Notices(lViews[[iView]], lOpened, dfParticipants)
+      lLooked <- tryCatch(
+        {
+          lOpened <- Batch_Opened(lViews[[iView]], dfResults, dfParticipants, dfOutcomes)
+          list(
+            passing = Batch_Passing(lOpened, dfResults, dfParticipants),
+            notices = Batch_Notices(lViews[[iView]], lOpened, dfParticipants)
+          )
+        },
+        error = function(cndError) conditionMessage(cndError)
+      )
+      if (is.character(lLooked)) {
+        lRows[[length(lRows) + 1L]] <- Row(iSpec, lRead$chart, strBiomarker, "failed", lLooked)
+        next
+      }
+      nPassing <- lLooked$passing
+      strNotices <- lLooked$notices
       strNote <- if (is.null(lViews[[iView]]$note)) NA_character_ else lViews[[iView]]$note
       Reason <- function(strMore) {
         chrReason <- stats::na.omit(c(strNote, strNotices, strMore))

@@ -451,3 +451,29 @@ test_that("specifications jsonlite simplified are refused with a sentence that s
   expect_identical(Spec_Read(jsonlite::read_json(strFile)[[1]])$chart, "group-comparison")
   expect_length(Spec_Parse(jsonlite::fromJSON(strFile, simplifyVector = FALSE)), 7L)
 })
+
+test_that("a view whose cut names what the tables lack fails on its own row with R's sentence, and the rest still run, across biomarkers too (#48)", {
+  skip_if_not_installed("ggplot2")
+  lGood <- lSpecOf(lSettings = list(row_by = "ARM", col_by = "RESPONSE"))
+  lSpecs <- list(
+    lSpecOf(lSettings = list(row_by = "ARM", col_by = list(col = "NOPE", type = "number", cut = "median"))),
+    lSpecOf(lSettings = list(row_by = "ARM", col_by = list(measure = "NOPE", visit = "Baseline", cut = "median"))),
+    lSpecOf("stratified-survival", lSettings = list(group_by = list(col = "NOPE", type = "number", cut = "median"))),
+    lSpecOf(lSettings = list(row_by = "ARM", col_by = list(col = "__proto__", type = "number", cut = "median"))),
+    lGood
+  )
+  for (bAcross in c(FALSE, TRUE)) {
+    dfManifest <- Run_Specifications(strSpecText(lSpecs), Synthetic_Results, Synthetic_Participants, dfOutcomes = Synthetic_Outcomes,
+      strFolder = tempfile("batch-bad-cut"), bTables = FALSE, bAcrossBiomarkers = bAcross)
+    # Across biomarkers, the cut of a biomarker the tables lack takes each
+    # biomarker they have instead, and is drawn; on its own it fails.
+    chrBad <- if (bAcross) c(1L, 3L, 4L) else 1:4
+    dfBad <- dfManifest[dfManifest$specification %in% chrBad, ]
+    expect_identical(unique(dfBad$status), "failed", label = paste("across", bAcross))
+    expect_true(all(!is.na(dfBad$reason)), label = paste("across", bAcross, "reasons"))
+    expect_match(dfBad$reason[dfBad$specification == 1L], "cuts the column 'NOPE', which neither table has", fixed = TRUE, all = TRUE)
+    if (!bAcross) expect_match(dfBad$reason[dfBad$specification == 2L], "NOPE", fixed = TRUE)
+    if (bAcross) expect_identical(unique(dfManifest$status[dfManifest$specification == 2L]), "written")
+    expect_identical(dfManifest$status[dfManifest$specification == 5L], "written", label = paste("across", bAcross))
+  }
+})
