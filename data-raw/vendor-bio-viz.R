@@ -41,6 +41,9 @@
 #    safety.viz kit of the bundle just copied on the filter settings in
 #    cases.json beside it (data-raw/filter-states.mjs): what each filter opens
 #    on, which R's Chart_Filters() is held to.
+# 5. The release: when bio.viz's tag for the version copied, v<version>, holds
+#    every copied file byte for byte, the three records name it as `release`
+#    beside the commit copied from.
 #
 # tests/testthat/test-vendored.R fails the suite when a copied file and its
 # record disagree, or when the three records name different bundles.
@@ -90,9 +93,9 @@ strUnmergedNote <- if (bMergedToDev) {
   )
 }
 
-# One file of bio.viz at the commit, as bytes.
-ReadAt <- function(strPath) {
-  strUrl <- sprintf("https://raw.githubusercontent.com/jwildfire/bio.viz/%s/%s", strCommit, strPath)
+# One file of bio.viz at the commit, or at another, as bytes.
+ReadAt <- function(strPath, strAt = strCommit) {
+  strUrl <- sprintf("https://raw.githubusercontent.com/jwildfire/bio.viz/%s/%s", strAt, strPath)
   strFile <- tempfile()
   on.exit(unlink(strFile))
   utils::download.file(strUrl, strFile, mode = "wb", quiet = TRUE)
@@ -281,6 +284,41 @@ if (!identical(iStatus, 0L)) {
 iStatus <- system2("node", c(file.path("data-raw", "filter-states.mjs")))
 if (!identical(iStatus, 0L)) {
   stop("data-raw/filter-states.mjs did not run: the bundles were copied, and states.json is not theirs yet")
+}
+
+# ---- 5. The release the copy is the same as -----------------------------------
+
+# bio.viz's tag for the version copied, v<version>, when it exists and every
+# file copied is byte for byte the same at it: the three records then name the
+# release beside the commit they were copied from, which stays dev's.
+strTag <- paste0("v", strBioVizVersion)
+chrTagged <- system2(
+  "git", c("ls-remote", "--tags", paste0(strRepository, ".git"), paste0("refs/tags/", strTag), paste0("refs/tags/", strTag, "^{}")),
+  stdout = TRUE
+)
+lRelease <- NULL
+if (length(chrTagged) > 0L) {
+  # An annotated tag's commit is the line marked ^{}; a light one's is its own.
+  strPeeled <- grep("\\^\\{\\}$", chrTagged, value = TRUE)
+  strTagCommit <- sub("\\s.*$", "", if (length(strPeeled) > 0L) strPeeled[1] else chrTagged[1])
+  lCopied <- c(lBundles, list(lSchema), lFixtures)
+  bSame <- all(vapply(lCopied, function(lFile) identical(Sha256(ReadAt(lFile$source, strTagCommit)), lFile$sha256), logical(1)))
+  if (bSame) {
+    lRelease <- list(
+      tag = strTag, commit = strTagCommit,
+      note = paste0("Every file copied is byte for byte the same at bio.viz's release tag ", strTag, ".")
+    )
+  } else {
+    message("bio.viz's tag ", strTag, " differs from the copy in at least one file, so the records name no release")
+  }
+}
+if (!is.null(lRelease)) {
+  for (strRecord in c(file.path(strLib, "SOURCE.json"), file.path(strSchemaDir, "SOURCE.json"), file.path(strFixtures, "SOURCE.json"))) {
+    lRecord <- jsonlite::read_json(strRecord, simplifyVector = FALSE)
+    iAfter <- match("merged_to_dev", names(lRecord))
+    lRecord <- c(lRecord[seq_len(iAfter)], list(release = lRelease), lRecord[-seq_len(iAfter)])
+    WriteJson(lRecord, strRecord)
+  }
 }
 
 cat(sprintf(
