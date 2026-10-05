@@ -50,6 +50,9 @@ test_that("README.md gives the install lines for the newest release, or the rele
   # README tagged with it already installs it. Otherwise the release line is
   # the newest released version, whose tag is on GitHub.
   bPreparing <- isTRUE(dfVersions$upcoming[1]) && identical(dfVersions$version[1], strPackage)
+  # A development version prepares no release: after a tag, the release line
+  # is the release, and its tag must be there (#50).
+  if (grepl("\\.9000$", strPackage)) expect_false(bPreparing, label = "a development version preparing a release")
   strRelease <- if (bPreparing) strPackage else dfVersions$version[!dfVersions$upcoming][1]
   expect_false(is.na(strRelease), label = "NEWS.md has a released version")
   expect_match(strText, sprintf('remotes::install_github("jwildfire/gsm.bio@v%s")', strRelease), fixed = TRUE)
@@ -66,7 +69,7 @@ test_that("README.md gives the install lines for the newest release, or the rele
   }
 })
 
-test_that("NEWS.md opens with the v0.2.0 section, Upcoming until its tag, above the v0.1.0 release (#1, #29, #44)", {
+test_that("NEWS.md opens with the upcoming v0.3.0 section, above the v0.2.0 and v0.1.0 releases (#1, #29, #44, #50)", {
   strPath <- if (bSourceTree()) {
     testthat::test_path("..", "..", "NEWS.md")
   } else {
@@ -77,8 +80,8 @@ test_that("NEWS.md opens with the v0.2.0 section, Upcoming until its tag, above 
 
   chrHeadings <- grep("^# ", readLines(strPath, warn = FALSE), value = TRUE)
   # The release step drops "(Upcoming)" when it publishes the tag.
-  expect_true(chrHeadings[1] %in% c("# gsm.bio v0.2.0 (Upcoming)", "# gsm.bio v0.2.0"), label = chrHeadings[1])
-  expect_identical(chrHeadings[2], "# gsm.bio v0.1.0")
+  expect_true(chrHeadings[1] %in% c("# gsm.bio v0.3.0 (Upcoming)", "# gsm.bio v0.3.0"), label = chrHeadings[1])
+  expect_identical(chrHeadings[2:3], c("# gsm.bio v0.2.0", "# gsm.bio v0.1.0"))
   # Only the newest section is ever Upcoming.
   expect_false(any(grepl("(Upcoming)", chrHeadings[-1], fixed = TRUE)))
 })

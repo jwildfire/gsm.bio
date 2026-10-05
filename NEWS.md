@@ -5,7 +5,11 @@ heading that loses the suffix when the release is cut; the GitHub release
 publishes from the section verbatim.
 -->
 
-# gsm.bio v0.2.0 (Upcoming)
+# gsm.bio v0.3.0 (Upcoming)
+
+The next version of gsm.bio. Its work lands on `dev` and is listed here as it does.
+
+# gsm.bio v0.2.0
 
 **See it move:** the [annotated v0.2.0 demo](https://jwildfire.github.io/obot.roadmap/reports/biomarker-v0.2-demo/) has captures and try-it steps for everything below.
 
