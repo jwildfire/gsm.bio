@@ -23,6 +23,10 @@
 #    keeps its own record of where that copy came from, and that record is
 #    carried into ours whole.
 #
+# 1b. The JSON Schema of bio.viz's chart specifications, into
+#    inst/specification/, with its record: Run_Specifications() reads each
+#    chart's settings by name from it.
+#
 # 2. The fixtures the tests hold R to, into tests/testthat/fixtures/bio.viz/,
 #    with their record, a set per chart: the rows bio.viz's own core wrote for
 #    panels of the chart's demo, and the requests the chart makes for them with
@@ -37,6 +41,9 @@
 #    safety.viz kit of the bundle just copied on the filter settings in
 #    cases.json beside it (data-raw/filter-states.mjs): what each filter opens
 #    on, which R's Chart_Filters() is held to.
+# 5. The release: when bio.viz's tag for the version copied, v<version>, holds
+#    every copied file byte for byte, the three records name it as `release`
+#    beside the commit copied from.
 #
 # tests/testthat/test-vendored.R fails the suite when a copied file and its
 # record disagree, or when the three records name different bundles.
@@ -65,9 +72,30 @@ strCommit <- if (grepl("^[0-9a-f]{40}$", strRef)) {
 }
 if (!grepl("^[0-9a-f]{40}$", strCommit)) stop("could not resolve ", strRef, " to a commit")
 
-# One file of bio.viz at the commit, as bytes.
-ReadAt <- function(strPath) {
-  strUrl <- sprintf("https://raw.githubusercontent.com/jwildfire/bio.viz/%s/%s", strCommit, strPath)
+# Whether the commit is on bio.viz's dev branch: dev is it, or has it among its
+# ancestors. A copy from a branch that is not merged yet says so in its record,
+# and is copied again from dev once the branch lands.
+bMergedToDev <- local({
+  strFile <- tempfile()
+  on.exit(unlink(strFile))
+  utils::download.file(
+    sprintf("https://api.github.com/repos/jwildfire/bio.viz/compare/dev...%s", strCommit), strFile,
+    quiet = TRUE
+  )
+  jsonlite::fromJSON(strFile)$status %in% c("identical", "behind")
+})
+strUnmergedNote <- if (bMergedToDev) {
+  NULL
+} else {
+  paste0(
+    "Copied from bio.viz's branch ", strRef, ", which is not merged to bio.viz's dev branch at this commit. ",
+    "When it lands there, copy again from dev (Rscript data-raw/vendor-bio-viz.R) and rerun the tests."
+  )
+}
+
+# One file of bio.viz at the commit, or at another, as bytes.
+ReadAt <- function(strPath, strAt = strCommit) {
+  strUrl <- sprintf("https://raw.githubusercontent.com/jwildfire/bio.viz/%s/%s", strAt, strPath)
   strFile <- tempfile()
   on.exit(unlink(strFile))
   utils::download.file(strUrl, strFile, mode = "wb", quiet = TRUE)
@@ -89,6 +117,8 @@ Place <- function(rawBytes, strRoot, strFile, strSource, ...) {
 }
 
 WriteJson <- function(lValue, strPath) {
+  # A member that is not set is left out.
+  lValue <- Filter(Negate(is.null), lValue)
   writeLines(jsonlite::toJSON(lValue, auto_unbox = TRUE, pretty = TRUE, null = "null"), strPath, useBytes = TRUE)
 }
 
@@ -128,6 +158,8 @@ WriteJson(list(
   repository = strRepository,
   ref = strRef,
   commit = strCommit,
+  merged_to_dev = bMergedToDev,
+  note = strUnmergedNote,
   files = lBundles,
   safety_viz = list(
     stand_in = TRUE,
@@ -148,7 +180,10 @@ WriteJson(list(
 # own, so a page holding widgets of both packages loads one copy of safety.viz.
 # Last, the package's own script, which every binding is made with
 # (inst/htmlwidgets/shared/, not copied from anywhere).
-chrWidgets <- c("Widget_GroupComparison", "Widget_AssociationScatter", "Widget_CorrelationMatrix", "Widget_BiomarkerScreen")
+chrWidgets <- c(
+  "Widget_GroupComparison", "Widget_AssociationScatter", "Widget_CorrelationMatrix", "Widget_BiomarkerScreen",
+  "Widget_CrossTab", "Widget_StratifiedSurvival"
+)
 strPackageVersion <- read.dcf("DESCRIPTION", fields = "Version")[[1]]
 for (strWidget in chrWidgets) {
   writeLines(c(
@@ -168,6 +203,25 @@ for (strWidget in chrWidgets) {
     "    script: 'gsm.bio.widget.js'"
   ), file.path("inst", "htmlwidgets", paste0(strWidget, ".yaml")))
 }
+
+# ---- 1b. The specification schema ----------------------------------------------
+
+# The format bio.viz writes a chart's specification in (bio.viz#68), with each
+# chart's settings by name and default: Run_Specifications() reads a
+# specification by it.
+strSchemaDir <- file.path("inst", "specification")
+strSchemaSource <- "src/data/specification.schema.json"
+lSchema <- Place(ReadAt(strSchemaSource), strSchemaDir, "specification.schema.json", strSchemaSource)
+WriteJson(list(
+  what = "The JSON Schema of bio.viz's chart specifications, copied from bio.viz byte for byte.",
+  copied_by = "data-raw/vendor-bio-viz.R",
+  repository = strRepository,
+  ref = strRef,
+  commit = strCommit,
+  merged_to_dev = bMergedToDev,
+  note = strUnmergedNote,
+  files = list(lSchema)
+), file.path(strSchemaDir, "SOURCE.json"))
 
 # ---- 2. The fixtures -----------------------------------------------------------
 
@@ -193,6 +247,16 @@ for (strSet in chrFixtureSets) {
   )))
 }
 
+# And single files, with no rows of their own: what desktop R makes of the
+# shared cut rule (cut-r.json), and the cross-tabulation's tables with R's
+# answers (cross-tab-r.json), and the stratified survival chart's curves with R's
+# answers (stratified-survival-r.json), each worked out from the study by
+# bio.viz's tools.
+for (strFile in c("cut-r.json", "cross-tab-r.json", "stratified-survival-r.json")) {
+  strSource <- paste0("tests/fixtures/", strFile)
+  lFixtures <- c(lFixtures, list(Place(ReadAt(strSource), strFixtures, strFile, strSource)))
+}
+
 WriteJson(list(
   what = paste(
     "Fixtures copied from bio.viz byte for byte, a set per chart: the rows bio.viz's own core wrote",
@@ -203,6 +267,8 @@ WriteJson(list(
   repository = strRepository,
   ref = strRef,
   commit = strCommit,
+  merged_to_dev = bMergedToDev,
+  note = strUnmergedNote,
   files = lFixtures
 ), file.path(strFixtures, "SOURCE.json"))
 
@@ -218,6 +284,41 @@ if (!identical(iStatus, 0L)) {
 iStatus <- system2("node", c(file.path("data-raw", "filter-states.mjs")))
 if (!identical(iStatus, 0L)) {
   stop("data-raw/filter-states.mjs did not run: the bundles were copied, and states.json is not theirs yet")
+}
+
+# ---- 5. The release the copy is the same as -----------------------------------
+
+# bio.viz's tag for the version copied, v<version>, when it exists and every
+# file copied is byte for byte the same at it: the three records then name the
+# release beside the commit they were copied from, which stays dev's.
+strTag <- paste0("v", strBioVizVersion)
+chrTagged <- system2(
+  "git", c("ls-remote", "--tags", paste0(strRepository, ".git"), paste0("refs/tags/", strTag), paste0("refs/tags/", strTag, "^{}")),
+  stdout = TRUE
+)
+lRelease <- NULL
+if (length(chrTagged) > 0L) {
+  # An annotated tag's commit is the line marked ^{}; a light one's is its own.
+  strPeeled <- grep("\\^\\{\\}$", chrTagged, value = TRUE)
+  strTagCommit <- sub("\\s.*$", "", if (length(strPeeled) > 0L) strPeeled[1] else chrTagged[1])
+  lCopied <- c(lBundles, list(lSchema), lFixtures)
+  bSame <- all(vapply(lCopied, function(lFile) identical(Sha256(ReadAt(lFile$source, strTagCommit)), lFile$sha256), logical(1)))
+  if (bSame) {
+    lRelease <- list(
+      tag = strTag, commit = strTagCommit,
+      note = paste0("Every file copied is byte for byte the same at bio.viz's release tag ", strTag, ".")
+    )
+  } else {
+    message("bio.viz's tag ", strTag, " differs from the copy in at least one file, so the records name no release")
+  }
+}
+if (!is.null(lRelease)) {
+  for (strRecord in c(file.path(strLib, "SOURCE.json"), file.path(strSchemaDir, "SOURCE.json"), file.path(strFixtures, "SOURCE.json"))) {
+    lRecord <- jsonlite::read_json(strRecord, simplifyVector = FALSE)
+    iAfter <- match("merged_to_dev", names(lRecord))
+    lRecord <- c(lRecord[seq_len(iAfter)], list(release = lRelease), lRecord[-seq_len(iAfter)])
+    WriteJson(lRecord, strRecord)
+  }
 }
 
 cat(sprintf(

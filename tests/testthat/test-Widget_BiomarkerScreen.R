@@ -236,7 +236,7 @@ test_that("the screen page records which R computed the results, and is made by 
   expect_identical(lSaved$payload$lStatistics$computed_by, lSaved$widget$x$lStatistics$computed_by)
   strScripts <- strWidgetScripts("Widget_BiomarkerScreen")
   expect_match(strScripts, "BioViz.biomarkerScreen(chart, settings)", fixed = TRUE)
-  expect_match(strScripts, "BioViz.r.createConnection({ results: statistics.results })", fixed = TRUE)
+  expect_match(strScripts, "BioViz.r.createConnection({ results: statistics.results, computedBy: statistics.computed_by })", fixed = TRUE)
   for (strNever in c("browser", "webr", "sourceUrl", "http", "fetch(", "import(")) {
     expect_false(grepl(strNever, strScripts, fixed = TRUE), label = paste("the scripts name", strNever))
   }
@@ -261,4 +261,69 @@ test_that("the screen widget saves as one self-contained file that holds both bu
   expect_false(grepl("<(script|img|iframe|link)[^>]*\\s(src|href)\\s*=", strPage, perl = TRUE))
   expect_false(grepl("biomarker-screen_files", strPage, fixed = TRUE))
   expect_identical(length(lPagePayload(strPage)$lStatistics$results), 13L)
+})
+
+# The hazard screen on the synthetic study: every biomarker at Baseline, high
+# against low on event-free survival.
+lHazardSettings <- function() {
+  c(
+    lScreenSettings()[setdiff(names(lScreenSettings()), c("visit", "value_type", "group_by"))],
+    list(comparison = "hazard", visit = "Baseline", value_type = "raw", stratified_survival = list(groups = lScreenColumns()))
+  )
+}
+
+test_that("with an outcomes table the screen widget stores the hazard rows and each row's survival test (#35)", {
+  lWidget <- Widget_BiomarkerScreen(Synthetic_Results, Synthetic_Participants, lHazardSettings(), dfOutcomes = Synthetic_Outcomes)
+  expect_named(lWidget$x, c("dfResults", "dfParticipants", "dfOutcomes", "lSettings", "bDebug", "bAutoWidth", "bAutoHeight", "lStatistics"))
+  expect_identical(lWidget$x$dfOutcomes, Synthetic_Outcomes)
+  lResults <- lWidget$x$lStatistics$results
+  expect_identical(vapply(lResults, function(lResult) lResult$name, character(1)), c("Analyze_Screen", rep("Analyze_Survival", 12L)))
+  expect_identical(lResults[[1]]$args$strComparison, "hazard")
+  expect_identical(lResults[[1]]$dataId$endpoint, "EFS")
+  for (lResult in lResults[-1]) {
+    expect_identical(lResult$dataId$group_by$cut, "median")
+    expect_identical(lResult$dataId$endpoint, "EFS")
+  }
+  # The saved page holds them, the screen's rows equal to Analyze_Screen on a
+  # frame worked out here.
+  lPage <- lPagePayload(strSavedPage(lWidget))
+  expect_length(lPage$lStatistics$results, 13L)
+  dfFrame <- data.frame(USUBJID = Synthetic_Participants$USUBJID, stringsAsFactors = FALSE)
+  for (strBiomarker in chrScreenBiomarkers()) dfFrame[[strBiomarker]] <- nResultAt(strBiomarker, "Baseline")
+  dfEfs <- Synthetic_Outcomes[Synthetic_Outcomes$PARAMCD == "EFS", ]
+  dfFrame$time <- dfEfs$AVAL[match(dfFrame$USUBJID, dfEfs$USUBJID)]
+  dfFrame$censor <- dfEfs$CNSR[match(dfFrame$USUBJID, dfEfs$USUBJID)]
+  ExpectInPage(
+    lPage$lStatistics$results[[1]]$value,
+    Analyze_Screen(dfFrame, chrScreenBiomarkers(), strComparison = "hazard", strTimeCol = "time", strCensorCol = "censor"),
+    "the hazard screen"
+  )
+  # Another endpoint, or a difference, is no result of this page.
+  chrKeys <- vapply(lPage$lStatistics$results, function(lResult) Chart_KeyText(lResult[c("name", "args", "dataId")]), character(1))
+  lOther <- lPage$lStatistics$results[[1]][c("name", "args", "dataId")]
+  lOther$dataId$endpoint <- "OS"
+  expect_false(Chart_KeyText(lOther) %in% chrKeys)
+  # Without an outcomes table, a hazard screen opens on a difference.
+  lNone <- Widget_BiomarkerScreen(Synthetic_Results, Synthetic_Participants, lSettings = c(lHazardSettings(), list(group_by = "ARM")))
+  expect_identical(lNone$x$lStatistics$results[[1]]$args$strComparison, "difference")
+  expect_error(Widget_BiomarkerScreen(Synthetic_Results, Synthetic_Participants, dfOutcomes = "EFS"), "dfOutcomes is not a data.frame or NULL")
+})
+
+test_that("a call written for v0.1.0, every argument in v0.1.0's place, makes the same screen as before (#16, #35, #48)", {
+  # v0.1.0's signature: (dfResults, dfParticipants, lSettings, width, height,
+  # elementId, bDebug). The outcomes table came later, and comes last.
+  chrFormals <- names(formals(Widget_BiomarkerScreen))
+  expect_identical(chrFormals, c("dfResults", "dfParticipants", "lSettings", "width", "height", "elementId", "bDebug", "dfOutcomes"))
+  lPositional <- Widget_BiomarkerScreen(Synthetic_Results, Synthetic_Participants, lScreenSettings())
+  lNamed <- lScreenWidget()
+  expect_identical(lPositional$x$lSettings, lScreenSettings())
+  expect_false("dfOutcomes" %in% names(lPositional$x))
+  expect_identical(lPositional$x$lStatistics$results, lNamed$x$lStatistics$results)
+  # The size and the debug switch, by name and by position, as v0.1.0 took them.
+  lSized <- Widget_BiomarkerScreen(Synthetic_Results, Synthetic_Participants, lScreenSettings(), width = "100%", height = "700px", bDebug = TRUE)
+  expect_identical(lSized[c("width", "height")], list(width = "100%", height = "700px"))
+  expect_true(lSized$x$bDebug)
+  lPlaced <- Widget_BiomarkerScreen(Synthetic_Results, Synthetic_Participants, lScreenSettings(), "100%", "700px", "screen", TRUE)
+  expect_identical(lPlaced[c("width", "height", "elementId")], list(width = "100%", height = "700px", elementId = "screen"))
+  expect_true(lPlaced$x$bDebug)
 })

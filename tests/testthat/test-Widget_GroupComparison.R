@@ -359,7 +359,7 @@ test_that("the page records which R computed the results, and the binding prints
 
 test_that("the page's connection is made from the stored results alone: no R and no address in it (#9)", {
   strBinding <- strWidgetScripts("Widget_GroupComparison")
-  expect_match(strBinding, "BioViz.r.createConnection({ results: statistics.results })", fixed = TRUE)
+  expect_match(strBinding, "BioViz.r.createConnection({ results: statistics.results, computedBy: statistics.computed_by })", fixed = TRUE)
   expect_match(strBinding, "BioViz.groupComparison(chart, settings)", fixed = TRUE)
   # Nothing that starts R in the page or fetches anything.
   for (strNever in c("browser", "webr", "sourceUrl", "http", "fetch(", "import(")) {
@@ -405,4 +405,55 @@ test_that("the widget saves as one self-contained file that holds both bundles a
   expect_false(grepl("<(script|img|iframe|link)[^>]*\\s(src|href)\\s*=", strPage, perl = TRUE))
   expect_false(grepl("group-comparison_files", strPage, fixed = TRUE))
   expect_identical(length(lPagePayload(strPage)$lStatistics$results), nStoredForChange())
+})
+
+test_that("the group comparison widget takes a cut category: the groups low to high, stored for every panel, equal to R's answer (#18)", {
+  lCut <- list(measure = "CRP", visit = "Baseline", cut = "median")
+  lWidget <- Widget_GroupComparison(Synthetic_Results, Synthetic_Participants, lSettings = list(
+    start_value = "IL-6", visits = c("Week 4", "Week 12"), value_type = "change", baseline_visits = "Baseline", group_by = lCut
+  ))
+  # The page is given the cut as R reads it.
+  expect_identical(lWidget$x$lSettings$group_by, list(measure = "CRP", visit = "Baseline", value = "raw", cut = "median"))
+  lStored <- lPagePayload(strSavedPage(lWidget))$lStatistics$results
+  # Every biomarker the chart can open, at each visit chosen, by the cut.
+  expect_length(lStored, 24L)
+  lResults <- Filter(function(lResult) identical(lResult$dataId$measure, "IL-6"), lStored)
+  expect_length(lResults, 2L)
+  # The groups, worked out here: quantile() and cut() on the study's CRP.
+  nCrp <- nResultAt("CRP", "Baseline")
+  nMedian <- stats::median(nCrp, na.rm = TRUE)
+  strBound <- format(signif(nMedian, 4), scientific = FALSE, trim = TRUE)
+  chrGroups <- enc2utf8(c(paste0("≤ ", strBound), paste0("> ", strBound)))
+  chrGroup <- ifelse(is.na(nCrp), NA, ifelse(nCrp <= nMedian, chrGroups[1], chrGroups[2]))
+  for (lResult in lResults) {
+    expect_identical(unlist(lResult$args$chrGroups), chrGroups)
+    expect_identical(unlist(lResult$dataId$groups), sort(chrGroups, method = "radix"))
+    nChange <- nResultAt("IL-6", lResult$dataId$visit) - nResultAt("IL-6", "Baseline")
+    dfRows <- data.frame(USUBJID = Synthetic_Participants$USUBJID, y = nChange, x = chrGroup, stringsAsFactors = FALSE)
+    dfRows <- dfRows[!is.na(dfRows$y) & !is.na(dfRows$x), ]
+    expect_identical(lResult$rows, nrow(dfRows))
+    ExpectInPage(
+      lResult$value,
+      Analyze_GroupDifference(dfRows, "y", "x", strMethod = "t", bPairwise = FALSE, chrGroups = chrGroups),
+      paste("the panel at", lResult$dataId$visit)
+    )
+    # The difference is the lower group less the higher.
+    expect_identical(lResult$value$estimates[[3]]$group, paste(chrGroups[1], "-", chrGroups[2]))
+  }
+})
+
+test_that("a cut category is handed to the page as R reads it, and one with no value to cut stops nothing (#18)", {
+  lWidget <- Widget_GroupComparison(Synthetic_Results, Synthetic_Participants, lSettings = list(
+    start_value = "IL-6", visits = "Week 4", value_type = "change", baseline_visits = "Baseline",
+    group_by = list(measure = "CRP", visit = "Baseline", cut = 3), panel_by = list(col = "AGE", type = "number", cut = 50)
+  ))
+  lPage <- lPagePayload(strSavedPage(lWidget))
+  expect_identical(lPage$lSettings$group_by, list(measure = "CRP", visit = "Baseline", value = "raw", cut = list(3L)))
+  expect_identical(lPage$lSettings$panel_by, list(col = "AGE", type = "number", cut = list(50L)))
+  expect_gt(length(lPage$lStatistics$results), 0L)
+  # A visit nobody has: no value to cut, no groups, nothing stored.
+  lNone <- Widget_GroupComparison(Synthetic_Results, Synthetic_Participants, lSettings = list(
+    start_value = "IL-6", visits = "Week 4", group_by = list(measure = "CRP", visit = "Week 99", cut = "median")
+  ))
+  expect_identical(lNone$x$lStatistics$results, list())
 })

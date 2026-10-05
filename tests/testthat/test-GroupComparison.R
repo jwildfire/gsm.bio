@@ -303,3 +303,95 @@ test_that("a test that does not fit the number of groups gives way to its counte
     c("F", "M")
   )
 })
+
+# A cut category (#18): the groups are a biomarker or a number cut by the
+# shared cut rule. bio.viz's recipes in group-statistics-r.json record two
+# panels by CRP at Baseline cut, with the key and R's answer.
+
+lCutRecipes <- function() {
+  lRecipes <- lReadJson(strStatisticsFixture("group-statistics-r.json"))$recipes
+  Filter(function(lRecipe) startsWith(lRecipe$case, "cut-"), lRecipes)
+}
+
+lCutView <- function(lGroupBy, lMore = list()) {
+  lTables <- lDemo()
+  lSettings <- lTables$settings
+  lSettings$group_by <- lGroupBy
+  for (strName in names(lMore)) lSettings[strName] <- list(lMore[[strName]])
+  lConfig <- GroupComparison_Settings(lSettings)
+  lState <- GroupComparison_State(lTables$results, lTables$participants, lConfig)
+  list(tables = lTables, config = lConfig, state = lState)
+}
+
+test_that("R keys a cut category's panel as the chart does: the groups low to high in chrGroups, by code point in the identity (#18)", {
+  lRecipes <- lCutRecipes()
+  expect_setequal(vapply(lRecipes, function(lRecipe) lRecipe$case, character(1)), c("cut-median", "cut-too-small"))
+  for (lRecipe in lRecipes) {
+    lView <- lCutView(lRecipe$dataId$group_by)
+    lRequests <- GroupComparison_Requests(lView$tables$results, lView$tables$participants, lView$config, lView$state)
+    expect_length(lRequests, 1L)
+    lMine <- lRequests[[1]]
+    expect_identical(lMine$name, lRecipe$name, label = paste(lRecipe$case, "name"))
+    expect_identical(lMine$args, lRecipe$args, label = paste(lRecipe$case, "args"))
+    # As JSON reads it back: a typed point is a number, whole or not.
+    expect_identical(lJsonRoundTrip(lMine$dataId), lRecipe$dataId, label = paste(lRecipe$case, "dataId"))
+    expect_identical(lMine$rows, lRecipe$rows, label = paste(lRecipe$case, "rows"))
+    expect_identical(
+      as.character(jsonlite::toJSON(lMine[c("name", "args", "dataId", "rows")], auto_unbox = TRUE, digits = NA)),
+      as.character(jsonlite::toJSON(lRecipe[c("name", "args", "dataId", "rows")], auto_unbox = TRUE, digits = NA)),
+      label = paste(lRecipe$case, "as JSON")
+    )
+    # The rows: the participants and the group each is in.
+    expect_identical(Core_Text(lMine$data$USUBJID), unlist(lRecipe$ids), label = paste(lRecipe$case, "participants"))
+    expect_identical(Core_Text(lMine$data$x), unlist(lRecipe$groups), label = paste(lRecipe$case, "groups"))
+    # R's answer, the first group's mean less the second's: low less high.
+    lAnswer <- do.call(Analyze_GroupDifference, c(list(lMine$data), lMine$args))
+    lTheirs <- lRecipe$value
+    expect_identical(lAnswer$status, lTheirs$status, label = paste(lRecipe$case, "status"))
+    expect_identical(lAnswer$counts, lTheirs$counts, label = paste(lRecipe$case, "counts"))
+    if (identical(lAnswer$status, "ok")) {
+      expect_equal(lAnswer$p_value, lTheirs$p_value, tolerance = 1e-8, label = paste(lRecipe$case, "p-value"))
+      expect_identical(lAnswer$estimates$group, vapply(lTheirs$estimates, function(lRow) lRow$group, character(1)))
+      expect_equal(lAnswer$estimates$estimate, vapply(lTheirs$estimates, function(lRow) lRow$estimate, numeric(1)), tolerance = 1e-8)
+    }
+  }
+  # The difference is the lower group less the higher.
+  lMedian <- Filter(function(lRecipe) lRecipe$case == "cut-median", lRecipes)[[1]]
+  expect_match(tail(vapply(lMedian$value$estimates, function(lRow) lRow$group, character(1)), 1), "^\u2264 .* - > ")
+})
+
+test_that("a cut category's groups are worked out once, on every participant the filters keep, and every group is drawn (#18)", {
+  lCut <- list(measure = "CRP", visit = "Baseline", cut = "tertiles")
+  # Levels are for a column: a cut draws every group it makes.
+  lView <- lCutView(lCut, list(visits = c("Week 4", "Week 8"), levels = c("Placebo")))
+  lModel <- GroupComparison_Panels(lView$tables$results, lView$tables$participants, lView$config, lView$state)
+  expect_identical(lModel$groups, 3L)
+  lRequests <- GroupComparison_Requests(lView$tables$results, lView$tables$participants, lView$config, lView$state)
+  expect_length(lRequests, 2L)
+  # The same groups in every visit's panel, low to high.
+  expect_identical(lRequests[[1]]$args$chrGroups, lRequests[[2]]$args$chrGroups)
+  expect_identical(lRequests[[1]]$args$chrGroups, list("\u2264 2.167", "> 2.167, \u2264 3.467", "> 3.467"))
+  expect_identical(lRequests[[1]]$args$strMethod, "anova")
+  # A filter moves the points.
+  lWomen <- lCutView(lCut, list(filters = list(list(value_col = "SEX", start = "F"))))
+  lWomenRequest <- GroupComparison_Requests(lWomen$tables$results, lWomen$tables$participants, lWomen$config, lWomen$state)[[1]]
+  lPoints <- Chart_Cut(Synthetic_Results, Synthetic_Participants, lWomen$config, list(SEX = "F"), Core_Variable(lCut))
+  expect_identical(lWomenRequest$args$chrGroups, as.list(lPoints$labels))
+  expect_false(identical(lWomenRequest$args$chrGroups, lRequests[[1]]$args$chrGroups))
+  # A cut panel: its level is the group's label.
+  lPanels <- lCutView("ARM", list(panel_by = list(col = "AGE", type = "number", cut = c(40, 60))))
+  lPanelRequests <- GroupComparison_Requests(lPanels$tables$results, lPanels$tables$participants, lPanels$config, lPanels$state)
+  expect_identical(
+    vapply(lPanelRequests, function(lRequest) lRequest$dataId$panel, character(1)),
+    c("\u2264 40", "> 40, \u2264 60", "> 60")
+  )
+  expect_identical(lPanelRequests[[1]]$dataId$panel_by, list(col = "AGE", type = "number", cut = list(40, 60)))
+  expect_null(lPanelRequests[[1]]$args$chrGroups)
+})
+
+test_that("a group or a panel that is a variable must be cut, and must be of a biomarker or a column the tables have (#18)", {
+  expect_error(GroupComparison_Settings(list(group_by = list(measure = "CRP", visit = "Baseline"))), "no cut")
+  expect_error(GroupComparison_Settings(list(panel_by = list(col = "AGE", cut = "median"))), "number")
+  expect_error(lCutView(list(measure = "NOPE", visit = "Baseline", cut = "median")), "NOPE")
+  expect_error(lCutView(list(col = "NOPE", type = "number", cut = "median")), "NOPE")
+})

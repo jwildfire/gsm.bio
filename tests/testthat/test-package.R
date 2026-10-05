@@ -14,32 +14,43 @@ chrDependencies <- function(strField) {
   sort(sub("\\s*\\(.*\\)$", "", chrEntries))
 }
 
-test_that("the package loads and reports the version its milestone ships (#1)", {
+test_that("the package loads and reports its version: 0.2.0, the v0.2.0 release (#1, #18, #44)", {
   expect_true(isNamespaceLoaded("gsm.bio"))
   expect_identical(utils::packageDescription("gsm.bio")$Package, "gsm.bio")
-  expect_identical(as.character(utils::packageVersion("gsm.bio")), "0.1.0")
+  # Between releases dev carries a development version, the last release with
+  # .9000; a release sets its own version, as v0.2.0 does here.
+  expect_identical(as.character(utils::packageVersion("gsm.bio")), "0.2.0")
 })
 
-test_that("the package imports stats and survival for the statistics, and htmlwidgets for the widgets (#1, #9)", {
-  expect_identical(chrDependencies("Imports"), c("htmlwidgets", "stats", "survival"))
+test_that("the package imports stats and survival for the statistics, htmlwidgets for the widgets, and grDevices for the RTF writer (#1, #9, #38)", {
+  # grDevices ships with R: Write_RTF() opens a device of its own for r2rtf to
+  # measure text on, so it leaves no Rplots.pdf and the caller's device as it was.
+  expect_identical(chrDependencies("Imports"), c("grDevices", "htmlwidgets", "stats", "survival"))
   expect_identical(chrDependencies("Depends"), "R")
   expect_identical(chrDependencies("Remotes"), character(0))
 })
 
-test_that("what only a test needs is suggested, not imported (#1, #9)", {
+test_that("what only a test, a static figure or the RTF writer needs is suggested, not imported (#1, #9, #37, #38)", {
   # effectsize checks the standardised difference; digest, jsonlite and
-  # rmarkdown check the vendored files and read a saved page back.
-  expect_identical(chrDependencies("Suggests"), c("digest", "effectsize", "jsonlite", "rmarkdown", "testthat"))
+  # rmarkdown check the vendored files and read a saved page back; ggplot2
+  # draws the static figures and r2rtf writes a table to RTF, and each says so
+  # when it is not installed; svglite writes a batch run's SVG figures.
+  expect_identical(chrDependencies("Suggests"), c("digest", "effectsize", "ggplot2", "jsonlite", "r2rtf", "rmarkdown", "svglite", "testthat"))
   expect_identical(utils::packageDescription("gsm.bio")[["Config/testthat/edition"]], "3")
 })
 
-test_that("the package exports the seven statistics functions and the widgets, and ships the synthetic study as its only data (#1, #2, #3, #4, #9, #12, #13, #16)", {
+test_that("the package exports the seven statistics functions, the widgets, the figures and the tables, and ships the synthetic study as its only data (#1, #2, #3, #4, #9, #12, #13, #16, #18, #35, #37, #38, #39)", {
   expect_setequal(
     getNamespaceExports("gsm.bio"),
     c(
       "Analyze_GroupDifference", "Analyze_Correlation", "Analyze_CorrelationMatrix", "Analyze_Fit",
       "Analyze_Contingency", "Analyze_Survival", "Analyze_Screen", "Widget_GroupComparison",
-      "Widget_AssociationScatter", "Widget_CorrelationMatrix", "Widget_BiomarkerScreen"
+      "Widget_AssociationScatter", "Widget_CorrelationMatrix", "Widget_BiomarkerScreen",
+      "Widget_CrossTab", "Widget_StratifiedSurvival",
+      "Visualize_GroupComparison", "Visualize_AssociationScatter", "Visualize_CorrelationMatrix",
+      "Visualize_BiomarkerScreen", "Visualize_CrossTab", "Visualize_StratifiedSurvival",
+      "Table_GroupComparison", "Table_AssociationScatter", "Table_CorrelationMatrix",
+      "Table_BiomarkerScreen", "Table_CrossTab", "Table_StratifiedSurvival", "Write_RTF", "Run_Specifications"
     )
   )
   expect_setequal(
@@ -55,5 +66,34 @@ test_that("the package-level help page exists (#1)", {
     expect_true("gsm.bio-package" %in% names(readRDS(strAliases)))
   } else {
     expect_true(file.exists(testthat::test_path("..", "..", "man", "gsm.bio-package.Rd")))
+  }
+})
+
+test_that("every function v0.1.0 exported takes v0.1.0's arguments in v0.1.0's places, so a v0.1.0 call by position works unchanged (#48)", {
+  # The arguments of each v0.1.0 export, in order, as the v0.1.0 tag has them.
+  lV010 <- list(
+    Analyze_Contingency = c("dfData", "strRowCol", "strColCol", "strMethod", "chrRowGroups", "chrColGroups", "nConfLevel", "nMinGroup"),
+    Analyze_Correlation = c("dfData", "strXCol", "strYCol", "strMethod", "strGroupCol", "chrGroups", "nConfLevel", "nMinGroup"),
+    Analyze_CorrelationMatrix = c("dfData", "chrCols", "strMethod", "nConfLevel", "nMinPairs"),
+    Analyze_Fit = c("dfData", "strXCol", "strYCol", "strMethod", "strGroupCol", "chrGroups", "nConfLevel", "nMinGroup", "nPoints"),
+    Analyze_GroupDifference = c("dfData", "strValueCol", "strGroupCol", "strMethod", "chrGroups", "bPairwise", "strPAdjust", "nConfLevel", "nMinGroup"),
+    Analyze_Screen = c(
+      "dfData", "chrCols", "strComparison", "strGroupCol", "chrGroups", "strWithCol", "strCorMethod", "strTimeCol",
+      "strCensorCol", "strEventCol", "strPAdjust", "nConfLevel", "nMinGroup"
+    ),
+    Analyze_Survival = c("dfData", "strTimeCol", "strGroupCol", "strCensorCol", "strEventCol", "chrGroups", "nConfLevel", "nMinGroup"),
+    Widget_AssociationScatter = c("dfResults", "dfParticipants", "lSettings", "width", "height", "elementId", "bDebug"),
+    Widget_BiomarkerScreen = c("dfResults", "dfParticipants", "lSettings", "width", "height", "elementId", "bDebug"),
+    Widget_CorrelationMatrix = c("dfResults", "dfParticipants", "lSettings", "width", "height", "elementId", "bDebug"),
+    Widget_GroupComparison = c("dfResults", "dfParticipants", "lSettings", "width", "height", "elementId", "bDebug")
+  )
+  for (strName in names(lV010)) {
+    chrNow <- names(formals(get(strName, envir = asNamespace("gsm.bio"))))
+    expect_identical(chrNow[seq_along(lV010[[strName]])], lV010[[strName]], label = paste(strName, "arguments"))
+  }
+  # Each v0.1.0 widget, called by position as v0.1.0 took it.
+  for (strWidget in grep("^Widget_", names(lV010), value = TRUE)) {
+    lWidget <- get(strWidget)(Synthetic_Results, Synthetic_Participants, list(), "100%", "500px", "by-position", FALSE)
+    expect_identical(lWidget[c("width", "height", "elementId")], list(width = "100%", height = "500px", elementId = "by-position"), label = strWidget)
   }
 })

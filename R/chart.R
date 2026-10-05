@@ -41,11 +41,16 @@ Chart_Fields <- function(xValue, strSetting) {
 }
 
 # A setting that lists names: one or several, as distinct text. NULL stays NULL.
-Chart_Names <- function(xValue, strSetting) {
+# With `bEmpty`, a list of none is none, an empty vector, as bio.viz takes it
+# for the settings it reads that way (`textList(..., { empty: true })`).
+Chart_Names <- function(xValue, strSetting, bEmpty = FALSE) {
   if (is.null(xValue)) {
     return(NULL)
   }
   xValues <- unlist(xValue)
+  if (bEmpty && length(xValues) == 0L) {
+    return(character(0))
+  }
   if (length(xValues) == 0L || !(is.character(xValues) || is.numeric(xValues)) || anyNA(xValues) || !all(nzchar(trimws(as.character(xValues))))) {
     Core_Stop("Setting '", strSetting, "' must be a name, or several names")
   }
@@ -130,7 +135,7 @@ Chart_Categories <- function(dfResults, dfParticipants, lConfig) {
 # when it opens on its first value. tests/testthat/test-chart.R holds this to
 # the safety.viz kit the widgets ship. Returns a named list of
 # column to the value, or values, the filter opens on; NULL for a filter that
-# opens on all.
+# opens on all, and an empty vector for one that opens on none.
 Chart_Filters <- function(dfParticipants, lConfig, dfCategories) {
   if (is.null(dfParticipants) || nrow(dfParticipants) == 0L) {
     return(list())
@@ -149,6 +154,9 @@ Chart_Filters <- function(dfParticipants, lConfig, dfCategories) {
     xStart <- unlist(lSpec$start)
     bStarted <- length(xStart) > 0L && !(length(xStart) == 1L && (is.na(xStart) || identical(as.character(xStart), "")))
     chrStart <- if (bStarted) Core_Text(xStart) else NULL
+    # A filter of several values whose `start` is an empty list opens on no
+    # value, and lets nobody through, as bio.viz's `startFilters` opens it.
+    if (isTRUE(lSpec$multiple) && !is.null(lSpec$start) && length(lSpec$start) == 0L) chrStart <- character(0)
     lState[lSpec$value_col] <- list(if (isTRUE(lSpec$multiple) || is.null(chrStart)) chrStart else chrStart[1L])
   }
   # The participant's id is no filter: it gets no control, and so no restriction.
@@ -160,13 +168,13 @@ Chart_Filters <- function(dfParticipants, lConfig, dfCategories) {
   # the data lacks is dropped, and the filter opens on All, or, with
   # `all = FALSE`, on its first value; several values keep the ones the data
   # has, and open on All when it has none. The values are listed only when
-  # they decide something.
+  # they decide something. A filter that opens on no value keeps it.
   for (lSpec in lSpecs) {
     strColumn <- lSpec$value_col
     chrSelected <- lState[[strColumn]]
     bAll <- !identical(lSpec$all, FALSE)
     if (isTRUE(lSpec$multiple)) {
-      if (!is.null(chrSelected)) {
+      if (length(chrSelected) > 0L) {
         chrSelected <- chrSelected[chrSelected %in% Chart_FilterValues(dfParticipants, strColumn)]
         if (length(chrSelected) == 0L) chrSelected <- NULL
       }
@@ -209,7 +217,8 @@ Chart_FiltersInForce <- function(lFilters) {
 # filtered out are set aside with their results before a frame is made, so they
 # are not counted as missing from it. With no participant table there is nothing
 # to filter, and the tables come back as they are. `lFilters` is what each
-# filter is set to, by its column, as Chart_Filters() gives it. Returns a list of
+# filter is set to, by its column, as Chart_Filters() gives it: NULL lets
+# everyone through, and an empty vector nobody. Returns a list of
 # `results` and `participants`, which is NULL when there is no participant table.
 Chart_KeepFiltered <- function(dfResults, dfParticipants, lConfig, lFilters) {
   if (is.null(dfParticipants) || nrow(dfParticipants) == 0L) {
@@ -220,7 +229,7 @@ Chart_KeepFiltered <- function(dfResults, dfParticipants, lConfig, lFilters) {
   dfKept <- dfParticipants
   for (strColumn in names(lFilters)) {
     chrSelection <- lFilters[[strColumn]]
-    if (length(chrSelection) > 0L) {
+    if (!is.null(chrSelection)) {
       # A participant with nothing in the column is compared as the chart
       # compares it, by the text of nothing.
       chrText <- Core_Text(dfKept[[strColumn]])
@@ -232,6 +241,27 @@ Chart_KeepFiltered <- function(dfResults, dfParticipants, lConfig, lFilters) {
     results = dfResults[Core_Text(dfResults[[strIdCol]]) %in% Core_Text(dfKept[[strParticipantIdCol]]), , drop = FALSE],
     participants = dfKept
   )
+}
+
+# How many participants the filters keep: the participant table's rows they
+# keep, or, with no participant table, the participants the results hold.
+Chart_Passing <- function(dfResults, dfParticipants, lConfig, lFilters) {
+  lKept <- Chart_KeepFiltered(dfResults, dfParticipants, lConfig, lFilters)
+  if (is.null(lKept$participants)) {
+    chrIds <- Core_Text(lKept$results[[lConfig$id_col]])
+    return(length(unique(chrIds[!is.na(chrIds)])))
+  }
+  nrow(lKept$participants)
+}
+
+# A figure or table of nobody: when the filters keep no participant, bio.viz's
+# chart says "No participant passes the filters." before any other reason it
+# has nothing to draw, and so does R.
+Chart_StopIfNobody <- function(strWho, dfResults, dfParticipants, lConfig, lFilters) {
+  if (!is.null(dfParticipants) && nrow(dfParticipants) > 0L && Chart_Passing(dfResults, dfParticipants, lConfig, lFilters) == 0L) {
+    Core_Stop(strWho, "(): no participant passes the filters")
+  }
+  invisible(NULL)
 }
 
 # The participant-level numbers a chart can take as a variable: columns in which every value
@@ -309,6 +339,81 @@ Chart_ColumnLevels <- function(dfResults, dfParticipants, strColumn) {
   Core_Levels(dfResults[[strColumn]])
 }
 
+# A setting that makes groups (bio.viz, src/shared/cut.js, `checkGrouping`): a
+# column's name, NULL, or a biomarker or a number cut into groups, which must
+# carry a cut and comes back as the settings write it (Core_WrittenCut()).
+Chart_Grouping <- function(xValue, strSetting) {
+  if (is.null(xValue)) {
+    return(NULL)
+  }
+  if (is.list(xValue) && !is.data.frame(xValue)) {
+    if (is.null(xValue$cut)) {
+      Core_Stop(
+        "Setting '", strSetting, "' is a variable with no cut. A biomarker or a number makes groups only when it ",
+        "is cut: add cut = 'median', 'tertiles', 'quartiles' or the cut points."
+      )
+    }
+    lVariable <- tryCatch(Core_Variable(xValue), error = function(cndError) {
+      Core_Stop("Setting '", strSetting, "': ", conditionMessage(cndError))
+    })
+    return(Core_WrittenCut(lVariable))
+  }
+  if (!(is.character(xValue) && length(xValue) == 1L && !is.na(xValue) && nzchar(trimws(xValue)))) {
+    Core_Stop("Setting '", strSetting, "' must be a single name (a character string), a cut variable, or NULL")
+  }
+  xValue
+}
+
+# Whether a setting that makes groups holds a cut variable rather than a column.
+Chart_IsCut <- function(xBy) is.list(xBy)
+
+# A grouping as the frame takes it: the cut variable, or the column.
+Chart_GroupingVariable <- function(xBy) if (Chart_IsCut(xBy)) xBy else list(col = xBy)
+
+# A cut variable a chart is given must be of a biomarker the results table has,
+# or of a column a table has: one that is not is refused when the tables are
+# read, naming the setting.
+Chart_CheckCut <- function(xBy, strSetting, dfResults, dfParticipants, lConfig) {
+  if (!Chart_IsCut(xBy)) {
+    return(invisible(NULL))
+  }
+  if (!is.null(xBy$measure) && !xBy$measure %in% Core_Text(dfResults[[lConfig$measure_col]])) {
+    Core_Stop("Setting '", strSetting, "' cuts the biomarker '", xBy$measure, "', which the results table does not have.")
+  }
+  if (!is.null(xBy$col) && !xBy$col %in% c(names(dfResults), names(dfParticipants))) {
+    Core_Stop("Setting '", strSetting, "' cuts the column '", xBy$col, "', which neither table has.")
+  }
+  invisible(NULL)
+}
+
+# The cut of one variable on a chart's tables (bio.viz, src/shared/cut.js,
+# `cutOf`): its value for each participant the filters keep, one each, and the
+# points and groups of the cut rule, worked out on those with a value. Returns
+# Core_CutPoints()'s list with `spec`, the variable as the settings write it,
+# and `ids` and `values`, each participant's. `chrOnly`, when given, keeps the
+# participants the cut is worked out on to those ids: the survival chart cuts
+# only the participants with an outcome, the ones it draws.
+Chart_Cut <- function(dfResults, dfParticipants, lConfig, lFilters, xBy, chrOnly = NULL) {
+  lKept <- Chart_KeepFiltered(dfResults, dfParticipants, lConfig, lFilters)
+  if (!is.null(chrOnly)) {
+    if (is.null(lKept$participants)) {
+      lKept$results <- lKept$results[Core_Text(lKept$results[[lConfig$id_col]]) %in% chrOnly, , drop = FALSE]
+    } else {
+      strParticipantIdCol <- if (is.null(lConfig$participant_id_col)) lConfig$id_col else lConfig$participant_id_col
+      lKept$participants <- lKept$participants[Core_Text(lKept$participants[[strParticipantIdCol]]) %in% chrOnly, , drop = FALSE]
+    }
+  }
+  dfData <- Core_Frame(
+    lKept$results, lKept$participants, list(v = xBy),
+    c(Chart_CoreSettings(lConfig), list(required = character(0)))
+  )$data
+  lVariable <- Core_Variable(xBy)
+  c(
+    Core_CutPoints(dfData$v, lVariable$cut),
+    list(spec = Core_WrittenCut(lVariable), ids = Core_Text(dfData[[lConfig$id_col]]), values = dfData$v)
+  )
+}
+
 # A key as text, the same for two keys that differ only in the order their
 # members were written: how the chart's connection tells stored results apart.
 Chart_KeyText <- function(xValue) {
@@ -336,4 +441,167 @@ Chart_Answer <- function(lRequests, lFunctions) {
     }
   }
   unname(lStored)
+}
+
+# ---- Outcomes ---------------------------------------------------------------------
+#
+# The outcomes table the survival chart, and the screen's hazard rows, read
+# (bio.viz, src/shared/outcomes.js): one row per participant and endpoint, with
+# a time and a flag, read either way round, censored (ADaM's CNSR, 1 =
+# censored) or an event (1 = event). Exactly one of the two is named.
+
+# The outcome settings, with the chart's defaults. The endpoint is the one the
+# chart opens on: NULL means the first.
+lOutcomeDefaults <- list(
+  outcome_id_col = NULL,
+  endpoint_col = "PARAMCD",
+  endpoint_label_col = "PARAM",
+  time_col = "AVAL",
+  censor_col = "CNSR",
+  event_col = NULL,
+  endpoint = NULL
+)
+
+# Why a participant's outcome is left out, in the chart's words.
+chrOutcomeLeftOut <- c(
+  none = "No outcome for the endpoint",
+  several = "More than one outcome row for the endpoint",
+  missing = "Time or flag is missing or not a number",
+  flag = "Flag is not 0 or 1",
+  negative = "Time is negative"
+)
+
+# The settings as given, with an event column named alone read as the flag:
+# the default censor column is then none (the chart's `flaggedSettings`).
+Chart_FlaggedSettings <- function(lSettings) {
+  if (!is.null(lSettings[["event_col"]]) && !"censor_col" %in% names(lSettings)) {
+    lSettings["censor_col"] <- list(NULL)
+  }
+  lSettings
+}
+
+# The outcome settings refused as the chart refuses them.
+Chart_CheckOutcomeSettings <- function(lConfig) {
+  IsName <- function(xValue) is.character(xValue) && length(xValue) == 1L && !is.na(xValue) && nzchar(trimws(xValue))
+  for (strKey in c("outcome_id_col", "endpoint_label_col", "censor_col", "event_col")) {
+    if (!is.null(lConfig[[strKey]]) && !IsName(lConfig[[strKey]])) {
+      Core_Stop("Setting '", strKey, "' must be a single column name (a character string), or NULL")
+    }
+  }
+  for (strKey in c("endpoint_col", "time_col")) {
+    if (!IsName(lConfig[[strKey]])) {
+      Core_Stop("Setting '", strKey, "' must be a single column name (a character string)")
+    }
+  }
+  if (is.null(lConfig[["censor_col"]]) == is.null(lConfig[["event_col"]])) {
+    Core_Stop(
+      "Name exactly one of 'censor_col' (1 = censored, as ADaM's CNSR) and 'event_col' (1 = event); ",
+      "give the other as NULL"
+    )
+  }
+  if (!is.null(lConfig[["endpoint"]]) && !IsName(lConfig[["endpoint"]])) {
+    Core_Stop("Setting 'endpoint' must be the name of an endpoint, or NULL for the first")
+  }
+  invisible(NULL)
+}
+
+# The flag column and what R is told it is: `censor` or `event`.
+Chart_FlagOf <- function(lConfig) {
+  if (!is.null(lConfig$censor_col)) list(col = lConfig$censor_col, field = "censor") else list(col = lConfig$event_col, field = "event")
+}
+
+# The outcomes table must have the columns the settings name; an empty table is
+# no outcomes table, and is not checked. `strTable` is what the table is called
+# when it is refused.
+Chart_CheckOutcomes <- function(dfOutcomes, lConfig, strTable = "the outcomes table") {
+  if (is.null(dfOutcomes) || nrow(dfOutcomes) == 0L) {
+    return(invisible(NULL))
+  }
+  lFlag <- Chart_FlagOf(lConfig)
+  strIdKey <- if (is.null(lConfig$outcome_id_col)) "id_col" else "outcome_id_col"
+  chrKeys <- c("endpoint_col", strIdKey, "time_col", paste0(lFlag$field, "_col"))
+  chrColumns <- c(lConfig$endpoint_col, lConfig[[strIdKey]], lConfig$time_col, lFlag$col)
+  for (iNeeded in seq_along(chrKeys)) {
+    if (!chrColumns[iNeeded] %in% names(dfOutcomes)) {
+      Core_Stop(strTable, " has no column '", chrColumns[iNeeded], "' (setting '", chrKeys[iNeeded], "').")
+    }
+  }
+  invisible(NULL)
+}
+
+# The endpoints the table has, by name with numbers as numbers, each with the
+# first label written for it (or its name).
+Chart_Endpoints <- function(dfOutcomes, lConfig) {
+  if (is.null(dfOutcomes) || nrow(dfOutcomes) == 0L) {
+    return(data.frame(endpoint = character(0), label = character(0), stringsAsFactors = FALSE))
+  }
+  chrEndpoints <- Core_Levels(dfOutcomes[[lConfig$endpoint_col]])
+  chrText <- Core_Text(dfOutcomes[[lConfig$endpoint_col]])
+  chrLabels <- vapply(chrEndpoints, function(strEndpoint) {
+    strLabelCol <- lConfig$endpoint_label_col
+    if (is.null(strLabelCol) || !strLabelCol %in% names(dfOutcomes)) {
+      return(strEndpoint)
+    }
+    xLabels <- dfOutcomes[[strLabelCol]]
+    iFound <- which(!is.na(chrText) & chrText == strEndpoint & !Core_IsBlank(xLabels))
+    if (length(iFound) == 0L) strEndpoint else Core_Text(xLabels[iFound[1L]])
+  }, character(1), USE.NAMES = FALSE)
+  data.frame(endpoint = chrEndpoints, label = chrLabels, stringsAsFactors = FALSE)
+}
+
+# A time or a flag as the chart reads it: a number, or text that reads as one;
+# a logical, TRUE or FALSE, or text written "TRUE", "true", "FALSE" or
+# "false", is 1 or 0, as Analyze_Survival takes a logical flag. Otherwise NA.
+Chart_OutcomeNumber <- function(xValue) {
+  if (is.logical(xValue)) {
+    return(as.numeric(xValue))
+  }
+  nValue <- Core_Number(xValue)
+  if (is.character(xValue) || is.factor(xValue)) {
+    chrText <- as.character(xValue)
+    nValue[chrText %in% c("TRUE", "true")] <- 1
+    nValue[chrText %in% c("FALSE", "false")] <- 0
+  }
+  nValue
+}
+
+# Each participant's outcome for one endpoint, as the chart reads it
+# (`outcomesOf`): one row per id asked for, with the time, the flag and whether
+# it is an event; or, where there is none to use, NA for each and the reason,
+# in the chart's words.
+Chart_Outcomes <- function(dfOutcomes, lConfig, strEndpoint, chrIds) {
+  nIds <- length(chrIds)
+  dfRead <- data.frame(
+    time = rep(NA_real_, nIds), flag = rep(NA_real_, nIds), event = rep(NA, nIds),
+    reason = rep(unname(chrOutcomeLeftOut["none"]), nIds), stringsAsFactors = FALSE
+  )
+  if (is.null(dfOutcomes) || nrow(dfOutcomes) == 0L || nIds == 0L) {
+    return(dfRead)
+  }
+  strIdCol <- if (is.null(lConfig$outcome_id_col)) lConfig$id_col else lConfig$outcome_id_col
+  lFlag <- Chart_FlagOf(lConfig)
+  chrEndpoint <- Core_Text(dfOutcomes[[lConfig$endpoint_col]])
+  bOf <- !is.na(chrEndpoint) & chrEndpoint == strEndpoint & !Core_IsBlank(dfOutcomes[[strIdCol]])
+  dfOf <- dfOutcomes[bOf, , drop = FALSE]
+  chrOfIds <- Core_Text(dfOf[[strIdCol]])
+  nCount <- tabulate(match(chrOfIds, chrIds), nbins = nIds)
+  iFirst <- match(chrIds, chrOfIds)
+  nTime <- Chart_OutcomeNumber(dfOf[[lConfig$time_col]])[iFirst]
+  nFlag <- Chart_OutcomeNumber(dfOf[[lFlag$col]])[iFirst]
+  strReason <- ifelse(
+    nCount == 0L, chrOutcomeLeftOut[["none"]],
+    ifelse(
+      nCount > 1L, chrOutcomeLeftOut[["several"]],
+      ifelse(
+        is.na(nTime) | is.na(nFlag), chrOutcomeLeftOut[["missing"]],
+        ifelse(!nFlag %in% c(0, 1), chrOutcomeLeftOut[["flag"]], ifelse(nTime < 0, chrOutcomeLeftOut[["negative"]], NA_character_))
+      )
+    )
+  )
+  bUsed <- is.na(strReason)
+  dfRead$reason <- strReason
+  dfRead$time[bUsed] <- nTime[bUsed]
+  dfRead$flag[bUsed] <- nFlag[bUsed]
+  dfRead$event[bUsed] <- if (lFlag$field == "censor") nFlag[bUsed] == 0 else nFlag[bUsed] == 1
+  dfRead
 }

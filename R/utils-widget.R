@@ -36,7 +36,12 @@ WidgetSizingPolicy <- function() {
 #' | unnamed vector of length one | itself | a single value |
 #' | unnamed vector of any other length | an unnamed list | an array |
 #' | factor | text | text |
+#' | `Inf`, `-Inf`, `NaN` | the text `"Inf"`, `"-Inf"`, `"NaN"` | that text |
 #' | `NA`, `NULL` | `NULL` | `null` |
+#'
+#' A number R gives as infinite, as Fisher's odds ratio of a table with an
+#' empty cell, would otherwise be written as `null` by the JSON writer and lost;
+#' bio.viz's connection reads those three spellings back as the numbers.
 #'
 #' Nothing is left for the JSON writer to decide: a named vector's names are
 #' kept by making it a list, and a table has one shape whatever its size.
@@ -64,10 +69,16 @@ StoredValue <- function(xValue) {
     lValue <- lapply(xValue, StoredValue)
     return(if (bNamed) lValue else unname(lValue))
   }
-  if (!bNamed && length(xValue) == 1L) {
-    return(if (is.na(xValue)) NULL else xValue)
+  One <- function(xOne) {
+    if (is.numeric(xOne) && !is.finite(xOne) && !(is.na(xOne) && !is.nan(xOne))) {
+      return(if (is.nan(xOne)) "NaN" else if (xOne > 0) "Inf" else "-Inf")
+    }
+    if (is.na(xOne)) NULL else xOne
   }
-  lValue <- lapply(seq_along(xValue), function(iValue) if (is.na(xValue[[iValue]])) NULL else unname(xValue[iValue]))
+  if (!bNamed && length(xValue) == 1L) {
+    return(One(xValue))
+  }
+  lValue <- lapply(seq_along(xValue), function(iValue) One(unname(xValue[iValue])))
   if (bNamed) stats::setNames(lValue, names(xValue)) else lValue
 }
 
@@ -213,10 +224,97 @@ Widget_NameFilters <- function(lConfig, lSettings, dfResults, dfParticipants) {
   list(config = lConfig, settings = lSettings)
 }
 
+#' Hand the page the cut variables as R reads them
+#'
+#' A cut variable a setting names is written back into the page's settings in
+#' the form R read it (Core_WrittenCut()): with its value type, and its typed
+#' points a list, as the chart takes them. A single typed point written as a
+#' number, `cut = 3`, is then the list the chart requires, `[3]`. A setting
+#' that names a column is left as it was given.
+#'
+#' @param chrKeys `character` The settings that make groups.
+#'
+#' @keywords internal
+#' @noRd
+Widget_NameCuts <- function(lConfig, lSettings, chrKeys) {
+  for (strKey in chrKeys) {
+    if (Chart_IsCut(lConfig[[strKey]])) {
+      lSettings[strKey] <- list(lConfig[[strKey]])
+    }
+  }
+  if (!is.null(lConfig$cuts)) {
+    lSettings$cuts <- lConfig$cuts
+  }
+  lSettings
+}
+
+#' Text as UTF-8, marked so, in tables, lists and factors
+#'
+#' A widget's tables, settings and stored results are written into its page as
+#' JSON, and jsonlite writes text R holds unmarked and not ASCII as escapes
+#' ("<c3><96>dem" for an O with an umlaut, then "dem") in a session whose locale is not UTF-8. So text is
+#' marked UTF-8 before anything is computed or written: text held as its
+#' UTF-8 bytes is marked so, text marked Latin-1 is converted, and other
+#' unmarked text is converted from the session's own encoding. ASCII text,
+#' numbers and logicals are left as they are.
+#'
+#' @keywords internal
+#' @noRd
+Widget_Utf8 <- function(xValue) {
+  Mark <- function(chrText) {
+    bWide <- !is.na(chrText) & grepl("[^ -~\t\n\v\f\r]", chrText, useBytes = TRUE)
+    if (!any(bWide)) {
+      return(chrText)
+    }
+    bUnknown <- bWide & Encoding(chrText) == "unknown"
+    bBytes <- bUnknown & validUTF8(chrText)
+    Encoding(chrText[bBytes]) <- "UTF-8"
+    bConvert <- (bWide & Encoding(chrText) == "latin1") | (bUnknown & !bBytes)
+    chrText[bConvert] <- enc2utf8(chrText[bConvert])
+    chrText
+  }
+  if (is.factor(xValue)) {
+    levels(xValue) <- Mark(levels(xValue))
+    return(xValue)
+  }
+  if (is.character(xValue)) {
+    return(Mark(xValue))
+  }
+  if (is.data.frame(xValue)) {
+    xValue[] <- lapply(xValue, Widget_Utf8)
+    names(xValue) <- Mark(names(xValue))
+    return(xValue)
+  }
+  if (is.list(xValue)) {
+    lNames <- names(xValue)
+    xValue <- lapply(xValue, Widget_Utf8)
+    if (!is.null(lNames)) names(xValue) <- Mark(lNames)
+    return(xValue)
+  }
+  xValue
+}
+
+#' Check the outcomes table a widget is given
+#'
+#' A data frame or `NULL`, and, when it has rows, the columns the settings name.
+#'
+#' @param lConfig `list` The chart's settings in full, with the outcome settings.
+#'
+#' @keywords internal
+#' @noRd
+Widget_CheckOutcomes <- function(dfOutcomes, lConfig) {
+  if (!is.null(dfOutcomes) && !is.data.frame(dfOutcomes)) {
+    stop("dfOutcomes is not a data.frame or NULL", call. = FALSE)
+  }
+  Chart_CheckOutcomes(dfOutcomes, lConfig, "dfOutcomes")
+}
+
 #' Make a widget from its tables, its settings and R's answers
 #'
 #' @param strName `character` The widget's name, which is its binding's.
 #' @param lStored `list` The stored results, as [Chart_Answer()] returns them.
+#' @param dfOutcomes `data.frame` The outcomes table, for a chart that reads
+#'   one, or `NULL`: the payload carries it only when it is given.
 #'
 #' @return An `htmlwidget` whose payload carries the tables, the settings, the
 #'   stored results in the shape the chart's connection reads, and which R
@@ -224,11 +322,14 @@ Widget_NameFilters <- function(lConfig, lSettings, dfResults, dfParticipants) {
 #'
 #' @keywords internal
 #' @noRd
-Widget_Create <- function(strName, dfResults, dfParticipants, lSettings, lStored, width, height, elementId, bDebug) {
-  x <- list(
-    dfResults = dfResults,
-    dfParticipants = dfParticipants,
-    lSettings = lSettings,
+Widget_Create <- function(strName, dfResults, dfParticipants, lSettings, lStored, width, height, elementId, bDebug,
+                          dfOutcomes = NULL) {
+  x <- c(
+    list(dfResults = dfResults, dfParticipants = dfParticipants),
+    if (!is.null(dfOutcomes)) list(dfOutcomes = dfOutcomes),
+    list(lSettings = lSettings)
+  )
+  x <- c(x, list(
     bDebug = bDebug,
     bAutoWidth = is.null(width),
     bAutoHeight = is.null(height),
@@ -241,10 +342,10 @@ Widget_Create <- function(strName, dfResults, dfParticipants, lSettings, lStored
         )
       })
     )
-  )
+  ))
   htmlwidgets::createWidget(
     name = strName,
-    x = x,
+    x = Widget_Utf8(x),
     width = width,
     height = height,
     package = "gsm.bio",

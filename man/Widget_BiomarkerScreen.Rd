@@ -11,7 +11,8 @@ Widget_BiomarkerScreen(
   width = NULL,
   height = NULL,
   elementId = NULL,
-  bDebug = FALSE
+  bDebug = FALSE,
+  dfOutcomes = NULL
 )
 }
 \arguments{
@@ -27,16 +28,17 @@ offers are read from it. Default: \code{NULL}.}
 \item{lSettings}{\code{list} bio.viz biomarker screen settings, under bio.viz's
 own names; laid over the chart's defaults in the page, so only overrides
 are needed. For example \code{comparison}, \code{visit}, \code{value_type}, \code{group_by},
-\code{levels}, \code{with}, \code{method}, \code{adjustment}, \code{sort}, \code{limit}, \code{groups},
-\code{numbers}, \code{filters} and \code{baseline_visits}; and \code{group_comparison} and
-\code{association_scatter}, lists of settings for the chart a row opens. The
+\code{levels}, \code{with}, \code{method}, \code{endpoint}, \code{adjustment}, \code{sort}, \code{limit},
+\code{groups}, \code{numbers}, \code{filters}, \code{baseline_visits} and the outcome columns;
+and \code{group_comparison}, \code{association_scatter} and \code{stratified_survival},
+lists of settings for the chart a row opens. The
 setting \code{connection} cannot be given; \code{statistic} can only be
 \code{"Analyze_Screen"} or \code{NULL} for no rows; and the settings for the chart a
 row opens cannot name what the screen hands that chart itself: for the
 group comparison \code{start_value}, \code{visits}, \code{value_type}, \code{group_by},
-\code{levels} and \code{test}, for the association scatter \code{x}, \code{y} and \code{method}, and
-for either \code{filters}, \code{connection}, \code{waiting_note} or \code{back}. Default:
-\code{list()}.}
+\code{levels} and \code{test}, for the association scatter \code{x}, \code{y} and \code{method},
+for the stratified survival chart \code{group_by} and \code{endpoint}, and for any
+\code{filters}, \code{connection}, \code{waiting_note} or \code{back}. Default: \code{list()}.}
 
 \item{width}{\code{character} Width of the widget as a CSS unit. Default: \code{NULL},
 as wide as its container.}
@@ -49,10 +51,16 @@ as wide as its container.}
 
 \item{bDebug}{\code{logical} Print debug messages in the browser console?
 Default: \code{FALSE}.}
+
+\item{dfOutcomes}{\code{data.frame} An outcomes table, one row per participant and
+endpoint with a time and a flag, as \code{\link[=Widget_StratifiedSurvival]{Widget_StratifiedSurvival()}} takes
+it, or \code{NULL}. With it the screen offers a hazard ratio. It is the last
+argument, after v0.1.0's, so every call written for v0.1.0, by position or
+by name, works as it did; give it by name. Default: \code{NULL}.}
 }
 \value{
 An \code{htmlwidget}. Its payload \code{x} carries \code{dfResults},
-\code{dfParticipants}, \code{lSettings}, \code{bDebug}, whether a width and a height were
+\code{dfParticipants}, \code{dfOutcomes} when it is given, \code{lSettings}, \code{bDebug}, whether a width and a height were
 left to the widget (\code{bAutoWidth}, \code{bAutoHeight}), and \code{lStatistics}: the
 stored results, each with \code{name}, \code{args}, \code{dataId}, \code{rows} and \code{value}, and
 \code{computed_by}, the R version, gsm.bio version and time that computed them.
@@ -62,9 +70,10 @@ A widget that renders the bio.viz biomarker screen: one row per biomarker,
 each with its estimate and interval drawn on one shared axis and its raw and
 adjusted p-values, and a click on a row opens that biomarker's own chart in
 place. The rows are computed here, in R, by \code{\link[=Analyze_Screen]{Analyze_Screen()}}, and the
-chart each row opens by \code{\link[=Analyze_GroupDifference]{Analyze_GroupDifference()}} or
-\code{\link[=Analyze_Correlation]{Analyze_Correlation()}} (and \code{\link[=Analyze_Fit]{Analyze_Fit()}} for a fitted line), and shipped
-with the page, so a saved page shows them with no R and no network.
+chart each row opens by \code{\link[=Analyze_GroupDifference]{Analyze_GroupDifference()}},
+\code{\link[=Analyze_Correlation]{Analyze_Correlation()}} (and \code{\link[=Analyze_Fit]{Analyze_Fit()}} for a fitted line) or
+\code{\link[=Analyze_Survival]{Analyze_Survival()}}, and shipped with the page, so a saved page shows them
+with no R and no network.
 }
 \section{What the page opens on}{
 
@@ -76,7 +85,12 @@ more, and its first two groups, when none are named); each row is the
 standardised difference (Hedges' g) with Welch's p-value. A correlation
 (\code{comparison = "correlation"}) correlates every biomarker with one variable,
 \code{with}, a biomarker at a visit or a participant-level number, by \code{method};
-the biomarker that is that variable is not a row of its own. The p-values
+the biomarker that is that variable is not a row of its own. A hazard ratio
+(\code{comparison = "hazard"}), offered only with an outcomes table, cuts every
+biomarker at its median and compares high against low on one endpoint,
+\code{endpoint} (the first when none is named); each row is the hazard ratio,
+High over Low, with the log-rank p-value. The outcomes table is read as
+\code{\link[=Widget_StratifiedSurvival]{Widget_StratifiedSurvival()}} reads it, by the same settings. The p-values
 are adjusted across the rows by \code{adjustment}, Benjamini-Hochberg by default.
 }
 
@@ -92,10 +106,11 @@ A click on a row opens that biomarker's chart, which asks R for its own
 statistics. For a difference it is the group comparison, on the biomarker,
 at the screen's one visit, with only the two groups and Welch's test; for a
 correlation it is the association scatter, with the biomarker along the
-bottom and the variable up the side, by the same method. For every row the
-widget stores exactly what that chart asks when it opens, under the screen's
-filters. On the synthetic study, a difference between the arms is one screen
-and twelve group comparisons.
+bottom and the variable up the side, by the same method; for a hazard ratio
+it is the stratified survival chart, on the biomarker cut at its median, on
+the same endpoint. For every row the widget stores exactly what that chart
+asks when it opens, under the screen's filters. On the synthetic study, a
+difference between the arms is one screen and twelve group comparisons.
 
 A reader who moves a control of the screen, or of the chart a row opens, to
 a view that was not computed is told that statistics are unavailable for
@@ -129,7 +144,7 @@ The widget loads bio.viz's bundle and the copy of safety.viz's bundle that
 bio.viz itself builds its chart from. Both are copied from bio.viz, with the
 bio.viz commit and a checksum per file recorded beside them in
 \code{system.file("htmlwidgets", "lib", "SOURCE.json", package = "gsm.bio")}. They
-are bio.viz v0.1.0 and safety.viz v1.9.0, the first safety.viz with the kit
+are bio.viz v0.2.0 and safety.viz v1.9.0, the first safety.viz with the kit
 the chart is built from, as bio.viz takes it from safety.viz's \code{dev} branch;
 the record says from which commit. gsm.safety carries an earlier safety.viz
 without the kit, and once it carries v1.9.0 the widgets can take the bundle
@@ -161,15 +176,33 @@ Widget_BiomarkerScreen(
   )
 )
 
+# Every biomarker at Baseline, high against low on event-free survival. CRP
+# is the biomarker the study plants a survival effect in; a click on a row
+# opens the survival curves of that biomarker cut at its median.
+Widget_BiomarkerScreen(
+  Synthetic_Results,
+  Synthetic_Participants,
+  lSettings = list(
+    comparison = "hazard",
+    visit = "Baseline",
+    endpoint = "EFS",
+    groups = lColumns,
+    filters = lColumns
+  ),
+  dfOutcomes = Synthetic_Outcomes
+)
+
 }
 \seealso{
 \code{\link[=Analyze_Screen]{Analyze_Screen()}}, which computes the rows, and
-\code{\link[=Widget_GroupComparison]{Widget_GroupComparison()}} and \code{\link[=Widget_AssociationScatter]{Widget_AssociationScatter()}}, the charts a
-row opens.
+\code{\link[=Widget_GroupComparison]{Widget_GroupComparison()}}, \code{\link[=Widget_AssociationScatter]{Widget_AssociationScatter()}} and
+\code{\link[=Widget_StratifiedSurvival]{Widget_StratifiedSurvival()}}, the charts a row opens.
 
 Other widgets: 
 \code{\link{Widget_AssociationScatter}()},
 \code{\link{Widget_CorrelationMatrix}()},
-\code{\link{Widget_GroupComparison}()}
+\code{\link{Widget_CrossTab}()},
+\code{\link{Widget_GroupComparison}()},
+\code{\link{Widget_StratifiedSurvival}()}
 }
 \concept{widgets}

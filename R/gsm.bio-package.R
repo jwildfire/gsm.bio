@@ -22,13 +22,22 @@
 #' A widget draws a bio.viz chart from R. It computes the chart's statistics
 #' with the functions above when it is made and stores them in the page, so a
 #' saved page shows them with no R and no network: see
-#' [Widget_GroupComparison()], [Widget_AssociationScatter()] and
-#' [Widget_CorrelationMatrix()]. The widgets are the only part of the package
-#' that uses htmlwidgets.
+#' [Widget_GroupComparison()], [Widget_AssociationScatter()],
+#' [Widget_CorrelationMatrix()], [Widget_BiomarkerScreen()], [Widget_CrossTab()]
+#' and [Widget_StratifiedSurvival()]. The widgets are the only part of the
+#' package that uses htmlwidgets.
+#'
+#' @section Figures:
+#' Each chart has a static ggplot2 figure too, `Visualize_<Chart>()`, from the
+#' same settings and with the same statistics: see
+#' [Visualize_GroupComparison()] and the functions beside it. ggplot2 is
+#' suggested, not imported.
 #'
 #' @section Status:
-#' Version 0.1.0 is in development: the statistics functions, a synthetic
-#' biomarker study with known planted effects, and the first widgets.
+#' Version 0.2.0 is being prepared: the statistics functions, a synthetic
+#' biomarker study with known planted effects, a widget for each of bio.viz's
+#' six charts, and from R a static figure, a statistics table, RTF and batch
+#' runs of chart specifications. Version 0.1.0 is the latest release.
 #'
 #' @importFrom stats aov chisq.test cor.test fisher.test kruskal.test p.adjust
 #' @importFrom stats lm loess t.test wilcox.test

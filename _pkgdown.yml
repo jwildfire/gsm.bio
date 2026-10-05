@@ -5,7 +5,7 @@ template:
 
 navbar:
   structure:
-    left: [reference, news]
+    left: [articles, reference, news]
     right: [search, github]
 
 reference:
@@ -36,6 +36,39 @@ reference:
       - Widget_AssociationScatter
       - Widget_CorrelationMatrix
       - Widget_BiomarkerScreen
+      - Widget_CrossTab
+      - Widget_StratifiedSurvival
+  - title: Figures
+    desc: >
+      The same views as static ggplot2 figures, for a report or a slide, with
+      the same statistics from the functions above, and the chart's title,
+      subtitle and footnotes. ggplot2 is suggested, not imported.
+    contents:
+      - Visualize_GroupComparison
+      - Visualize_AssociationScatter
+      - Visualize_CorrelationMatrix
+      - Visualize_BiomarkerScreen
+      - Visualize_CrossTab
+      - Visualize_StratifiedSurvival
+  - title: Tables
+    desc: >
+      The same views' statistics as tables, one row per statistic, written by
+      the program's display rules, and an RTF writer for a report. r2rtf is
+      suggested, not imported.
+    contents:
+      - Table_GroupComparison
+      - Table_AssociationScatter
+      - Table_CorrelationMatrix
+      - Table_BiomarkerScreen
+      - Table_CrossTab
+      - Table_StratifiedSurvival
+      - Write_RTF
+  - title: Batch
+    desc: >
+      bio.viz's chart specifications run against a dataset to figures and RTF
+      tables in a folder, one per specification or one per biomarker.
+    contents:
+      - Run_Specifications
   - title: Synthetic study
     desc: >
       A made-up biomarker study with three planted effects of known size, for
@@ -45,3 +78,9 @@ reference:
       - Synthetic_Participants
       - Synthetic_Outcomes
       - Synthetic_Truth
+
+articles:
+  - title: Gallery
+    navbar: ~
+    contents:
+      - articles/gallery

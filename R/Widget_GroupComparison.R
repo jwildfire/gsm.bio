@@ -59,7 +59,7 @@
 #' bio.viz itself builds its chart from. Both are copied from bio.viz, with the
 #' bio.viz commit and a checksum per file recorded beside them in
 #' `system.file("htmlwidgets", "lib", "SOURCE.json", package = "gsm.bio")`. They
-#' are bio.viz v0.1.0 and safety.viz v1.9.0, the first safety.viz with the kit
+#' are bio.viz v0.2.0 and safety.viz v1.9.0, the first safety.viz with the kit
 #' the chart is built from, as bio.viz takes it from safety.viz's `dev` branch;
 #' the record says from which commit. gsm.safety carries an earlier safety.viz
 #' without the kit, and once it carries v1.9.0 the widgets can take the bundle
@@ -136,10 +136,16 @@ Widget_GroupComparison <- function(
     elementId = NULL,
     bDebug = FALSE) {
   Widget_CheckInputs(dfResults, dfParticipants, lSettings, bDebug)
+  # Text as UTF-8, marked so, before anything is computed: the page carries it
+  # so whatever the session's locale.
+  dfResults <- Widget_Utf8(dfResults)
+  dfParticipants <- Widget_Utf8(dfParticipants)
+  lSettings <- Widget_Utf8(lSettings)
   lConfig <- GroupComparison_Settings(lSettings)
   Widget_CheckColumns(lConfig, dfResults, dfParticipants)
   lNamed <- Widget_NameBaseline(lConfig, lSettings, dfResults)
   lNamed <- Widget_NameFilters(lNamed$config, lNamed$settings, dfResults, dfParticipants)
+  lNamed$settings <- Widget_NameCuts(lNamed$config, lNamed$settings, c("group_by", "panel_by"))
 
   Widget_Create(
     "Widget_GroupComparison", dfResults, dfParticipants, lNamed$settings,

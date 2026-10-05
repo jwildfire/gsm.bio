@@ -30,23 +30,43 @@ test_that("CLAUDE.md carries the Standards block and the commands a session runs
   }
 })
 
-test_that("README.md gives the install lines for the release and for the integration branch (#1, #27)", {
+# The versions NEWS.md heads its sections with, newest first, and whether each
+# is still marked Upcoming.
+dfNewsVersions <- function(chrLines) {
+  chrHeadings <- grep("^# gsm\\.bio v", chrLines, value = TRUE)
+  data.frame(
+    version = sub("^# gsm\\.bio v([0-9.]+).*$", "\\1", chrHeadings),
+    upcoming = grepl(" (Upcoming)", chrHeadings, fixed = TRUE),
+    stringsAsFactors = FALSE
+  )
+}
+
+test_that("README.md gives the install lines for the newest release, or the release this tree prepares, and for the integration branch (#1, #27, #29, #48)", {
   strText <- paste(chrRepositoryFile("README.md"), collapse = "\n")
-  strVersion <- as.character(utils::packageVersion("gsm.bio"))
-  # The release is installed from its tag, named by the package's version.
-  expect_match(strText, sprintf('remotes::install_github("jwildfire/gsm.bio@v%s")', strVersion), fixed = TRUE)
+  dfVersions <- dfNewsVersions(chrRepositoryFile("NEWS.md"))
+  strPackage <- as.character(utils::packageVersion("gsm.bio"))
+  # The release this tree prepares: NEWS's newest section, still Upcoming, is
+  # the package's own version. Its tag is made from main when it ships, so the
+  # README tagged with it already installs it. Otherwise the release line is
+  # the newest released version, whose tag is on GitHub.
+  bPreparing <- isTRUE(dfVersions$upcoming[1]) && identical(dfVersions$version[1], strPackage)
+  strRelease <- if (bPreparing) strPackage else dfVersions$version[!dfVersions$upcoming][1]
+  expect_false(is.na(strRelease), label = "NEWS.md has a released version")
+  expect_match(strText, sprintf('remotes::install_github("jwildfire/gsm.bio@v%s")', strRelease), fixed = TRUE)
   expect_match(strText, 'remotes::install_github("jwildfire/gsm.bio@dev")', fixed = TRUE)
-  # The release line names the version NEWS opens on: the release, or, while
-  # NEWS still marks it Upcoming, the one being prepared, which the README says
-  # is not installed from its tag until the tag is cut.
-  chrHeadings <- grep("^# ", chrRepositoryFile("NEWS.md"), value = TRUE)
-  expect_true(chrHeadings[1] %in% sprintf(c("# gsm.bio v%s", "# gsm.bio v%s (Upcoming)"), strVersion))
-  if (grepl("(Upcoming)", chrHeadings[1], fixed = TRUE)) {
-    expect_match(strText, sprintf("until v%s is tagged", strVersion), fixed = TRUE)
+  expect_false(grepl("is tagged", strText, fixed = TRUE), label = "a sentence that waits for the tag")
+  chrTags <- suppressWarnings(system2(
+    "git", c("ls-remote", "--tags", "https://github.com/jwildfire/gsm.bio.git", sprintf("refs/tags/v%s", strRelease)),
+    stdout = TRUE, stderr = FALSE
+  ))
+  if (bPreparing) {
+    expect_lte(length(chrTags), 1L, label = sprintf("tag v%s on GitHub, once at most", strRelease))
+  } else {
+    expect_identical(length(chrTags), 1L, label = sprintf("tag v%s on GitHub", strRelease))
   }
 })
 
-test_that("NEWS.md opens with the upcoming v0.1.0 section (#1)", {
+test_that("NEWS.md opens with the v0.2.0 section, Upcoming until its tag, above the v0.1.0 release (#1, #29, #44)", {
   strPath <- if (bSourceTree()) {
     testthat::test_path("..", "..", "NEWS.md")
   } else {
@@ -56,7 +76,11 @@ test_that("NEWS.md opens with the upcoming v0.1.0 section (#1)", {
   skip_if_not(nzchar(strPath) && file.exists(strPath), "NEWS.md is missing")
 
   chrHeadings <- grep("^# ", readLines(strPath, warn = FALSE), value = TRUE)
-  expect_identical(chrHeadings[1], "# gsm.bio v0.1.0 (Upcoming)")
+  # The release step drops "(Upcoming)" when it publishes the tag.
+  expect_true(chrHeadings[1] %in% c("# gsm.bio v0.2.0 (Upcoming)", "# gsm.bio v0.2.0"), label = chrHeadings[1])
+  expect_identical(chrHeadings[2], "# gsm.bio v0.1.0")
+  # Only the newest section is ever Upcoming.
+  expect_false(any(grepl("(Upcoming)", chrHeadings[-1], fixed = TRUE)))
 })
 
 test_that("the R CMD check workflow has one job named R-CMD-check that fails on notes (#1)", {

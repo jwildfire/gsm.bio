@@ -36,7 +36,7 @@ test_that("the vendored bundles match the checksums recorded beside them (#9)", 
   )
 })
 
-test_that("the record says the safety.viz copy is a stand-in, and carries where bio.viz took it from: safety.viz's dev (#9, #19)", {
+test_that("the record says the safety.viz copy is a stand-in, and carries where bio.viz took it from: safety.viz's dev (#9, #18, #19)", {
   lRecord <- lReadJson(strLibDir(), "SOURCE.json")
   lKit <- lRecord$safety_viz
 
@@ -50,9 +50,25 @@ test_that("the record says the safety.viz copy is a stand-in, and carries where 
   expect_identical(lTheirs$ref, "dev")
   expect_match(lTheirs$commit, "^[0-9a-f]{40}$")
   expect_true(lTheirs$merged_to_dev)
-  # And ours: bio.viz's dev branch, at a recorded commit.
-  expect_identical(lRecord$ref, "dev")
+  # And ours: bio.viz's dev branch, at a recorded commit. A copy from a branch
+  # not merged to dev yet says so, with a note to copy again, and is allowed
+  # only while the package is at a development version: a release never
+  # carries one (#18).
   expect_match(lRecord$commit, "^[0-9a-f]{40}$")
+  expect_true(is.logical(lRecord$merged_to_dev))
+  strVersion <- as.character(utils::packageVersion("gsm.bio"))
+  bDevelopment <- length(unclass(package_version(strVersion))[[1]]) > 3L
+  if (isTRUE(lRecord$merged_to_dev)) {
+    expect_identical(lRecord$ref, "dev")
+    expect_null(lRecord$note)
+  } else {
+    expect_true(bDevelopment, label = sprintf("version %s is a development version, so it may carry an unmerged copy", strVersion))
+    expect_false(identical(lRecord$ref, "dev"))
+    expect_match(lRecord$note, "not merged to bio.viz's dev branch", fixed = TRUE)
+    expect_match(lRecord$note, "copy again from dev", fixed = TRUE)
+  }
+  lFixtureRecord <- lReadJson(testthat::test_path("fixtures", "bio.viz"), "SOURCE.json")
+  expect_identical(lFixtureRecord[c("ref", "commit", "merged_to_dev")], lRecord[c("ref", "commit", "merged_to_dev")])
   lCopy <- Filter(function(lFile) lFile$library == "safety.viz", lRecord$files)[[1]]
   expect_identical(lTheirs$files[[1]]$sha256, lCopy$sha256)
   expect_identical(lTheirs$version, lCopy$version)
@@ -138,4 +154,35 @@ test_that("the core's frames were written by the vendored bundle, from the study
     vapply(lFrames$frames, function(lFrame) lFrame$case, character(1)),
     vapply(lCases, function(lCase) lCase$case, character(1))
   )
+})
+
+test_that("the specification schema matches the checksum recorded beside it, from the same bio.viz commit as the bundles (#39)", {
+  strDir <- system.file("specification", package = "gsm.bio")
+  lRecord <- lReadJson(strDir, "SOURCE.json")
+  expect_identical(lRecord$copied_by, "data-raw/vendor-bio-viz.R")
+  expect_identical(lRecord$commit, lReadJson(strLibDir(), "SOURCE.json")$commit)
+  expect_length(lRecord$files, 1L)
+  lFile <- lRecord$files[[1]]
+  expect_identical(lFile$file, "specification.schema.json")
+  expect_identical(lFile$source, "src/data/specification.schema.json")
+  expect_identical(strSha256(file.path(strDir, lFile$file)), lFile$sha256)
+  expect_setequal(list.files(strDir), c("SOURCE.json", "specification.schema.json"))
+})
+
+test_that("the copy names the bio.viz release it is byte for byte the same as: v0.2.0, in all three records (#48)", {
+  lRecords <- list(
+    lReadJson(system.file("htmlwidgets", "lib", "SOURCE.json", package = "gsm.bio")),
+    lReadJson(system.file("specification", "SOURCE.json", package = "gsm.bio")),
+    lReadJson(testthat::test_path("fixtures", "bio.viz"), "SOURCE.json")
+  )
+  strVersion <- Filter(function(lFile) lFile$library == "bio.viz", lRecords[[1]]$files)[[1]]$version
+  for (lRecord in lRecords) {
+    expect_identical(lRecord$release$tag, paste0("v", strVersion))
+    expect_match(lRecord$release$commit, "^[0-9a-f]{40}$")
+    expect_identical(lRecord$release, lRecords[[1]]$release)
+    # The release beside the commit copied from, which stays dev's.
+    expect_identical(lRecord$ref, "dev")
+  }
+  expect_identical(lRecords[[1]]$release$tag, "v0.2.0")
+  expect_identical(substr(lRecords[[1]]$release$commit, 1, 7), "4440a43")
 })

@@ -47,15 +47,21 @@ context.window = context;
 context.self = context;
 vm.runInContext(safety.text, context);
 
-// bio.viz's addFilterControls, cut from its bundle: from its first line to the
-// closing brace at the same indent.
+// bio.viz's addFilterControls and startFilters, cut from its bundle: each from
+// its first line to the closing brace at the same indent. startFilters is how
+// a chart starts its state: the kit's, with a filter of several values given
+// an empty start opening on no value, so that it lets nobody through.
 const lines = bio.text.split('\n');
-const first = lines.findIndex((line) => line.startsWith('  function addFilterControls('));
-const last = lines.findIndex((line, index) => index > first && line === '  }');
-if (first < 0 || last < 0) throw new Error('addFilterControls was not found in the bio.viz bundle.');
-vm.runInContext(lines.slice(first, last + 1).join('\n'), context);
+const cut = (name) => {
+  const first = lines.findIndex((line) => line.startsWith(`  function ${name}(`));
+  const last = lines.findIndex((line, index) => index > first && line === '  }');
+  if (first < 0 || last < 0) throw new Error(`${name} was not found in the bio.viz bundle.`);
+  vm.runInContext(lines.slice(first, last + 1).join('\n'), context);
+  return vm.runInContext(name, context);
+};
 const { kit } = vm.runInContext('SafetyViz', context);
-const addFilterControls = vm.runInContext('addFilterControls', context);
+const addFilterControls = cut('addFilterControls');
+const startFilters = cut('startFilters');
 
 // The study's CSV files hold no quoted field, so a split is a read. Every value
 // is text, as a page that reads a CSV file has it.
@@ -82,7 +88,7 @@ const rowsOf = (columns) =>
 function open(participants, filters) {
   warnings = [];
   const filterSpecs = filters.map((spec) => kit.normalizeFilterSpec(spec));
-  const state = { filters: kit.initFilterState(filterSpecs) };
+  const state = { filters: startFilters({ kit, filterSpecs, settings: { filters } }) };
   const offered = {};
   const chart = {
     kit: { ...kit, renderFilterControl: ({ spec, values }) => ((offered[spec.value_col] = values.length), { dataset: {} }) },

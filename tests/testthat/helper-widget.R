@@ -79,8 +79,11 @@ strSavedPage <- function(lWidget, bSelfContained = bPandoc()) {
   strDir <- tempfile("Widget_GroupComparison")
   dir.create(strDir)
   strFile <- file.path(strDir, "group-comparison.html")
+  # The page is UTF-8, so it is read back as UTF-8 whatever the session's
+  # locale; read in the locale's own encoding, a cut group's sign \u2264 would
+  # not read back as itself.
   htmlwidgets::saveWidget(lWidget, file = strFile, selfcontained = bSelfContained)
-  paste(readLines(strFile, warn = FALSE), collapse = "\n")
+  paste(readLines(strFile, warn = FALSE, encoding = "UTF-8"), collapse = "\n")
 }
 
 # The payload a saved page carries for its widget, read back out of the page.
@@ -121,7 +124,10 @@ chrPageDifferences <- function(xPage, xValue, strLabel) {
   if (length(xValue) != 1L) {
     return(paste(strLabel, "is not a single value in R"))
   }
-  bSame <- if (is.na(xValue)) {
+  bSame <- if (is.numeric(xValue) && (is.nan(xValue) || is.infinite(xValue))) {
+    # R's non-finite numbers, as bio.viz's connection reads them back.
+    identical(xPage, if (is.nan(xValue)) "NaN" else if (xValue > 0) "Inf" else "-Inf")
+  } else if (is.na(xValue)) {
     is.null(xPage)
   } else if (is.numeric(xValue)) {
     is.numeric(xPage) && length(xPage) == 1L && isTRUE(all.equal(as.numeric(xPage), as.numeric(xValue), tolerance = 1e-12))
@@ -153,15 +159,44 @@ lBundleDefaults <- function(strSetting) {
   lRecord <- lReadJson(system.file("htmlwidgets", "lib", "SOURCE.json", package = "gsm.bio"))
   strFile <- Filter(function(lFile) lFile$library == "bio.viz", lRecord$files)[[1]]$file
   chrLines <- readLines(system.file("htmlwidgets", "lib", strFile, package = "gsm.bio"), warn = FALSE)
-  iStarts <- grep("^  var DEFAULT_SETTINGS[0-9]* = Object\\.freeze\\(\\{$", chrLines)
-  for (iStart in iStarts) {
+  # A block of plain values: each setting's value as the JSON it is written in.
+  Block <- function(iStart) {
     iEnd <- iStart + match("  });", chrLines[-seq_len(iStart)])
     chrBlock <- grep("^\\s*//", chrLines[(iStart + 1L):(iEnd - 1L)], value = TRUE, invert = TRUE)
-    chrNames <- sub("^\\s*([a-z_]+): .*$", "\\1", chrBlock)
-    if (strSetting %in% chrNames) {
-      chrValues <- sub(",$", "", sub("^\\s*[a-z_]+: ", "", chrBlock))
-      return(stats::setNames(lapply(chrValues, function(strValue) jsonlite::fromJSON(strValue)), chrNames))
+    stats::setNames(sub(",$", "", sub("^\\s*[a-z_]+: ", "", chrBlock)), sub("^\\s*([a-z_]+): .*$", "\\1", chrBlock))
+  }
+  # The outcome settings two charts share are written once, in OUTCOME_DEFAULTS
+  # (bio.viz, src/shared/outcomes.js), and each chart's defaults name them
+  # there: OUTCOME_DEFAULTS.time_col.
+  iOutcomes <- grep("^  var OUTCOME_DEFAULTS = Object\\.freeze\\(\\{$", chrLines)
+  chrOutcomes <- if (length(iOutcomes) == 1L) Block(iOutcomes) else character(0)
+  # Settings every chart has (TITLE_DEFAULTS, DOWNLOAD_DEFAULTS in bio.viz's
+  # src/shared/) are written once, on one line, and spread into each chart's
+  # defaults: ...TITLE_DEFAULTS.
+  Spread <- function(strName) {
+    strLine <- grep(paste0("^  var ", strName, " = Object\\.freeze\\(\\{.*\\}\\);$"), chrLines, value = TRUE)
+    if (length(strLine) != 1L) stop("the bundle spreads ", strName, ", which it does not define on one line")
+    chrPairs <- strsplit(sub("^.*\\{ *(.*?) *\\}\\);$", "\\1", strLine, perl = TRUE), ", *")[[1]]
+    stats::setNames(sub("^[a-z_]+: ", "", chrPairs), sub(":.*$", "", chrPairs))
+  }
+  for (iStart in grep("^  var DEFAULT_SETTINGS[0-9]* = Object\\.freeze\\(\\{$", chrLines)) {
+    chrValues <- Block(iStart)
+    bSpread <- grepl("^\\s*\\.\\.\\.[A-Z_]+,?$", names(chrValues))
+    if (any(bSpread)) {
+      chrSpread <- sub("^\\s*\\.\\.\\.([A-Z_]+),?$", "\\1", names(chrValues)[bSpread])
+      chrValues <- c(chrValues[!bSpread], unlist(lapply(chrSpread, Spread)))
+    }
+    if (strSetting %in% names(chrValues)) {
+      bShared <- grepl("^OUTCOME_DEFAULTS\\.[a-z_]+$", chrValues)
+      chrValues[bShared] <- chrOutcomes[sub("^OUTCOME_DEFAULTS\\.", "", chrValues[bShared])]
+      return(lapply(chrValues, function(strValue) jsonlite::fromJSON(strValue)))
     }
   }
   NULL
+}
+
+# A value as it reads back from the JSON a page is written in: a typed cut
+# point is a number, whole or not, as the chart reads it.
+lJsonRoundTrip <- function(xValue) {
+  jsonlite::fromJSON(jsonlite::toJSON(xValue, auto_unbox = TRUE, digits = NA), simplifyVector = FALSE)
 }

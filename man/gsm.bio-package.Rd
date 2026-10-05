@@ -31,15 +31,26 @@ wrap them: \code{\link[stats:t.test]{stats::t.test()}}, \code{\link[stats:wilcox
 A widget draws a bio.viz chart from R. It computes the chart's statistics
 with the functions above when it is made and stores them in the page, so a
 saved page shows them with no R and no network: see
-\code{\link[=Widget_GroupComparison]{Widget_GroupComparison()}}, \code{\link[=Widget_AssociationScatter]{Widget_AssociationScatter()}} and
-\code{\link[=Widget_CorrelationMatrix]{Widget_CorrelationMatrix()}}. The widgets are the only part of the package
-that uses htmlwidgets.
+\code{\link[=Widget_GroupComparison]{Widget_GroupComparison()}}, \code{\link[=Widget_AssociationScatter]{Widget_AssociationScatter()}},
+\code{\link[=Widget_CorrelationMatrix]{Widget_CorrelationMatrix()}}, \code{\link[=Widget_BiomarkerScreen]{Widget_BiomarkerScreen()}}, \code{\link[=Widget_CrossTab]{Widget_CrossTab()}}
+and \code{\link[=Widget_StratifiedSurvival]{Widget_StratifiedSurvival()}}. The widgets are the only part of the
+package that uses htmlwidgets.
+}
+
+\section{Figures}{
+
+Each chart has a static ggplot2 figure too, \verb{Visualize_<Chart>()}, from the
+same settings and with the same statistics: see
+\code{\link[=Visualize_GroupComparison]{Visualize_GroupComparison()}} and the functions beside it. ggplot2 is
+suggested, not imported.
 }
 
 \section{Status}{
 
-Version 0.1.0 is in development: the statistics functions, a synthetic
-biomarker study with known planted effects, and the first widgets.
+Version 0.2.0 is being prepared: the statistics functions, a synthetic
+biomarker study with known planted effects, a widget for each of bio.viz's
+six charts, and from R a static figure, a statistics table, RTF and batch
+runs of chart specifications. Version 0.1.0 is the latest release.
 }
 
 \seealso{

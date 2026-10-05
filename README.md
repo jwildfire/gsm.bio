@@ -8,11 +8,11 @@ Each statistic is a thin wrapper around a function from the stats or survival pa
 
 ```r
 # install.packages("remotes")
-remotes::install_github("jwildfire/gsm.bio@v0.1.0") # the v0.1.0 release, from its tag
+remotes::install_github("jwildfire/gsm.bio@v0.2.0") # the v0.2.0 release, from its tag
 remotes::install_github("jwildfire/gsm.bio@dev")    # what is on dev, the integration branch
 ```
 
-The release line works from the day v0.1.0 is cut: until v0.1.0 is tagged, [NEWS](https://github.com/jwildfire/gsm.bio/blob/dev/NEWS.md) marks it Upcoming and only `@dev` installs.
+[NEWS](https://github.com/jwildfire/gsm.bio/blob/dev/NEWS.md) lists what each release holds, and what is on `dev` for the next.
 
 ## Statistics
 
@@ -87,7 +87,7 @@ Widget_CorrelationMatrix(
 
 It stores `Analyze_CorrelationMatrix()`'s answer for the grid the settings open on and, for every cell, exactly what the scatter that cell opens asks of R, so a saved page opens any cell's scatter with its coefficient, interval and p-value. On the synthetic study that is one grid and 132 scatters, one for each cell on either side of the diagonal.
 
-`Widget_BiomarkerScreen()` draws bio.viz's biomarker screen: one row per biomarker at one visit, each with its estimate and interval on one shared axis and its raw and adjusted p-values, as a standardised difference between two groups or a correlation with one variable. A click on a row opens that biomarker's group comparison or association scatter in place, with a way back.
+`Widget_BiomarkerScreen()` draws bio.viz's biomarker screen: one row per biomarker at one visit, each with its estimate and interval on one shared axis and its raw and adjusted p-values, as a standardised difference between two groups, a correlation with one variable or, given an outcomes table, a hazard ratio of high against low. A click on a row opens that biomarker's group comparison, association scatter or survival curves in place, with a way back.
 
 ```r
 Widget_BiomarkerScreen(
@@ -97,9 +97,107 @@ Widget_BiomarkerScreen(
 )
 ```
 
-It stores `Analyze_Screen()`'s answer for the screen the settings open on and, for every row, exactly what the chart that row opens asks of R: for a difference the group comparison at the screen's one visit, of the two groups, with Welch's test; for a correlation the scatter with the biomarker along the bottom and the variable up the side. On the synthetic study, Placebo against Treatment, that is one screen and twelve group comparisons.
+It stores `Analyze_Screen()`'s answer for the screen the settings open on and, for every row, exactly what the chart that row opens asks of R: for a difference the group comparison at the screen's one visit, of the two groups, with Welch's test; for a correlation the scatter with the biomarker along the bottom and the variable up the side; for a hazard ratio the survival curves of the biomarker cut where the screen cut it. On the synthetic study, Placebo against Treatment, that is one screen and twelve group comparisons. The outcomes table is `dfOutcomes`, the screen's last argument, given by name, so every v0.1.0 call works as it did:
 
-Every widget carries two JavaScript bundles, both copied from bio.viz with the commit and a checksum per file recorded in `inst/htmlwidgets/lib/SOURCE.json`: bio.viz v0.1.0, and safety.viz v1.9.0, the first safety.viz with the kit bio.viz's charts are built from. The safety.viz copy is the one bio.viz takes from safety.viz's `dev` branch at its v1.9.0 release preparation, and its commit is recorded too. gsm.safety carries an earlier safety.viz without the kit; once it carries v1.9.0, the widgets can take the bundle from there instead of carrying their own copy.
+```r
+Widget_BiomarkerScreen(
+  Synthetic_Results,
+  Synthetic_Participants,
+  lSettings = list(comparison = "hazard", visit = "Baseline", endpoint = "EFS"),
+  dfOutcomes = Synthetic_Outcomes
+)
+```
+
+`Widget_CrossTab()` draws bio.viz's cross-tabulation: a two-way table of counts with its totals and percentages, beside stacked bars, and R's chi-square or Fisher's exact test under it. A click on a count lists that cell's participants.
+
+```r
+Widget_CrossTab(
+  Synthetic_Results,
+  Synthetic_Participants,
+  lSettings = list(row_by = "RESPONSE", col_by = list(measure = "CRP", visit = "Baseline", cut = "median"))
+)
+```
+
+It stores `Analyze_Contingency()`'s answer for the table the settings open on, by both tests. Either variable of the table, and the groups or the panels of `Widget_GroupComparison()`, can be a biomarker or a number cut into groups at its median, tertiles, quartiles or typed points, by the cut rule bio.viz uses in every chart: `quantile()` with its default for the points, and `cut()` with a value on a point in the lower group.
+
+`Widget_StratifiedSurvival()` draws bio.viz's stratified survival chart: a Kaplan-Meier curve for each group on one endpoint of an outcomes table, the number at risk beneath, and R's log-rank test, each group's median and the hazard ratio under them. The outcomes table is read as ADaM holds time to event (`PARAMCD`, `PARAM`, `AVAL`, and `CNSR` with 1 for censored), or with an event flag the other way round. A click on a curve or a count at risk lists those participants.
+
+```r
+Widget_StratifiedSurvival(
+  Synthetic_Results,
+  Synthetic_Participants,
+  lSettings = list(endpoint = "EFS", group_by = list(measure = "CRP", visit = "Baseline", cut = "median")),
+  dfOutcomes = Synthetic_Outcomes
+)
+```
+
+It stores `Analyze_Survival()`'s answer for the curves the settings open on. A cut's groups are handed to R high to low, so the hazard ratio is the higher group's hazard over the lower's.
+
+Every widget carries two JavaScript bundles, both copied from bio.viz with the commit and a checksum per file recorded in `inst/htmlwidgets/lib/SOURCE.json`: bio.viz v0.2.0, and safety.viz v1.9.0, the first safety.viz with the kit bio.viz's charts are built from. The safety.viz copy is the one bio.viz takes from safety.viz's `dev` branch at its v1.9.0 release preparation, and its commit is recorded too. gsm.safety carries an earlier safety.viz without the kit; once it carries v1.9.0, the widgets can take the bundle from there instead of carrying their own copy.
+
+## Figures
+
+Each chart also has a static figure, for a report or a slide: `Visualize_GroupComparison()`, `Visualize_AssociationScatter()`, `Visualize_CorrelationMatrix()`, `Visualize_BiomarkerScreen()`, `Visualize_CrossTab()` and `Visualize_StratifiedSurvival()`. Each takes the same tables and settings as its widget and returns a `ggplot`. The statistics printed under it come from the same `Analyze_*()` call on the same rows. ggplot2 is suggested, not imported: install it to draw figures.
+
+```r
+Visualize_StratifiedSurvival(
+  Synthetic_Results,
+  Synthetic_Participants,
+  lSettings = list(
+    endpoint = "EFS",
+    group_by = list(measure = "CRP", visit = "Baseline", cut = "median"),
+    title = "{endpoint} by {group}",
+    subtitle = "{n} participants"
+  ),
+  dfOutcomes = Synthetic_Outcomes
+)
+```
+
+The settings `title`, `subtitle` and `footnotes` are written with the chart's placeholders, by bio.viz's rules: a name in braces is replaced by text, and a name the figure does not have is left as written. The last line under a figure is always its own: the date it was drawn, by gsm.bio, and R's method and counts behind each statistic it printed, with the R and gsm.bio versions. The [gallery](https://jwildfire.github.io/gsm.bio/articles/gallery.html) shows each figure beside its widget.
+
+## Tables
+
+Each chart's statistics also come as a table, for a report: `Table_GroupComparison()`, `Table_AssociationScatter()`, `Table_CorrelationMatrix()`, `Table_BiomarkerScreen()`, `Table_CrossTab()` and `Table_StratifiedSurvival()`. Each takes the same tables and settings as its widget and returns a data frame, one row per statistic R computed for the view the chart opens on. A row gives the method, each estimate with its interval, the counts, and the p-value written by the display rules: three decimals, `p < 0.001` below that, labelled exploratory with its adjustment named, and no stars. A statistic R did not compute carries R's reason instead.
+
+```r
+dfTable <- Table_StratifiedSurvival(
+  Synthetic_Results,
+  Synthetic_Participants,
+  lSettings = list(
+    endpoint = "EFS",
+    group_by = list(measure = "CRP", visit = "Baseline", cut = "median"),
+    title = "{endpoint} by {group}"
+  ),
+  dfOutcomes = Synthetic_Outcomes
+)
+Write_RTF(dfTable, "survival.rtf")
+```
+
+`Write_RTF()` writes a table to RTF with the r2rtf package: the title and subtitle above, the footnotes beneath, the table's own last. r2rtf is suggested, not imported, and `Write_RTF()` says so when it is not installed.
+
+## Batch runs
+
+A bio.viz chart writes what it draws as a specification, JSON data (bio.viz's docs/output.md, "Specifications"). `Run_Specifications()` reads a list of them and draws each against a dataset, as a figure by its `Visualize_*()` function and an RTF table by its `Table_*()` function and `Write_RTF()`, into a folder, with a manifest. With `bAcrossBiomarkers = TRUE` one specification is drawn once per biomarker.
+
+```r
+dfManifest <- Run_Specifications(
+  "specifications.json",
+  Synthetic_Results,
+  Synthetic_Participants,
+  dfOutcomes = Synthetic_Outcomes,
+  strFolder = "output",
+  bAcrossBiomarkers = TRUE,
+  chrFormats = c("png", "pdf")
+)
+```
+
+A specification is data: nothing in it is evaluated, and a title that looks like code is drawn as text. One that bio.viz would refuse is refused with a sentence and listed in the manifest, and the rest still run. Give the file, the text, or the list `jsonlite::read_json()` reads (or `fromJSON(simplifyVector = FALSE)`): `fromJSON()`'s default simplifies the list into a data frame, which is refused with a sentence that says so.
+
+The reader is held to bio.viz's own over every setting of every chart. It differs on purpose in two places: a chart's `statistic` (and the scatter's `fit_statistic`) must be the chart's own `Analyze_*()` function or null, since gsm.bio computes nothing else; and a specification given as text is checked for depth as one given as an object is ([bio.viz#74](https://github.com/jwildfire/bio.viz/issues/74)).
+
+The manifest counts the participants each view's filters keep, and its `reason` says what was not drawn as asked, in the words of bio.viz's notices: a setting that names something the tables lack, a filter value its column lacks, a filter on a column that is not a filter. A view that keeps no participant is `failed` with "No participant passes the filters." Explicit cut points are applied unchanged to every biomarker of a run across biomarkers, and each row says so.
+
+A PDF is drawn by cairo where this R can load it. Where it cannot (a Mac without XQuartz, for one), the pdf device draws it and a character beyond Latin-1, such as the sign of a cut, is a dot or a stand-in such as `<=`; the row says so. A file already in the folder with an output's name is replaced, and any other file there is left alone. A view that fails part way leaves none of its files.
 
 ## Synthetic study
 
@@ -107,7 +205,7 @@ The package ships a made-up biomarker study, so that a test can assert an answer
 
 ## Status
 
-Version 0.1.0 is in development on `dev`: seven statistics functions, the synthetic study and four widgets, for the group comparison chart, the association scatter, the correlation matrix and the biomarker screen. Widgets for the other charts and static figures come in later versions. [NEWS.md](https://github.com/jwildfire/gsm.bio/blob/dev/NEWS.md) lists what has landed, and the reference site is at <https://jwildfire.github.io/gsm.bio/>.
+Version 0.2.0 is the second release. It adds widgets for the cross-tabulation and the stratified survival chart, and hazard ratios in the biomarker screen. It also adds output from R: a static figure and a statistics table for every chart, the table written to RTF, and batch runs of the specifications bio.viz's charts write. [Version 0.1.0](https://github.com/jwildfire/gsm.bio/releases/tag/v0.1.0) was the first: seven statistics functions, the synthetic study, and widgets for the group comparison, the association scatter, the correlation matrix and the biomarker screen. [NEWS.md](https://github.com/jwildfire/gsm.bio/blob/dev/NEWS.md) has the notes for each, and the reference site is at <https://jwildfire.github.io/gsm.bio/>.
 
 The design is on the obot roadmap: [bio.viz and gsm.bio](https://jwildfire.github.io/obot.roadmap/requirements/design/353_design.html).
 
