@@ -7,7 +7,9 @@
 \description{
 Every \verb{Analyze_*} function returns the same plain named list, whatever it
 computed and whether or not it could compute it. A chart hands over a table
-with one row per participant and receives this back.
+with one row per participant and receives this back. The two functions that
+answer by level take one row per participant and level:
+\code{\link[=Analyze_GroupDifferenceBy]{Analyze_GroupDifferenceBy()}} and \code{\link[=Analyze_DifferenceGrid]{Analyze_DifferenceGrid()}}.
 }
 \section{Members}{
 
@@ -25,7 +27,7 @@ Always all of these, always in this order, all in lower snake case.\tabular{ll}{
    \code{dropped} \tab A data frame of \code{reason} and \code{n}: the rows left out and why. No rows when nothing was dropped. \cr
    \code{warnings} \tab An unnamed list of the warnings R raised inside the wrapped call, as text. They are captured here and never printed. \cr
    \code{notes} \tab An unnamed list of remarks of the package's own, as text. \cr
-   \code{rows} \tab A data frame for a function's many-row results: pairwise comparisons, per-group correlations, the pairs of a matrix, the points of a fitted line, the cells of a table, the groups of a survival comparison, the biomarkers of a screen. Its columns are given on each function's page. No rows when there are none. \cr
+   \code{rows} \tab A data frame for a function's many-row results: pairwise comparisons, the levels a group test was run at, per-group correlations, the pairs of a matrix, the points of a fitted line, the cells of a table, the groups of a survival comparison, the biomarkers of a screen, the cells of a grid of differences. Its columns are given on each function's page. No rows when there are none. \cr
 }
 
 
@@ -116,7 +118,8 @@ attached.
 }
 
 \seealso{
-\code{\link[=Analyze_GroupDifference]{Analyze_GroupDifference()}}, \code{\link[=Analyze_Correlation]{Analyze_Correlation()}},
-\code{\link[=Analyze_CorrelationMatrix]{Analyze_CorrelationMatrix()}}, \code{\link[=Analyze_Fit]{Analyze_Fit()}}, \code{\link[=Analyze_Contingency]{Analyze_Contingency()}},
-\code{\link[=Analyze_Survival]{Analyze_Survival()}}, \code{\link[=Analyze_Screen]{Analyze_Screen()}}
+\code{\link[=Analyze_GroupDifference]{Analyze_GroupDifference()}}, \code{\link[=Analyze_GroupDifferenceBy]{Analyze_GroupDifferenceBy()}},
+\code{\link[=Analyze_Correlation]{Analyze_Correlation()}}, \code{\link[=Analyze_CorrelationMatrix]{Analyze_CorrelationMatrix()}}, \code{\link[=Analyze_Fit]{Analyze_Fit()}},
+\code{\link[=Analyze_Contingency]{Analyze_Contingency()}}, \code{\link[=Analyze_Survival]{Analyze_Survival()}}, \code{\link[=Analyze_Screen]{Analyze_Screen()}},
+\code{\link[=Analyze_DifferenceGrid]{Analyze_DifferenceGrid()}}
 }
