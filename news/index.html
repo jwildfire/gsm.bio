@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">gsm.bio</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -38,13 +38,11 @@
 
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.2.0" id="gsmbio-v020-upcoming">gsm.bio v0.2.0 (Upcoming)<a class="anchor" aria-label="anchor" href="#gsmbio-v020-upcoming"></a></h2>
-<p>The next version of gsm.bio. Its work lands on <code>dev</code> and is listed here as it does.</p>
+<p><strong>See it move:</strong> the <a href="https://jwildfire.github.io/obot.roadmap/reports/biomarker-v0.2-demo/" class="external-link">annotated v0.2.0 demo</a> has captures and try-it steps for everything below.</p>
+<p>gsm.bio v0.2.0 draws the rest of bio.viz’s charts from R and adds output from R. Two new widgets, the cross-tabulation and the stratified survival chart, carry R’s tests in the page, and the biomarker screen adds hazard ratios. Every chart can now be drawn without a browser as well: a static figure, its statistics as a table and in RTF, and a whole list of the specifications bio.viz’s charts write, run in one call. Each output prints the same <code>Analyze_*()</code> answers its chart does.</p>
 <div class="section level3">
 <h3 id="whats-new-0-2-0">What’s new<a class="anchor" aria-label="anchor" href="#whats-new-0-2-0"></a></h3>
 <ul><li>
-<strong>A biomarker cut into groups.</strong> A cut variable, <code>list(measure, visit, cut)</code> or <code>list(col, type = "number", cut)</code>, makes groups at the median, the tertiles, the quartiles or typed points, by the same rule as bio.viz: <code><a href="https://rdrr.io/r/stats/quantile.html" class="external-link">quantile()</a></code> with its default, and <code><a href="https://rdrr.io/r/base/cut.html" class="external-link">cut()</a></code> with a value on a point in the lower group. <code><a href="../reference/Widget_GroupComparison.html">Widget_GroupComparison()</a></code> takes one as its groups or its panels, and hands R the groups low to high. <a href="https://github.com/jwildfire/obot.roadmap/issues/359" class="external-link">obot.roadmap#359</a>, <a href="https://github.com/jwildfire/gsm.bio/issues/18" class="external-link">#18</a>, <a href="https://github.com/jwildfire/gsm.bio/pull/31" class="external-link">#31</a>
-</li>
-<li>
 <strong>Cross-tabulation widget.</strong> <a href="https://jwildfire.github.io/gsm.bio/reference/Widget_CrossTab.html"><code>Widget_CrossTab()</code></a>: a two-way table of counts of two columns or cut biomarkers, with R’s chi-square and Fisher’s exact test stored in the page, and each cell’s participants a click away. <a href="https://github.com/jwildfire/obot.roadmap/issues/359" class="external-link">obot.roadmap#359</a>, <a href="https://github.com/jwildfire/gsm.bio/issues/18" class="external-link">#18</a>, <a href="https://github.com/jwildfire/gsm.bio/pull/31" class="external-link">#31</a>
 </li>
 <li>
@@ -60,17 +58,36 @@
 <strong>Statistics tables and RTF.</strong> Six <code>Table_*()</code> functions, one per chart, return the statistics of the view the chart opens on as a data frame, one row per statistic. Each row has its method, estimate and interval, counts, the p-value by the display rules (exploratory, adjustment named, no stars) and R’s reason where it was not computed. The numbers come from the same <code>Analyze_*()</code> calls the charts make. <a href="https://jwildfire.github.io/gsm.bio/reference/Write_RTF.html"><code>Write_RTF()</code></a> writes a table, with its title and footnotes, to RTF through r2rtf, which is suggested, not imported. <a href="https://github.com/jwildfire/obot.roadmap/issues/362" class="external-link">obot.roadmap#362</a>, <a href="https://github.com/jwildfire/gsm.bio/issues/38" class="external-link">#38</a>, <a href="https://github.com/jwildfire/gsm.bio/pull/41" class="external-link">#41</a>
 </li>
 <li>
-<strong>Titles and footnotes on the widgets.</strong> Every widget takes bio.viz’s <code>title</code>, <code>subtitle</code> and <code>footnotes</code> settings, with the chart’s placeholders. The chart’s own footnote names the R and gsm.bio versions that computed the results stored with the page, which the widget now hands it. <a href="https://github.com/jwildfire/obot.roadmap/issues/362" class="external-link">obot.roadmap#362</a>, <a href="https://github.com/jwildfire/gsm.bio/issues/37" class="external-link">#37</a>, <a href="https://github.com/jwildfire/gsm.bio/pull/40" class="external-link">#40</a>
-</li>
-<li>
 <strong>Batch runs of chart specifications.</strong> <a href="https://jwildfire.github.io/gsm.bio/reference/Run_Specifications.html"><code>Run_Specifications()</code></a> reads the specifications bio.viz’s charts write and draws each against a dataset, as a figure (PNG, PDF or SVG) and an RTF table, into a folder, with a manifest of what was written. One specification can run across every biomarker, one figure and one table each. A specification is data and nothing in it is evaluated; one that cannot be read is refused with bio.viz’s sentence, and the rest still run. The manifest counts the participants each view’s filters keep and says what the tables could not honour, as bio.viz’s notices do. <a href="https://github.com/jwildfire/obot.roadmap/issues/362" class="external-link">obot.roadmap#362</a>, <a href="https://github.com/jwildfire/gsm.bio/issues/39" class="external-link">#39</a>, <a href="https://github.com/jwildfire/gsm.bio/pull/42" class="external-link">#42</a>
 </li>
 </ul></div>
 <div class="section level3">
 <h3 id="also-in-this-release-0-2-0">Also in this release<a class="anchor" aria-label="anchor" href="#also-in-this-release-0-2-0"></a></h3>
 <ul><li>
+<strong>A biomarker cut into groups.</strong> A cut variable, <code>list(measure, visit, cut)</code> or <code>list(col, type = "number", cut)</code>, makes groups at the median, the tertiles, the quartiles or typed points, by the same rule as bio.viz: <code><a href="https://rdrr.io/r/stats/quantile.html" class="external-link">quantile()</a></code> with its default, and <code><a href="https://rdrr.io/r/base/cut.html" class="external-link">cut()</a></code> with a value on a point in the lower group. <code><a href="../reference/Widget_GroupComparison.html">Widget_GroupComparison()</a></code> takes one as its groups or its panels, and hands R the groups low to high. <a href="https://github.com/jwildfire/obot.roadmap/issues/359" class="external-link">obot.roadmap#359</a>, <a href="https://github.com/jwildfire/gsm.bio/issues/18" class="external-link">#18</a>, <a href="https://github.com/jwildfire/gsm.bio/pull/31" class="external-link">#31</a>
+</li>
+<li>
+<strong>Titles and footnotes on the widgets.</strong> Every widget takes bio.viz’s <code>title</code>, <code>subtitle</code> and <code>footnotes</code> settings, with the chart’s placeholders. The chart’s own footnote names the R and gsm.bio versions that computed the results stored with the page, which the widget now hands it. <a href="https://github.com/jwildfire/obot.roadmap/issues/362" class="external-link">obot.roadmap#362</a>, <a href="https://github.com/jwildfire/gsm.bio/issues/37" class="external-link">#37</a>, <a href="https://github.com/jwildfire/gsm.bio/pull/40" class="external-link">#40</a>
+</li>
+<li>
+<strong>A filter set to no value lets nobody through,</strong> as the chart opens it. In R, a filter of several values whose <code>start</code> is an empty list used to let everyone through. It now keeps no one, and each figure and table says no participant passes the filters. <a href="https://github.com/jwildfire/gsm.bio/issues/39" class="external-link">#39</a>, <a href="https://github.com/jwildfire/gsm.bio/pull/42" class="external-link">#42</a>
+</li>
+<li>
+<strong>A column’s categories in the chart’s order.</strong> The cross-tabulation’s categories and the survival chart’s groups of a column are handed to R as the chart draws them: by name with numbers as numbers, so “2 mg” comes before “10 mg” and “a” before “B”. The chart finds its stored results for such columns again. A cut’s order is unchanged. <a href="https://github.com/jwildfire/gsm.bio/issues/44" class="external-link">#44</a>, <a href="https://github.com/jwildfire/gsm.bio/pull/45" class="external-link">#45</a>
+</li>
+<li>
+<strong>An infinite odds ratio is kept.</strong> A stored result now writes R’s <code>Inf</code>, <code>-Inf</code> and <code>NaN</code> as text, which bio.viz reads back as the numbers. Before, the page had <code>null</code>, so Fisher’s odds ratio of a table with an empty cell disappeared. The cross-tabulation’s figure now prints each estimate with its interval, as the chart’s line does. The figure and the table name Fisher’s odds ratio by its rows and columns, for example “odds ratio (A / B, odds of x against y)”, and print an infinite one in words: “infinite, 95% confidence interval 14.86 to infinity”. <a href="https://github.com/jwildfire/gsm.bio/issues/44" class="external-link">#44</a>, <a href="https://github.com/jwildfire/gsm.bio/pull/45" class="external-link">#45</a>
+</li>
+<li>
 <strong>Pages carry text as UTF-8 in any locale.</strong> A widget made in an R session whose locale is not UTF-8 (<code>Rscript</code> started with no <code>LANG</code>) wrote text that is not ASCII, such as a category “Ödem”, into its page as escapes. The chart showed “<c3>&lt;96&gt;dem”, and a view keyed by it said statistics are unavailable. Every widget now marks its tables’, settings’ and results’ text as UTF-8 before it computes or writes anything. <a href="https://github.com/jwildfire/gsm.bio/issues/22" class="external-link">#22</a>, <a href="https://github.com/jwildfire/gsm.bio/pull/34" class="external-link">#34</a></c3></li>
+<li>
+<strong>The widgets carry bio.viz v0.2.0,</strong> copied from bio.viz <code>dev</code> at its v0.2.0 release preparation, with the specification schema the batch runner reads. safety.viz stays at v1.9.0. <a href="https://github.com/jwildfire/gsm.bio/issues/44" class="external-link">#44</a>, <a href="https://github.com/jwildfire/gsm.bio/pull/45" class="external-link">#45</a>
+</li>
 </ul></div>
+<div class="section level3">
+<h3 id="tests-and-provenance-0-2-0">Tests and provenance<a class="anchor" aria-label="anchor" href="#tests-and-provenance-0-2-0"></a></h3>
+<p>300 tests (34,586 expectations on R 4.3.3) pass from the source tree, where none may skip; <code>R CMD check</code> runs them too, skipping the ten that read the repository’s own files. Every statistic a widget stores, a figure prints or a table holds is held to the <code>Analyze_*()</code> function on rows the test works out from the study’s tables. Each figure is also held to a snapshot of the data and labels it draws, which are the same on every platform. The batch runner’s reader is held to bio.viz’s own reader, run in node on the same specifications: the format’s rules case by case, and every setting of every chart given each of 21 values (4,578 specifications). The rules R shares with the charts are held to frames, requests and filter states written by the vendored bundles: bio.viz <code>dev</code> at <a href="https://github.com/jwildfire/bio.viz/commit/35ccfd323f49b3afdf1d9b9c20eedff0fe696a3b" class="external-link">35ccfd3</a>, and through it safety.viz <code>dev</code> at <a href="https://github.com/jwildfire/safety.viz/commit/096cc26d48e5d3cd1bf03eb78249658974c7a307" class="external-link">096cc26</a>.</p>
+</div>
 </div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.1.0" id="gsmbio-v010">gsm.bio v0.1.0<a class="anchor" aria-label="anchor" href="#gsmbio-v010"></a></h2>

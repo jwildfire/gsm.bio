@@ -22,7 +22,7 @@
 
     <a class="navbar-brand me-2" href="index.html">gsm.bio</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -194,7 +194,7 @@
 <span>  dfOutcomes <span class="op">=</span> <span class="va">Synthetic_Outcomes</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <p>It stores <code><a href="reference/Analyze_Survival.html">Analyze_Survival()</a></code>’s answer for the curves the settings open on. A cut’s groups are handed to R high to low, so the hazard ratio is the higher group’s hazard over the lower’s.</p>
-<p>Every widget carries two JavaScript bundles, both copied from bio.viz with the commit and a checksum per file recorded in <code>inst/htmlwidgets/lib/SOURCE.json</code>: bio.viz v0.1.0, and safety.viz v1.9.0, the first safety.viz with the kit bio.viz’s charts are built from. The safety.viz copy is the one bio.viz takes from safety.viz’s <code>dev</code> branch at its v1.9.0 release preparation, and its commit is recorded too. gsm.safety carries an earlier safety.viz without the kit; once it carries v1.9.0, the widgets can take the bundle from there instead of carrying their own copy.</p>
+<p>Every widget carries two JavaScript bundles, both copied from bio.viz with the commit and a checksum per file recorded in <code>inst/htmlwidgets/lib/SOURCE.json</code>: bio.viz v0.2.0, and safety.viz v1.9.0, the first safety.viz with the kit bio.viz’s charts are built from. The safety.viz copy is the one bio.viz takes from safety.viz’s <code>dev</code> branch at its v1.9.0 release preparation, and its commit is recorded too. gsm.safety carries an earlier safety.viz without the kit; once it carries v1.9.0, the widgets can take the bundle from there instead of carrying their own copy.</p>
 </div>
 <div class="section level2">
 <h2 id="figures">Figures<a class="anchor" aria-label="anchor" href="#figures"></a>
@@ -259,7 +259,7 @@
 <div class="section level2">
 <h2 id="status">Status<a class="anchor" aria-label="anchor" href="#status"></a>
 </h2>
-<p><a href="https://github.com/jwildfire/gsm.bio/releases/tag/v0.1.0" class="external-link">Version 0.1.0</a> is released: seven statistics functions, the synthetic study and four widgets, for the group comparison chart, the association scatter, the correlation matrix and the biomarker screen. Version 0.2.0 is in development on <code>dev</code>; widgets for the other charts and static figures come in later versions. <a href="https://github.com/jwildfire/gsm.bio/blob/dev/NEWS.md" class="external-link">NEWS.md</a> lists what has landed, and the reference site is at <a href="https://jwildfire.github.io/gsm.bio/" class="uri">https://jwildfire.github.io/gsm.bio/</a>.</p>
+<p><a href="https://github.com/jwildfire/gsm.bio/releases/tag/v0.1.0" class="external-link">Version 0.1.0</a> is released: seven statistics functions, the synthetic study, and widgets for the group comparison, the association scatter, the correlation matrix and the biomarker screen. Version 0.2.0 is being prepared on <code>dev</code>. It adds widgets for the cross-tabulation and the stratified survival chart, and hazard ratios in the biomarker screen. It also adds output from R: a static figure and a statistics table for every chart, the table written to RTF, and batch runs of the specifications bio.viz’s charts write. <a href="https://github.com/jwildfire/gsm.bio/blob/dev/NEWS.md" class="external-link">NEWS.md</a> has the notes for each, and the reference site is at <a href="https://jwildfire.github.io/gsm.bio/" class="uri">https://jwildfire.github.io/gsm.bio/</a>.</p>
 <p>The design is on the obot roadmap: <a href="https://jwildfire.github.io/obot.roadmap/requirements/design/353_design.html" class="external-link">bio.viz and gsm.bio</a>.</p>
 </div>
 <div class="section level2">

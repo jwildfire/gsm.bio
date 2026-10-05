@@ -54,8 +54,11 @@ and the functions beside it. ggplot2 is suggested, not imported.
 
 ## Status
 
-Version 0.1.0 is in development: the statistics functions, a synthetic
-biomarker study with known planted effects, and the first widgets.
+Version 0.2.0 is being prepared: the statistics functions, a synthetic
+biomarker study with known planted effects, a widget for each of
+bio.viz's six charts, and from R a static figure, a statistics table,
+RTF and batch runs of chart specifications. Version 0.1.0 is the latest
+release.
 
 ## See also
 
