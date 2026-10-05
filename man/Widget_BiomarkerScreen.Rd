@@ -8,11 +8,11 @@ Widget_BiomarkerScreen(
   dfResults,
   dfParticipants = NULL,
   lSettings = list(),
-  dfOutcomes = NULL,
   width = NULL,
   height = NULL,
   elementId = NULL,
-  bDebug = FALSE
+  bDebug = FALSE,
+  dfOutcomes = NULL
 )
 }
 \arguments{
@@ -40,12 +40,6 @@ group comparison \code{start_value}, \code{visits}, \code{value_type}, \code{gro
 for the stratified survival chart \code{group_by} and \code{endpoint}, and for any
 \code{filters}, \code{connection}, \code{waiting_note} or \code{back}. Default: \code{list()}.}
 
-\item{dfOutcomes}{\code{data.frame} An outcomes table, one row per participant and
-endpoint with a time and a flag, as \code{\link[=Widget_StratifiedSurvival]{Widget_StratifiedSurvival()}} takes
-it, or \code{NULL}. With it the screen offers a hazard ratio. It comes after
-\code{lSettings}, so a call written for v0.1.0 works as it did. Default:
-\code{NULL}.}
-
 \item{width}{\code{character} Width of the widget as a CSS unit. Default: \code{NULL},
 as wide as its container.}
 
@@ -57,6 +51,12 @@ as wide as its container.}
 
 \item{bDebug}{\code{logical} Print debug messages in the browser console?
 Default: \code{FALSE}.}
+
+\item{dfOutcomes}{\code{data.frame} An outcomes table, one row per participant and
+endpoint with a time and a flag, as \code{\link[=Widget_StratifiedSurvival]{Widget_StratifiedSurvival()}} takes
+it, or \code{NULL}. With it the screen offers a hazard ratio. It is the last
+argument, after v0.1.0's, so every call written for v0.1.0, by position or
+by name, works as it did; give it by name. Default: \code{NULL}.}
 }
 \value{
 An \code{htmlwidget}. Its payload \code{x} carries \code{dfResults},

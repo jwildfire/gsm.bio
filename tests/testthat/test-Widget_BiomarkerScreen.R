@@ -273,7 +273,7 @@ lHazardSettings <- function() {
 }
 
 test_that("with an outcomes table the screen widget stores the hazard rows and each row's survival test (#35)", {
-  lWidget <- Widget_BiomarkerScreen(Synthetic_Results, Synthetic_Participants, lHazardSettings(), Synthetic_Outcomes)
+  lWidget <- Widget_BiomarkerScreen(Synthetic_Results, Synthetic_Participants, lHazardSettings(), dfOutcomes = Synthetic_Outcomes)
   expect_named(lWidget$x, c("dfResults", "dfParticipants", "dfOutcomes", "lSettings", "bDebug", "bAutoWidth", "bAutoHeight", "lStatistics"))
   expect_identical(lWidget$x$dfOutcomes, Synthetic_Outcomes)
   lResults <- lWidget$x$lStatistics$results
@@ -309,19 +309,21 @@ test_that("with an outcomes table the screen widget stores the hazard rows and e
   expect_error(Widget_BiomarkerScreen(Synthetic_Results, Synthetic_Participants, dfOutcomes = "EFS"), "dfOutcomes is not a data.frame or NULL")
 })
 
-test_that("a call written for v0.1.0, its settings third by position, makes the same screen as before (#16, #35)", {
+test_that("a call written for v0.1.0, every argument in v0.1.0's place, makes the same screen as before (#16, #35, #48)", {
   # v0.1.0's signature: (dfResults, dfParticipants, lSettings, width, height,
-  # elementId, bDebug). The outcomes table came later, after the settings.
+  # elementId, bDebug). The outcomes table came later, and comes last.
   chrFormals <- names(formals(Widget_BiomarkerScreen))
-  expect_identical(chrFormals[1:4], c("dfResults", "dfParticipants", "lSettings", "dfOutcomes"))
-  expect_identical(chrFormals[5:8], c("width", "height", "elementId", "bDebug"))
+  expect_identical(chrFormals, c("dfResults", "dfParticipants", "lSettings", "width", "height", "elementId", "bDebug", "dfOutcomes"))
   lPositional <- Widget_BiomarkerScreen(Synthetic_Results, Synthetic_Participants, lScreenSettings())
   lNamed <- lScreenWidget()
   expect_identical(lPositional$x$lSettings, lScreenSettings())
   expect_false("dfOutcomes" %in% names(lPositional$x))
   expect_identical(lPositional$x$lStatistics$results, lNamed$x$lStatistics$results)
-  # The size and the debug switch, by name, as v0.1.0 took them.
+  # The size and the debug switch, by name and by position, as v0.1.0 took them.
   lSized <- Widget_BiomarkerScreen(Synthetic_Results, Synthetic_Participants, lScreenSettings(), width = "100%", height = "700px", bDebug = TRUE)
   expect_identical(lSized[c("width", "height")], list(width = "100%", height = "700px"))
   expect_true(lSized$x$bDebug)
+  lPlaced <- Widget_BiomarkerScreen(Synthetic_Results, Synthetic_Participants, lScreenSettings(), "100%", "700px", "screen", TRUE)
+  expect_identical(lPlaced[c("width", "height", "elementId")], list(width = "100%", height = "700px", elementId = "screen"))
+  expect_true(lPlaced$x$bDebug)
 })

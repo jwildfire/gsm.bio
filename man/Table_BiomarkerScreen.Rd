@@ -27,9 +27,8 @@ offers are read from it. Default: \code{NULL}.}
 
 \item{dfOutcomes}{\code{data.frame} An outcomes table, one row per participant and
 endpoint with a time and a flag, as \code{\link[=Widget_StratifiedSurvival]{Widget_StratifiedSurvival()}} takes
-it, or \code{NULL}. With it the screen offers a hazard ratio. It comes after
-\code{lSettings}, so a call written for v0.1.0 works as it did. Default:
-\code{NULL}.}
+it, or \code{NULL}. With it the screen offers a hazard ratio. It follows
+\code{lSettings}. Default: \code{NULL}.}
 }
 \value{
 A \code{data.frame} of text: \code{Biomarker}, then \code{Statistic}, \code{Method},

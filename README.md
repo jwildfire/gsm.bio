@@ -97,7 +97,7 @@ Widget_BiomarkerScreen(
 )
 ```
 
-It stores `Analyze_Screen()`'s answer for the screen the settings open on and, for every row, exactly what the chart that row opens asks of R: for a difference the group comparison at the screen's one visit, of the two groups, with Welch's test; for a correlation the scatter with the biomarker along the bottom and the variable up the side; for a hazard ratio the survival curves of the biomarker cut where the screen cut it. On the synthetic study, Placebo against Treatment, that is one screen and twelve group comparisons. The outcomes table is `dfOutcomes`, after the settings:
+It stores `Analyze_Screen()`'s answer for the screen the settings open on and, for every row, exactly what the chart that row opens asks of R: for a difference the group comparison at the screen's one visit, of the two groups, with Welch's test; for a correlation the scatter with the biomarker along the bottom and the variable up the side; for a hazard ratio the survival curves of the biomarker cut where the screen cut it. On the synthetic study, Placebo against Treatment, that is one screen and twelve group comparisons. The outcomes table is `dfOutcomes`, the screen's last argument, given by name, so every v0.1.0 call works as it did:
 
 ```r
 Widget_BiomarkerScreen(
