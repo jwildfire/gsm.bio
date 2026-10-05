@@ -41,21 +41,29 @@ dfNewsVersions <- function(chrLines) {
   )
 }
 
-test_that("README.md gives the install lines for the newest release, whose tag exists, and for the integration branch (#1, #27, #29)", {
+test_that("README.md gives the install lines for the newest release, or the release this tree prepares, and for the integration branch (#1, #27, #29, #48)", {
   strText <- paste(chrRepositoryFile("README.md"), collapse = "\n")
   dfVersions <- dfNewsVersions(chrRepositoryFile("NEWS.md"))
-  strRelease <- dfVersions$version[!dfVersions$upcoming][1]
+  strPackage <- as.character(utils::packageVersion("gsm.bio"))
+  # The release this tree prepares: NEWS's newest section, still Upcoming, is
+  # the package's own version. Its tag is made from main when it ships, so the
+  # README tagged with it already installs it. Otherwise the release line is
+  # the newest released version, whose tag is on GitHub.
+  bPreparing <- isTRUE(dfVersions$upcoming[1]) && identical(dfVersions$version[1], strPackage)
+  strRelease <- if (bPreparing) strPackage else dfVersions$version[!dfVersions$upcoming][1]
   expect_false(is.na(strRelease), label = "NEWS.md has a released version")
-  # The release is installed from its tag.
   expect_match(strText, sprintf('remotes::install_github("jwildfire/gsm.bio@v%s")', strRelease), fixed = TRUE)
   expect_match(strText, 'remotes::install_github("jwildfire/gsm.bio@dev")', fixed = TRUE)
   expect_false(grepl("is tagged", strText, fixed = TRUE), label = "a sentence that waits for the tag")
-  # The tag is on GitHub, so the release line installs.
   chrTags <- suppressWarnings(system2(
     "git", c("ls-remote", "--tags", "https://github.com/jwildfire/gsm.bio.git", sprintf("refs/tags/v%s", strRelease)),
     stdout = TRUE, stderr = FALSE
   ))
-  expect_identical(length(chrTags), 1L, label = sprintf("tag v%s on GitHub", strRelease))
+  if (bPreparing) {
+    expect_lte(length(chrTags), 1L, label = sprintf("tag v%s on GitHub, once at most", strRelease))
+  } else {
+    expect_identical(length(chrTags), 1L, label = sprintf("tag v%s on GitHub", strRelease))
+  }
 })
 
 test_that("NEWS.md opens with the v0.2.0 section, Upcoming until its tag, above the v0.1.0 release (#1, #29, #44)", {
