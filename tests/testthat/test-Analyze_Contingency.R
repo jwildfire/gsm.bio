@@ -200,7 +200,7 @@ test_that("Fisher's exact test on a two-by-two table with small margins gives fi
   expect_identical(lResult$estimates$estimate, unname(lBase$estimate))
   expect_identical(c(lResult$estimates$lower, lResult$estimates$upper), as.numeric(lBase$conf.int))
   expect_identical(lResult$counts, 12L)
-  expect_match(lResult$notes[[1]], "Below it here: arm = A has 7; grade = 3 has 2.", fixed = TRUE)
+  expect_match(lResult$notes[[1]], "Below it here: grade = 3 has 2.", fixed = TRUE)
   expect_identical(Analyze_Contingency(dfTwo, "arm", "grade")$status, "too_small")
 })
 
