@@ -41,7 +41,7 @@ dfNewsVersions <- function(chrLines) {
   )
 }
 
-test_that("README.md gives the install lines for the newest release, or the release this tree prepares, and for the integration branch (#1, #27, #29, #48)", {
+test_that("README.md gives the install lines for the newest release, or the release this tree prepares, and for the integration branch (#1, #27, #29, #48, #62)", {
   strText <- paste(chrRepositoryFile("README.md"), collapse = "\n")
   dfVersions <- dfNewsVersions(chrRepositoryFile("NEWS.md"))
   strPackage <- as.character(utils::packageVersion("gsm.bio"))
@@ -58,10 +58,10 @@ test_that("README.md gives the install lines for the newest release, or the rele
   expect_match(strText, sprintf('remotes::install_github("jwildfire/gsm.bio@v%s")', strRelease), fixed = TRUE)
   expect_match(strText, 'remotes::install_github("jwildfire/gsm.bio@dev")', fixed = TRUE)
   expect_false(grepl("is tagged", strText, fixed = TRUE), label = "a sentence that waits for the tag")
-  chrTags <- suppressWarnings(system2(
-    "git", c("ls-remote", "--tags", "https://github.com/jwildfire/gsm.bio.git", sprintf("refs/tags/v%s", strRelease)),
-    stdout = TRUE, stderr = FALSE
-  ))
+  # The tag, asked of GitHub with git. When GitHub cannot be asked the test
+  # stops with what git said: no answer is not "no tag", whichever is
+  # expected (#62).
+  chrTags <- chrRemoteTag("https://github.com/jwildfire/gsm.bio.git", sprintf("v%s", strRelease))
   if (bPreparing) {
     expect_lte(length(chrTags), 1L, label = sprintf("tag v%s on GitHub, once at most", strRelease))
   } else {

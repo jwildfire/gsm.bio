@@ -91,16 +91,26 @@ chrReleaseRefusals <- function(strPackageVersion, lRecord, lSays) {
   ))
 }
 
-# git, asked up to three times: GitHub is over a network. What it wrote, or an
-# error with what it said the last time.
+# git, asked up to three times, a little later each time: GitHub is over a
+# network. What it wrote, or an error with what it said the last time. A git
+# that could not be asked is never an answer.
 chrGit <- function(chrArgs, nTries = 3L) {
   for (iTry in seq_len(nTries)) {
     chrOut <- suppressWarnings(system2("git", chrArgs, stdout = TRUE, stderr = TRUE))
     if (is.null(attr(chrOut, "status"))) {
       return(as.character(chrOut))
     }
+    if (iTry < nTries) Sys.sleep(2 * iTry)
   }
   stop("git ", paste(chrArgs[1:2], collapse = " "), " did not run: ", paste(chrOut, collapse = " "), call. = FALSE)
+}
+
+# A tag of a repository as GitHub has it: the lines git lists for it, none
+# when there is no such tag. An error when GitHub could not be asked, so that
+# "could not ask" is never read as "no such tag".
+chrRemoteTag <- function(strRepository, strTag) {
+  chrListed <- chrGit(c("ls-remote", "--tags", strRepository, paste0("refs/tags/", strTag)))
+  grep("^[0-9a-f]{40}\trefs/tags/", chrListed, value = TRUE)
 }
 
 # bio.viz's tag as GitHub has it: NULL when there is no such tag, and otherwise
@@ -108,7 +118,7 @@ chrGit <- function(chrArgs, nTries = 3L) {
 # with no file contents (the tag's commit and its folders only).
 lBioVizTag <- function(strTag) {
   strRef <- paste0("refs/tags/", strTag)
-  if (length(chrGit(c("ls-remote", "--tags", strBioVizRepository, strRef))) == 0L) {
+  if (length(chrRemoteTag(strBioVizRepository, strTag)) == 0L) {
     return(NULL)
   }
   strStore <- tempfile("bio.viz-tag-")
