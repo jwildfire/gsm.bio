@@ -90,13 +90,15 @@ for two groups the difference in means with its interval.
 The data are long: one row per participant and level, as a results table
 holds one biomarker across its visits. Each row of the answer is
 \code{Analyze_GroupDifference()}'s own answer on the rows of that level, with
-\code{bPairwise} off, so its unadjusted p-value is the one printed when the level
-is looked at alone.
+\code{bPairwise} off and the same groups named, so its unadjusted p-value is the
+one printed when the level is looked at alone with those groups.
 
 The groups are the same at every level: the ones named in \code{chrGroups}, or
 every group present anywhere among the levels answered. A group with nobody
 at a level is too small there; the level is not quietly compared without
-it.
+it. So with three or more groups, a level where one of them has nobody has
+no p-value here, while \code{Analyze_GroupDifference()} on that level's rows
+alone, with \code{chrGroups} left out, compares the groups that are there.
 
 The adjustment is \code{\link[stats:p.adjust]{stats::p.adjust()}} across the levels that have a
 p-value. A level that could not be computed, because a group is below the
