@@ -15,7 +15,7 @@ answer by level take one row per participant and level:
 
 Always all of these, always in this order, all in lower snake case.\tabular{ll}{
    Member \tab Holds \cr
-   \code{status} \tab \code{"ok"}; \code{"too_small"} when a group is below the minimum size; \code{"error"} when R stopped or the request could not be met. \cr
+   \code{status} \tab \code{"ok"}; \code{"too_small"} when a group is below the minimum size, or a table has too few categories with anyone in them for Fisher's exact test; \code{"error"} when R stopped or the request could not be met. \cr
    \code{reason} \tab Why there are no numbers, as text. \code{NA} when \code{status} is \code{"ok"}. For \code{"error"} it is R's own message where R raised one. \cr
    \code{test} \tab The method asked for, as the caller named it, for example \code{"wilcoxon"}. \cr
    \code{method} \tab The method's name as R reports it, for example \code{"Welch Two Sample t-test"}. \cr
@@ -106,6 +106,9 @@ A statistic is not computed when a group has fewer participants than
 threshold: it is the smallest size at which every wrapped test runs and
 returns its interval with a little to spare, and it is the conventional
 floor for an expected count in a chi-squared test.
+
+Fisher's exact test is the one exception: it is exact at any count, so
+\code{\link[=Analyze_Contingency]{Analyze_Contingency()}} does not apply the minimum to it. See there.
 }
 
 \section{One definition}{

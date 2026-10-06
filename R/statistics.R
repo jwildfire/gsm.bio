@@ -30,7 +30,7 @@ local({
 #'
 #' | Member | Holds |
 #' |---|---|
-#' | `status` | `"ok"`; `"too_small"` when a group is below the minimum size; `"error"` when R stopped or the request could not be met. |
+#' | `status` | `"ok"`; `"too_small"` when a group is below the minimum size, or a table has too few categories with anyone in them for Fisher's exact test; `"error"` when R stopped or the request could not be met. |
 #' | `reason` | Why there are no numbers, as text. `NA` when `status` is `"ok"`. For `"error"` it is R's own message where R raised one. |
 #' | `test` | The method asked for, as the caller named it, for example `"wilcoxon"`. |
 #' | `method` | The method's name as R reports it, for example `"Welch Two Sample t-test"`. |
@@ -111,6 +111,9 @@ local({
 #' threshold: it is the smallest size at which every wrapped test runs and
 #' returns its interval with a little to spare, and it is the conventional
 #' floor for an expected count in a chi-squared test.
+#'
+#' Fisher's exact test is the one exception: it is exact at any count, so
+#' [Analyze_Contingency()] does not apply the minimum to it. See there.
 #'
 #' @section One definition:
 #' The functions are defined once, in the file
@@ -511,6 +514,17 @@ Analyze_Fit <- Analyze_Fit
 #' which `chisq.test()` itself warns. When any cell is flagged, `notes` says
 #' how many, and R's warning is in `warnings`.
 #'
+#' The minimum group size, `nMinGroup`, applies to `"chisq"` only. A row or a
+#' column of the table that totals fewer participants stops the chi-squared
+#' test, with `status` `"too_small"`. Fisher's exact test is exact at any
+#' count, which is what it is for, so it is exempt: it runs on any table in
+#' which two or more rows and two or more columns have at least one
+#' participant, whatever `nMinGroup` is. When a row or a column is below the
+#' minimum, `notes` says so and names it. A category nobody is in is no row
+#' and no column: where that leaves fewer than two either way, the result has
+#' `status` `"too_small"` and R's reason, where `fisher.test()` itself would
+#' return a p-value of 1.
+#'
 #' @inheritParams Analyze_GroupDifference
 #' @param strRowCol,strColCol `character` Names of the two categorical columns:
 #'   the rows and the columns of the table.
@@ -523,9 +537,10 @@ Analyze_Fit <- Analyze_Fit
 #'   present, in sorted order.
 #' @param nConfLevel `numeric` Confidence level of the odds ratio's interval.
 #'   Default: `0.95`.
-#' @param nMinGroup `numeric` The smallest category the test is computed for.
-#'   If any row or column of the table totals fewer participants, the result
-#'   has `status` `"too_small"` and no numbers. Default: `nMinGroupDefault`,
+#' @param nMinGroup `numeric` The smallest category the chi-squared test is
+#'   computed for. If any row or column of the table totals fewer
+#'   participants, the result for `"chisq"` has `status` `"too_small"` and no
+#'   numbers. It is not applied to `"fisher"`. Default: `nMinGroupDefault`,
 #'   which is 5. See [StatisticsResult].
 #'
 #' @return The fixed result described in [StatisticsResult]. Here `counts` is
@@ -541,6 +556,15 @@ Analyze_Fit <- Analyze_Fit
 #' lResult$rows
 #'
 #' Analyze_Contingency(Synthetic_Participants, "ARM", "RESPONSE", strMethod = "fisher")$estimates
+#'
+#' # A table with a small margin: twenty participants, two of them at grade 3.
+#' # Fisher's exact test runs; the chi-squared test is not computed.
+#' dfGrades <- data.frame(
+#'   arm = rep(c("A", "B"), each = 10),
+#'   grade = c(rep(1:3, times = c(6, 3, 1)), rep(1:3, times = c(4, 5, 1)))
+#' )
+#' Analyze_Contingency(dfGrades, "arm", "grade", strMethod = "fisher")$p_value
+#' Analyze_Contingency(dfGrades, "arm", "grade")$reason
 #'
 #' @family statistics
 #' @export
