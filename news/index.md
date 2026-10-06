@@ -28,6 +28,27 @@ as it does.
   Every released function answers as it did.
   [obot.roadmap#367](https://github.com/jwildfire/obot.roadmap/issues/367),
   [\#52](https://github.com/jwildfire/gsm.bio/issues/52)
+- **The group comparison widget at the chart’s three levels.**
+  [`Widget_GroupComparison()`](https://jwildfire.github.io/gsm.bio/reference/Widget_GroupComparison.html)
+  now opens on a trend tile for every biomarker, each a line per group
+  across the visits. A tile opens that biomarker across its visits in
+  one picture, with the number in each group and R’s test of the groups
+  under each visit, and a visit opens the single-visit view the widget
+  drew before. The page stores the row of tests for every biomarker,
+  with the p-values as R gives them and under the adjustment across
+  visits the setting `visit_adjustment` names (`"holm"` or `"BH"`), and
+  still stores each visit’s own test, so a saved page shows all three
+  levels with no R and no network. Unscheduled visits are left out at
+  every level unless `unscheduled_visits = TRUE`, under safety.viz’s
+  setting names; R and the page find them by the same names, and the
+  static figure and the table leave them out as the chart does. New
+  settings pass through to the chart: `tile_summary`, `tile_min_spread`,
+  `time_mark`, `visit_adjustment`, `statistic_by_visit` and the three
+  unscheduled-visit settings. A page whose settings name a biomarker and
+  no visit used to open on a panel for every visit; it now opens on the
+  picture over time, and `visits` names the visits to open as panels.
+  [obot.roadmap#367](https://github.com/jwildfire/obot.roadmap/issues/367),
+  [\#53](https://github.com/jwildfire/gsm.bio/issues/53)
 - **Fisher’s exact test runs on tables with small margins.**
   [`Analyze_Contingency()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_Contingency.html)
   no longer applies the minimum group size to Fisher’s exact test, which

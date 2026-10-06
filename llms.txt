@@ -71,9 +71,12 @@ same version of R.
 ## Widgets
 
 [`Widget_GroupComparison()`](https://jwildfire.github.io/gsm.bio/reference/Widget_GroupComparison.md)
-draws bio.viz’s group comparison chart from R: one biomarker value
-across the levels of a category, as boxes, violins or points, with a
-test of the groups under each panel.
+draws bio.viz’s group comparison chart from R: how a biomarker value
+differs between the levels of a category, at three levels. It opens on a
+trend tile for every biomarker, a tile opens one biomarker across its
+visits with a test of the groups under each visit, and a visit opens
+that visit alone, as boxes, violins or points, with a test under each
+panel.
 
 ``` r
 
@@ -86,16 +89,20 @@ Widget_GroupComparison(
 ```
 
 It takes the results table, optionally the participant table, and the
-chart’s settings as a list under bio.viz’s own names. The chart opens on
-an overview of every biomarker at every visit, which prints no test; a
-click on a biomarker opens it alone, with a panel for each visit and a
-test under each. `start_value = "IL-6"` opens that biomarker straight
-away.
+chart’s settings as a list under bio.viz’s own names. The tiles draw
+each group’s median across the visits and print no test.
+`start_value = "IL-6"` opens that biomarker over time straight away, and
+`visits` names the visits to open as panels. Unscheduled visits are left
+out at every level unless `unscheduled_visits = TRUE`.
 
-The tests are computed in R when the widget is made, by
-[`Analyze_GroupDifference()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_GroupDifference.md),
-for each biomarker at each visit panel the chart draws at the widget’s
-settings, and are stored in the page. Saved with
+The tests are computed in R when the widget is made and are stored in
+the page: for each biomarker,
+[`Analyze_GroupDifferenceBy()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_GroupDifferenceBy.md)’s
+test under every visit of its picture over time, with the p-values as R
+gives them and under the adjustment `visit_adjustment` names when it
+names one, and
+[`Analyze_GroupDifference()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_GroupDifference.md)’s
+test for each visit alone. Saved with
 [`htmlwidgets::saveWidget()`](https://rdrr.io/pkg/htmlwidgets/man/saveWidget.html),
 the page is one file that shows them with no R and no network, and says
 under the chart which R version and gsm.bio version computed them. A
@@ -247,13 +254,15 @@ lower’s.
 
 Every widget carries two JavaScript bundles, both copied from bio.viz
 with the commit and a checksum per file recorded in
-`inst/htmlwidgets/lib/SOURCE.json`: bio.viz v0.2.0, and safety.viz
-v1.9.0, the first safety.viz with the kit bio.viz’s charts are built
-from. The safety.viz copy is the one bio.viz takes from safety.viz’s
-`dev` branch at its v1.9.0 release preparation, and its commit is
-recorded too. gsm.safety carries an earlier safety.viz without the kit;
-once it carries v1.9.0, the widgets can take the bundle from there
-instead of carrying their own copy.
+`inst/htmlwidgets/lib/SOURCE.json`: bio.viz, as its `dev` branch stands
+at the recorded commit, and safety.viz v1.9.0, the first safety.viz with
+the kit bio.viz’s charts are built from. When the copy of bio.viz is
+byte for byte one of its releases the record names the release. The
+safety.viz copy is the one bio.viz takes from safety.viz’s `dev` branch
+at its v1.9.0 release preparation, and its commit is recorded too.
+gsm.safety carries an earlier safety.viz without the kit; once it
+carries v1.9.0, the widgets can take the bundle from there instead of
+carrying their own copy.
 
 ## Figures
 
