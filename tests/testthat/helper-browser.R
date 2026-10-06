@@ -115,6 +115,28 @@ window.gsmBioPage = (function () {
 })();
 "
 
+# How long, in seconds, the browser is given to answer: chromote's own ten is
+# too few for the first start of Chrome on a machine that has just been set up,
+# as a CI runner has.
+nBrowserPatience <- 60
+
+# A browser session, started patiently and more than once if need be: a slow
+# start is the machine's, and is not what these tests are of. A browser that
+# does not start in three tries is an error, which fails the test.
+lStartBrowser <- function(nWidth, nHeight, nTries = 3L) {
+  lWas <- options(chromote.timeout = nBrowserPatience)
+  on.exit(options(lWas), add = TRUE)
+  chrSaid <- character(0)
+  for (iTry in seq_len(nTries)) {
+    xSession <- tryCatch(chromote::ChromoteSession$new(width = nWidth, height = nHeight), error = function(cndError) cndError)
+    if (!inherits(xSession, "error")) {
+      return(xSession)
+    }
+    chrSaid <- c(chrSaid, conditionMessage(xSession))
+  }
+  stop("the headless browser did not start in ", nTries, " tries: ", paste(unique(chrSaid), collapse = "; "), call. = FALSE)
+}
+
 # Opens a saved page in a headless browser with the network switched off, and
 # returns what drives it: `Look()`, the view as it stands; `Move(how, ...)`,
 # one move and the view after it; `Evaluate(strCode)`, an expression's value,
@@ -122,7 +144,7 @@ window.gsmBioPage = (function () {
 # `Requests()`, the address of every request the page has made; and `Close()`.
 lOpenPage <- function(strFile, nWidth = 1200L, nHeight = 900L) {
   strUrl <- paste0("file://", normalizePath(strFile))
-  lBrowser <- chromote::ChromoteSession$new(width = nWidth, height = nHeight)
+  lBrowser <- lStartBrowser(nWidth, nHeight)
   chrRequests <- character(0)
   chrErrors <- character(0)
   lBrowser$Network$enable()
@@ -135,11 +157,11 @@ lOpenPage <- function(strFile, nWidth = 1200L, nHeight = 900L) {
   })
   # No network: a request to anywhere but the file itself fails.
   lBrowser$Network$emulateNetworkConditions(offline = TRUE, latency = 0, downloadThroughput = 0, uploadThroughput = 0)
-  lLoaded <- lBrowser$Page$loadEventFired(wait_ = FALSE)
+  lLoaded <- lBrowser$Page$loadEventFired(wait_ = FALSE, timeout_ = nBrowserPatience)
   lBrowser$Page$navigate(strUrl, wait_ = FALSE)
   lBrowser$wait_for(lLoaded)
   Evaluate <- function(strCode) {
-    lAnswer <- lBrowser$Runtime$evaluate(strCode, awaitPromise = TRUE, returnByValue = TRUE)
+    lAnswer <- lBrowser$Runtime$evaluate(strCode, awaitPromise = TRUE, returnByValue = TRUE, timeout_ = nBrowserPatience)
     if (!is.null(lAnswer$exceptionDetails)) {
       stop("the page raised: ", lAnswer$exceptionDetails$exception$description, call. = FALSE)
     }
