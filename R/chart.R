@@ -65,6 +65,31 @@ Chart_CoreSettings <- function(lConfig) {
   )]
 }
 
+# The results a chart draws, by the unscheduled-visit rule (R/core.R): for a
+# chart that has the rule's settings, the rows at scheduled visits, or every
+# row when `unscheduled_visits` switches the others on. A chart without the
+# settings draws every row. Returns `results`, the rows drawn; `visits`, the
+# unscheduled visits that have a result to draw, in visit order, which is what
+# the chart's switch brings back; and `drawn`, whether the rows drawn hold
+# unscheduled visits, which a request's identity then says.
+Chart_Unscheduled <- function(dfResults, lConfig) {
+  if (!"unscheduled_visits" %in% names(lConfig)) {
+    return(list(results = dfResults, visits = character(0), drawn = FALSE))
+  }
+  lFound <- Core_Scheduled(dfResults, lConfig[c("visit_col", names(lCoreUnscheduledDefaults))])
+  chrVisits <- character(0)
+  if (length(lFound$visits) > 0L) {
+    chrAll <- Core_Visits(dfResults, Chart_CoreSettings(lConfig))
+    chrVisits <- chrAll[chrAll %in% lFound$visits]
+  }
+  bShown <- isTRUE(lConfig$unscheduled_visits)
+  list(
+    results = if (bShown) dfResults else lFound$results,
+    visits = chrVisits,
+    drawn = bShown && length(chrVisits) > 0L
+  )
+}
+
 # The biomarkers the Biomarker control offers: the configured list in its
 # order, keeping the ones the table has, or every biomarker in the table by
 # name.

@@ -171,11 +171,17 @@ lBundleDefaults <- function(strSetting) {
   iOutcomes <- grep("^  var OUTCOME_DEFAULTS = Object\\.freeze\\(\\{$", chrLines)
   chrOutcomes <- if (length(iOutcomes) == 1L) Block(iOutcomes) else character(0)
   # Settings every chart has (TITLE_DEFAULTS, DOWNLOAD_DEFAULTS in bio.viz's
-  # src/shared/) are written once, on one line, and spread into each chart's
-  # defaults: ...TITLE_DEFAULTS.
+  # src/shared/) are written once and spread into each chart's defaults:
+  # ...TITLE_DEFAULTS. Most are written on one line; the unscheduled-visit
+  # rule's (UNSCHEDULED_DEFAULTS, bio.viz's src/core/unscheduled.js) are a
+  # block, a setting to a line.
   Spread <- function(strName) {
+    iBlock <- grep(paste0("^  var ", strName, " = Object\\.freeze\\(\\{$"), chrLines)
+    if (length(iBlock) == 1L) {
+      return(Block(iBlock))
+    }
     strLine <- grep(paste0("^  var ", strName, " = Object\\.freeze\\(\\{.*\\}\\);$"), chrLines, value = TRUE)
-    if (length(strLine) != 1L) stop("the bundle spreads ", strName, ", which it does not define on one line")
+    if (length(strLine) != 1L) stop("the bundle spreads ", strName, ", which it does not define once")
     chrPairs <- strsplit(sub("^.*\\{ *(.*?) *\\}\\);$", "\\1", strLine, perl = TRUE), ", *")[[1]]
     stats::setNames(sub("^[a-z_]+: ", "", chrPairs), sub(":.*$", "", chrPairs))
   }

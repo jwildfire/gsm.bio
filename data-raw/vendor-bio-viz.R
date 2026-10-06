@@ -302,7 +302,11 @@ if (length(chrTagged) > 0L) {
   strPeeled <- grep("\\^\\{\\}$", chrTagged, value = TRUE)
   strTagCommit <- sub("\\s.*$", "", if (length(strPeeled) > 0L) strPeeled[1] else chrTagged[1])
   lCopied <- c(lBundles, list(lSchema), lFixtures)
-  bSame <- all(vapply(lCopied, function(lFile) identical(Sha256(ReadAt(lFile$source, strTagCommit)), lFile$sha256), logical(1)))
+  # A file the tag does not have is a file that differs: dev has moved on.
+  bSame <- all(vapply(lCopied, function(lFile) {
+    rawTagged <- tryCatch(suppressWarnings(ReadAt(lFile$source, strTagCommit)), error = function(e) NULL)
+    !is.null(rawTagged) && identical(Sha256(rawTagged), lFile$sha256)
+  }, logical(1)))
   if (bSame) {
     lRelease <- list(
       tag = strTag, commit = strTagCommit,

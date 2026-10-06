@@ -70,3 +70,21 @@ dfSyntheticLong <- function() {
 chrSyntheticVisits <- function() {
   unique(Synthetic_Results$VISIT[order(Synthetic_Results$VISITNUM)])
 }
+
+# The study with two unscheduled visits added for a few participants: one that
+# sorts before Baseline, so the baseline a change is measured from would move
+# if it were read, and one after Week 4.
+dfWithUnscheduled <- function() {
+  dfRows <- Synthetic_Results[Synthetic_Results$VISIT == "Week 4", ]
+  chrSome <- unique(dfRows$USUBJID)[1:40]
+  dfFirst <- dfRows[dfRows$USUBJID %in% chrSome, ]
+  dfFirst$VISIT <- "Unscheduled 1"
+  dfFirst$VISITNUM <- min(Synthetic_Results$VISITNUM) - 1
+  dfFirst$STRESN <- dfFirst$STRESN + 1
+  dfLast <- dfRows[dfRows$USUBJID %in% chrSome[1:30], ]
+  dfLast$VISIT <- "EARLY TERMINATION"
+  dfLast$VISITNUM <- dfRows$VISITNUM[1] + 0.5
+  dfOut <- rbind(Synthetic_Results, dfFirst, dfLast)
+  rownames(dfOut) <- NULL
+  dfOut
+}

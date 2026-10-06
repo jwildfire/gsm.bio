@@ -1,16 +1,22 @@
 # What bio.viz's group comparison chart draws and asks R, worked out in R.
 #
-# The chart asks its connection to R for one test per panel, and finds a stored
-# result by the function's name, its arguments and the identity of the panel's
-# rows together (bio.viz, docs/group-comparison.md, "What R is asked"). To ship
-# R's answers with a page, Widget_GroupComparison() has to know, before there is
-# a page, which panels the chart will draw and what it will ask for each. This
-# file follows the chart's own code for that (bio.viz, src/group-comparison/):
-# what the controls offer, what they open on, the panels, and the request.
+# The chart draws at three levels (bio.viz, src/group-comparison/level.js):
+# every biomarker, a trend tile each, which asks R for nothing; one biomarker
+# over time, every visit it has in one picture, which asks R for the test at
+# every visit in one request; and one biomarker's visits, a panel per visit
+# chosen, which asks R for one test per panel. It finds a stored result by the
+# function's name, its arguments and the identity of the rows together
+# (bio.viz, docs/group-comparison.md, "What R is asked"). To ship R's answers
+# with a page, Widget_GroupComparison() has to know, before there is a page,
+# what the chart will draw at each level and what it will ask. This file
+# follows the chart's own code for that (bio.viz, src/group-comparison/): what
+# the controls offer, what they open on, which visits are drawn, the level,
+# the panels, and the two requests.
 #
-# It computes no statistic. The rows of a panel come from Core_Frame(), and the
-# answer for a panel is Analyze_GroupDifference() on those rows. Nothing here is
-# exported.
+# It computes no statistic. The rows come from Core_Frame(); the answer for a
+# panel is Analyze_GroupDifference() on its rows, and the answer under one
+# biomarker over time is Analyze_GroupDifferenceBy() on the rows of every visit
+# tested. Nothing here is exported.
 
 # The settings of the chart that R reads, with the chart's own defaults. The
 # chart has more (how it draws, its listing, the participant profile); those
@@ -34,13 +40,21 @@ lGroupComparisonDefaults <- list(
   color_by = NULL,
   panel_by = NULL,
   y_scale = "linear",
+  time_mark = "box",
   measures = NULL,
   groups = NULL,
   max_levels = 12L,
   filters = NULL,
+  unscheduled_visits = FALSE,
+  unscheduled_visit_pattern = "/unscheduled|early termination/i",
+  unscheduled_visit_values = NULL,
+  tile_summary = "median",
+  tile_min_spread = 1.25,
   statistic = "Analyze_GroupDifference",
   test = "t",
   pairwise = FALSE,
+  statistic_by_visit = "Analyze_GroupDifferenceBy",
+  visit_adjustment = "none",
   studyday_col = NULL,
   normal_col_high = NULL,
   normal_col_low = NULL
@@ -48,8 +62,20 @@ lGroupComparisonDefaults <- list(
 
 chrGroupComparisonTests <- c("t", "wilcoxon", "anova", "kruskal", "none")
 
-# The one R function the widget stores results of.
+# What one biomarker over time is drawn as, what a trend tile's line goes
+# through, and how R adjusts the p-values across the visits, by the names
+# `p.adjust()` gives the adjustments.
+chrGroupComparisonTimeMarks <- c("box", "mean_se", "median_iqr")
+chrGroupComparisonTileSummaries <- c("median", "mean")
+chrGroupComparisonAdjustments <- c("none", "holm", "BH")
+
+# The levels the chart draws at, by the names it gives them.
+chrGroupComparisonLevels <- c("biomarkers", "over-time", "visits")
+
+# The R functions the widget stores results of: the test under one panel, and
+# the test under every visit of one biomarker over time.
 strGroupComparisonStatistic <- "Analyze_GroupDifference"
+strGroupComparisonByVisit <- "Analyze_GroupDifferenceBy"
 
 # The settings R reads, in full: the caller's over the chart's defaults, each
 # checked, in the forms the functions below read them.
@@ -83,8 +109,20 @@ GroupComparison_Settings <- function(lSettings = list()) {
   Choice("y_scale", c("linear", "log"))
   Choice("baseline_stat", chrCoreBaselineStats)
   Choice("test", chrGroupComparisonTests)
-  if (!(is.logical(lConfig$pairwise) && length(lConfig$pairwise) == 1L && !is.na(lConfig$pairwise))) {
-    Core_Stop("Setting 'pairwise' must be TRUE or FALSE")
+  Choice("time_mark", chrGroupComparisonTimeMarks)
+  Choice("tile_summary", chrGroupComparisonTileSummaries)
+  Choice("visit_adjustment", chrGroupComparisonAdjustments)
+  for (strKey in c("pairwise", "unscheduled_visits")) {
+    if (!(is.logical(lConfig[[strKey]]) && length(lConfig[[strKey]]) == 1L && !is.na(lConfig[[strKey]]))) {
+      Core_Stop("Setting '", strKey, "' must be TRUE or FALSE")
+    }
+  }
+  nSpread <- lConfig$tile_min_spread
+  if (!(is.numeric(nSpread) && length(nSpread) == 1L && is.finite(nSpread) && nSpread >= 0)) {
+    Core_Stop(
+      "Setting 'tile_min_spread' must be a number, zero or more: how many standard deviations of the results at the ",
+      "baseline visit a tile's value axis spans at the least"
+    )
   }
   nMaxLevels <- lConfig$max_levels
   if (!(is.numeric(nMaxLevels) && length(nMaxLevels) == 1L && !is.na(nMaxLevels) && nMaxLevels >= 1 && nMaxLevels == round(nMaxLevels))) {
@@ -96,10 +134,37 @@ GroupComparison_Settings <- function(lSettings = list()) {
       "or NULL for no statistics line"
     )
   }
+  if (!is.null(lConfig$statistic_by_visit) && !identical(lConfig$statistic_by_visit, strGroupComparisonByVisit)) {
+    Core_Stop(
+      "Setting 'statistic_by_visit' must be '", strGroupComparisonByVisit, "', the function the widget stores the tests ",
+      "under one biomarker's visits of, or NULL for no test under the visits"
+    )
+  }
   # No visit named is every visit, and no level named is none drawn, as bio.viz
-  # reads them.
-  for (strKey in c("baseline_visits", "visits", "levels", "measures")) {
-    lConfig[strKey] <- list(Chart_Names(lConfig[[strKey]], strKey, bEmpty = strKey %in% c("visits", "levels")))
+  # reads them. A list of no unscheduled visits is a list: it names none, and
+  # the pattern is then not read.
+  for (strKey in c("baseline_visits", "visits", "levels", "measures", "unscheduled_visit_values")) {
+    lConfig[strKey] <- list(Chart_Names(
+      lConfig[[strKey]], strKey,
+      bEmpty = strKey %in% c("visits", "levels", "unscheduled_visit_values")
+    ))
+  }
+  # The pattern is read only when no visit is named outright, and then it has
+  # to be one R reads as a browser does (R/core.R).
+  strPattern <- lConfig$unscheduled_visit_pattern
+  if (!is.null(strPattern) && !IsName(strPattern)) {
+    Core_Stop(
+      "Setting 'unscheduled_visit_pattern' must be a regular expression written as text, \"/source/flags\" or a plain ",
+      "source, or NULL for none"
+    )
+  }
+  if (!is.null(strPattern) && is.null(lConfig$unscheduled_visit_values) && is.null(Core_ReadPattern(strPattern))) {
+    Core_Stop(
+      "Setting 'unscheduled_visit_pattern' is a regular expression a browser reads, and R reads only the patterns that ",
+      "mean the same in both: words of letters, digits and spaces set side by side with |, with or without the flag i, ",
+      "as \"/unscheduled|early termination/i\" is. Name the unscheduled visits in 'unscheduled_visit_values' instead, ",
+      "which is read the same everywhere"
+    )
   }
   for (strKey in c("groups", "filters")) {
     lConfig[strKey] <- list(Chart_Fields(lConfig[[strKey]], strKey))
@@ -107,13 +172,40 @@ GroupComparison_Settings <- function(lSettings = list()) {
   lConfig
 }
 
-# The visits the Visit control offers, and the ones it opens on: the visits in
-# the setting `visits` that the table has, or, when the setting names none,
-# every visit.
-GroupComparison_Visits <- function(dfResults, lConfig) {
-  chrAll <- Core_Visits(dfResults, Chart_CoreSettings(lConfig))
+# The visits the chart has, and the ones it opens on: the visits in the
+# setting `visits` that the table has, or, when the setting names none, every
+# visit. They are the visits the chart draws: an unscheduled visit is among
+# them only when the settings switch unscheduled visits on (Chart_Unscheduled).
+GroupComparison_Visits <- function(dfResults, lConfig, lDrawn = Chart_Unscheduled(dfResults, lConfig)) {
+  chrAll <- Core_Visits(lDrawn$results, Chart_CoreSettings(lConfig))
   chrAsked <- lConfig$visits[lConfig$visits %in% chrAll]
   list(all = chrAll, start = if (length(chrAsked) > 0L) chrAsked else chrAll)
+}
+
+# The visits one biomarker has values at, in visit order, of the visits the
+# chart draws: the ones the Visit control offers while that biomarker is open,
+# and the ones it has a panel or a place over time at.
+GroupComparison_MeasureVisits <- function(dfDrawn, lConfig, strMeasure) {
+  if (is.null(strMeasure) || is.na(strMeasure) || nrow(dfDrawn) == 0L) {
+    return(character(0))
+  }
+  dfRows <- dfDrawn[Core_Text(dfDrawn[[lConfig$measure_col]]) %in% strMeasure, , drop = FALSE]
+  if (nrow(dfRows) == 0L) character(0) else Core_Visits(dfRows, Chart_CoreSettings(lConfig))
+}
+
+# Which level the chart draws for what the controls are set to (bio.viz,
+# src/group-comparison/level.js): every biomarker when none is chosen; one
+# biomarker over time when every visit it has is chosen, it has two or more,
+# and the value has a visit, which a baseline value does not; and otherwise
+# that biomarker's visits, a panel each.
+GroupComparison_Level <- function(lState, chrOffered) {
+  if (is.null(lState$measure) || is.na(lState$measure)) {
+    return("biomarkers")
+  }
+  if (lState$value_type == "baseline" || length(chrOffered) < 2L) {
+    return("visits")
+  }
+  if (all(chrOffered %in% lState$visits)) "over-time" else "visits"
 }
 
 # The visits that are drawn, of the visits chosen. For a change, a fold change
@@ -131,8 +223,8 @@ GroupComparison_VisitsDrawn <- function(chrVisits, strValueType, chrBaselineVisi
 
 # What the chart opens on: the settings, where the tables have what they name.
 # The biomarker is the one `start_value` names when the table has it, and
-# otherwise NULL, which is the overview of every biomarker: the overview prints
-# no test and asks R for nothing.
+# otherwise NULL, which is every biomarker, a trend tile each: the tiles print
+# no test and ask R for nothing.
 GroupComparison_State <- function(dfResults, dfParticipants, lConfig) {
   dfCategories <- Chart_Categories(dfResults, dfParticipants, lConfig)
   chrMeasures <- Chart_Measures(dfResults, lConfig)
@@ -160,6 +252,7 @@ GroupComparison_State <- function(dfResults, dfParticipants, lConfig) {
     y_scale = lConfig$y_scale,
     test = lConfig$test,
     pairwise = lConfig$pairwise,
+    visit_adjustment = lConfig$visit_adjustment,
     filters = Chart_Filters(dfParticipants, lConfig, dfCategories)
   )
 }
@@ -183,13 +276,24 @@ GroupComparison_FitTest <- function(strTest, nGroups) {
 
 # The panels the chart draws in one view, each with its rows: one per visit,
 # and one per level of the panel column, as the chart's `buildPanels` makes
-# them. Returns a list with `panels`, each a list of `visit`, `panel` (the
-# level of the panel column, or NULL) and `records` (the panel's rows, one per
-# participant: the id, `y`, `x`, and `color` and `panel` when set), and
-# `groups`, how many levels of the group are drawn.
-GroupComparison_Panels <- function(dfResults, dfParticipants, lConfig, lState) {
+# them. The visits are the ones chosen that the biomarker has values at, of the
+# visits the chart draws. Returns a list with `panels`, each a list of `visit`,
+# `panel` (the level of the panel column, or NULL) and `records` (the panel's
+# rows, one per participant: the id, `y`, `x`, and `color` and `panel` when
+# set); `groups`, how many levels of the group are drawn; `levels`, those
+# levels; and `baseline_visits`, the baseline visit of a change.
+#
+# `bKeepBaseline` keeps the one baseline visit of a change among the visits,
+# as the picture of one biomarker over time does: it is drawn there, where
+# every group starts, and is not tested. `lDrawn` is the results the chart
+# draws, for a caller that has worked them out already.
+GroupComparison_Panels <- function(dfResults, dfParticipants, lConfig, lState, bKeepBaseline = FALSE,
+                                   lDrawn = Chart_Unscheduled(dfResults, lConfig)) {
   lCore <- Chart_CoreSettings(lConfig)
   strIdCol <- lConfig$id_col
+  # Unscheduled visits are set aside before anything is listed or framed, so
+  # they are not a panel and not the baseline a change is measured from.
+  dfResults <- lDrawn$results
 
   # The filters choose participants; the results of the others are set aside
   # before the frame is made, so they are not counted as missing from it.
@@ -205,7 +309,10 @@ GroupComparison_Panels <- function(dfResults, dfParticipants, lConfig, lState) {
   } else {
     character(0)
   }
-  chrDrawn <- GroupComparison_VisitsDrawn(lState$visits, lState$value_type, chrBaselineVisits)
+  # A visit the biomarker has no value at has no panel: it keeps its place
+  # among the visits chosen for another biomarker.
+  chrAsked <- lState$visits[lState$visits %in% GroupComparison_MeasureVisits(dfResults, lConfig, lState$measure)]
+  chrDrawn <- if (bKeepBaseline) chrAsked else GroupComparison_VisitsDrawn(chrAsked, lState$value_type, chrBaselineVisits)
   lVisits <- if (bNeedsVisit) as.list(chrDrawn) else list(NULL)
   # A cut variable's points are worked out once, on every participant the
   # filters keep who has a value of it, whether or not they have a value to
@@ -278,7 +385,10 @@ GroupComparison_Panels <- function(dfResults, dfParticipants, lConfig, lState) {
       )
     }
   }
-  list(panels = lPanels, groups = if (is.null(lState$group_by)) 0L else length(chrShown))
+  list(
+    panels = lPanels, groups = if (is.null(lState$group_by)) 0L else length(chrShown),
+    levels = chrShown, baseline_visits = chrBaselineVisits
+  )
 }
 
 # What the chart asks R for one panel: the function, the arguments and the
@@ -304,6 +414,9 @@ GroupComparison_Key <- function(dfRecords, lView) {
     lDataId$filters <- lapply(lView$filters, as.list)
   }
   if (identical(lView$y_scale, "log")) lDataId$positive_only <- TRUE
+  # The rows were framed with unscheduled visits among the results: a baseline
+  # found among them need not be the one found without them.
+  if (isTRUE(lView$unscheduled_visits)) lDataId$unscheduled_visits <- TRUE
   lArgs <- list(
     strValueCol = "y",
     strGroupCol = "x",
@@ -320,16 +433,17 @@ GroupComparison_Key <- function(dfRecords, lView) {
   list(name = lView$statistic, args = lArgs, dataId = lDataId, rows = nrow(dfRecords))
 }
 
-# Every request the chart makes in one view: one per panel that has a test.
-# Each is the key, with `data`, the panel's rows.
-GroupComparison_Requests <- function(dfResults, dfParticipants, lConfig, lState) {
+# Every request the chart makes of one biomarker's visits, a panel each: one
+# per panel that has a test. Each is the key, with `data`, the panel's rows.
+GroupComparison_Requests <- function(dfResults, dfParticipants, lConfig, lState,
+                                     lDrawn = Chart_Unscheduled(dfResults, lConfig)) {
   if (is.null(lConfig$statistic) || is.null(lState$group_by) || is.null(lState$measure) || is.na(lState$measure)) {
     return(list())
   }
   if (lState$value_type != "baseline" && length(lState$visits) == 0L) {
     return(list())
   }
-  lModel <- GroupComparison_Panels(dfResults, dfParticipants, lConfig, lState)
+  lModel <- GroupComparison_Panels(dfResults, dfParticipants, lConfig, lState, lDrawn = lDrawn)
   strTest <- GroupComparison_FitTest(lState$test, lModel$groups)
   if (is.null(strTest) || strTest == "none") {
     return(list())
@@ -346,33 +460,154 @@ GroupComparison_Requests <- function(dfResults, dfParticipants, lConfig, lState)
       baseline_visits = lConfig$baseline_visits, baseline_stat = lConfig$baseline_stat,
       group_by = lState$group_by, color_by = lState$color_by, panel_by = lState$panel_by, panel = lPanel$panel,
       cut_groups = lPanel$cut_groups,
-      filters = Chart_FiltersInForce(lState$filters), y_scale = lState$y_scale
+      filters = Chart_FiltersInForce(lState$filters), y_scale = lState$y_scale,
+      unscheduled_visits = lDrawn$drawn
     ))
     lRequests[[length(lRequests) + 1L]] <- c(lKey, list(data = lPanel$records))
   }
   lRequests
 }
 
-# The stored results a page ships: for each biomarker the Biomarker control
-# offers, R's answer for each panel the chart draws when that biomarker is
-# opened at the widget's settings. Each is the request the chart makes for the
-# panel with `value`, what Analyze_GroupDifference() returned for the panel's
-# rows, and `data`, those rows.
+# What the chart asks R under one biomarker over time: the function, the
+# arguments and the identity of the rows, with the number of rows. This is
+# bio.viz's `group_comparison_by_visit_key()` recipe (docs/group-comparison.md,
+# "Stored results, from R"), and the chart's own `overTimeRequest`
+# (src/group-comparison/statistic.js). The rows are long, one per participant
+# and visit tested. The identity has no colour and no panel: the picture takes
+# neither.
+GroupComparison_OverTimeKey <- function(dfRows, lView) {
+  chrGroups <- Core_SortText(unique(Core_Text(dfRows$x)))
+  lDataId <- list(chart = "group-comparison", measure = lView$measure, value_type = lView$value_type)
+  lDataId$visits <- as.list(lView$visits)
+  if (!is.null(lView$baseline_visits)) lDataId$baseline_visits <- as.list(lView$baseline_visits)
+  lDataId$baseline_stat <- lView$baseline_stat
+  if (!is.null(lView$group_by)) lDataId$group_by <- lView$group_by
+  lDataId$groups <- as.list(chrGroups)
+  if (length(lView$filters) > 0L) {
+    lDataId$filters <- lapply(lView$filters, as.list)
+  }
+  if (identical(lView$y_scale, "log")) lDataId$positive_only <- TRUE
+  if (isTRUE(lView$unscheduled_visits)) lDataId$unscheduled_visits <- TRUE
+  lArgs <- list(
+    strValueCol = "y",
+    strGroupCol = "x",
+    strByCol = "visit",
+    strMethod = lView$test,
+    # The visits in visit order: R would sort their names otherwise.
+    chrBy = as.list(lView$visits),
+    strPAdjust = lView$visit_adjustment
+  )
+  # A cut's groups are handed to R low to high: every group drawn, at any
+  # visit, the same at every visit. A column's are left to R.
+  if (!is.null(lView$cut_groups)) {
+    lArgs$chrGroups <- as.list(lView$cut_groups)
+  }
+  list(name = lView$statistic_by_visit, args = lArgs, dataId = lDataId, rows = nrow(dfRows))
+}
+
+# The request the chart makes under one biomarker over time, once for each
+# adjustment named: the key, with `data`, the rows of every visit tested, each
+# the row the single-visit view hands R for that visit with the visit named in
+# `visit`. The baseline visit of a change is drawn and not tested, so its rows
+# are not sent. An empty list when the chart draws another level for what the
+# controls are set to, or asks R for nothing there.
+GroupComparison_OverTimeRequests <- function(dfResults, dfParticipants, lConfig, lState,
+                                             chrAdjustments = lState$visit_adjustment,
+                                             lDrawn = Chart_Unscheduled(dfResults, lConfig)) {
+  # The row of tests is there when both functions are named.
+  if (is.null(lConfig$statistic) || is.null(lConfig$statistic_by_visit) || is.null(lState$group_by)) {
+    return(list())
+  }
+  chrOffered <- GroupComparison_MeasureVisits(lDrawn$results, lConfig, lState$measure)
+  if (GroupComparison_Level(lState, chrOffered) != "over-time") {
+    return(list())
+  }
+  # The picture takes no second grouping and no panels.
+  lPicture <- lState
+  lPicture["color_by"] <- list(NULL)
+  lPicture["panel_by"] <- list(NULL)
+  lModel <- GroupComparison_Panels(dfResults, dfParticipants, lConfig, lPicture, bKeepBaseline = TRUE, lDrawn = lDrawn)
+  strTest <- GroupComparison_FitTest(lState$test, lModel$groups)
+  if (is.null(strTest) || strTest == "none") {
+    return(list())
+  }
+  chrVisits <- unlist(lapply(lModel$panels, function(lPanel) lPanel$visit))
+  chrTested <- GroupComparison_VisitsDrawn(chrVisits, lState$value_type, lModel$baseline_visits)
+  lTested <- Filter(function(lPanel) lPanel$visit %in% chrTested, lModel$panels)
+  dfRows <- do.call(rbind, lapply(lTested, function(lPanel) {
+    dfRecords <- lPanel$records
+    dfRecords$visit <- rep(lPanel$visit, nrow(dfRecords))
+    dfRecords
+  }))
+  rownames(dfRows) <- NULL
+  lapply(chrAdjustments, function(strAdjustment) {
+    lKey <- GroupComparison_OverTimeKey(dfRows, list(
+      statistic_by_visit = lConfig$statistic_by_visit, test = strTest, visit_adjustment = strAdjustment,
+      measure = lState$measure, value_type = lState$value_type, visits = chrTested,
+      baseline_visits = lConfig$baseline_visits, baseline_stat = lConfig$baseline_stat,
+      group_by = lState$group_by,
+      cut_groups = if (Chart_IsCut(lState$group_by)) lModel$levels else NULL,
+      filters = Chart_FiltersInForce(lState$filters), y_scale = lState$y_scale,
+      unscheduled_visits = lDrawn$drawn
+    ))
+    c(lKey, list(data = dfRows))
+  })
+}
+
+# The stored results a page ships. The trend tiles ask R for nothing, so
+# nothing is stored for them. For each biomarker the Biomarker control offers,
+# the page holds R's answer to what the chart asks at the two levels a reader
+# reaches from a tile, at the widget's settings:
 #
-# The chart opens on an overview of every biomarker unless `start_value` names
-# one; the overview prints no test, and a reader opens a biomarker from it. So
-# the results are stored for every biomarker, whichever the page opens on.
+# - one biomarker over time: the test under every visit, in one request,
+#   unadjusted, and under the adjustment the setting `visit_adjustment` names
+#   when it names one, so the switch between the two is answered either way;
+# - one visit alone, for each visit the biomarker has: the panel a click on
+#   that visit opens, or its panels when the settings name a panel column;
+# - and, when the settings name some of the visits, the panels the page opens
+#   that biomarker on.
+#
+# Each is the request the chart makes with `value`, what the statistics
+# function returned for the request's rows, and `data`, those rows.
 GroupComparison_StoredResults <- function(dfResults, dfParticipants, lConfig) {
   if (is.null(lConfig$statistic) || nrow(dfResults) == 0L) {
     return(list())
   }
+  lDrawn <- Chart_Unscheduled(dfResults, lConfig)
+  chrAll <- GroupComparison_Visits(dfResults, lConfig, lDrawn)$all
   # What the controls open on is the same for every biomarker but the biomarker.
   lOpening <- GroupComparison_State(dfResults, dfParticipants, lConfig)
+  # The p-values as R gives them, and as the setting has R adjust them.
+  chrAdjustments <- unique(c("none", lConfig$visit_adjustment))
   lRequests <- list()
   for (strMeasure in Chart_Measures(dfResults, lConfig)) {
     lState <- lOpening
     lState$measure <- strMeasure
-    lRequests <- c(lRequests, GroupComparison_Requests(dfResults, dfParticipants, lConfig, lState))
+    chrOffered <- GroupComparison_MeasureVisits(lDrawn$results, lConfig, strMeasure)
+    # Over time, as the page opens the biomarker when it opens it so, and as
+    # All in the Visit control and the way back from a visit lead to it: every
+    # visit the biomarker has is chosen, in visit order.
+    lEvery <- lState
+    lEvery$visits <- chrAll[chrAll %in% c(lState$visits, chrOffered)]
+    for (lView in list(lState, lEvery)) {
+      lRequests <- c(lRequests, GroupComparison_OverTimeRequests(dfResults, dfParticipants, lConfig, lView, chrAdjustments, lDrawn))
+    }
+    # The panels the page opens the biomarker on, when it opens it on some of
+    # its visits, or on a baseline value, which has no visit.
+    if (GroupComparison_Level(lState, chrOffered) == "visits") {
+      lRequests <- c(lRequests, GroupComparison_Requests(dfResults, dfParticipants, lConfig, lState, lDrawn))
+    }
+    # Each visit alone, as a click on it over time opens it.
+    if (lState$value_type != "baseline") {
+      for (strVisit in chrOffered) {
+        lOne <- lState
+        lOne$visits <- strVisit
+        lRequests <- c(lRequests, GroupComparison_Requests(dfResults, dfParticipants, lConfig, lOne, lDrawn))
+      }
+    }
   }
-  Chart_Answer(lRequests, list(Analyze_GroupDifference = Analyze_GroupDifference))
+  Chart_Answer(lRequests, list(
+    Analyze_GroupDifference = Analyze_GroupDifference,
+    Analyze_GroupDifferenceBy = Analyze_GroupDifferenceBy
+  ))
 }
