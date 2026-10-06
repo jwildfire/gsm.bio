@@ -45,7 +45,7 @@ A result is the answer of the R that computed it. R's own defaults can differ be
 
 ## Widgets
 
-`Widget_GroupComparison()` draws bio.viz's group comparison chart from R: one biomarker value across the levels of a category, as boxes, violins or points, with a test of the groups under each panel.
+`Widget_GroupComparison()` draws bio.viz's group comparison chart from R: how a biomarker value differs between the levels of a category, at three levels. It opens on a trend tile for every biomarker, a tile opens one biomarker across its visits with a test of the groups under each visit, and a visit opens that visit alone, as boxes, violins or points, with a test under each panel.
 
 ```r
 library(gsm.bio)
@@ -56,9 +56,9 @@ Widget_GroupComparison(
 )
 ```
 
-It takes the results table, optionally the participant table, and the chart's settings as a list under bio.viz's own names. The chart opens on an overview of every biomarker at every visit, which prints no test; a click on a biomarker opens it alone, with a panel for each visit and a test under each. `start_value = "IL-6"` opens that biomarker straight away.
+It takes the results table, optionally the participant table, and the chart's settings as a list under bio.viz's own names. The tiles draw each group's median across the visits and print no test. `start_value = "IL-6"` opens that biomarker over time straight away, and `visits` names the visits to open as panels. Unscheduled visits are left out at every level unless `unscheduled_visits = TRUE`.
 
-The tests are computed in R when the widget is made, by `Analyze_GroupDifference()`, for each biomarker at each visit panel the chart draws at the widget's settings, and are stored in the page. Saved with `htmlwidgets::saveWidget()`, the page is one file that shows them with no R and no network, and says under the chart which R version and gsm.bio version computed them. A view that was not computed, such as another test or a filter, says that statistics are unavailable for it; it never shows another view's numbers.
+The tests are computed in R when the widget is made and are stored in the page: for each biomarker, `Analyze_GroupDifferenceBy()`'s test under every visit of its picture over time, with the p-values as R gives them and under the adjustment `visit_adjustment` names when it names one, and `Analyze_GroupDifference()`'s test for each visit alone. Saved with `htmlwidgets::saveWidget()`, the page is one file that shows them with no R and no network, and says under the chart which R version and gsm.bio version computed them. A view that was not computed, such as another test or a filter, says that statistics are unavailable for it; it never shows another view's numbers.
 
 `Widget_AssociationScatter()` draws bio.viz's association scatter the same way: one point per participant with a variable on each axis, a correlation coefficient under each panel and, when asked for, a fitted line.
 
@@ -135,7 +135,7 @@ Widget_StratifiedSurvival(
 
 It stores `Analyze_Survival()`'s answer for the curves the settings open on. A cut's groups are handed to R high to low, so the hazard ratio is the higher group's hazard over the lower's.
 
-Every widget carries two JavaScript bundles, both copied from bio.viz with the commit and a checksum per file recorded in `inst/htmlwidgets/lib/SOURCE.json`: bio.viz v0.2.0, and safety.viz v1.9.0, the first safety.viz with the kit bio.viz's charts are built from. The safety.viz copy is the one bio.viz takes from safety.viz's `dev` branch at its v1.9.0 release preparation, and its commit is recorded too. gsm.safety carries an earlier safety.viz without the kit; once it carries v1.9.0, the widgets can take the bundle from there instead of carrying their own copy.
+Every widget carries two JavaScript bundles, both copied from bio.viz with the commit and a checksum per file recorded in `inst/htmlwidgets/lib/SOURCE.json`: bio.viz, as its `dev` branch stands at the recorded commit, and safety.viz v1.9.0, the first safety.viz with the kit bio.viz's charts are built from. When the copy of bio.viz is byte for byte one of its releases the record names the release. The safety.viz copy is the one bio.viz takes from safety.viz's `dev` branch at its v1.9.0 release preparation, and its commit is recorded too. gsm.safety carries an earlier safety.viz without the kit; once it carries v1.9.0, the widgets can take the bundle from there instead of carrying their own copy.
 
 ## Figures
 

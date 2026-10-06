@@ -517,6 +517,99 @@ Core_Visits <- function(dfResults, lSettings = list()) {
   })
 }
 
+# ---- Unscheduled visits ---------------------------------------------------------
+#
+# Which visits are unscheduled, and the results a chart is left with when it
+# draws only the scheduled ones (bio.viz, src/core/unscheduled.js, which is
+# safety.viz's rule under safety.viz's setting names). A visit is unscheduled
+# when it is named in `unscheduled_visit_values`; when no list is given, when
+# its name matches `unscheduled_visit_pattern`; and with neither, never.
+#
+# A pattern is a regular expression a browser reads, and R's are not quite the
+# same, so R does not hand one to a regular expression engine at all. It reads
+# the patterns that mean the same in both languages and no others: words set
+# side by side with `|`, each of letters, digits and spaces, with or without
+# the flag `i`, as the chart's default is. A visit matches when its name holds
+# one of the words, and under `i` the letters A to Z match in either case and
+# no other character does, which is what a browser's `i` means without the
+# flag `u`. Any other pattern is refused with a sentence that says to name the
+# visits. tests/testthat/test-GroupComparison-page.R holds R's reading to the
+# copied bundle's own, run in a browser on the same names.
+
+lCoreUnscheduledDefaults <- list(
+  unscheduled_visits = FALSE,
+  unscheduled_visit_pattern = "/unscheduled|early termination/i",
+  unscheduled_visit_values = NULL
+)
+
+# A pattern as R reads it: the words it sets side by side, and whether letters
+# match in either case. NULL when the pattern is one R does not read.
+Core_ReadPattern <- function(strPattern) {
+  if (!is.character(strPattern) || length(strPattern) != 1L || is.na(strPattern)) {
+    return(NULL)
+  }
+  # Written `/source/flags`, or a plain source, as bio.viz's `parsePattern` reads it.
+  bSlashed <- grepl("^/.*/[A-Za-z]*$", strPattern)
+  strSource <- if (bSlashed) sub("^/(.*)/[A-Za-z]*$", "\\1", strPattern) else strPattern
+  strFlags <- if (bSlashed) sub("^/.*/([A-Za-z]*)$", "\\1", strPattern) else ""
+  if (!strFlags %in% c("", "i") || !grepl("^[A-Za-z0-9 |]*$", strSource)) {
+    return(NULL)
+  }
+  # A word of nothing is in every name: `a|` and an empty source match every visit.
+  chrWords <- strsplit(paste0(strSource, "|"), "|", fixed = TRUE)[[1]]
+  if (endsWith(strSource, "|") || !nzchar(strSource)) chrWords <- c(chrWords, "")
+  list(words = unique(chrWords), any_case = identical(strFlags, "i"))
+}
+
+# Whether each visit is unscheduled, by name.
+Core_IsUnscheduled <- function(chrVisits, lSettings = list()) {
+  chrVisits <- as.character(chrVisits)
+  if (!is.null(lSettings$unscheduled_visit_values)) {
+    return(chrVisits %in% as.character(unlist(lSettings$unscheduled_visit_values)))
+  }
+  if (is.null(lSettings$unscheduled_visit_pattern)) {
+    return(rep(FALSE, length(chrVisits)))
+  }
+  lPattern <- Core_ReadPattern(lSettings$unscheduled_visit_pattern)
+  if (is.null(lPattern)) {
+    Core_Stop(
+      "`unscheduled_visit_pattern` is a regular expression a browser reads, and R reads only the patterns that mean the same in both: ",
+      "words of letters, digits and spaces set side by side with |, with or without the flag i, as \"/unscheduled|early termination/i\" is. ",
+      "Name the unscheduled visits in `unscheduled_visit_values` instead, which is read the same everywhere."
+    )
+  }
+  # The letters A to Z in either case, and no other character.
+  Fold <- function(chrText) if (lPattern$any_case) chartr(paste(LETTERS, collapse = ""), paste(letters, collapse = ""), chrText) else chrText
+  chrNames <- Fold(chrVisits)
+  bFound <- rep(FALSE, length(chrVisits))
+  for (strWord in Fold(lPattern$words)) {
+    bFound <- bFound | (if (nzchar(strWord)) grepl(strWord, chrNames, fixed = TRUE) else TRUE)
+  }
+  bFound
+}
+
+# The results at scheduled visits, and what was set aside: `results`, the rows
+# of the table at a visit the rule does not name, in the table's order;
+# `visits`, the unscheduled visits found, in the order first seen; and `rows`,
+# how many rows were set aside. A row with no visit is kept. Whether the chart
+# draws the unscheduled visits (`unscheduled_visits`) is the caller's to read.
+Core_Scheduled <- function(dfResults, lSettings = list()) {
+  strVisitCol <- if (is.null(lSettings$visit_col)) lCoreDefaults$visit_col else lSettings$visit_col
+  lNone <- list(results = dfResults, visits = character(0), rows = 0L)
+  if (nrow(dfResults) == 0L || !strVisitCol %in% names(dfResults)) {
+    return(lNone)
+  }
+  bNamed <- !Core_IsBlank(dfResults[[strVisitCol]])
+  chrVisit <- Core_Text(dfResults[[strVisitCol]])
+  chrNames <- unique(chrVisit[bNamed])
+  chrFound <- chrNames[Core_IsUnscheduled(chrNames, lSettings)]
+  if (length(chrFound) == 0L) {
+    return(lNone)
+  }
+  bKept <- !bNamed | !chrVisit %in% chrFound
+  list(results = dfResults[bKept, , drop = FALSE], visits = chrFound, rows = sum(!bKept))
+}
+
 # Resolves named variables to one row per participant.
 #
 # dfResults       the results table, one row per participant, biomarker and

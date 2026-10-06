@@ -10,8 +10,8 @@
 #
 #   Rscript data-raw/specifications/record-readers.R
 #
-# Run from the repository root, with node, after the bundle is copied again
-# (data-raw/vendor-bio-viz.R). The reader is run from the copied bundle by
+# Run from the repository root, with node, after the bundle is copied again:
+# data-raw/vendor-bio-viz.R runs it as its last step. The reader is run from the copied bundle by
 # tests/testthat/fixtures/specifications/bioviz-reader.mjs, and the cases are
 # the tests' own (tests/testthat/helper-specifications.R). The tests compare
 # both recordings with the reader run live wherever node is installed.

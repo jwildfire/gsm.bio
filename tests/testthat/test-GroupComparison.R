@@ -69,9 +69,12 @@ test_that("the settings R reads have the defaults of the vendored chart (#9)", {
       label = paste("R's default for", strSetting), expected.label = "the bundle's"
     )
   }
-  # The setting the widget makes itself, and the function it stores results of.
+  # The setting the widget makes itself, and the functions it stores results of.
   expect_true("connection" %in% names(lBundle))
   expect_identical(lBundle$statistic, strGroupComparisonStatistic)
+  expect_identical(lBundle$statistic_by_visit, strGroupComparisonByVisit)
+  # The unscheduled-visit rule's settings are the core's, under the same names.
+  expect_identical(lCoreUnscheduledDefaults, lGroupComparisonDefaults[names(lCoreUnscheduledDefaults)])
   expect_identical(GroupComparison_Settings()[names(lGroupComparisonDefaults)], lGroupComparisonDefaults)
   # The frame's own settings are the chart's, under the same names.
   expect_identical(lCoreDefaults, lGroupComparisonDefaults[names(lCoreDefaults)])
@@ -394,4 +397,320 @@ test_that("a group or a panel that is a variable must be cut, and must be of a b
   expect_error(GroupComparison_Settings(list(panel_by = list(col = "AGE", cut = "median"))), "number")
   expect_error(lCutView(list(measure = "NOPE", visit = "Baseline", cut = "median")), "NOPE")
   expect_error(lCutView(list(col = "NOPE", type = "number", cut = "median")), "NOPE")
+})
+
+# One biomarker over time (#53): the chart draws a biomarker across every
+# visit it has in one picture, and asks R for the test under every visit in
+# one request. bio.viz records the rows its own code hands R for that request
+# (group-statistics/over-time-*.csv), the request, and what desktop R answered.
+
+dfOverTimeCases <- function() {
+  utils::read.csv(
+    strStatisticsFixture("group-statistics", "over-time-cases.csv"),
+    colClasses = "character", na.strings = "", check.names = FALSE
+  )
+}
+
+lRecordedOverTime <- function() {
+  lResults <- lReadJson(strStatisticsFixture("group-statistics-r.json"))$over_time
+  stats::setNames(lResults, vapply(lResults, function(lResult) lResult$case, character(1)))
+}
+
+# The requests R works out for a case: the biomarker open with every visit
+# chosen, as the chart is when it draws the biomarker over time.
+lOverTimeCaseRequest <- function(lCase) {
+  Several <- function(strValue) if (is.na(strValue)) NULL else strsplit(strValue, "|", fixed = TRUE)[[1]]
+  lFilters <- list()
+  if (!is.na(lCase$filters)) {
+    for (chrPart in strsplit(strsplit(lCase$filters, ";", fixed = TRUE)[[1]], "=", fixed = TRUE)) {
+      lFilters[[chrPart[1]]] <- Several(chrPart[2])
+    }
+  }
+  lTables <- lDemo()
+  lSettings <- lTables$settings[setdiff(names(lTables$settings), "visits")]
+  lSettings$baseline_visits <- Several(lCase$baseline_visits)
+  lSettings$baseline_stat <- lCase$baseline_stat
+  lSettings$value_type <- lCase$value_type
+  lSettings$group_by <- lCase$group_by
+  lSettings$test <- lCase$test
+  lSettings$y_scale <- lCase$y_scale
+  lSettings$visit_adjustment <- lCase$visit_adjustment
+  lConfig <- GroupComparison_Settings(lSettings)
+  lState <- GroupComparison_State(lTables$results, lTables$participants, lConfig)
+  lState$measure <- lCase$measure
+  lState$filters <- lFilters
+  lRequests <- GroupComparison_OverTimeRequests(lTables$results, lTables$participants, lConfig, lState)
+  expect_identical(length(lRequests), 1L, label = paste(lCase$case, "is one request"))
+  lRequests[[1]]
+}
+
+test_that("R resolves the rows the chart hands R under one biomarker over time, for every case bio.viz recorded (#53)", {
+  dfCases <- dfOverTimeCases()
+  expect_gte(nrow(dfCases), 12L)
+  expect_identical(anyDuplicated(dfCases$case), 0L)
+
+  for (iCase in seq_len(nrow(dfCases))) {
+    lCase <- as.list(dfCases[iCase, ])
+    dfTheirs <- utils::read.csv(
+      strStatisticsFixture("group-statistics", lCase$file),
+      colClasses = "character", na.strings = character(0), check.names = FALSE
+    )
+    dfMine <- lOverTimeCaseRequest(lCase)$data
+
+    # Long rows: a participant, a value, a group and a visit to a row, the
+    # visits in visit order and the participants in the frame's within each.
+    expect_identical(names(dfMine), c("USUBJID", "y", "x", "visit"), label = paste(lCase$case, "columns"))
+    expect_identical(names(dfMine), names(dfTheirs), label = paste(lCase$case, "columns"))
+    expect_identical(nrow(dfMine), nrow(dfTheirs), label = paste(lCase$case, "rows"))
+    expect_equal(dfMine$y, as.numeric(dfTheirs$y), tolerance = 1e-12, label = paste(lCase$case, "y"))
+    for (strColumn in setdiff(names(dfTheirs), "y")) {
+      expect_identical(Core_Text(dfMine[[strColumn]]), dfTheirs[[strColumn]], label = paste(lCase$case, strColumn))
+    }
+  }
+  # The cases reach a result and a change, two groups and four, a filter that
+  # leaves groups too small to test, and each adjustment.
+  expect_true(all(c("raw", "change") %in% dfCases$value_type))
+  expect_true(all(c("ARM", "ARM_SEX") %in% dfCases$group_by))
+  expect_setequal(dfCases$visit_adjustment, chrGroupComparisonAdjustments)
+  expect_true("AGE=57" %in% dfCases$filters)
+  # The baseline visit of a change is drawn and not tested: its rows are not sent.
+  lChange <- lOverTimeCaseRequest(as.list(dfCases[dfCases$case == "over-time-change", ]))
+  expect_false("Baseline" %in% lChange$data$visit)
+  expect_identical(unique(lChange$data$visit), c("Week 2", "Week 4", "Week 8", "Week 12"))
+})
+
+test_that("R keys the test under one biomarker's visits exactly as the chart keys its request (#53)", {
+  dfCases <- dfOverTimeCases()
+  lRecorded <- lRecordedOverTime()
+  expect_setequal(names(lRecorded), dfCases$case)
+
+  for (iCase in seq_len(nrow(dfCases))) {
+    lCase <- as.list(dfCases[iCase, ])
+    lMine <- lOverTimeCaseRequest(lCase)
+    lTheirs <- lRecorded[[lCase$case]]
+    expect_identical(lMine$name, lTheirs$name, label = paste(lCase$case, "name"))
+    expect_identical(lMine$args, lTheirs$args, label = paste(lCase$case, "args"))
+    expect_identical(lMine$dataId, lTheirs$dataId, label = paste(lCase$case, "dataId"))
+    expect_identical(lMine$rows, lTheirs$rows, label = paste(lCase$case, "rows"))
+    # And as JSON, which is how the page compares them.
+    expect_identical(
+      as.character(jsonlite::toJSON(lMine[c("name", "args", "dataId", "rows")], auto_unbox = TRUE)),
+      as.character(jsonlite::toJSON(lTheirs[c("name", "args", "dataId", "rows")], auto_unbox = TRUE)),
+      label = paste(lCase$case, "as JSON")
+    )
+  }
+  # The arguments in the order the chart writes them, the visits always named
+  # and the adjustment always said; the identity lists the visits tested.
+  lOne <- lRecorded[["over-time-change-holm"]]
+  expect_identical(names(lOne$args), c("strValueCol", "strGroupCol", "strByCol", "strMethod", "chrBy", "strPAdjust"))
+  expect_identical(lOne$args$strPAdjust, "holm")
+  expect_identical(lOne$args$chrBy, lOne$dataId$visits)
+  expect_identical(
+    names(lOne$dataId),
+    c("chart", "measure", "value_type", "visits", "baseline_visits", "baseline_stat", "group_by", "groups")
+  )
+  # An adjustment is another key, and so is a panel's request for one visit.
+  chrKeys <- vapply(lRecorded, function(lResult) Chart_KeyText(lResult[c("name", "args", "dataId")]), character(1))
+  expect_identical(anyDuplicated(chrKeys), 0L)
+})
+
+test_that("R's answer for those rows is the answer bio.viz recorded from desktop R, visit by visit (#53)", {
+  dfCases <- dfOverTimeCases()
+  lRecorded <- lRecordedOverTime()
+  for (iCase in seq_len(nrow(dfCases))) {
+    lCase <- as.list(dfCases[iCase, ])
+    lRequest <- lOverTimeCaseRequest(lCase)
+    lMine <- do.call(Analyze_GroupDifferenceBy, c(list(lRequest$data), lRequest$args))
+    lTheirs <- lRecorded[[lCase$case]]$value
+
+    ExpectResultShape(lMine)
+    expect_identical(lMine$status, lTheirs$status, label = paste(lCase$case, "status"))
+    expect_identical(lMine$counts, lTheirs$counts, label = paste(lCase$case, "counts"))
+    expect_identical(lMine$adjustment, lTheirs$adjustment, label = paste(lCase$case, "adjustment"))
+    expect_identical(nrow(lMine$rows), length(lTheirs$rows), label = paste(lCase$case, "a row per visit"))
+    for (iVisit in seq_along(lTheirs$rows)) {
+      lTheirRow <- lTheirs$rows[[iVisit]]
+      strLabel <- paste(lCase$case, lTheirRow$by)
+      expect_identical(lMine$rows$by[iVisit], lTheirRow$by, label = strLabel)
+      expect_identical(lMine$rows$status[iVisit], lTheirRow$status, label = paste(strLabel, "status"))
+      for (strNumber in c("p_unadjusted", "p_value")) {
+        if (is.null(lTheirRow[[strNumber]])) {
+          expect_true(is.na(lMine$rows[[strNumber]][iVisit]), label = paste(strLabel, strNumber))
+        } else {
+          # To 1 part in 10^8, the tolerance bio.viz holds the chart to.
+          expect_equal(lMine$rows[[strNumber]][iVisit], lTheirRow[[strNumber]], tolerance = 1e-8, label = paste(strLabel, strNumber))
+        }
+      }
+    }
+    # As the page stores it, it is the shape bio.viz's connection reads.
+    expect_identical(names(StoredValue(lMine)), names(lTheirs), label = paste(lCase$case, "members"))
+    expect_identical(names(StoredValue(lMine)$rows[[1]]), names(lTheirs$rows[[1]]), label = paste(lCase$case, "a row's members"))
+  }
+  # Groups too small to test at a visit are said, not hidden.
+  expect_true("too_small" %in% vapply(lRecorded, function(lResult) lResult$value$status, character(1)))
+})
+
+test_that("the level drawn is the chart's: tiles, one biomarker over time, or its visits as panels (#53)", {
+  chrAll <- c("Baseline", "Week 2", "Week 4", "Week 8", "Week 12")
+  State <- function(strMeasure, chrVisits, strValueType = "change") list(measure = strMeasure, visits = chrVisits, value_type = strValueType)
+  expect_identical(chrGroupComparisonLevels, c("biomarkers", "over-time", "visits"))
+  # No biomarker chosen: every biomarker, whatever the visits.
+  expect_identical(GroupComparison_Level(State(NULL, chrAll), chrAll), "biomarkers")
+  # A biomarker and every visit it has: over time. Fewer: panels.
+  expect_identical(GroupComparison_Level(State("IL-6", chrAll), chrAll), "over-time")
+  expect_identical(GroupComparison_Level(State("IL-6", chrAll[2:5]), chrAll), "visits")
+  expect_identical(GroupComparison_Level(State("IL-6", "Week 4"), chrAll), "visits")
+  # A visit chosen that the biomarker lacks does not count against it.
+  expect_identical(GroupComparison_Level(State("IL-6", chrAll), chrAll[1:3]), "over-time")
+  # One visit is not a picture over time, and a baseline value has no visit.
+  expect_identical(GroupComparison_Level(State("IL-6", "Baseline"), "Baseline"), "visits")
+  expect_identical(GroupComparison_Level(State("IL-6", chrAll, "baseline"), chrAll), "visits")
+
+  # Over time asks R once, and only at that level.
+  lTables <- lDemo()
+  OverTime <- function(lMore = list(), strMeasure = "IL-6") {
+    lConfig <- GroupComparison_Settings(c(lTables$settings[setdiff(names(lTables$settings), c("visits", names(lMore)))], lMore))
+    lState <- GroupComparison_State(lTables$results, lTables$participants, lConfig)
+    lState["measure"] <- list(strMeasure)
+    GroupComparison_OverTimeRequests(lTables$results, lTables$participants, lConfig, lState)
+  }
+  expect_length(OverTime(), 1L)
+  expect_identical(OverTime()[[1]]$dataId$visits, as.list(chrAll[-1]))
+  expect_identical(OverTime(list(value_type = "raw"))[[1]]$dataId$visits, as.list(chrAll))
+  # Against two baseline visits a change is tested at every visit.
+  expect_identical(OverTime(list(baseline_visits = c("Baseline", "Week 2")))[[1]]$dataId$visits, as.list(chrAll))
+  expect_identical(OverTime(list(visits = c("Week 4", "Week 8"))), list())
+  expect_identical(OverTime(list(value_type = "baseline")), list())
+  expect_identical(OverTime(strMeasure = NULL), list())
+  # No test chosen, no function named for either line, or one group: nothing asked.
+  expect_identical(OverTime(list(test = "none")), list())
+  expect_identical(OverTime(list(statistic_by_visit = NULL)), list())
+  expect_identical(OverTime(list(statistic = NULL)), list())
+  expect_identical(OverTime(list(levels = "Placebo")), list())
+  # The picture takes no second grouping and no panels: neither is in the key.
+  lPlain <- OverTime()[[1]]
+  lGrouped <- OverTime(list(color_by = "SEX", panel_by = "SEX", pairwise = TRUE))[[1]]
+  expect_identical(lGrouped[c("name", "args", "dataId", "rows")], lPlain[c("name", "args", "dataId", "rows")])
+  # The test fits the groups drawn, and a logarithmic scale is in the identity.
+  expect_identical(OverTime(list(group_by = "ARM_SEX"))[[1]]$args$strMethod, "anova")
+  expect_true(OverTime(list(y_scale = "log", value_type = "raw"))[[1]]$dataId$positive_only)
+  # A cut's groups are handed to R low to high, every group drawn.
+  lCut <- OverTime(list(group_by = list(measure = "CRP", visit = "Baseline", cut = "tertiles")))[[1]]
+  expect_identical(lCut$args$chrGroups, list("\u2264 2.167", "> 2.167, \u2264 3.467", "> 3.467"))
+  expect_identical(names(lCut$args), c("strValueCol", "strGroupCol", "strByCol", "strMethod", "chrBy", "strPAdjust", "chrGroups"))
+  expect_identical(lCut$args$strMethod, "anova")
+})
+
+# Unscheduled visits (#53): left out at every level unless switched on, by
+# safety.viz's rule under safety.viz's setting names (bio.viz,
+# src/core/unscheduled.js). The synthetic study has none, so these tests add
+# rows of their own to a copy of it.
+
+test_that("a visit is unscheduled by the list when there is one, and otherwise by the pattern, as bio.viz's rule reads them (#53)", {
+  chrNames <- c("Unscheduled", "UNSCHEDULED 2", "Visit 3 (unscheduled)", "Early Termination", "early  termination", "Week 4", "Baseline")
+  # The default: a name holding either word, in either case.
+  expect_identical(lCoreUnscheduledDefaults$unscheduled_visit_pattern, "/unscheduled|early termination/i")
+  expect_identical(Core_IsUnscheduled(chrNames, lCoreUnscheduledDefaults), c(TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE))
+  # A list decides alone, by name: the pattern is then not read, and a list of
+  # none names none.
+  expect_identical(
+    Core_IsUnscheduled(chrNames, list(unscheduled_visit_values = c("Week 4", "Nope"), unscheduled_visit_pattern = "/unscheduled/i")),
+    chrNames == "Week 4"
+  )
+  expect_false(any(Core_IsUnscheduled(chrNames, list(unscheduled_visit_values = character(0), unscheduled_visit_pattern = "/unscheduled/i"))))
+  # With neither, no visit is unscheduled.
+  expect_false(any(Core_IsUnscheduled(chrNames, list(unscheduled_visit_pattern = NULL))))
+  expect_false(any(Core_IsUnscheduled(chrNames, list())))
+  # A plain source is read in the case it is written in; a word of nothing is
+  # in every name, as an empty alternative is to a browser.
+  expect_identical(Core_IsUnscheduled(chrNames, list(unscheduled_visit_pattern = "Week|Base")), chrNames %in% c("Week 4", "Baseline"))
+  expect_false(any(Core_IsUnscheduled(chrNames, list(unscheduled_visit_pattern = "week"))))
+  expect_true(all(Core_IsUnscheduled(chrNames, list(unscheduled_visit_pattern = "/week|/"))))
+  # Only the letters A to Z match in either case, as in a browser without the
+  # flag `u`: the long s is not an s.
+  expect_false(Core_IsUnscheduled("Un\u017fcheduled", lCoreUnscheduledDefaults))
+  # A pattern that could mean something else to a browser is not read.
+  for (strPattern in c("/^un/i", "/unscheduled/g", "/un.*/", "/a(b)/", "/\\d/", "/a/b/")) {
+    expect_null(Core_ReadPattern(strPattern), label = strPattern)
+    expect_error(Core_IsUnscheduled(chrNames, list(unscheduled_visit_pattern = strPattern)), "unscheduled_visit_values", label = strPattern)
+  }
+
+  # The settings: each of the three, checked.
+  expect_error(GroupComparison_Settings(list(unscheduled_visits = "yes")), "unscheduled_visits.*TRUE or FALSE")
+  expect_error(GroupComparison_Settings(list(unscheduled_visit_pattern = 3)), "unscheduled_visit_pattern.*regular expression")
+  expect_error(GroupComparison_Settings(list(unscheduled_visit_pattern = "/^un/i")), "Name the unscheduled visits in 'unscheduled_visit_values'")
+  expect_error(GroupComparison_Settings(list(unscheduled_visit_values = list(TRUE))), "unscheduled_visit_values.*name")
+  # A pattern R does not read is no matter when the visits are named.
+  lNamed <- GroupComparison_Settings(list(unscheduled_visit_pattern = "/^un/i", unscheduled_visit_values = list("Unscheduled 1")))
+  expect_identical(lNamed$unscheduled_visit_values, "Unscheduled 1")
+  expect_identical(GroupComparison_Settings(list(unscheduled_visit_values = list()))$unscheduled_visit_values, character(0))
+  # And the others the three levels add.
+  expect_error(GroupComparison_Settings(list(time_mark = "line")), "time_mark.*must be one of box, mean_se, median_iqr")
+  expect_error(GroupComparison_Settings(list(tile_summary = "max")), "tile_summary.*must be one of median, mean")
+  expect_error(GroupComparison_Settings(list(tile_min_spread = -1)), "tile_min_spread.*zero or more")
+  expect_error(GroupComparison_Settings(list(visit_adjustment = "bonferroni")), "visit_adjustment.*must be one of none, holm, BH")
+  expect_error(GroupComparison_Settings(list(statistic_by_visit = "my_test")), "statistic_by_visit.*Analyze_GroupDifferenceBy")
+})
+
+test_that("the rows at unscheduled visits are set aside before anything is read, and a row with no visit is kept (#53)", {
+  dfResults <- dfWithUnscheduled()
+  lFound <- Core_Scheduled(dfResults, c(list(visit_col = "VISIT"), lCoreUnscheduledDefaults))
+  expect_identical(lFound$visits, c("Unscheduled 1", "EARLY TERMINATION"))
+  expect_identical(lFound$rows, sum(dfResults$VISIT %in% lFound$visits))
+  expect_identical(nrow(lFound$results), nrow(Synthetic_Results))
+  expect_identical(unique(lFound$results$VISIT), unique(Synthetic_Results$VISIT))
+  # Nothing to set aside: the table itself.
+  expect_identical(Core_Scheduled(Synthetic_Results, c(list(visit_col = "VISIT"), lCoreUnscheduledDefaults))$results, Synthetic_Results)
+  # A row with no visit is kept.
+  dfBlank <- dfResults
+  dfBlank$VISIT[1:3] <- c(NA, "", "  ")
+  expect_identical(nrow(Core_Scheduled(dfBlank, c(list(visit_col = "VISIT"), lCoreUnscheduledDefaults))$results), nrow(Synthetic_Results))
+
+  # What the chart draws: the scheduled visits, or every visit when switched on.
+  lOff <- GroupComparison_Settings(list(value_type = "change", group_by = "ARM"))
+  lOn <- GroupComparison_Settings(list(value_type = "change", group_by = "ARM", unscheduled_visits = TRUE))
+  chrScheduled <- c("Baseline", "Week 2", "Week 4", "Week 8", "Week 12")
+  expect_identical(GroupComparison_Visits(dfResults, lOff)$all, chrScheduled)
+  expect_identical(
+    GroupComparison_Visits(dfResults, lOn)$all,
+    c("Unscheduled 1", "Baseline", "Week 2", "Week 4", "EARLY TERMINATION", "Week 8", "Week 12")
+  )
+  # The unscheduled visits with a result to draw, in visit order; the identity
+  # says they are among the rows only when they are drawn.
+  expect_identical(Chart_Unscheduled(dfResults, lOff)[c("visits", "drawn")], list(visits = c("Unscheduled 1", "EARLY TERMINATION"), drawn = FALSE))
+  expect_true(Chart_Unscheduled(dfResults, lOn)$drawn)
+  expect_false(Chart_Unscheduled(Synthetic_Results, lOn)$drawn)
+  # Named in a list, the visits are those and no others.
+  lListed <- GroupComparison_Settings(list(unscheduled_visit_values = "Week 2"))
+  expect_identical(GroupComparison_Visits(dfResults, lListed)$all[1:3], c("Unscheduled 1", "Baseline", "Week 4"))
+  # A chart without the rule's settings draws every row.
+  expect_identical(Chart_Unscheduled(dfResults, list(visit_col = "VISIT"))$results, dfResults)
+
+  # The baseline a change is measured from is the first visit drawn: Baseline
+  # with the unscheduled visits left out, though one of them sorts before it.
+  expect_identical(Widget_NameBaseline(lOff, list(), dfResults)$config$baseline_visits, "Baseline")
+  expect_identical(Widget_NameBaseline(lOn, list(), dfResults)$config$baseline_visits, "Unscheduled 1")
+  # And the visits a biomarker has, of those drawn.
+  expect_identical(GroupComparison_MeasureVisits(Chart_Unscheduled(dfResults, lOff)$results, lOff, "IL-6"), chrScheduled)
+  expect_identical(GroupComparison_MeasureVisits(dfResults, lOff, "NOPE"), character(0))
+})
+
+test_that("a visit a biomarker has no value at is not one of its panels, and does not stop its picture over time (#53)", {
+  lTables <- lDemo()
+  # CRP has no result at Week 8 in this copy.
+  dfResults <- lTables$results[!(lTables$results$TEST == "CRP" & lTables$results$VISIT == "Week 8"), ]
+  lConfig <- GroupComparison_Settings(lTables$settings[setdiff(names(lTables$settings), "visits")])
+  lState <- GroupComparison_State(dfResults, lTables$participants, lConfig)
+  lState$measure <- "CRP"
+  expect_identical(lState$visits, c("Baseline", "Week 2", "Week 4", "Week 8", "Week 12"))
+  expect_identical(GroupComparison_MeasureVisits(dfResults, lConfig, "CRP"), c("Baseline", "Week 2", "Week 4", "Week 12"))
+  lModel <- GroupComparison_Panels(dfResults, lTables$participants, lConfig, lState)
+  expect_identical(unlist(lapply(lModel$panels, `[[`, "visit")), c("Week 2", "Week 4", "Week 12"))
+  lOverTime <- GroupComparison_OverTimeRequests(dfResults, lTables$participants, lConfig, lState)
+  expect_length(lOverTime, 1L)
+  expect_identical(lOverTime[[1]]$dataId$visits, list("Week 2", "Week 4", "Week 12"))
+  # The picture keeps the baseline visit of a change, which the panels leave out.
+  lPicture <- GroupComparison_Panels(dfResults, lTables$participants, lConfig, lState, bKeepBaseline = TRUE)
+  expect_identical(unlist(lapply(lPicture$panels, `[[`, "visit")), c("Baseline", "Week 2", "Week 4", "Week 12"))
+  expect_identical(lPicture$baseline_visits, "Baseline")
 })

@@ -3,19 +3,14 @@
   "copied_by": "data-raw/vendor-bio-viz.R",
   "repository": "https://github.com/jwildfire/bio.viz",
   "ref": "dev",
-  "commit": "35ccfd323f49b3afdf1d9b9c20eedff0fe696a3b",
+  "commit": "f3aa6f30e5a76f58feae705bb72f618f107f46f5",
   "merged_to_dev": true,
-  "release": {
-    "tag": "v0.2.0",
-    "commit": "4440a4377935b3cc7263a07cb64db760b2d4a1a5",
-    "note": "Every file copied is byte for byte the same at bio.viz's release tag v0.2.0."
-  },
   "files": [
     {
       "file": "group-statistics/SOURCE.json",
       "source": "tests/fixtures/group-statistics/SOURCE.json",
-      "sha256": "6b9eabd05a65c09ee715f5a9718de347d38e0402d1785ba586822f5335d7c963",
-      "bytes": 5849
+      "sha256": "d4ad5132a28249ac5c61e3a13100563f269fc2509f83fe2cd46df2ec085655ee",
+      "bytes": 9009
     },
     {
       "file": "group-statistics/welch.csv",
@@ -132,10 +127,52 @@
       "bytes": 2167
     },
     {
+      "file": "group-statistics/over-time-result.csv",
+      "source": "tests/fixtures/group-statistics/over-time-result.csv",
+      "sha256": "514624614ab6147ef2627330e7b1c8240e06e46b7c2b2af291c0dc9e625b7676",
+      "bytes": 28832
+    },
+    {
+      "file": "group-statistics/over-time-change.csv",
+      "source": "tests/fixtures/group-statistics/over-time-change.csv",
+      "sha256": "c34282fa7ec98f5e98867e1d1c3cf005fa67c2eed0428996a6087d4a29d84916",
+      "bytes": 31274
+    },
+    {
+      "file": "group-statistics/over-time-anova.csv",
+      "source": "tests/fixtures/group-statistics/over-time-anova.csv",
+      "sha256": "56226a44917c4e041ac3dba42ec81d1c3a75c7e70345fa3ad814afe6ea558766",
+      "bytes": 30718
+    },
+    {
+      "file": "group-statistics/over-time-age-57.csv",
+      "source": "tests/fixtures/group-statistics/over-time-age-57.csv",
+      "sha256": "f471954c36d0333516b1a982e74f1aa1b4c40f5fc2a130e77cc496bf56d1a7d0",
+      "bytes": 1252
+    },
+    {
+      "file": "group-statistics/over-time-age-40-to-43.csv",
+      "source": "tests/fixtures/group-statistics/over-time-age-40-to-43.csv",
+      "sha256": "73e4a56f079c6b14008a7e6e1fa671497eb56fe506c58db6c4bead44211f6115",
+      "bytes": 1552
+    },
+    {
+      "file": "group-statistics/over-time-age-39.csv",
+      "source": "tests/fixtures/group-statistics/over-time-age-39.csv",
+      "sha256": "18d12c494519786a52ccde2ae42c16552af74f4e6bfbeeb8a2cfa4d646025832",
+      "bytes": 588
+    },
+    {
+      "file": "group-statistics/over-time-cases.csv",
+      "source": "tests/fixtures/group-statistics/over-time-cases.csv",
+      "sha256": "4fcf0117871ccff1a7a4087f0d7a2dfbf7c3b6763ecc6852441793b722d3b861",
+      "bytes": 1965
+    },
+    {
       "file": "group-statistics-r.json",
       "source": "tests/fixtures/group-statistics-r.json",
-      "sha256": "5056202ec11f8478591c1d04f07b19b272451ac229aaf1ab3af1c17f46924878",
-      "bytes": 36759
+      "sha256": "731711ef8ced7836a969ab1698c0ae772b867b5a7d41a15b7288f844ade3fced",
+      "bytes": 78257
     },
     {
       "file": "association-statistics/SOURCE.json",
@@ -296,7 +333,7 @@
     {
       "file": "association-statistics-r.json",
       "source": "tests/fixtures/association-statistics-r.json",
-      "sha256": "320e4651ac01c56a75bba03dd18d5756dc13148fa0b78fcfdd8e4e6c78041419",
+      "sha256": "99db5e24f1f0abf6d3c0a8e7b13984a4d7864cc8899e899d92153b5468a3a167",
       "bytes": 273337
     },
     {
@@ -374,7 +411,7 @@
     {
       "file": "matrix-statistics-r.json",
       "source": "tests/fixtures/matrix-statistics-r.json",
-      "sha256": "741c5d25da70d16d3ab9f0cd2d245e5612a0a3130b82258e45291d17ed33359a",
+      "sha256": "849778ceee835ab04264b8718f2d6c4c8e9544c3af34e85bf74fbc6a042f4100",
       "bytes": 96853
     },
     {
@@ -488,7 +525,7 @@
     {
       "file": "screen-statistics-r.json",
       "source": "tests/fixtures/screen-statistics-r.json",
-      "sha256": "665e4ca6279dbdd71412de73817a6dc257a6e985adb2120af0db523a7a5e76e0",
+      "sha256": "f9bfb8b876c62530f4b74ffa6aadfeeae9538836c087439c91c56cf619d6e699",
       "bytes": 97235
     },
     {
@@ -500,13 +537,13 @@
     {
       "file": "cross-tab-r.json",
       "source": "tests/fixtures/cross-tab-r.json",
-      "sha256": "b772c5a08271643cd3be1bc4089c3c1d94a22d768e350641e530863f92d9c8d4",
+      "sha256": "5c35918951f81f44d3e1293f4843d62fcd03a32131cdcfa62e4348684b350a8d",
       "bytes": 121163
     },
     {
       "file": "stratified-survival-r.json",
       "source": "tests/fixtures/stratified-survival-r.json",
-      "sha256": "e0ed18a20811029d45b151275299a5cc8cde96ad026e7e139259123e272c7744",
+      "sha256": "488c750a0819e34bc71d7befa4e82bea01457a3080b97e3e20e08e9f19e4e3f6",
       "bytes": 215452
     }
   ]

@@ -68,9 +68,12 @@ test_that("a page saved in a session whose locale is not UTF-8 carries text that
     )$x
     expect_setequal(intersect(unlist(lPage$dfParticipants$STAGE), chrStagesUtf8()), chrStagesUtf8())
     lStored <- Filter(function(lResult) identical(lResult$dataId$measure, "IL-6"), lPage$lStatistics$results)
-    expect_length(lStored, 1L)
-    expect_setequal(unlist(lStored[[1]]$dataId$groups), chrStagesUtf8())
-    expect_identical(unlist(lStored[[1]]$dataId$groups), Core_SortText(chrStagesUtf8()))
+    # Each visit after Baseline alone, and the visits over time (#53).
+    expect_length(lStored, 5L)
+    for (lResult in lStored) {
+      expect_setequal(unlist(lResult$dataId$groups), chrStagesUtf8())
+      expect_identical(unlist(lResult$dataId$groups), Core_SortText(chrStagesUtf8()))
+    }
   })
 })
 

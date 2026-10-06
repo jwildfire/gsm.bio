@@ -176,11 +176,39 @@ Widget_CheckColumns <- function(lConfig, dfResults, dfParticipants) {
 #' @noRd
 Widget_NameBaseline <- function(lConfig, lSettings, dfResults) {
   if (is.null(lConfig$baseline_visits)) {
-    chrFirstVisit <- Core_First(Core_Visits(dfResults, Chart_CoreSettings(lConfig)))
+    # The first visit the chart draws: a chart that leaves unscheduled visits
+    # out does not measure a change from one.
+    chrFirstVisit <- Core_First(Core_Visits(Chart_Unscheduled(dfResults, lConfig)$results, Chart_CoreSettings(lConfig)))
     if (length(chrFirstVisit) == 1L) {
       lConfig$baseline_visits <- chrFirstVisit
       lSettings$baseline_visits <- chrFirstVisit
     }
+  }
+  list(config = lConfig, settings = lSettings)
+}
+
+#' Name the unscheduled visits to the chart outright
+#'
+#' A chart that leaves unscheduled visits out finds them by name in
+#' `unscheduled_visit_values`, or, with no list, by a regular expression in
+#' `unscheduled_visit_pattern`, which the reader's browser reads. So that R and
+#' the page cannot find different visits, the visits R found by the pattern
+#' are handed to the chart as the list, which decides alone; a list the
+#' settings give is left as given, and so are settings with no pattern.
+#'
+#' @return A list of `config`, the settings R reads, and `settings`, the
+#'   settings the page is given, each with `unscheduled_visit_values` filled in
+#'   when the visits were found by the pattern.
+#'
+#' @keywords internal
+#' @noRd
+Widget_NameUnscheduled <- function(lConfig, lSettings, dfResults) {
+  if (is.null(lConfig$unscheduled_visit_values) && !is.null(lConfig$unscheduled_visit_pattern)) {
+    chrFound <- Core_Scheduled(dfResults, lConfig[c("visit_col", names(lCoreUnscheduledDefaults))])$visits
+    lConfig$unscheduled_visit_values <- chrFound
+    # A list whatever its length, so the page reads one name as a list of one
+    # and none as a list of none.
+    lSettings$unscheduled_visit_values <- as.list(chrFound)
   }
   list(config = lConfig, settings = lSettings)
 }
