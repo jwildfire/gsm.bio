@@ -4,17 +4,29 @@
 # it is in a bare R session with only stats and survival attached.
 
 chrStatisticsExports <- c(
-  "Analyze_GroupDifference", "Analyze_Correlation", "Analyze_CorrelationMatrix", "Analyze_Fit",
-  "Analyze_Contingency", "Analyze_Survival", "Analyze_Screen"
+  "Analyze_GroupDifference", "Analyze_GroupDifferenceBy", "Analyze_Correlation", "Analyze_CorrelationMatrix",
+  "Analyze_Fit", "Analyze_Contingency", "Analyze_Survival", "Analyze_Screen", "Analyze_DifferenceGrid"
 )
 
 strStatisticsFile <- function() {
   system.file("statistics", "statistics.R", package = "gsm.bio")
 }
 
+# The frames the calls below are made on: one row per participant, and, for
+# the answers by level (#52), one row per participant, biomarker and visit, and
+# the rows of that for the one biomarker the group difference is planted in.
+lStatisticsFrames <- function() {
+  dfLong <- dfSyntheticLong()
+  list(
+    wide = dfSyntheticFrame(), long = dfLong,
+    visits = dfLong[dfLong$TEST == Synthetic_Truth$GroupDifference$Biomarker, ]
+  )
+}
+
 # Every result the tests below look at, as the browser would ask for it: the
 # function's name, then named arguments in the shapes JSON delivers, a list of
-# single values where an argument takes several.
+# single values where an argument takes several, and then, for a call made on
+# another frame than the one with a row per participant, that frame's name.
 lStatisticsCalls <- function() {
   lTruth <- Synthetic_Truth
   strX <- paste(lTruth$Correlation$Biomarkers[1], "@ Week 4")
@@ -76,12 +88,34 @@ lStatisticsCalls <- function() {
     )),
     screen_too_small = list("Analyze_Screen", list(
       chrCols = c("Change", "AGE"), strComparison = "difference", strGroupCol = "ARM", nMinGroup = 101
-    ))
+    )),
+    by_t = list("Analyze_GroupDifferenceBy", list(
+      strValueCol = "STRESN", strGroupCol = "ARM", strByCol = "VISIT", strMethod = "t",
+      chrGroups = as.list(lTruth$GroupDifference$Groups), chrBy = as.list(chrSyntheticVisits()), strPAdjust = "holm"
+    ), "visits"),
+    by_kruskal = list("Analyze_GroupDifferenceBy", list(
+      strValueCol = "STRESN", strGroupCol = "ARM_SEX", strByCol = "VISIT", strMethod = "kruskal", strPAdjust = "BH"
+    ), "visits"),
+    by_too_small = list("Analyze_GroupDifferenceBy", list(
+      strValueCol = "STRESN", strGroupCol = "ARM", strByCol = "VISIT", nMinGroup = 101
+    ), "visits"),
+    by_error = list("Analyze_GroupDifferenceBy", list(strValueCol = "STRESN", strGroupCol = "ARM", strByCol = "Nope"), "visits"),
+    grid = list("Analyze_DifferenceGrid", list(
+      strValueCol = "STRESN", strGroupCol = "ARM", strBiomarkerCol = "TEST", strByCol = "VISIT",
+      chrGroups = as.list(lTruth$GroupDifference$Groups), chrBy = as.list(chrSyntheticVisits())
+    ), "long"),
+    grid_too_small = list("Analyze_DifferenceGrid", list(
+      strValueCol = "STRESN", strGroupCol = "ARM", strBiomarkerCol = "TEST", strByCol = "VISIT", nMinGroup = 101
+    ), "long"),
+    grid_error = list("Analyze_DifferenceGrid", list(
+      strValueCol = "STRESN", strGroupCol = "ARM_SEX", strBiomarkerCol = "TEST", strByCol = "VISIT"
+    ), "long")
   )
 }
 
-lRunCalls <- function(lCalls, dfFrame, envFunctions) {
+lRunCalls <- function(lCalls, lFrames, envFunctions) {
   lapply(lCalls, function(lCall) {
+    dfFrame <- lFrames[[if (length(lCall) > 2L) lCall[[3]] else "wide"]]
     do.call(get(lCall[[1]], envir = envFunctions), c(list(dfFrame), lCall[[2]]))
   })
 }
@@ -121,7 +155,7 @@ test_that("the statistics file ships in the installed package where system.file(
   expect_identical(basename(dirname(strStatisticsFile())), "statistics")
 })
 
-test_that("each exported function is identical to its definition in the statistics file (#3, #4, #12)", {
+test_that("each exported function is identical to its definition in the statistics file (#3, #4, #12, #52)", {
   envFile <- new.env(parent = globalenv())
   sys.source(strStatisticsFile(), envir = envFile)
   chrExports <- chrStatisticsExports
@@ -155,7 +189,7 @@ test_that("each exported function is identical to its definition in the statisti
   expect_identical(get("nMinGroupDefault", envir = envFile), 5L)
 })
 
-test_that("the statistics file calls base R, stats and survival and nothing else, and never evaluates text (#3, #4, #12)", {
+test_that("the statistics file calls base R, stats and survival and nothing else, and never evaluates text (#3, #4, #12, #52)", {
   exprFile <- parse(strStatisticsFile(), keep.source = FALSE)
   envFile <- new.env(parent = globalenv())
   sys.source(strStatisticsFile(), envir = envFile)
@@ -194,8 +228,8 @@ test_that("the statistics file calls base R, stats and survival and nothing else
   expect_identical(intersect(all.names(exprFile), chrForbidden), character(0))
 })
 
-test_that("no result on the synthetic study holds a factor, a matrix, a classed object or a bare vector for a collection (#3, #4, #12)", {
-  lResults <- lRunCalls(lStatisticsCalls(), dfSyntheticFrame(), asNamespace("gsm.bio"))
+test_that("no result on the synthetic study holds a factor, a matrix, a classed object or a bare vector for a collection (#3, #4, #12, #52)", {
+  lResults <- lRunCalls(lStatisticsCalls(), lStatisticsFrames(), asNamespace("gsm.bio"))
 
   for (strCall in names(lResults)) {
     ExpectResultShape(lResults[[strCall]])
@@ -215,15 +249,23 @@ test_that("no result on the synthetic study holds a factor, a matrix, a classed 
   expect_identical(nrow(lResults$screen_hazard$rows), 12L)
   expect_identical(nrow(lResults$screen_one$rows), 1L)
   expect_identical(lResults$screen_too_small$status, "too_small")
+  # The answers by level (#52): a row per visit, and a row per biomarker and visit.
+  expect_identical(nrow(lResults$by_t$rows), 5L)
+  expect_identical(nrow(lResults$by_kruskal$rows), 5L)
+  expect_identical(lResults$by_too_small$status, "too_small")
+  expect_identical(lResults$by_error$status, "error")
+  expect_identical(nrow(lResults$grid$rows), 60L)
+  expect_identical(lResults$grid_too_small$status, "too_small")
+  expect_identical(lResults$grid_error$status, "error")
 })
 
-test_that("the statistics file runs in a bare R session with only stats and survival attached, and gives the same results (#3, #4, #12)", {
+test_that("the statistics file runs in a bare R session with only stats and survival attached, and gives the same results (#3, #4, #12, #52)", {
   strFrame <- tempfile(fileext = ".rds")
   strCalls <- tempfile(fileext = ".rds")
   strOut <- tempfile(fileext = ".rds")
   strScript <- tempfile(fileext = ".R")
   on.exit(unlink(c(strFrame, strCalls, strOut, strScript)))
-  saveRDS(dfSyntheticFrame(), strFrame)
+  saveRDS(lStatisticsFrames(), strFrame)
   saveRDS(lStatisticsCalls(), strCalls)
   # The child is given the file and the data and nothing else: it sources the
   # file at top level, as R in the browser would, and calls each function by
@@ -233,9 +275,12 @@ test_that("the statistics file runs in a bare R session with only stats and surv
     "chrSearchBefore <- search()",
     "source(chrArgs[1])",
     "chrDefined <- ls()",
-    "dfFrame <- readRDS(chrArgs[2])",
+    "lFrames <- readRDS(chrArgs[2])",
     "lCalls <- readRDS(chrArgs[3])",
-    "lResults <- lapply(lCalls, function(lCall) do.call(lCall[[1]], c(list(dfFrame), lCall[[2]])))",
+    "lResults <- lapply(lCalls, function(lCall) {",
+    "  dfFrame <- lFrames[[if (length(lCall) > 2L) lCall[[3]] else 'wide']]",
+    "  do.call(lCall[[1]], c(list(dfFrame), lCall[[2]]))",
+    "})",
     "saveRDS(list(",
     "  search_before = chrSearchBefore, search_after = search(),",
     "  namespaces = loadedNamespaces(), defined = chrDefined, results = lResults",
@@ -268,14 +313,14 @@ test_that("the statistics file runs in a bare R session with only stats and surv
   expect_true(all(chrStatisticsExports %in% lBare$defined))
 
   # The same answers as the package, to the last bit, for every method.
-  lPackage <- lRunCalls(lStatisticsCalls(), dfSyntheticFrame(), asNamespace("gsm.bio"))
+  lPackage <- lRunCalls(lStatisticsCalls(), lStatisticsFrames(), asNamespace("gsm.bio"))
   expect_identical(names(lBare$results), names(lPackage))
   for (strCall in names(lPackage)) {
     expect_identical(lBare$results[[strCall]], lPackage[[strCall]], label = paste("the bare session's", strCall))
   }
 })
 
-test_that("the help pages state the minimum group size the file defines, and never call it agreed or validated (#3, #4, #12)", {
+test_that("the help pages state the minimum group size the file defines, and never call it agreed or validated (#3, #4, #12, #52)", {
   lRd <- if (bSourceTree()) tools::Rd_db(dir = strSourceRoot()) else tools::Rd_db("gsm.bio")
   nDefault <- get("nMinGroupDefault", envir = asNamespace("gsm.bio"))
   for (strTopic in chrStatisticsExports) {

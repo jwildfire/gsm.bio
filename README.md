@@ -16,17 +16,19 @@ remotes::install_github("jwildfire/gsm.bio@dev")    # what is on dev, the integr
 
 ## Statistics
 
-Each function takes a data frame with one row per participant and the names of its columns, and returns the same plain list: a status, the method's name as R reports it, the estimates with their intervals, the statistic, the p-value, the participants used, what was dropped and why, and a reason in place of the numbers when a group is too small.
+Each function takes a data frame with one row per participant and the names of its columns (the two that answer by level take one row per participant and level), and returns the same plain list: a status, the method's name as R reports it, the estimates with their intervals, the statistic, the p-value, the participants used, what was dropped and why, and a reason in place of the numbers when a group is too small.
 
 | Function | Wraps |
 |---|---|
 | `Analyze_GroupDifference()` | `t.test()` (Welch), `wilcox.test()`, `aov()`, `kruskal.test()`; pairwise comparisons adjusted by `p.adjust()` |
+| `Analyze_GroupDifferenceBy()` | The same test within each level of a column, such as each visit of one biomarker, in one call: one row per level, with the p-values adjusted across the levels by `p.adjust()` when a method is named |
 | `Analyze_Correlation()` | `cor.test()`, Pearson or Spearman, overall and per group |
 | `Analyze_CorrelationMatrix()` | `cor.test()` on every pair of columns, with the pair count per cell |
 | `Analyze_Fit()` | `lm()` for a line, with the slope and intercept, their intervals from `confint()` and the confidence band from `predict()`; `loess()` for a smooth, with its band from `predict(se = TRUE)`; overall and per group, as points a chart draws as they are |
 | `Analyze_Contingency()` | `chisq.test()`, with small expected counts flagged, and `fisher.test()` |
 | `Analyze_Survival()` | `survdiff()` for the log-rank test, `survfit()` for median survival with its log-log interval, `coxph()` for the hazard ratio between two groups |
 | `Analyze_Screen()` | One row per biomarker for one comparison: a standardised difference between two groups, a correlation with one variable, or a hazard ratio for high against low; p-values adjusted across the rows by `p.adjust()` |
+| `Analyze_DifferenceGrid()` | The screen's standardised difference between two groups for every biomarker at every level of a column, such as every visit, in one call: one row per biomarker and level, from long data, with no p-value |
 
 ```r
 library(gsm.bio)

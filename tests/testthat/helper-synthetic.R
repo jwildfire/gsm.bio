@@ -52,3 +52,21 @@ lWithWarnings <- function(fnCall) {
   })
   list(value = xValue, warnings = as.list(unique(chrWarnings)))
 }
+
+# The study in long form, as a chart of visits holds it: one row per
+# participant, biomarker and visit, with the participant's arm, and arm and sex
+# side by side as a four-level group, beside the value. A participant with no
+# result at a visit has no row there.
+dfSyntheticLong <- function() {
+  dfLong <- Synthetic_Results[c("USUBJID", "TEST", "VISIT", "STRESN")]
+  iParticipant <- match(dfLong$USUBJID, Synthetic_Participants$USUBJID)
+  dfLong$ARM <- Synthetic_Participants$ARM[iParticipant]
+  dfLong$ARM_SEX <- paste(dfLong$ARM, Synthetic_Participants$SEX[iParticipant])
+  rownames(dfLong) <- NULL
+  dfLong
+}
+
+# The visits, in the study's own order.
+chrSyntheticVisits <- function() {
+  unique(Synthetic_Results$VISIT[order(Synthetic_Results$VISITNUM)])
+}

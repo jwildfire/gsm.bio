@@ -9,6 +9,10 @@ publishes from the section verbatim.
 
 The next version of gsm.bio. Its work lands on `dev` and is listed here as it does.
 
+## What's new
+
+- **A group test at every visit, and a grid of differences, in one call each.** [`Analyze_GroupDifferenceBy()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_GroupDifferenceBy.html) runs the group test within each level of a column, such as each visit of one biomarker, and returns one row per level: R's p-value for that level, the same p-value adjusted across the levels by `p.adjust()` when a method is named (none by default), the counts, and for two groups the difference in means. [`Analyze_DifferenceGrid()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_DifferenceGrid.html) returns the screen's standardised difference between two groups for every biomarker at every level, one row per cell, with its interval and no p-value. Both take the results table long, one row per participant, biomarker and visit, so nothing is reshaped first. A level or a cell with a group below the minimum size, or with values that do not vary, has its reason in place of its numbers and is left out of the adjustment. Each row is the single function's own answer on that level's rows, so the numbers agree with the single-visit view. Every released function answers as it did. [obot.roadmap#367](https://github.com/jwildfire/obot.roadmap/issues/367), [#52](https://github.com/jwildfire/gsm.bio/issues/52)
+
 # gsm.bio v0.2.0
 
 **See it move:** the [annotated v0.2.0 demo](https://jwildfire.github.io/obot.roadmap/reports/biomarker-v0.2-demo/) has captures and try-it steps for everything below.

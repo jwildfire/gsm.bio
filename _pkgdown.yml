@@ -19,12 +19,14 @@ reference:
       function the design names, and all returning the same result.
     contents:
       - Analyze_GroupDifference
+      - Analyze_GroupDifferenceBy
       - Analyze_Correlation
       - Analyze_CorrelationMatrix
       - Analyze_Fit
       - Analyze_Contingency
       - Analyze_Survival
       - Analyze_Screen
+      - Analyze_DifferenceGrid
       - StatisticsResult
   - title: Widgets
     desc: >

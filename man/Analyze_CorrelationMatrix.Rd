@@ -65,8 +65,10 @@ lResult$rows[c("x", "y", "counts", "estimate", "lower", "upper")]
 Other statistics: 
 \code{\link{Analyze_Contingency}()},
 \code{\link{Analyze_Correlation}()},
+\code{\link{Analyze_DifferenceGrid}()},
 \code{\link{Analyze_Fit}()},
 \code{\link{Analyze_GroupDifference}()},
+\code{\link{Analyze_GroupDifferenceBy}()},
 \code{\link{Analyze_Screen}()},
 \code{\link{Analyze_Survival}()}
 }
