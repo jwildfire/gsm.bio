@@ -454,6 +454,8 @@ var BioViz = (() => {
     if (groups.length === 0 || !groups.every(([, n]) => isCount(n))) return null;
     return groups.map(([group, n]) => group === "n" ? `n = ${n}` : `${group} n = ${n}`).join(", ");
   }
+  var P_ROUNDING = 1e-9;
+  var isP = (p) => typeof p === "number" && p >= 0 && p <= 1 + P_ROUNDING;
   function formatP(p) {
     const rounded = p.toFixed(3);
     if (p < 1e-3 || rounded === "0.000") return "p < 0.001";
@@ -498,7 +500,7 @@ var BioViz = (() => {
       return { status: "withheld", text: withCounts(lead, counts) };
     }
     const p = result.p_value;
-    if (typeof p !== "number" || !(p >= 0 && p <= 1)) {
+    if (!isP(p)) {
       return refused("the result has no p-value between 0 and 1");
     }
     if (!method) return refused("the result does not name its method");
@@ -756,7 +758,7 @@ var BioViz = (() => {
       return refuse8("the row does not say how many rows its p-value was adjusted across");
     }
     const p = given2.p_value;
-    if (typeof p !== "number" || !(p >= 0 && p <= 1)) {
+    if (!isP(p)) {
       return refuse8("the adjusted p-value is not a number between 0 and 1");
     }
     if (!isNumber(given2.estimate)) return refuse8("the estimate is not a number");
@@ -829,7 +831,7 @@ var BioViz = (() => {
     });
     if (parts.status !== "shown") return whole(parts.status, parts.text);
     const raw = given2.p_unadjusted;
-    if (typeof raw !== "number" || !(raw >= 0 && raw <= 1)) {
+    if (!isP(raw)) {
       return whole("refused", refused("the row has no unadjusted p-value between 0 and 1").text);
     }
     const unadjusted = formatP(raw);
@@ -1553,8 +1555,8 @@ var BioViz = (() => {
   var refuse4 = (message) => {
     throw new TypeError(`bio.viz: ${message}`);
   };
-  var VERSION = true ? "0.2.0" : "unbuilt";
-  var DEVELOPMENT = true ? true : true;
+  var VERSION = true ? "0.3.0" : "unbuilt";
+  var DEVELOPMENT = true ? false : true;
   var VERSION_SAID = DEVELOPMENT ? `${VERSION} with development changes` : VERSION;
   var TITLE_DEFAULTS = Object.freeze({ title: null, subtitle: null, footnotes: null });
   var DOWNLOAD_DEFAULTS = Object.freeze({ downloads: true, png_scale: 2 });
@@ -3599,6 +3601,13 @@ var BioViz = (() => {
     style.textContent = styles;
     document.head.append(style);
   }
+  var ownTable = (table) => `
+${table}{box-sizing:border-box;width:auto;margin:0;background:none;font-family:inherit;font-size:inherit;line-height:normal}
+${table} caption,${table} th,${table} td{box-sizing:content-box}
+${table} th,${table} td{border:0;padding:1px;background:none;color:inherit;font-family:inherit;font-size:inherit;letter-spacing:normal;text-transform:none;vertical-align:inherit}
+${table} th{font-weight:700;text-align:center}
+${table} td{text-align:inherit}`;
+  var ownHeading = (heading, weight = 700) => `${heading}{box-sizing:content-box;font-family:inherit;font-weight:${weight};line-height:normal}`;
   var lineStyles = (root) => `
 ${root} .bv-statistic{margin:.6rem 0 0;font-size:.85rem;color:#1f2933;max-width:100%}
 ${root} .bv-statistic:empty{display:none}
@@ -3606,12 +3615,14 @@ ${root} .bv-statistic p{margin:0 0 .3rem}
 ${root} .bv-statistic[data-state=waiting],${root} .bv-statistic[data-state=none]{color:#52616f;font-style:italic}
 ${root} .bv-stat-remark,${root} .bv-stat-scope{font-size:.8rem;color:#52616f}
 ${root} .bv-stat-remark[data-kind=warning]{color:#8a4b00}
+${ownTable(`${root} .bv-stat-pairs`)}
 ${root} .bv-stat-pairs{border-collapse:collapse;margin:.2rem 0 .5rem;font-size:.8rem;width:100%;max-width:36rem}
 ${root} .bv-stat-pairs caption{text-align:left;padding:0 0 .25rem;caption-side:top}
 ${root} .bv-stat-pairs th,${root} .bv-stat-pairs td{text-align:left;font-weight:400;padding:.2rem .6rem .2rem 0;border-top:1px solid #d9dee3;vertical-align:top;overflow-wrap:anywhere}
 ${root} .bv-stat-pairs thead th{font-weight:600;border-top:0}
 ${root} .bv-stat-pairs td:nth-child(2){white-space:nowrap}
 ${root} .bv-stat-method{display:block;color:#52616f}
+${ownHeading(`${root} .bv-panel h3`)}
 ${root} .bv-panel-canvas{height:300px;position:relative}
 ${root} .bv-panel-note{margin:0 0 .4rem;font-size:.8rem;color:#52616f}
 ${root} .sv-listing table{table-layout:fixed}
@@ -9101,7 +9112,8 @@ ${toolbarStyles(`.${MODULE_CLASS}`)}
   var C = `.${MODULE_CLASS2}`;
   var STYLES3 = `${lineStyles(C)}
 ${C} .bv-matrix{margin:0 0 .6rem;border:1px solid #d8dee4;border-radius:10px;background:#fff;padding:.8rem}
-${C} .bv-matrix-title{margin:0 0 .6rem;font-size:.92rem;font-weight:600;color:#1f2933}
+${ownHeading(`${C} .bv-matrix-title`, 600)}
+${C} .bv-matrix-title{margin:0 0 .6rem;font-size:.92rem;color:#1f2933}
 ${C} .bv-matrix-scroll{max-width:100%;overflow-x:auto}
 ${C} .bv-matrix-grid{display:grid;grid-template-columns:fit-content(var(--bv-label)) repeat(var(--bv-n),var(--bv-cell));gap:2px;width:max-content;font-size:.78rem;color:#1f2933}
 ${C} .bv-col-head{writing-mode:vertical-rl;transform:rotate(180deg);max-height:var(--bv-label);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;justify-self:center;align-self:end;padding:.3rem 0;line-height:1.1}
@@ -9127,8 +9139,12 @@ ${C} .bv-pairs{margin-top:1rem;font-size:.85rem}
 ${C} .bv-pairs summary{cursor:pointer;font-weight:600;margin:0 0 .4rem}
 ${C} .bv-pairs-tools{margin:0 0 .4rem}
 ${C} .bv-pairs-tools button{padding:.3rem .6rem;border:1px solid #d8dee4;border-radius:6px;background:#fff;color:#1f2933;font:inherit;font-size:.8rem;cursor:pointer}
+${ownTable(`${C} .bv-pairs-table`)}
+/* The list is in the kit's listing, whose headings are small capitals: the
+   chart states them itself, where it leaned on the kit's rule before (#97). */
 ${C} .bv-pairs table{width:100%;border-collapse:collapse;background:#fff;table-layout:fixed}
 ${C} .bv-pairs th,${C} .bv-pairs td{border-bottom:1px solid #e3e8ee;padding:.4rem .5rem;text-align:left;vertical-align:top;overflow-wrap:anywhere}
+${C} .bv-pairs th{font-size:.75rem;letter-spacing:.03em;text-transform:uppercase;color:#52616f}
 ${C} .bv-pairs thead th{border-bottom:2px solid #d8dee4;font-size:.8rem;font-weight:600;color:#52616f;overflow-wrap:normal}
 ${C} .bv-pairs th[scope=row]{font-weight:400}
 ${C} .bv-pairs thead th:nth-child(1){width:38%}
@@ -9899,7 +9915,7 @@ ${C}.sv-collapsed .sv-sidebar{padding:.5rem .9rem}
         "bio.viz-correlation-matrix-pairs.csv"
       );
       tools.append(download);
-      const table = document.createElement("table");
+      const table = kit.createElement("table", "bv-pairs-table");
       const header = document.createElement("tr");
       ["Pair", "Complete pairs", head].forEach((title) => {
         const cell = kit.createElement("th", null, title);
@@ -10377,6 +10393,7 @@ ${C}.sv-collapsed .sv-sidebar{padding:.5rem .9rem}
 ${toolbarStyles(C2)}
 ${C2} .bv-chart-wrap{height:var(--bv-curves-height,340px);position:relative}
 ${C2} .bv-risk-wrap{margin:.5rem 0 .8rem;max-width:100%;overflow-x:auto}
+${ownTable(`${C2} .bv-risk`)}
 ${C2} .bv-risk{border-collapse:collapse;font-size:.8rem;color:#1f2933;font-variant-numeric:tabular-nums}
 ${C2} .bv-risk caption{caption-side:top;text-align:left;font-weight:600;padding:0 0 .3rem}
 ${C2} .bv-risk th,${C2} .bv-risk td{border:1px solid #d8dee4;padding:0;text-align:right;white-space:nowrap}
@@ -11779,7 +11796,8 @@ ${C2} .bv-control-note{display:block;margin:.2rem 0 0;font-size:.75rem;color:#52
   var C3 = `.${MODULE_CLASS4}`;
   var STYLES5 = `${lineStyles(C3)}
 ${C3} .bv-screen{margin:0 0 .6rem;border:1px solid #d8dee4;border-radius:10px;background:#fff;padding:.8rem}
-${C3} .bv-screen-title{margin:0 0 .3rem;font-size:.92rem;font-weight:600;color:#1f2933}
+${ownHeading(`${C3} .bv-screen-title`, 600)}
+${C3} .bv-screen-title{margin:0 0 .3rem;font-size:.92rem;color:#1f2933}
 ${C3} .bv-screen-caption{margin:0 0 .6rem;font-size:.8rem;color:#52616f}
 ${C3} .bv-screen-names{margin:.2rem 0 0;font-size:.85rem;color:#52616f}
 ${C3} .bv-screen-head,${C3} .bv-screen-row{display:grid;grid-template-columns:minmax(5.5rem,9rem) minmax(8rem,1fr) 11.8rem 5.4rem 5.8rem 5.6rem;align-items:center;gap:0 .6rem}
@@ -12776,13 +12794,24 @@ ${C3}.sv-collapsed .sv-sidebar{padding:.5rem .9rem}
   }
   var present3 = (value) => value !== void 0 && value !== null;
   function named(value, names) {
-    if (!names || typeof value.reason !== "string") return value;
-    const reason = value.reason.replace(
-      /(^Not computed: |; )(row|col) = /g,
+    if (!names) return value;
+    const rename = (said2, lead) => said2.replace(
+      new RegExp(`(${lead}|; )(row|col) = `, "g"),
       (_, before, field) => `${before}${names[field] || field} = `
     );
-    return { ...value, reason };
+    const out = { ...value };
+    if (typeof value.reason === "string") out.reason = rename(value.reason, "^Not computed: ");
+    if (Array.isArray(value.notes)) {
+      out.notes = value.notes.map(
+        (note) => (
+          // Only the list of categories is renamed, from where it starts.
+          typeof note === "string" && note.includes(BELOW_MINIMUM) ? note.slice(0, note.indexOf(BELOW_MINIMUM)) + rename(note.slice(note.indexOf(BELOW_MINIMUM)), BELOW_MINIMUM) : note
+        )
+      );
+    }
+    return out;
   }
+  var BELOW_MINIMUM = "Below it here: ";
   function oriented(row, groups) {
     const rows = groups && Array.isArray(groups.rows) ? groups.rows : [];
     const cols = groups && Array.isArray(groups.cols) ? groups.cols : [];
@@ -12916,6 +12945,7 @@ ${C3}.sv-collapsed .sv-sidebar{padding:.5rem .9rem}
   var STYLES6 = `${lineStyles(C4)}
 ${toolbarStyles(C4)}
 ${C4} .bv-crosstab-wrap{margin:0 0 .8rem;max-width:100%;overflow-x:auto}
+${ownTable(`${C4} .bv-crosstab`)}
 ${C4} .bv-crosstab{border-collapse:collapse;font-size:.85rem;color:#1f2933;font-variant-numeric:tabular-nums}
 ${C4} .bv-crosstab caption{caption-side:top;text-align:left;font-weight:600;padding:0 0 .4rem}
 ${C4} .bv-crosstab th,${C4} .bv-crosstab td{border:1px solid #d8dee4;padding:.3rem .55rem;text-align:right;vertical-align:top}
@@ -13654,7 +13684,7 @@ ${C4} .bv-control-note{display:block;margin:.2rem 0 0;font-size:.75rem;color:#52
   var portfolio_default = {
     $schema: "./schema/portfolio.json",
     version: 2,
-    description: "bio.viz's charts, listed in safety.viz's portfolio manifest format (version 2) so that safety.viz's demo app can list and draw them beside its own. Each chart takes two named tables: the results, from the labs and vitals file, and the participants, from the subject-level file, which is optional. Each setting is the key in the chart's own settings (src/<chart>/configure.js), with the standard column it defaults to and whether the chart cannot be made without it; the participant table's id column is read from the subject-level file, so the two files may name the participant differently. The standard domains are the app's. A test holds this list to the charts (tests/unit/core/portfolio.test.js).",
+    description: "bio.viz's charts, listed in safety.viz's portfolio manifest format (version 2) so that safety.viz's demo app can list and draw them beside its own. Each chart takes two named tables: the results, from the labs and vitals file, and the participants, from the subject-level file, which is optional. Each setting is the key in the chart's own settings (src/<chart>/configure.js), with the standard column it defaults to and whether the chart cannot be made without it; the participant table's id column is read from the subject-level file, so the two files may name the participant differently. A setting of a table this list cannot name, the biomarker screen's outcomes table, has no column and is not required: the app passes nothing for it and the chart keeps its own default. The standard domains are the app's, and every column named here is a column of its domain there. A test holds this list to the charts and to those domains (tests/unit/core/portfolio.test.js).",
     groups: {
       biomarkers: {
         label: "Biomarkers",
@@ -13921,23 +13951,23 @@ ${C4} .bv-control-note{display:block;margin:.2rem 0 0;font-size:.75rem;color:#52
           },
           endpoint_col: {
             domain: "bds",
-            column: "PARAMCD",
-            required: true
+            column: null,
+            required: false
           },
           endpoint_label_col: {
             domain: "bds",
-            column: "PARAM",
+            column: null,
             required: false
           },
           time_col: {
             domain: "bds",
-            column: "AVAL",
-            required: true
+            column: null,
+            required: false
           },
           censor_col: {
             domain: "bds",
-            column: "CNSR",
-            required: true
+            column: null,
+            required: false
           },
           event_col: {
             domain: "bds",
@@ -14021,7 +14051,7 @@ ${C4} .bv-control-note{display:block;margin:.2rem 0 0;font-size:.75rem;color:#52
   };
 
   // src/main.js
-  var version = "0.2.0";
+  var version = "0.3.0";
   return __toCommonJS(main_exports);
 })();
 //# sourceMappingURL=bio.viz.js.map
