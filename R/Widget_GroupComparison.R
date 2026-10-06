@@ -108,8 +108,8 @@
 #' bio.viz itself builds its chart from. Both are copied from bio.viz's `dev`
 #' branch, with the bio.viz commit and a checksum per file recorded beside them
 #' in `system.file("htmlwidgets", "lib", "SOURCE.json", package = "gsm.bio")`.
-#' When the copy is byte for byte a bio.viz release, the record names the
-#' release; between releases it names the commit alone. The safety.viz bundle
+#' When the copy was made from a tagged bio.viz release, the record names the
+#' release; otherwise it names the commit alone. The safety.viz bundle
 #' is v1.9.0, the first with the kit the chart is built from, as bio.viz takes
 #' it from safety.viz's `dev` branch; the record says from which commit.
 #' gsm.safety carries an earlier safety.viz without the kit, and once it
