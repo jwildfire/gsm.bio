@@ -45,7 +45,10 @@
 # 5. The release: when bio.viz's tag for the version copied, v<version>, holds
 #    every copied file byte for byte, the three records name it as `release`
 #    beside the commit copied from. Between bio.viz's releases its dev branch
-#    differs from the tag, and the records name no release.
+#    differs from the tag, and the records name no release. Nor do they when
+#    the two packages are released together and the copy is made before
+#    bio.viz's tag: tests/testthat/test-vendored.R then holds the copy to a
+#    release build from bio.viz's dev, and to the tag from the day it exists.
 # 6. tests/testthat/fixtures/specifications/bioviz-reader.json and
 #    bioviz-fuzz.json, what the copied bundle's own specification reader makes
 #    of the tests' cases (data-raw/specifications/record-readers.R, which needs

@@ -3,7 +3,7 @@
   "copied_by": "data-raw/vendor-bio-viz.R",
   "repository": "https://github.com/jwildfire/bio.viz",
   "ref": "dev",
-  "commit": "f3aa6f30e5a76f58feae705bb72f618f107f46f5",
+  "commit": "8d0ddab4a1dde14a0a469ecf4b77e9021650b7d3",
   "merged_to_dev": true,
   "files": [
     {
@@ -171,7 +171,7 @@
     {
       "file": "group-statistics-r.json",
       "source": "tests/fixtures/group-statistics-r.json",
-      "sha256": "731711ef8ced7836a969ab1698c0ae772b867b5a7d41a15b7288f844ade3fced",
+      "sha256": "0bcba0ca169f59b4740ec0239b13f888d34f3ee90c843efaa9f7bf8385bf6266",
       "bytes": 78257
     },
     {
@@ -333,7 +333,7 @@
     {
       "file": "association-statistics-r.json",
       "source": "tests/fixtures/association-statistics-r.json",
-      "sha256": "99db5e24f1f0abf6d3c0a8e7b13984a4d7864cc8899e899d92153b5468a3a167",
+      "sha256": "5abea5700d5d26b58a25653a1622699224bea7a2feed2391849d62061450e775",
       "bytes": 273337
     },
     {
@@ -411,7 +411,7 @@
     {
       "file": "matrix-statistics-r.json",
       "source": "tests/fixtures/matrix-statistics-r.json",
-      "sha256": "849778ceee835ab04264b8718f2d6c4c8e9544c3af34e85bf74fbc6a042f4100",
+      "sha256": "3a38b89db86d157f24f5dec7e6cd5c33baff6071b64bbff343ad04294f757599",
       "bytes": 96853
     },
     {
@@ -525,7 +525,7 @@
     {
       "file": "screen-statistics-r.json",
       "source": "tests/fixtures/screen-statistics-r.json",
-      "sha256": "f9bfb8b876c62530f4b74ffa6aadfeeae9538836c087439c91c56cf619d6e699",
+      "sha256": "1efd5737a418d769b540bd7b7c3bba5e91f28320bf35f62e76b801687bd4809e",
       "bytes": 97235
     },
     {
@@ -537,13 +537,13 @@
     {
       "file": "cross-tab-r.json",
       "source": "tests/fixtures/cross-tab-r.json",
-      "sha256": "5c35918951f81f44d3e1293f4843d62fcd03a32131cdcfa62e4348684b350a8d",
-      "bytes": 121163
+      "sha256": "5e389c6b273c50dd2c9d2a22fc309bbe67a8ce6da360e6910ab3435e211287a6",
+      "bytes": 139370
     },
     {
       "file": "stratified-survival-r.json",
       "source": "tests/fixtures/stratified-survival-r.json",
-      "sha256": "488c750a0819e34bc71d7befa4e82bea01457a3080b97e3e20e08e9f19e4e3f6",
+      "sha256": "49a6c3dfaa57be196e0bae77a36584d1a59f2515f87350e341799481dcad6acc",
       "bytes": 215452
     }
   ]

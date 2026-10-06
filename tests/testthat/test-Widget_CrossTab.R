@@ -195,7 +195,7 @@ test_that("every widget hands its chart which R computed the stored results, so 
   strScripts <- strWidgetScripts("Widget_CrossTab")
   expect_match(strScripts, "BioViz.r.createConnection({ results: statistics.results, computedBy: statistics.computed_by })", fixed = TRUE)
   # The copied bundle takes the record, and its footnote says it.
-  strBundle <- paste(readLines(system.file("htmlwidgets", "lib", "bio.viz-0.2.0", "bio.viz.js", package = "gsm.bio"), warn = FALSE), collapse = "\n")
+  strBundle <- paste(readLines(strBioVizBundleFile(), warn = FALSE), collapse = "\n")
   expect_match(strBundle, "computedBy", fixed = TRUE)
   expect_match(strBundle, "stored with the page", fixed = TRUE)
   # The record the page carries has the members the connection checks.

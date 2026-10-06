@@ -7,6 +7,14 @@ lReadJson <- function(...) {
   jsonlite::fromJSON(paste(readLines(file.path(...), warn = FALSE, encoding = "UTF-8"), collapse = "\n"), simplifyVector = FALSE)
 }
 
+# The copied bio.viz script-tag bundle, as its record names it: its folder
+# carries bio.viz's version, which a copy of a new release changes.
+strBioVizBundleFile <- function() {
+  lRecord <- lReadJson(system.file("htmlwidgets", "lib", "SOURCE.json", package = "gsm.bio"))
+  strFile <- Filter(function(lFile) lFile$library == "bio.viz", lRecord$files)[[1]]$file
+  system.file("htmlwidgets", "lib", strFile, package = "gsm.bio")
+}
+
 strSha256 <- function(strFile) {
   digest::digest(file = strFile, algo = "sha256")
 }
@@ -156,9 +164,7 @@ strWidgetScripts <- function(strWidget) {
 # bundle's own text: one `name: value` per line of its DEFAULT_SETTINGS. The
 # chart is the one that has the setting named.
 lBundleDefaults <- function(strSetting) {
-  lRecord <- lReadJson(system.file("htmlwidgets", "lib", "SOURCE.json", package = "gsm.bio"))
-  strFile <- Filter(function(lFile) lFile$library == "bio.viz", lRecord$files)[[1]]$file
-  chrLines <- readLines(system.file("htmlwidgets", "lib", strFile, package = "gsm.bio"), warn = FALSE)
+  chrLines <- readLines(strBioVizBundleFile(), warn = FALSE)
   # A block of plain values: each setting's value as the JSON it is written in.
   Block <- function(iStart) {
     iEnd <- iStart + match("  });", chrLines[-seq_len(iStart)])

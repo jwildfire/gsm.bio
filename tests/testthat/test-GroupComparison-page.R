@@ -49,7 +49,13 @@ ExpectNoNetwork <- function(lPage) {
   expect_identical(lPage$Errors(), character(0), label = "errors the page raised")
 }
 
-test_that("a saved page, opened with no network, shows the three levels and answers every request they make from its stored results (#53)", {
+# The chart's own footnote, the last under it: when and by which bio.viz it was
+# drawn, and what stands behind each statistic.
+strDrawnBy <- function(lPage) {
+  lPage$Evaluate("Array.from(document.querySelectorAll('.bv-foot-line')).map((line) => line.textContent).join(' ')")
+}
+
+test_that("a saved page, opened with no network, shows the three levels and answers every request they make from its stored results (#53, #59)", {
   NeedBrowser()
   chrBiomarkers <- chrSyntheticBiomarkers()
   chrTested <- c("Week 2", "Week 4", "Week 8", "Week 12")
@@ -80,6 +86,11 @@ test_that("a saved page, opened with no network, shows the three levels and answ
   expect_identical(lTiles$statistics, list())
   expect_false(any(nzchar(unlist(lTiles$lines))), label = "a statistics line on the tiles")
   expect_match(lTiles$provenance[[1]], "stored with this page. No R runs here", fixed = TRUE)
+  # The footnote names the bio.viz that drew the page as the copied bundle
+  # says its own version: a release by its version alone, and a build off a
+  # release "with development changes" (#59).
+  strBioVizSaid <- lBundleSays(chrBioVizBundle())$said
+  expect_match(strDrawnBy(lPage), paste0(" by bio.viz ", strBioVizSaid, ". No statistic was asked of R."), fixed = TRUE)
   Picture("1-trend-tiles.png")
 
   # A tile opens its biomarker over time: the visits along the bottom, and
@@ -108,6 +119,9 @@ test_that("a saved page, opened with no network, shows the three levels and answ
   expect_identical(lVisit$statistics[[1]]$name, "Analyze_GroupDifference")
   expect_identical(lVisit$statistics[[1]]$dataId$visit, "Week 4")
   expect_match(paste(unlist(lVisit$lines), collapse = " "), "Welch Two Sample t-test: p < 0.001 (Placebo n = 95, Treatment n = 91)", fixed = TRUE)
+  # And it names the gsm.bio that computed the stored test, by this version.
+  expect_match(strDrawnBy(lPage), paste0(" by bio.viz ", strBioVizSaid, ". Statistics: Welch Two Sample t-test"), fixed = TRUE)
+  expect_match(strDrawnBy(lPage), sprintf(" with gsm.bio %s on ", utils::packageVersion("gsm.bio")), fixed = TRUE)
   Picture("3-one-visit.png")
 
   # A view that was not computed says so where the result would be, at both
