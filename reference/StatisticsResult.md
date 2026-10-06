@@ -2,7 +2,11 @@
 
 Every `Analyze_*` function returns the same plain named list, whatever
 it computed and whether or not it could compute it. A chart hands over a
-table with one row per participant and receives this back.
+table with one row per participant and receives this back. The two
+functions that answer by level take one row per participant and level:
+[`Analyze_GroupDifferenceBy()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_GroupDifferenceBy.md)
+and
+[`Analyze_DifferenceGrid()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_DifferenceGrid.md).
 
 ## Members
 
@@ -23,7 +27,7 @@ Always all of these, always in this order, all in lower snake case.
 | `dropped` | A data frame of `reason` and `n`: the rows left out and why. No rows when nothing was dropped. |
 | `warnings` | An unnamed list of the warnings R raised inside the wrapped call, as text. They are captured here and never printed. |
 | `notes` | An unnamed list of remarks of the package's own, as text. |
-| `rows` | A data frame for a function's many-row results: pairwise comparisons, per-group correlations, the pairs of a matrix, the points of a fitted line, the cells of a table, the groups of a survival comparison, the biomarkers of a screen. Its columns are given on each function's page. No rows when there are none. |
+| `rows` | A data frame for a function's many-row results: pairwise comparisons, the levels a group test was run at, per-group correlations, the pairs of a matrix, the points of a fitted line, the cells of a table, the groups of a survival comparison, the biomarkers of a screen, the cells of a grid of differences. Its columns are given on each function's page. No rows when there are none. |
 
 When `status` is not `"ok"`, `reason` says why and the numbers are
 withheld: `p_value` is `NA` and `estimates` and `statistic` have no
@@ -117,9 +121,11 @@ packages attached.
 ## See also
 
 [`Analyze_GroupDifference()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_GroupDifference.md),
+[`Analyze_GroupDifferenceBy()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_GroupDifferenceBy.md),
 [`Analyze_Correlation()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_Correlation.md),
 [`Analyze_CorrelationMatrix()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_CorrelationMatrix.md),
 [`Analyze_Fit()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_Fit.md),
 [`Analyze_Contingency()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_Contingency.md),
 [`Analyze_Survival()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_Survival.md),
-[`Analyze_Screen()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_Screen.md)
+[`Analyze_Screen()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_Screen.md),
+[`Analyze_DifferenceGrid()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_DifferenceGrid.md)

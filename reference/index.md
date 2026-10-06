@@ -15,6 +15,8 @@ function the design names, and all returning the same result.
 
 - [`Analyze_GroupDifference()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_GroupDifference.md)
   : Compare a numeric variable between groups
+- [`Analyze_GroupDifferenceBy()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_GroupDifferenceBy.md)
+  : Compare a numeric variable between groups at each level of a column
 - [`Analyze_Correlation()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_Correlation.md)
   : Correlate two numeric variables
 - [`Analyze_CorrelationMatrix()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_CorrelationMatrix.md)
@@ -27,6 +29,9 @@ function the design names, and all returning the same result.
   : Compare survival between groups
 - [`Analyze_Screen()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_Screen.md)
   : Screen many biomarkers with one comparison
+- [`Analyze_DifferenceGrid()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_DifferenceGrid.md)
+  : The standardised difference for every biomarker at every level of a
+  column
 - [`StatisticsResult`](https://jwildfire.github.io/gsm.bio/reference/StatisticsResult.md)
   [`statistics-result`](https://jwildfire.github.io/gsm.bio/reference/StatisticsResult.md)
   : The result every statistics function returns

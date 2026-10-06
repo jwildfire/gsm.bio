@@ -27,7 +27,8 @@ each release holds, and what is on `dev` for the next.
 ## Statistics
 
 Each function takes a data frame with one row per participant and the
-names of its columns, and returns the same plain list: a status, the
+names of its columns (the two that answer by level take one row per
+participant and level), and returns the same plain list: a status, the
 method’s name as R reports it, the estimates with their intervals, the
 statistic, the p-value, the participants used, what was dropped and why,
 and a reason in place of the numbers when a group is too small.
@@ -35,12 +36,14 @@ and a reason in place of the numbers when a group is too small.
 | Function | Wraps |
 |----|----|
 | [`Analyze_GroupDifference()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_GroupDifference.md) | [`t.test()`](https://rdrr.io/r/stats/t.test.html) (Welch), [`wilcox.test()`](https://rdrr.io/r/stats/wilcox.test.html), [`aov()`](https://rdrr.io/r/stats/aov.html), [`kruskal.test()`](https://rdrr.io/r/stats/kruskal.test.html); pairwise comparisons adjusted by [`p.adjust()`](https://rdrr.io/r/stats/p.adjust.html) |
+| [`Analyze_GroupDifferenceBy()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_GroupDifferenceBy.md) | The same test within each level of a column, such as each visit of one biomarker, in one call: one row per level, with the p-values adjusted across the levels by [`p.adjust()`](https://rdrr.io/r/stats/p.adjust.html) when a method is named |
 | [`Analyze_Correlation()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_Correlation.md) | [`cor.test()`](https://rdrr.io/r/stats/cor.test.html), Pearson or Spearman, overall and per group |
 | [`Analyze_CorrelationMatrix()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_CorrelationMatrix.md) | [`cor.test()`](https://rdrr.io/r/stats/cor.test.html) on every pair of columns, with the pair count per cell |
 | [`Analyze_Fit()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_Fit.md) | [`lm()`](https://rdrr.io/r/stats/lm.html) for a line, with the slope and intercept, their intervals from [`confint()`](https://rdrr.io/r/stats/confint.html) and the confidence band from [`predict()`](https://rdrr.io/r/stats/predict.html); [`loess()`](https://rdrr.io/r/stats/loess.html) for a smooth, with its band from `predict(se = TRUE)`; overall and per group, as points a chart draws as they are |
 | [`Analyze_Contingency()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_Contingency.md) | [`chisq.test()`](https://rdrr.io/r/stats/chisq.test.html), with small expected counts flagged, and [`fisher.test()`](https://rdrr.io/r/stats/fisher.test.html) |
 | [`Analyze_Survival()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_Survival.md) | `survdiff()` for the log-rank test, `survfit()` for median survival with its log-log interval, `coxph()` for the hazard ratio between two groups |
 | [`Analyze_Screen()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_Screen.md) | One row per biomarker for one comparison: a standardised difference between two groups, a correlation with one variable, or a hazard ratio for high against low; p-values adjusted across the rows by [`p.adjust()`](https://rdrr.io/r/stats/p.adjust.html) |
+| [`Analyze_DifferenceGrid()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_DifferenceGrid.md) | The screen’s standardised difference between two groups for every biomarker at every level of a column, such as every visit, in one call: one row per biomarker and level, from long data, with no p-value |
 
 ``` r
 
@@ -359,7 +362,7 @@ A specification is data: nothing in it is evaluated, and a title that
 looks like code is drawn as text. One that bio.viz would refuse is
 refused with a sentence and listed in the manifest, and the rest still
 run. Give the file, the text, or the list
-[`jsonlite::read_json()`](https://rdrr.io/pkg/jsonlite/man/read_json.html)
+[`jsonlite::read_json()`](https://jeroen.r-universe.dev/jsonlite/reference/read_json.html)
 reads (or `fromJSON(simplifyVector = FALSE)`): `fromJSON()`’s default
 simplifies the list into a data frame, which is refused with a sentence
 that says so.

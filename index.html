@@ -69,7 +69,7 @@
 <div class="section level2">
 <h2 id="statistics">Statistics<a class="anchor" aria-label="anchor" href="#statistics"></a>
 </h2>
-<p>Each function takes a data frame with one row per participant and the names of its columns, and returns the same plain list: a status, the method’s name as R reports it, the estimates with their intervals, the statistic, the p-value, the participants used, what was dropped and why, and a reason in place of the numbers when a group is too small.</p>
+<p>Each function takes a data frame with one row per participant and the names of its columns (the two that answer by level take one row per participant and level), and returns the same plain list: a status, the method’s name as R reports it, the estimates with their intervals, the statistic, the p-value, the participants used, what was dropped and why, and a reason in place of the numbers when a group is too small.</p>
 <table class="table">
 <colgroup>
 <col width="50%">
@@ -85,6 +85,10 @@
 <td>
 <code><a href="https://rdrr.io/r/stats/t.test.html" class="external-link">t.test()</a></code> (Welch), <code><a href="https://rdrr.io/r/stats/wilcox.test.html" class="external-link">wilcox.test()</a></code>, <code><a href="https://rdrr.io/r/stats/aov.html" class="external-link">aov()</a></code>, <code><a href="https://rdrr.io/r/stats/kruskal.test.html" class="external-link">kruskal.test()</a></code>; pairwise comparisons adjusted by <code><a href="https://rdrr.io/r/stats/p.adjust.html" class="external-link">p.adjust()</a></code>
 </td>
+</tr>
+<tr>
+<td><code><a href="reference/Analyze_GroupDifferenceBy.html">Analyze_GroupDifferenceBy()</a></code></td>
+<td>The same test within each level of a column, such as each visit of one biomarker, in one call: one row per level, with the p-values adjusted across the levels by <code><a href="https://rdrr.io/r/stats/p.adjust.html" class="external-link">p.adjust()</a></code> when a method is named</td>
 </tr>
 <tr>
 <td><code><a href="reference/Analyze_Correlation.html">Analyze_Correlation()</a></code></td>
@@ -116,6 +120,10 @@
 <td><code><a href="reference/Analyze_Screen.html">Analyze_Screen()</a></code></td>
 <td>One row per biomarker for one comparison: a standardised difference between two groups, a correlation with one variable, or a hazard ratio for high against low; p-values adjusted across the rows by <code><a href="https://rdrr.io/r/stats/p.adjust.html" class="external-link">p.adjust()</a></code>
 </td>
+</tr>
+<tr>
+<td><code><a href="reference/Analyze_DifferenceGrid.html">Analyze_DifferenceGrid()</a></code></td>
+<td>The screen’s standardised difference between two groups for every biomarker at every level of a column, such as every visit, in one call: one row per biomarker and level, from long data, with no p-value</td>
 </tr>
 </tbody>
 </table>
@@ -246,7 +254,7 @@
 <span>  bAcrossBiomarkers <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  chrFormats <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"png"</span>, <span class="st">"pdf"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<p>A specification is data: nothing in it is evaluated, and a title that looks like code is drawn as text. One that bio.viz would refuse is refused with a sentence and listed in the manifest, and the rest still run. Give the file, the text, or the list <code><a href="https://rdrr.io/pkg/jsonlite/man/read_json.html" class="external-link">jsonlite::read_json()</a></code> reads (or <code>fromJSON(simplifyVector = FALSE)</code>): <code>fromJSON()</code>’s default simplifies the list into a data frame, which is refused with a sentence that says so.</p>
+<p>A specification is data: nothing in it is evaluated, and a title that looks like code is drawn as text. One that bio.viz would refuse is refused with a sentence and listed in the manifest, and the rest still run. Give the file, the text, or the list <code><a href="https://jeroen.r-universe.dev/jsonlite/reference/read_json.html" class="external-link">jsonlite::read_json()</a></code> reads (or <code>fromJSON(simplifyVector = FALSE)</code>): <code>fromJSON()</code>’s default simplifies the list into a data frame, which is refused with a sentence that says so.</p>
 <p>The reader is held to bio.viz’s own over every setting of every chart. It differs on purpose in two places: a chart’s <code>statistic</code> (and the scatter’s <code>fit_statistic</code>) must be the chart’s own <code>Analyze_*()</code> function or null, since gsm.bio computes nothing else; and a specification given as text is checked for depth as one given as an object is (<a href="https://github.com/jwildfire/bio.viz/issues/74" class="external-link">bio.viz#74</a>).</p>
 <p>The manifest counts the participants each view’s filters keep, and its <code>reason</code> says what was not drawn as asked, in the words of bio.viz’s notices: a setting that names something the tables lack, a filter value its column lacks, a filter on a column that is not a filter. A view that keeps no participant is <code>failed</code> with “No participant passes the filters.” Explicit cut points are applied unchanged to every biomarker of a run across biomarkers, and each row says so.</p>
 <p>A PDF is drawn by cairo where this R can load it. Where it cannot (a Mac without XQuartz, for one), the pdf device draws it and a character beyond Latin-1, such as the sign of a cut, is a dot or a stand-in such as <code>&lt;=</code>; the row says so. A file already in the folder with an output’s name is replaced, and any other file there is left alone. A view that fails part way leaves none of its files.</p>
