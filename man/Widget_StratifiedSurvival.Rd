@@ -137,14 +137,15 @@ R computed for, though that value may not be the first in the list.
 \section{Bundles}{
 
 The widget loads bio.viz's bundle and the copy of safety.viz's bundle that
-bio.viz itself builds its chart from. Both are copied from bio.viz, with the
-bio.viz commit and a checksum per file recorded beside them in
-\code{system.file("htmlwidgets", "lib", "SOURCE.json", package = "gsm.bio")}. They
-are bio.viz v0.2.0 and safety.viz v1.9.0, the first safety.viz with the kit
-the chart is built from, as bio.viz takes it from safety.viz's \code{dev} branch;
-the record says from which commit. gsm.safety carries an earlier safety.viz
-without the kit, and once it carries v1.9.0 the widgets can take the bundle
-from there.
+bio.viz itself builds its chart from. Both are copied from bio.viz's \code{dev}
+branch, with the bio.viz commit and a checksum per file recorded beside them
+in \code{system.file("htmlwidgets", "lib", "SOURCE.json", package = "gsm.bio")}.
+When the copy is byte for byte a bio.viz release, the record names the
+release; between releases it names the commit alone. The safety.viz bundle
+is v1.9.0, the first with the kit the chart is built from, as bio.viz takes
+it from safety.viz's \code{dev} branch; the record says from which commit.
+gsm.safety carries an earlier safety.viz without the kit, and once it
+carries v1.9.0 the widgets can take the bundle from there.
 }
 
 \examples{

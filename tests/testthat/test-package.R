@@ -30,12 +30,17 @@ test_that("the package imports stats and survival for the statistics, htmlwidget
   expect_identical(chrDependencies("Remotes"), character(0))
 })
 
-test_that("what only a test, a static figure or the RTF writer needs is suggested, not imported (#1, #9, #37, #38)", {
+test_that("what only a test, a static figure or the RTF writer needs is suggested, not imported (#1, #9, #37, #38, #53)", {
   # effectsize checks the standardised difference; digest, jsonlite and
-  # rmarkdown check the vendored files and read a saved page back; ggplot2
-  # draws the static figures and r2rtf writes a table to RTF, and each says so
-  # when it is not installed; svglite writes a batch run's SVG figures.
-  expect_identical(chrDependencies("Suggests"), c("digest", "effectsize", "ggplot2", "jsonlite", "r2rtf", "rmarkdown", "svglite", "testthat"))
+  # rmarkdown check the vendored files and read a saved page back; chromote
+  # opens a saved page in a headless browser, for the tests that drive the
+  # chart itself; ggplot2 draws the static figures and r2rtf writes a table to
+  # RTF, and each says so when it is not installed; svglite writes a batch
+  # run's SVG figures.
+  expect_identical(
+    chrDependencies("Suggests"),
+    c("chromote", "digest", "effectsize", "ggplot2", "jsonlite", "r2rtf", "rmarkdown", "svglite", "testthat")
+  )
   expect_identical(utils::packageDescription("gsm.bio")[["Config/testthat/edition"]], "3")
 })
 

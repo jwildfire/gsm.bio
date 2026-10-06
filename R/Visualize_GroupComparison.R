@@ -1,11 +1,17 @@
 #' Group Comparison Figure
 #'
-#' A static ggplot2 figure of the view the group comparison chart opens on: one
-#' biomarker's value across the levels of a category, as boxes with the
-#' participants as points, one panel per visit, with R's test of each panel
-#' printed in its heading. It is the figure [Widget_GroupComparison()] draws in
-#' the browser, from the same settings, and its tests are
-#' [Analyze_GroupDifference()]'s on the same rows.
+#' A static ggplot2 figure of one biomarker's visits as the group comparison
+#' chart draws them a panel each: the biomarker's value across the levels of a
+#' category, as boxes with the participants as points, one panel per visit,
+#' with R's test of each panel printed in its heading. It is the figure
+#' [Widget_GroupComparison()] draws in the browser for the visits chosen, from
+#' the same settings, and its tests are [Analyze_GroupDifference()]'s on the
+#' same rows.
+#'
+#' The figure is of the visits as panels whichever visits are chosen. The chart
+#' itself draws a biomarker with every visit chosen in one picture over time.
+#' Unscheduled visits are left out as the chart leaves them out, unless
+#' `unscheduled_visits = TRUE` (see [Widget_GroupComparison()]).
 #'
 #' @section Titles and footnotes:
 #' The settings `title`, `subtitle` and `footnotes` are text with named

@@ -1,11 +1,18 @@
 #' Group Comparison Table
 #'
-#' The statistics of the view the group comparison chart opens on, as a table:
-#' one row per panel the chart tests, with R's method, each estimate and its
-#' interval, the counts, the p-value and its note, written as the chart prints
-#' them. The numbers are [Analyze_GroupDifference()]'s on the rows the chart
-#' draws in each panel, as [Widget_GroupComparison()] stores them; with
-#' `pairwise = TRUE` each pair of groups has a row of its own beneath its panel.
+#' The statistics of one biomarker's visits, as the group comparison chart
+#' draws them a panel each, as a table: one row per panel the chart tests, with
+#' R's method, each estimate and its interval, the counts, the p-value and its
+#' note, written as the chart prints them. The numbers are
+#' [Analyze_GroupDifference()]'s on the rows the chart draws in each panel, as
+#' [Widget_GroupComparison()] stores them; with `pairwise = TRUE` each pair of
+#' groups has a row of its own beneath its panel.
+#'
+#' The table is of the visits as panels whichever visits are chosen. The chart
+#' itself draws a biomarker with every visit chosen in one picture over time;
+#' the test it prints under a visit there is the test of that visit's row
+#' here. Unscheduled visits are left out as the chart leaves them out, unless
+#' `unscheduled_visits = TRUE` (see [Widget_GroupComparison()]).
 #'
 #' @section Display rules:
 #' A p-value is written to three decimals, `p < 0.001` below that and

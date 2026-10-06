@@ -169,20 +169,31 @@ test_that("the specification schema matches the checksum recorded beside it, fro
   expect_setequal(list.files(strDir), c("SOURCE.json", "specification.schema.json"))
 })
 
-test_that("the copy names the bio.viz release it is byte for byte the same as: v0.2.0, in all three records (#48)", {
+test_that("the three records name the bio.viz release the copy is byte for byte the same as, or none between releases, and a release of gsm.bio carries one (#48, #53)", {
   lRecords <- list(
     lReadJson(system.file("htmlwidgets", "lib", "SOURCE.json", package = "gsm.bio")),
     lReadJson(system.file("specification", "SOURCE.json", package = "gsm.bio")),
     lReadJson(testthat::test_path("fixtures", "bio.viz"), "SOURCE.json")
   )
-  strVersion <- Filter(function(lFile) lFile$library == "bio.viz", lRecords[[1]]$files)[[1]]$version
+  strBioViz <- Filter(function(lFile) lFile$library == "bio.viz", lRecords[[1]]$files)[[1]]$version
+  # The three were written by one run of the copy: they say the same.
   for (lRecord in lRecords) {
-    expect_identical(lRecord$release$tag, paste0("v", strVersion))
-    expect_match(lRecord$release$commit, "^[0-9a-f]{40}$")
     expect_identical(lRecord$release, lRecords[[1]]$release)
-    # The release beside the commit copied from, which stays dev's.
-    expect_identical(lRecord$ref, "dev")
+    expect_identical(lRecord[c("ref", "commit")], lRecords[[1]][c("ref", "commit")])
   }
-  expect_identical(lRecords[[1]]$release$tag, "v0.2.0")
-  expect_identical(substr(lRecords[[1]]$release$commit, 1, 7), "4440a43")
+  lRelease <- lRecords[[1]]$release
+  if (is.null(lRelease)) {
+    # bio.viz's dev has moved on from its last release, so the copy is of no
+    # release. That is allowed only while the package is at a development
+    # version: a release of gsm.bio carries a released bio.viz.
+    strVersion <- as.character(utils::packageVersion("gsm.bio"))
+    bDevelopment <- length(unclass(package_version(strVersion))[[1]]) > 3L
+    expect_true(bDevelopment, label = sprintf("version %s is a development version, so its copy of bio.viz may be of no release", strVersion))
+  } else {
+    # The release beside the commit copied from, which stays dev's.
+    expect_identical(lRelease$tag, paste0("v", strBioViz))
+    expect_match(lRelease$commit, "^[0-9a-f]{40}$")
+    expect_match(lRelease$note, "byte for byte the same", fixed = TRUE)
+    expect_identical(lRecords[[1]]$ref, "dev")
+  }
 })

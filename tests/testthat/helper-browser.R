@@ -50,7 +50,7 @@ window.gsmBioPage = (function () {
     let last = null;
     let same = 0;
     while (Date.now() - start < 10000) {
-      await new Promise((done) => setTimeout(done, 40));
+      await new Promise((done) => setTimeout(done, 30));
       const now = said();
       if (now === last) {
         same += 1;
@@ -82,7 +82,7 @@ window.gsmBioPage = (function () {
     trail: texts('nav.bv-trail li'),
     hidden: texts('.bv-hidden-visits'),
     footnote: chart().footnote ? chart().footnote.textContent : null,
-    provenance: texts.call(null, 'p').length ? [...document.querySelectorAll('.gsm-bio-provenance')].map((node) => node.textContent) : [],
+    provenance: [...document.querySelectorAll('.gsm-bio-provenance')].map((node) => node.textContent),
     errors: [...document.querySelectorAll('.gsm-bio-error')].map((node) => node.textContent)
   });
   const press = (node, what) => {
@@ -172,4 +172,39 @@ strSavedFile <- function(lWidget, strName = "group-comparison") {
   strFile <- file.path(strDir, paste0(strName, ".html"))
   htmlwidgets::saveWidget(lWidget, file = strFile, selfcontained = TRUE)
   strFile
+}
+
+# Walks a page as a reader does, from the trend tiles: each biomarker's tile,
+# which opens it over time; there each adjustment named, by the Adjust across
+# visits control; then each visit under the picture, which opens it alone, and
+# the trail's way back; and the trail's way back to the tiles. Returns `asked`,
+# everything the chart asked R on the way with what it was answered (an entry
+# of `chart.statistics()` each, with the level it was asked at), and `views`,
+# what the page showed at the first biomarker's three levels.
+lWalkPage <- function(lPage, chrBiomarkers, chrAdjustments = character(0)) {
+  lAsked <- list()
+  Note <- function(lView) {
+    for (lOne in lView$statistics) {
+      lAsked[[length(lAsked) + 1L]] <<- c(lOne, list(level = lView$level))
+    }
+    lView
+  }
+  lTiles <- lPage$Look()
+  lViews <- list(tiles = lTiles)
+  for (strBiomarker in chrBiomarkers) {
+    lTime <- Note(lPage$Move("tile", strBiomarker))
+    for (strAdjustment in chrAdjustments) {
+      lTime <- Note(lPage$Move("choose", "visit-adjustment", strAdjustment))
+    }
+    if (is.null(lViews$over_time)) lViews$over_time <- lTime
+    for (strVisit in unlist(lTime$visitButtons)) {
+      lVisit <- Note(lPage$Move("visit", strVisit))
+      if (is.null(lViews$visit)) lViews$visit <- lVisit
+      lBack <- Note(lPage$Move("trail", paste(strBiomarker, "over time")))
+      if (!identical(lBack$level, "over-time")) stop("the trail did not lead back to ", strBiomarker, " over time")
+    }
+    lHome <- lPage$Move("trail", "All biomarkers")
+    if (!identical(lHome$level, "biomarkers")) stop("the trail did not lead back to the tiles")
+  }
+  list(asked = lAsked, views = lViews)
 }
