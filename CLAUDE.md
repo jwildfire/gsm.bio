@@ -41,10 +41,14 @@ runs one requirement per session
   (`tests/testthat/fixtures/bio.viz/`), the frames the copied bundle’s
   own core writes (`tests/testthat/fixtures/core-frames/frames.json`),
   and what its safety.viz kit opens each filter on
-  (`tests/testthat/fixtures/filter-states/states.json`). It needs git, a
-  network connection and node. Run it when bio.viz’s `dev` moves, then
-  run the suite: a test that fails names the rule in `R/core.R`,
-  `R/chart.R` or a chart’s own file that bio.viz changed.
+  (`tests/testthat/fixtures/filter-states/states.json`). It is the one
+  command of a copy: it also records again what the copied bundle’s own
+  specification reader makes of the tests’ cases
+  (`tests/testthat/fixtures/specifications/bioviz-reader.json` and
+  `bioviz-fuzz.json`). It needs git, a network connection, node and
+  devtools. Run it when bio.viz’s `dev` moves, then run the suite: a
+  test that fails names the rule in `R/core.R`, `R/chart.R` or a chart’s
+  own file that bio.viz changed.
 
 # Conventions
 
@@ -101,11 +105,11 @@ runs one requirement per session
   Its header lists where it differs from bio.viz on purpose.
   `tests/testthat/test-batch.R` holds it to bio.viz’s own reader run in
   node, case by case and over every setting of every chart given 21
-  values, with recordings for a session with no node: after the bundle
-  is copied again, run
-  `Rscript data-raw/specifications/record-readers.R`. Nothing in a
-  specification is evaluated: the same file walks every function in the
-  namespace and fails on [`eval()`](https://rdrr.io/r/base/eval.html),
+  values, with recordings for a session with no node, which the copy
+  command records again (`data-raw/specifications/record-readers.R`).
+  Nothing in a specification is evaluated: the same file walks every
+  function in the namespace and fails on
+  [`eval()`](https://rdrr.io/r/base/eval.html),
   [`parse()`](https://rdrr.io/r/base/parse.html) or anything that runs
   text, and on [`do.call()`](https://rdrr.io/r/base/do.call.html) of
   anything but `rbind`,
@@ -134,6 +138,13 @@ runs one requirement per session
   `data-raw/vendor-bio-viz.R`, which writes its dependency file.
 - The proof that a widget saves as one self-contained file needs pandoc.
   In the source tree the test fails without it; it never skips there.
+- The proof that a saved page answers what its chart asks opens the page
+  in a headless browser with no network
+  (`tests/testthat/test-GroupComparison-page.R`,
+  `tests/testthat/helper-browser.R`). It needs the chromote package,
+  which is under Suggests, and a Chrome or Chromium on the machine. It
+  runs in the source tree, where a browser that cannot be started fails
+  the test; it is left out under R CMD check.
 - Every `Analyze_*` function returns the one result shape documented in
   [`?StatisticsResult`](https://jwildfire.github.io/gsm.bio/reference/StatisticsResult.md)
   and built by `Stat_Result()`; `tests/testthat/helper-result-shape.R`

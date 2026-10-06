@@ -17,7 +17,7 @@ charts from R, as widgets that carry R’s answers in the page.
 ``` r
 
 # install.packages("remotes")
-remotes::install_github("jwildfire/gsm.bio@v0.2.0") # the v0.2.0 release, from its tag
+remotes::install_github("jwildfire/gsm.bio@v0.3.0") # the v0.3.0 release, from its tag
 remotes::install_github("jwildfire/gsm.bio@dev")    # what is on dev, the integration branch
 ```
 
@@ -414,12 +414,19 @@ is used.
 ## Status
 
 [Version
-0.2.0](https://github.com/jwildfire/gsm.bio/releases/tag/v0.2.0) is
-released, the second release. It adds widgets for the cross-tabulation
-and the stratified survival chart, and hazard ratios in the biomarker
-screen. It also adds output from R: a static figure and a statistics
-table for every chart, the table written to RTF, and batch runs of the
-specifications bio.viz’s charts write. [Version
+0.3.0](https://github.com/jwildfire/gsm.bio/releases/tag/v0.3.0) is
+released, the third release. It draws the group comparison at three
+levels, a trend tile for every biomarker, one biomarker across its
+visits and one visit, with R’s test under each visit stored in the page.
+It also adds two statistics functions that answer by level in one call,
+and one rule for unscheduled visits in the widget, the figure and the
+table. [Version
+0.2.0](https://github.com/jwildfire/gsm.bio/releases/tag/v0.2.0) was the
+second. It added widgets for the cross-tabulation and the stratified
+survival chart, hazard ratios in the biomarker screen, and output from
+R: a static figure and a statistics table for every chart, the table
+written to RTF, and batch runs of the specifications bio.viz’s charts
+write. [Version
 0.1.0](https://github.com/jwildfire/gsm.bio/releases/tag/v0.1.0) was the
 first: seven statistics functions, the synthetic study, and widgets for
 the group comparison, the association scatter, the correlation matrix
