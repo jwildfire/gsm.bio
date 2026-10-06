@@ -33,9 +33,10 @@ present, in sorted order.}
 \item{nConfLevel}{\code{numeric} Confidence level of the odds ratio's interval.
 Default: \code{0.95}.}
 
-\item{nMinGroup}{\code{numeric} The smallest category the test is computed for.
-If any row or column of the table totals fewer participants, the result
-has \code{status} \code{"too_small"} and no numbers. Default: \code{nMinGroupDefault},
+\item{nMinGroup}{\code{numeric} The smallest category the chi-squared test is
+computed for. If any row or column of the table totals fewer
+participants, the result for \code{"chisq"} has \code{status} \code{"too_small"} and no
+numbers. It is not applied to \code{"fisher"}. Default: \code{nMinGroupDefault},
 which is 5. See \link{StatisticsResult}.}
 }
 \value{
@@ -61,6 +62,17 @@ For \code{"chisq"}, each cell of \code{rows} carries the expected count that
 \code{chisq.test()} returned and is flagged where it is below 5, the count at
 which \code{chisq.test()} itself warns. When any cell is flagged, \code{notes} says
 how many, and R's warning is in \code{warnings}.
+
+The minimum group size, \code{nMinGroup}, applies to \code{"chisq"} only. A row or a
+column of the table that totals fewer participants stops the chi-squared
+test, with \code{status} \code{"too_small"}. Fisher's exact test is exact at any
+count, which is what it is for, so it is exempt: it runs on any table in
+which two or more rows and two or more columns have at least one
+participant, whatever \code{nMinGroup} is. When a row or a column is below the
+minimum, \code{notes} says so and names it. A category nobody is in is no row
+and no column: where that leaves fewer than two either way, the result has
+\code{status} \code{"too_small"} and R's reason, where \code{fisher.test()} itself would
+return a p-value of 1.
 }
 \examples{
 lResult <- Analyze_Contingency(Synthetic_Participants, "ARM", "RESPONSE")
@@ -69,6 +81,15 @@ lResult$p_value
 lResult$rows
 
 Analyze_Contingency(Synthetic_Participants, "ARM", "RESPONSE", strMethod = "fisher")$estimates
+
+# A table with a small margin: twenty participants, two of them at grade 3.
+# Fisher's exact test runs; the chi-squared test is not computed.
+dfGrades <- data.frame(
+  arm = rep(c("A", "B"), each = 10),
+  grade = c(rep(1:3, times = c(6, 3, 1)), rep(1:3, times = c(4, 5, 1)))
+)
+Analyze_Contingency(dfGrades, "arm", "grade", strMethod = "fisher")$p_value
+Analyze_Contingency(dfGrades, "arm", "grade")$reason
 
 }
 \seealso{

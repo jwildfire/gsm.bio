@@ -124,20 +124,137 @@ test_that("Fisher's exact test equals fisher.test() on a larger table, where R e
   expect_identical(nrow(lResult$rows), 8L)
 })
 
-test_that("a category below the minimum size gets a reason and no numbers (#3)", {
+test_that("a category below the minimum size stops the chi-squared test, with a reason and no numbers (#3, #46)", {
   dfSmall <- dfFrame
   dfSmall$RESPONSE[dfSmall$RESPONSE == "Responder"][-(1:4)] <- "Non-responder"
-  for (strMethod in c("chisq", "fisher")) {
-    lResult <- Analyze_Contingency(dfSmall, "ARM", "RESPONSE", strMethod = strMethod)
-    ExpectResultShape(lResult)
-    expect_identical(lResult$status, "too_small")
-    expect_identical(lResult$reason, "Not computed: RESPONSE = Responder has 4. The minimum group size is 5.")
-    expect_identical(lResult$counts, 200L)
-    # The table is still returned, because it is the explanation.
-    expect_identical(sum(lResult$rows$n), 200L)
-  }
-  expect_identical(Analyze_Contingency(dfSmall, "ARM", "RESPONSE", strMethod = "fisher", nMinGroup = 4)$status, "ok")
+  lResult <- Analyze_Contingency(dfSmall, "ARM", "RESPONSE", strMethod = "chisq")
+  ExpectResultShape(lResult)
+  expect_identical(lResult$status, "too_small")
+  expect_identical(lResult$reason, "Not computed: RESPONSE = Responder has 4. The minimum group size is 5.")
+  expect_identical(lResult$counts, 200L)
+  expect_true(is.na(lResult$p_value))
+  # The table is still returned, because it is the explanation.
+  expect_identical(sum(lResult$rows$n), 200L)
+  expect_identical(Analyze_Contingency(dfSmall, "ARM", "RESPONSE", nMinGroup = 4)$status, "ok")
   expect_identical(formals(Analyze_Contingency)$nMinGroup, quote(nMinGroupDefault))
+})
+
+# The table of the task (#46): arm by grade for twenty participants, of whom
+# only two have grade 3.
+dfGrades <- data.frame(
+  arm = rep(c("A", "B"), each = 10L),
+  grade = c(rep(c("1", "2", "3"), times = c(6L, 3L, 1L)), rep(c("1", "2", "3"), times = c(4L, 5L, 1L))),
+  stringsAsFactors = FALSE
+)
+
+test_that("Fisher's exact test is exempt from the minimum group size: on a table with small margins it equals fisher.test(), while the chi-squared test on the same table is still refused (#46)", {
+  mTable <- table(dfGrades$arm, dfGrades$grade)
+  expect_identical(unname(colSums(mTable)), c(10, 8, 2))
+  lBase <- stats::fisher.test(mTable)
+
+  expect_silent(lResult <- Analyze_Contingency(dfGrades, "arm", "grade", strMethod = "fisher"))
+  ExpectResultShape(lResult)
+  expect_identical(lResult$status, "ok")
+  expect_true(is.na(lResult$reason))
+  expect_identical(lResult$p_value, lBase$p.value)
+  expect_identical(round(lResult$p_value, 3), 0.809)
+  expect_identical(lResult$method, lBase$method)
+  expect_identical(lResult$counts, 20L)
+  expect_identical(lResult$rows$n, as.integer(mTable))
+  # R estimates no odds ratio for a table bigger than two by two.
+  expect_identical(nrow(lResult$estimates), 0L)
+  # The result says that a margin is below the minimum, and that it ran anyway.
+  expect_identical(
+    lResult$notes,
+    list("Fisher's exact test is exact at any count, so the minimum group size of 5 is not applied to it. Below it here: grade = 3 has 2.")
+  )
+
+  # The minimum is not applied to Fisher's test whatever it is set to.
+  for (nMinGroup in c(2, 5, 11, 50)) {
+    lSet <- Analyze_Contingency(dfGrades, "arm", "grade", strMethod = "fisher", nMinGroup = nMinGroup)
+    expect_identical(lSet$status, "ok", label = paste("nMinGroup", nMinGroup))
+    expect_identical(lSet$p_value, lBase$p.value)
+  }
+  # With every margin at or above it, the result has no note.
+  expect_identical(Analyze_Contingency(dfGrades, "arm", "grade", strMethod = "fisher", nMinGroup = 2)$notes, list())
+  expect_identical(Analyze_Contingency(dfFrame, "ARM", "RESPONSE", strMethod = "fisher")$notes, list())
+
+  # The chi-squared test keeps the minimum: the same table is refused.
+  lChisq <- Analyze_Contingency(dfGrades, "arm", "grade", strMethod = "chisq")
+  ExpectResultShape(lChisq)
+  expect_identical(lChisq$status, "too_small")
+  expect_identical(lChisq$reason, "Not computed: grade = 3 has 2. The minimum group size is 5.")
+  expect_true(is.na(lChisq$p_value))
+  expect_identical(Analyze_Contingency(dfGrades, "arm", "grade")$status, "too_small")
+})
+
+test_that("Fisher's exact test on a two-by-two table with small margins gives fisher.test()'s odds ratio and interval (#46)", {
+  dfTwo <- dfGrades[dfGrades$grade != "2", ]
+  mTable <- table(dfTwo$arm, dfTwo$grade)
+  expect_identical(unname(colSums(mTable)), c(10, 2))
+  lBase <- stats::fisher.test(mTable)
+  lResult <- Analyze_Contingency(dfTwo, "arm", "grade", strMethod = "fisher")
+  ExpectResultShape(lResult)
+  expect_identical(lResult$status, "ok")
+  expect_identical(lResult$p_value, lBase$p.value)
+  expect_identical(lResult$estimates$estimate, unname(lBase$estimate))
+  expect_identical(c(lResult$estimates$lower, lResult$estimates$upper), as.numeric(lBase$conf.int))
+  expect_identical(lResult$counts, 12L)
+  expect_match(lResult$notes[[1]], "Below it here: grade = 3 has 2.", fixed = TRUE)
+  expect_identical(Analyze_Contingency(dfTwo, "arm", "grade")$status, "too_small")
+})
+
+test_that("Fisher's exact test still needs a table: one row or one column is refused, and so is a table where fewer than two rows or two columns have anyone (#46)", {
+  # One category each way is not a two-way table, for either test.
+  dfOne <- dfGrades
+  dfOne$Same <- "A"
+  for (strMethod in c("chisq", "fisher")) {
+    lRow <- Analyze_Contingency(dfOne, "Same", "grade", strMethod = strMethod)
+    ExpectResultShape(lRow)
+    expect_identical(lRow$status, "error")
+    expect_identical(lRow$reason, "A two-way table needs two or more categories each way; 'Same' has 1 and 'grade' has 3.")
+    expect_true(is.na(lRow$p_value))
+    lCol <- Analyze_Contingency(dfOne, "arm", "Same", strMethod = strMethod)
+    expect_identical(lCol$status, "error")
+    expect_identical(lCol$reason, "A two-way table needs two or more categories each way; 'arm' has 2 and 'Same' has 1.")
+  }
+
+  # A category named and held by nobody is no row: with one row left, or one
+  # column, there is nothing to test, though fisher.test() would return p = 1.
+  lEmptyRow <- Analyze_Contingency(dfGrades, "arm", "grade", strMethod = "fisher", chrRowGroups = c("A", "C"))
+  ExpectResultShape(lEmptyRow)
+  expect_identical(lEmptyRow$status, "too_small")
+  expect_identical(
+    lEmptyRow$reason,
+    "Not computed: arm = C has 0. Fisher's exact test needs two or more rows and two or more columns with at least one participant each."
+  )
+  expect_true(is.na(lEmptyRow$p_value))
+  expect_identical(lEmptyRow$counts, 10L)
+  expect_identical(sum(lEmptyRow$rows$n), 10L)
+  lEmptyCol <- Analyze_Contingency(dfGrades, "arm", "grade", strMethod = "fisher", chrColGroups = c("3", "4", "5"))
+  expect_identical(lEmptyCol$status, "too_small")
+  expect_identical(
+    lEmptyCol$reason,
+    "Not computed: grade = 4 has 0; grade = 5 has 0. Fisher's exact test needs two or more rows and two or more columns with at least one participant each."
+  )
+  # Nobody at all.
+  lNobody <- Analyze_Contingency(dfGrades, "arm", "grade", strMethod = "fisher", chrRowGroups = c("C", "D"), chrColGroups = c("8", "9"))
+  expect_identical(lNobody$status, "too_small")
+  expect_identical(lNobody$counts, 0L)
+  expect_match(lNobody$reason, "Not computed: arm = C has 0; arm = D has 0; grade = 8 has 0; grade = 9 has 0. Fisher's", fixed = TRUE)
+
+  # With two rows and two columns that have someone, an empty category beside
+  # them does not stop the test: the answer is fisher.test()'s for that table,
+  # and the note names the empty category.
+  lSpare <- Analyze_Contingency(dfGrades, "arm", "grade", strMethod = "fisher", chrColGroups = c("1", "2", "4"))
+  mSpare <- table(
+    factor(dfGrades$arm[dfGrades$grade != "3"]),
+    factor(dfGrades$grade[dfGrades$grade != "3"], levels = c("1", "2", "4"))
+  )
+  expect_identical(lSpare$status, "ok")
+  expect_identical(lSpare$p_value, stats::fisher.test(mSpare)$p.value)
+  expect_identical(lSpare$counts, 18L)
+  expect_match(lSpare$notes[[1]], "Below it here: grade = 4 has 0.", fixed = TRUE)
 })
 
 test_that("missing and unselected categories are dropped and counted (#3)", {
