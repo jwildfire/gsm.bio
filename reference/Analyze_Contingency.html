@@ -90,9 +90,10 @@ Default: <code>0.95</code>.</p></dd>
 
 
 <dt id="arg-nmingroup">nMinGroup<a class="anchor" aria-label="anchor" href="#arg-nmingroup"></a></dt>
-<dd><p><code>numeric</code> The smallest category the test is computed for.
-If any row or column of the table totals fewer participants, the result
-has <code>status</code> <code>"too_small"</code> and no numbers. Default: <code>nMinGroupDefault</code>,
+<dd><p><code>numeric</code> The smallest category the chi-squared test is
+computed for. If any row or column of the table totals fewer
+participants, the result for <code>"chisq"</code> has <code>status</code> <code>"too_small"</code> and no
+numbers. It is not applied to <code>"fisher"</code>. Default: <code>nMinGroupDefault</code>,
 which is 5. See <a href="StatisticsResult.html">StatisticsResult</a>.</p></dd>
 
 </dl></div>
@@ -110,6 +111,16 @@ the table in long form, one row per cell, with the columns <code>row</code>, <co
 <code><a href="https://rdrr.io/r/stats/chisq.test.html" class="external-link">chisq.test()</a></code> returned and is flagged where it is below 5, the count at
 which <code><a href="https://rdrr.io/r/stats/chisq.test.html" class="external-link">chisq.test()</a></code> itself warns. When any cell is flagged, <code>notes</code> says
 how many, and R's warning is in <code>warnings</code>.</p>
+<p>The minimum group size, <code>nMinGroup</code>, applies to <code>"chisq"</code> only. A row or a
+column of the table that totals fewer participants stops the chi-squared
+test, with <code>status</code> <code>"too_small"</code>. Fisher's exact test is exact at any
+count, which is what it is for, so it is exempt: it runs on any table in
+which two or more rows and two or more columns have at least one
+participant, whatever <code>nMinGroup</code> is. When a row or a column is below the
+minimum, <code>notes</code> says so and names it. A category nobody is in is no row
+and no column: where that leaves fewer than two either way, the result has
+<code>status</code> <code>"too_small"</code> and R's reason, where <code><a href="https://rdrr.io/r/stats/fisher.test.html" class="external-link">fisher.test()</a></code> itself would
+return a p-value of 1.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
@@ -141,6 +152,17 @@ how many, and R's warning is in <code>warnings</code>.</p>
 <span class="r-in"><span><span class="fu">Analyze_Contingency</span><span class="op">(</span><span class="va">Synthetic_Participants</span>, <span class="st">"ARM"</span>, <span class="st">"RESPONSE"</span>, strMethod <span class="op">=</span> <span class="st">"fisher"</span><span class="op">)</span><span class="op">$</span><span class="va">estimates</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>         name group estimate     lower   upper level</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 1 odds ratio  &lt;NA&gt; 1.292434 0.6994128 2.39815  0.95</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># A table with a small margin: twenty participants, two of them at grade 3.</span></span></span>
+<span class="r-in"><span><span class="co"># Fisher's exact test runs; the chi-squared test is not computed.</span></span></span>
+<span class="r-in"><span><span class="va">dfGrades</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  arm <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"A"</span>, <span class="st">"B"</span><span class="op">)</span>, each <span class="op">=</span> <span class="fl">10</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  grade <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fl">3</span>, times <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">6</span>, <span class="fl">3</span>, <span class="fl">1</span><span class="op">)</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fl">3</span>, times <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">4</span>, <span class="fl">5</span>, <span class="fl">1</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">Analyze_Contingency</span><span class="op">(</span><span class="va">dfGrades</span>, <span class="st">"arm"</span>, <span class="st">"grade"</span>, strMethod <span class="op">=</span> <span class="st">"fisher"</span><span class="op">)</span><span class="op">$</span><span class="va">p_value</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.8090454</span>
+<span class="r-in"><span><span class="fu">Analyze_Contingency</span><span class="op">(</span><span class="va">dfGrades</span>, <span class="st">"arm"</span>, <span class="st">"grade"</span><span class="op">)</span><span class="op">$</span><span class="va">reason</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Not computed: grade = 3 has 2. The minimum group size is 5."</span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

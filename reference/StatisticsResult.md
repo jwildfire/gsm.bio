@@ -15,7 +15,7 @@ Always all of these, always in this order, all in lower snake case.
 |  |  |
 |----|----|
 | Member | Holds |
-| `status` | `"ok"`; `"too_small"` when a group is below the minimum size; `"error"` when R stopped or the request could not be met. |
+| `status` | `"ok"`; `"too_small"` when a group is below the minimum size, or a table has too few categories with anyone in them for Fisher's exact test; `"error"` when R stopped or the request could not be met. |
 | `reason` | Why there are no numbers, as text. `NA` when `status` is `"ok"`. For `"error"` it is R's own message where R raised one. |
 | `test` | The method asked for, as the caller named it, for example `"wilcoxon"`. |
 | `method` | The method's name as R reports it, for example `"Welch Two Sample t-test"`. |
@@ -109,6 +109,10 @@ A statistic is not computed when a group has fewer participants than
 validated threshold: it is the smallest size at which every wrapped test
 runs and returns its interval with a little to spare, and it is the
 conventional floor for an expected count in a chi-squared test.
+
+Fisher's exact test is the one exception: it is exact at any count, so
+[`Analyze_Contingency()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_Contingency.md)
+does not apply the minimum to it. See there.
 
 ## One definition
 

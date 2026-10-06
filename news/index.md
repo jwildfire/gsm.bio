@@ -28,6 +28,23 @@ as it does.
   Every released function answers as it did.
   [obot.roadmap#367](https://github.com/jwildfire/obot.roadmap/issues/367),
   [\#52](https://github.com/jwildfire/gsm.bio/issues/52)
+- **Fisher’s exact test runs on tables with small margins.**
+  [`Analyze_Contingency()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_Contingency.html)
+  no longer applies the minimum group size to Fisher’s exact test, which
+  is exact at any count: a table with a row or a column of fewer than
+  five participants now returns
+  [`fisher.test()`](https://rdrr.io/r/stats/fisher.test.html)’s p-value
+  where it returned no test, and a note in the result names the row or
+  column below the minimum. The chi-square test keeps the minimum and is
+  still not computed on such a table. So the cross-tabulation widget
+  stores Fisher’s answer for a small table, and
+  [`Table_CrossTab()`](https://jwildfire.github.io/gsm.bio/reference/Table_CrossTab.md)
+  and
+  [`Visualize_CrossTab()`](https://jwildfire.github.io/gsm.bio/reference/Visualize_CrossTab.md)
+  print it. `nMinGroup` now applies to `"chisq"` only. Fisher’s test
+  still needs two or more rows and two or more columns with someone in
+  each. Decided by [@jwildfire](https://github.com/jwildfire) on
+  2026-10-04. [\#46](https://github.com/jwildfire/gsm.bio/issues/46)
 
 ## gsm.bio v0.2.0
 

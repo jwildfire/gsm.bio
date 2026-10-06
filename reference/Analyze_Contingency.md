@@ -47,10 +47,11 @@ Analyze_Contingency(
 
 - nMinGroup:
 
-  `numeric` The smallest category the test is computed for. If any row
-  or column of the table totals fewer participants, the result has
-  `status` `"too_small"` and no numbers. Default: `nMinGroupDefault`,
-  which is 5. See
+  `numeric` The smallest category the chi-squared test is computed for.
+  If any row or column of the table totals fewer participants, the
+  result for `"chisq"` has `status` `"too_small"` and no numbers. It is
+  not applied to `"fisher"`. Default: `nMinGroupDefault`, which is 5.
+  See
   [StatisticsResult](https://jwildfire.github.io/gsm.bio/reference/StatisticsResult.md).
 
 ## Value
@@ -79,6 +80,18 @@ is flagged where it is below 5, the count at which
 [`chisq.test()`](https://rdrr.io/r/stats/chisq.test.html) itself warns.
 When any cell is flagged, `notes` says how many, and R's warning is in
 `warnings`.
+
+The minimum group size, `nMinGroup`, applies to `"chisq"` only. A row or
+a column of the table that totals fewer participants stops the
+chi-squared test, with `status` `"too_small"`. Fisher's exact test is
+exact at any count, which is what it is for, so it is exempt: it runs on
+any table in which two or more rows and two or more columns have at
+least one participant, whatever `nMinGroup` is. When a row or a column
+is below the minimum, `notes` says so and names it. A category nobody is
+in is no row and no column: where that leaves fewer than two either way,
+the result has `status` `"too_small"` and R's reason, where
+[`fisher.test()`](https://rdrr.io/r/stats/fisher.test.html) itself would
+return a p-value of 1.
 
 ## See also
 
@@ -110,4 +123,15 @@ lResult$rows
 Analyze_Contingency(Synthetic_Participants, "ARM", "RESPONSE", strMethod = "fisher")$estimates
 #>         name group estimate     lower   upper level
 #> 1 odds ratio  <NA> 1.292434 0.6994128 2.39815  0.95
+
+# A table with a small margin: twenty participants, two of them at grade 3.
+# Fisher's exact test runs; the chi-squared test is not computed.
+dfGrades <- data.frame(
+  arm = rep(c("A", "B"), each = 10),
+  grade = c(rep(1:3, times = c(6, 3, 1)), rep(1:3, times = c(4, 5, 1)))
+)
+Analyze_Contingency(dfGrades, "arm", "grade", strMethod = "fisher")$p_value
+#> [1] 0.8090454
+Analyze_Contingency(dfGrades, "arm", "grade")$reason
+#> [1] "Not computed: grade = 3 has 2. The minimum group size is 5."
 ```
