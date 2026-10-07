@@ -73,6 +73,11 @@ minimum, \code{notes} says so and names it. A category nobody is in is no row
 and no column: where that leaves fewer than two either way, the result has
 \code{status} \code{"too_small"} and R's reason, where \code{fisher.test()} itself would
 return a p-value of 1.
+
+R's own limits still apply to Fisher's exact test. For a larger table, four
+categories by four with 200 participants say, \code{fisher.test()} stops on the
+size of its workspace: the result then has \code{status} \code{"error"}, R's message
+as its \code{reason} and no p-value. \code{"chisq"} answers such a table.
 }
 \examples{
 lResult <- Analyze_Contingency(Synthetic_Participants, "ARM", "RESPONSE")
