@@ -14,12 +14,12 @@ chrDependencies <- function(strField) {
   sort(sub("\\s*\\(.*\\)$", "", chrEntries))
 }
 
-test_that("the package loads and reports its version: 0.3.0, the v0.3.0 release (#1, #18, #44, #50, #59)", {
+test_that("the package loads and reports its version: a development version after the v0.3.0 release (#1, #18, #44, #50, #59, #69)", {
   expect_true(isNamespaceLoaded("gsm.bio"))
   expect_identical(utils::packageDescription("gsm.bio")$Package, "gsm.bio")
   # Between releases dev carries a development version, the last release with
-  # .9000; a release sets its own version, as v0.3.0 does here.
-  expect_identical(as.character(utils::packageVersion("gsm.bio")), "0.3.0")
+  # .9000; a release sets its own version, and the release of v0.4.0 sets 0.4.0.
+  expect_identical(as.character(utils::packageVersion("gsm.bio")), "0.3.0.9000")
 })
 
 test_that("the package imports stats and survival for the statistics, htmlwidgets for the widgets, and grDevices for the RTF writer (#1, #9, #38)", {
