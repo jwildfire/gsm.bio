@@ -108,8 +108,8 @@ chrGit <- function(chrArgs, nTries = 3L) {
 # A tag of a repository as GitHub has it: the lines git lists for it, none
 # when there is no such tag. An error when GitHub could not be asked, so that
 # "could not ask" is never read as "no such tag".
-chrRemoteTag <- function(strRepository, strTag) {
-  chrListed <- chrGit(c("ls-remote", "--tags", strRepository, paste0("refs/tags/", strTag)))
+chrRemoteTag <- function(strRepository, strTag, nTries = 3L) {
+  chrListed <- chrGit(c("ls-remote", "--tags", strRepository, paste0("refs/tags/", strTag)), nTries = nTries)
   grep("^[0-9a-f]{40}\trefs/tags/", chrListed, value = TRUE)
 }
 
