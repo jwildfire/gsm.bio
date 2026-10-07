@@ -21,7 +21,14 @@ runs one requirement per session
 - `devtools::test()` — the testthat suite (edition 3). Tests that read
   files outside the built package (the repository guards, the rerun of
   the data script) run here and skip under check; CI runs the suite a
-  second time from the source tree, where a skip fails the run.
+  second time from the source tree, where a skip fails the run. From the
+  source tree the suite needs to reach GitHub, at any version of the
+  package: `tests/testthat/test-vendored.R` asks with git for bio.viz’s
+  tags on every run (the v0.2.0 tag, to prove its comparison, and the
+  tag of the version copied), and the README guard in
+  `tests/testthat/test-repository.R` asks for gsm.bio’s. A run that
+  cannot reach GitHub after three tries fails with what git said; it
+  does not skip, and it does not pass.
 - `devtools::check()` — must be clean (no errors, warnings or notes)
   before a PR opens; CI runs the same check as `R-CMD-check` and fails
   on a note. Where R cannot reach its time service the check adds one

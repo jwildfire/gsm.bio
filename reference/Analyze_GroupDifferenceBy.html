@@ -154,12 +154,14 @@ any other reason. Each row gives its own reason.</p>
     <p>The data are long: one row per participant and level, as a results table
 holds one biomarker across its visits. Each row of the answer is
 <code><a href="Analyze_GroupDifference.html">Analyze_GroupDifference()</a></code>'s own answer on the rows of that level, with
-<code>bPairwise</code> off, so its unadjusted p-value is the one printed when the level
-is looked at alone.</p>
+<code>bPairwise</code> off and the same groups named, so its unadjusted p-value is the
+one printed when the level is looked at alone with those groups.</p>
 <p>The groups are the same at every level: the ones named in <code>chrGroups</code>, or
 every group present anywhere among the levels answered. A group with nobody
 at a level is too small there; the level is not quietly compared without
-it.</p>
+it. So with three or more groups, a level where one of them has nobody has
+no p-value here, while <code><a href="Analyze_GroupDifference.html">Analyze_GroupDifference()</a></code> on that level's rows
+alone, with <code>chrGroups</code> left out, compares the groups that are there.</p>
 <p>The adjustment is <code><a href="https://rdrr.io/r/stats/p.adjust.html" class="external-link">stats::p.adjust()</a></code> across the levels that have a
 p-value. A level that could not be computed, because a group is below the
 minimum size or its values do not vary, has its own <code>status</code> and <code>reason</code>,

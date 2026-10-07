@@ -12,9 +12,10 @@ bio.viz v0.3.0 draws it at: every biomarker over time, one biomarker
 across its visits with R’s test under each visit, and one visit alone.
 The page stores every test those levels ask for, so a saved file shows
 all three with no R and no network. Two new statistics functions answer
-by level in one call, and the widget, the static figure and the table
-now leave unscheduled visits out by one rule. It is released together
-with bio.viz v0.3.0.
+by level in one call, the widget, the static figure and the table now
+leave unscheduled visits out by one rule, and Fisher’s exact test is no
+longer withheld from a table because a row or a column is small. It is
+released together with bio.viz v0.3.0.
 
 ### What’s new
 
@@ -38,8 +39,14 @@ with bio.viz v0.3.0.
   over time in one picture: the groups side by side at every visit,
   drawn by `time_mark` as boxes, as means with their standard errors or
   as medians with their quartiles, with the number in each group and R’s
-  test of the groups under each visit. For every biomarker the page
-  stores that row of tests as one answer of
+  test of the groups under each visit. The mean, the standard deviation
+  and the standard error drawn for means with standard errors are the
+  chart’s own descriptions of one group’s values, computed in the
+  browser, which bio.viz’s rule allows by name
+  ([bio.viz#112](https://github.com/jwildfire/bio.viz/issues/112),
+  decided by [@jwildfire](https://github.com/jwildfire) on 2026-10-06);
+  every test is still R’s. For every biomarker the page stores that row
+  of tests as one answer of
   [`Analyze_GroupDifferenceBy()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_GroupDifferenceBy.html):
   with the p-values as R gives them, and, when `visit_adjustment` names
   `"holm"` or `"BH"`, with R’s adjustment across the visits as well, so
@@ -74,8 +81,15 @@ with bio.viz v0.3.0.
   biomarker and visit, so nothing is reshaped first. A level with a
   group below the minimum size, or with values that do not vary, has its
   reason in place of its numbers and is left out of the adjustment. Each
-  row is the single function’s own answer on that level’s rows, so the
-  numbers agree with the single-visit view.
+  row is the single function’s own answer on that level’s rows for the
+  same groups, so the numbers agree with the single-visit view wherever
+  every group has someone at the visit. The groups are the same at every
+  level, so one case differs: with three or more groups and a visit
+  where one of them has nobody, that visit’s row is not computed and
+  gives the reason, while the same visit asked alone tests the groups
+  that are there.
+  [bio.viz#114](https://github.com/jwildfire/bio.viz/issues/114) holds
+  the chart’s side of it.
   [obot.roadmap#367](https://github.com/jwildfire/obot.roadmap/issues/367),
   [\#52](https://github.com/jwildfire/gsm.bio/issues/52),
   [\#54](https://github.com/jwildfire/gsm.bio/pull/54)
@@ -109,9 +123,6 @@ with bio.viz v0.3.0.
   [obot.roadmap#367](https://github.com/jwildfire/obot.roadmap/issues/367),
   [\#53](https://github.com/jwildfire/gsm.bio/issues/53),
   [\#57](https://github.com/jwildfire/gsm.bio/pull/57)
-
-### Also in this release
-
 - **Fisher’s exact test runs on tables with small margins.**
   [`Analyze_Contingency()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_Contingency.html)
   no longer applies the minimum group size to Fisher’s exact test, which
@@ -127,9 +138,17 @@ with bio.viz v0.3.0.
   [`Visualize_CrossTab()`](https://jwildfire.github.io/gsm.bio/reference/Visualize_CrossTab.md)
   print it. `nMinGroup` now applies to `"chisq"` only. Fisher’s test
   still needs two or more rows and two or more columns with someone in
-  each. Decided by [@jwildfire](https://github.com/jwildfire) on
-  2026-10-04. [\#46](https://github.com/jwildfire/gsm.bio/issues/46),
-  [\#55](https://github.com/jwildfire/gsm.bio/pull/55)
+  each, and it is still not computed for larger tables, as Not in this
+  release says below. bio.viz v0.3.0 carries the same change in its copy
+  of gsm.bio’s statistics file, so a chart with R in the browser answers
+  as the widget does. Decided by
+  [@jwildfire](https://github.com/jwildfire) on 2026-10-04.
+  [\#46](https://github.com/jwildfire/gsm.bio/issues/46),
+  [\#55](https://github.com/jwildfire/gsm.bio/pull/55),
+  [bio.viz#104](https://github.com/jwildfire/bio.viz/issues/104)
+
+### Also in this release
+
 - **A saved page is opened in a browser by the tests.** The suite now
   saves a group comparison widget, opens the file in a headless Chrome
   with the network switched off, and walks the three levels as a reader
@@ -142,7 +161,7 @@ with bio.viz v0.3.0.
   [\#57](https://github.com/jwildfire/gsm.bio/pull/57)
 - **The widgets carry bio.viz v0.3.0,** with the specification schema
   the batch runner reads. They are copied from bio.viz `dev` at
-  [8d0ddab](https://github.com/jwildfire/bio.viz/commit/8d0ddab4a1dde14a0a469ecf4b77e9021650b7d3),
+  [a303f6b](https://github.com/jwildfire/bio.viz/commit/a303f6b06ce30f74ad61b74a46c3ec19bd044197),
   a release build: every chart’s footnote reads “bio.viz 0.3.0”. The two
   packages are released together, so the copy was made before bio.viz’s
   v0.3.0 tag. From the day that tag exists the suite holds every copied
@@ -160,24 +179,37 @@ with bio.viz v0.3.0.
   widget’s grid with it. The widget has one opening view, the trend
   tiles.
   [obot.roadmap#371](https://github.com/jwildfire/obot.roadmap/issues/371)
+- **Fisher’s exact test for larger tables.** Fisher’s exact test is not
+  computed for larger tables: four categories by four with 200
+  participants is enough, and so is three by three with 1,000.
+  [`fisher.test()`](https://rdrr.io/r/stats/fisher.test.html) stops on
+  the size of its workspace, so the result has no p-value and carries
+  R’s own message about the workspace as its reason. This is not new in
+  v0.3.0. The chi-square test answers such a table. What to do instead,
+  a larger workspace, a simulated p-value or a plainer sentence, is a
+  statistical choice that has not been made.
+  [\#64](https://github.com/jwildfire/gsm.bio/issues/64)
 
 ### Tests and provenance
 
 339 tests (54,889 expectations on R 4.3.3) pass from the source tree,
-where none may skip; `R CMD check` runs them too, skipping the 14 that
-read the repository’s own files, open a browser or ask GitHub for a tag.
-Every statistic a widget stores, a figure prints or a table holds is
-held to the `Analyze_*()` function on rows the test works out from the
-study’s tables, and the row of tests under one biomarker over time is
-held to bio.viz’s own fixtures of what desktop R answered. The saved
-group comparison page is opened in a headless browser with no network,
-and every request its chart makes is answered from the page. The batch
-runner’s reader is held to bio.viz’s own reader, run in node on the same
-specifications: the format’s rules case by case, and every setting of
-every chart given each of 21 values (4,746 specifications). The rules R
-shares with the charts are held to frames, requests and filter states
-written by the vendored bundles: bio.viz `dev` at
-[8d0ddab](https://github.com/jwildfire/bio.viz/commit/8d0ddab4a1dde14a0a469ecf4b77e9021650b7d3),
+where none may skip. From there the suite needs to reach GitHub at any
+version of the package: on every run it asks, with git, for bio.viz’s
+tags and for gsm.bio’s, and a run that cannot ask fails. `R CMD check`
+runs the tests too, skipping the 14 that read the repository’s own
+files, open a browser or ask GitHub for a tag. Every statistic a widget
+stores, a figure prints or a table holds is held to the `Analyze_*()`
+function on rows the test works out from the study’s tables, and the row
+of tests under one biomarker over time is held to bio.viz’s own fixtures
+of what desktop R answered. The saved group comparison page is opened in
+a headless browser with no network, and every request its chart makes is
+answered from the page. The batch runner’s reader is held to bio.viz’s
+own reader, run in node on the same specifications: the format’s rules
+case by case, and every setting of every chart given each of 21 values
+(4,746 specifications). The rules R shares with the charts are held to
+frames, requests and filter states written by the vendored bundles:
+bio.viz `dev` at
+[a303f6b](https://github.com/jwildfire/bio.viz/commit/a303f6b06ce30f74ad61b74a46c3ec19bd044197),
 and through it safety.viz `dev` at
 [096cc26](https://github.com/jwildfire/safety.viz/commit/096cc26d48e5d3cd1bf03eb78249658974c7a307).
 

@@ -93,6 +93,12 @@ the result has `status` `"too_small"` and R's reason, where
 [`fisher.test()`](https://rdrr.io/r/stats/fisher.test.html) itself would
 return a p-value of 1.
 
+R's own limits still apply to Fisher's exact test. For a larger table,
+four categories by four with 200 participants say,
+[`fisher.test()`](https://rdrr.io/r/stats/fisher.test.html) stops on the
+size of its workspace: the result then has `status` `"error"`, R's
+message as its `reason` and no p-value. `"chisq"` answers such a table.
+
 ## See also
 
 Other statistics:

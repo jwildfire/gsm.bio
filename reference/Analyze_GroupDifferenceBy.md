@@ -123,13 +123,18 @@ computed for any other reason. Each row gives its own reason.
 The data are long: one row per participant and level, as a results table
 holds one biomarker across its visits. Each row of the answer is
 [`Analyze_GroupDifference()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_GroupDifference.md)'s
-own answer on the rows of that level, with `bPairwise` off, so its
-unadjusted p-value is the one printed when the level is looked at alone.
+own answer on the rows of that level, with `bPairwise` off and the same
+groups named, so its unadjusted p-value is the one printed when the
+level is looked at alone with those groups.
 
 The groups are the same at every level: the ones named in `chrGroups`,
 or every group present anywhere among the levels answered. A group with
 nobody at a level is too small there; the level is not quietly compared
-without it.
+without it. So with three or more groups, a level where one of them has
+nobody has no p-value here, while
+[`Analyze_GroupDifference()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_GroupDifference.md)
+on that level's rows alone, with `chrGroups` left out, compares the
+groups that are there.
 
 The adjustment is
 [`stats::p.adjust()`](https://rdrr.io/r/stats/p.adjust.html) across the
