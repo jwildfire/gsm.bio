@@ -143,6 +143,7 @@ released together with bio.viz v0.3.0.
   of gsm.bio’s statistics file, so a chart with R in the browser answers
   as the widget does. Decided by
   [@jwildfire](https://github.com/jwildfire) on 2026-10-04.
+  [obot.roadmap#353](https://github.com/jwildfire/obot.roadmap/issues/353),
   [\#46](https://github.com/jwildfire/gsm.bio/issues/46),
   [\#55](https://github.com/jwildfire/gsm.bio/pull/55),
   [bio.viz#104](https://github.com/jwildfire/bio.viz/issues/104)
@@ -181,7 +182,10 @@ released together with bio.viz v0.3.0.
   [obot.roadmap#371](https://github.com/jwildfire/obot.roadmap/issues/371)
 - **Fisher’s exact test for larger tables.** Fisher’s exact test is not
   computed for larger tables: four categories by four with 200
-  participants is enough, and so is three by three with 1,000.
+  participants can be enough, and so can three by three with 1,000. It
+  depends on how evenly the categories are filled: a table spread evenly
+  stops at those sizes, and one with most participants in a single
+  category can still be computed.
   [`fisher.test()`](https://rdrr.io/r/stats/fisher.test.html) stops on
   the size of its workspace, so the result has no p-value and carries
   R’s own message about the workspace as its reason. This is not new in
@@ -192,11 +196,11 @@ released together with bio.viz v0.3.0.
 
 ### Tests and provenance
 
-339 tests (54,889 expectations on R 4.3.3) pass from the source tree,
+340 tests (54,896 expectations on R 4.3.3) pass from the source tree,
 where none may skip. From there the suite needs to reach GitHub at any
 version of the package: on every run it asks, with git, for bio.viz’s
 tags and for gsm.bio’s, and a run that cannot ask fails. `R CMD check`
-runs the tests too, skipping the 14 that read the repository’s own
+runs the tests too, skipping the 15 that read the repository’s own
 files, open a browser or ask GitHub for a tag. Every statistic a widget
 stores, a figure prints or a table holds is held to the `Analyze_*()`
 function on rows the test works out from the study’s tables, and the row
