@@ -1,220 +1,103 @@
 # Changelog
 
-## gsm.bio v0.3.0 (Upcoming)
+## gsm.bio v0.4.0 (Upcoming)
+
+The next version of gsm.bio. Its work lands on `dev` and is listed here
+as it does.
+
+## gsm.bio v0.3.0
 
 **See it move:** the [annotated v0.3.0
 demo](https://jwildfire.github.io/obot.roadmap/reports/biomarker-v0.3-demo/)
-has captures and try-it steps for everything below, for bio.viz and
-gsm.bio together; its section on the three levels from R is the widget.
+has captures, try-it steps and the detail behind everything below; its
+last section is the widget.
 
 gsm.bio v0.3.0 draws the group comparison from R at the three levels
-bio.viz v0.3.0 draws it at: every biomarker over time, one biomarker
-across its visits with R’s test under each visit, and one visit alone.
-The page stores every test those levels ask for, so a saved file shows
-all three with no R and no network. Two new statistics functions answer
-by level in one call, the widget, the static figure and the table now
-leave unscheduled visits out by one rule, and Fisher’s exact test is no
-longer withheld from a table because a row or a column is small. It is
-released together with bio.viz v0.3.0.
+bio.viz v0.3.0 draws it at, and stores every test those levels ask for
+in the page, so a saved file shows all three with no R and no network.
+Two new statistics functions answer a whole row of visits in one call.
+It is released together with bio.viz v0.3.0.
 
 ### What’s new
 
-- **The group comparison widget opens on a trend tile for every
-  biomarker.** With no biomarker named,
+- **The group comparison widget has three levels.**
   [`Widget_GroupComparison()`](https://jwildfire.github.io/gsm.bio/reference/Widget_GroupComparison.html)
-  draws one small tile per biomarker: a line for each group across the
-  visits, through the group’s median or, by the setting `tile_summary`,
-  its mean, on the biomarker’s own value axis. `tile_min_spread` sets
-  the least a tile’s axis spans, so lines that barely differ stay close
-  to flat. The tiles print no test, ask R for nothing, and nothing is
-  stored for them. A tile opens its biomarker across the visits. The
-  function’s reference page, linked here, draws the widget from the
-  synthetic study: click a tile, then a visit’s name, to walk the three
-  levels.
+  opens on a trend tile for every biomarker; a tile opens one biomarker
+  across its visits, with R’s test stored under each visit; a visit’s
+  name opens that visit alone. A view that was not computed says so. A
+  call that named a biomarker and no visit opened on a panel per visit
+  and now opens on the picture over time.
   [obot.roadmap#367](https://github.com/jwildfire/obot.roadmap/issues/367),
-  [\#53](https://github.com/jwildfire/gsm.bio/issues/53),
-  [\#57](https://github.com/jwildfire/gsm.bio/pull/57)
-- **One biomarker across its visits, with R’s test stored under each
-  visit.** A tile, or the setting `start_value`, opens one biomarker
-  over time in one picture: the groups side by side at every visit,
-  drawn by `time_mark` as boxes, as means with their standard errors or
-  as medians with their quartiles, with the number in each group and R’s
-  test of the groups under each visit. The mean, the standard deviation
-  and the standard error drawn for means with standard errors are the
-  chart’s own descriptions of one group’s values, computed in the
-  browser, which bio.viz’s rule allows by name
-  ([bio.viz#112](https://github.com/jwildfire/bio.viz/issues/112),
-  decided by [@jwildfire](https://github.com/jwildfire) on 2026-10-06);
-  every test is still R’s. For every biomarker the page stores that row
-  of tests as one answer of
-  [`Analyze_GroupDifferenceBy()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_GroupDifferenceBy.html):
-  with the p-values as R gives them, and, when `visit_adjustment` names
-  `"holm"` or `"BH"`, with R’s adjustment across the visits as well, so
-  the chart’s Adjust across visits control is answered either way. For a
-  change from one baseline visit, the baseline visit is drawn and not
-  tested.
-  [obot.roadmap#367](https://github.com/jwildfire/obot.roadmap/issues/367),
-  [\#53](https://github.com/jwildfire/gsm.bio/issues/53),
-  [\#57](https://github.com/jwildfire/gsm.bio/pull/57)
-- **One visit, a click away, as the widget drew it before.** A visit’s
-  name under the picture opens that visit alone: boxes, violins or
-  points, with a second grouping, panels and pairwise comparisons, and
-  R’s test under each panel. The page still stores each visit’s own test
-  for every biomarker, so a saved page shows all three levels with no R
-  and no network. A view that was not computed, such as another test,
-  another group or the adjustment the settings did not name, says that
-  its statistics are unavailable; the page never shows one view’s
-  numbers under another. A call that names a biomarker and no visit
-  opened on a panel for every visit in v0.2.0. It now opens on the
-  picture over time, and `visits` names the visits to open as panels.
-  [obot.roadmap#367](https://github.com/jwildfire/obot.roadmap/issues/367),
-  [\#53](https://github.com/jwildfire/gsm.bio/issues/53),
+  [\#53](https://github.com/jwildfire/gsm.bio/issues/53), PR
   [\#57](https://github.com/jwildfire/gsm.bio/pull/57)
 - **A group test at every visit, in one call.**
   [`Analyze_GroupDifferenceBy()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_GroupDifferenceBy.html)
-  runs the group test within each level of a column, such as each visit
-  of one biomarker, and returns one row per level: R’s p-value for that
-  level, the same p-value adjusted across the levels by
-  [`p.adjust()`](https://rdrr.io/r/stats/p.adjust.html) when a method is
-  named (none by default), the counts, and for two groups the difference
-  in means. It takes the results table long, one row per participant,
-  biomarker and visit, so nothing is reshaped first. A level with a
-  group below the minimum size, or with values that do not vary, has its
-  reason in place of its numbers and is left out of the adjustment. Each
-  row is the single function’s own answer on that level’s rows for the
-  same groups, so the numbers agree with the single-visit view wherever
-  every group has someone at the visit. The groups are the same at every
-  level, so one case differs: with three or more groups and a visit
-  where one of them has nobody, that visit’s row is not computed and
-  gives the reason, while the same visit asked alone tests the groups
-  that are there.
-  [bio.viz#114](https://github.com/jwildfire/bio.viz/issues/114) holds
-  the chart’s side of it.
+  runs the group test within each level of a column and returns a row
+  per level, with R’s p-value and, when a method is named, the same
+  p-value adjusted across the levels by
+  [`p.adjust()`](https://rdrr.io/r/stats/p.adjust.html). The same groups
+  are tested at every level, so a level where one of three groups has
+  nobody is not computed.
   [obot.roadmap#367](https://github.com/jwildfire/obot.roadmap/issues/367),
-  [\#52](https://github.com/jwildfire/gsm.bio/issues/52),
+  [\#52](https://github.com/jwildfire/gsm.bio/issues/52), PR
   [\#54](https://github.com/jwildfire/gsm.bio/pull/54)
 - **A grid of differences, in one call.**
   [`Analyze_DifferenceGrid()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_DifferenceGrid.html)
-  returns the screen’s standardised difference between two groups for
-  every biomarker at every level, one row per cell, with its interval
-  and no p-value, from the same long table. A cell that cannot be
-  computed has its reason in place of its numbers. Every released
-  function answers as it did.
-  [obot.roadmap#367](https://github.com/jwildfire/obot.roadmap/issues/367),
-  [\#52](https://github.com/jwildfire/gsm.bio/issues/52),
-  [\#54](https://github.com/jwildfire/gsm.bio/pull/54)
+  returns the standardised difference between two groups for every
+  biomarker at every level, with its interval and no p-value. Nothing
+  draws it yet. [\#52](https://github.com/jwildfire/gsm.bio/issues/52),
+  PR [\#54](https://github.com/jwildfire/gsm.bio/pull/54)
 - **Unscheduled visits are left out, by one rule everywhere.** The
-  widget leaves unscheduled visits out at every level unless
-  `unscheduled_visits = TRUE`: they are not on a tile, not a visit of
-  the picture over time, not a panel, and not the baseline a change is
-  measured from.
+  widget,
   [`Visualize_GroupComparison()`](https://jwildfire.github.io/gsm.bio/reference/Visualize_GroupComparison.html)
   and
   [`Table_GroupComparison()`](https://jwildfire.github.io/gsm.bio/reference/Table_GroupComparison.html)
-  leave them out as the chart does. A visit is unscheduled when
-  `unscheduled_visit_values` names it; with no list, it is one whose
-  name holds “unscheduled” or “early termination”, or matches the
-  pattern `unscheduled_visit_pattern` gives. These are safety.viz’s
-  setting names. R and the page find the same visits, because the widget
-  hands the page the visits R found; a pattern R cannot read the way a
-  browser does is refused, with a sentence that says to name the visits
-  instead. A study with such visits therefore draws fewer visits than it
-  did in v0.2.0.
-  [obot.roadmap#367](https://github.com/jwildfire/obot.roadmap/issues/367),
-  [\#53](https://github.com/jwildfire/gsm.bio/issues/53),
+  leave them out as the chart does, unless `unscheduled_visits = TRUE`.
+  [\#53](https://github.com/jwildfire/gsm.bio/issues/53), PR
   [\#57](https://github.com/jwildfire/gsm.bio/pull/57)
 - **Fisher’s exact test runs on tables with small margins.**
   [`Analyze_Contingency()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_Contingency.html)
-  no longer applies the minimum group size to Fisher’s exact test, which
-  is exact at any count: a table with a row or a column of fewer than
-  five participants now returns
+  no longer applies the minimum group size to Fisher’s exact test, so a
+  table with a row or a column of fewer than five returns
   [`fisher.test()`](https://rdrr.io/r/stats/fisher.test.html)’s p-value
-  where it returned no test, and a note in the result names the row or
-  column below the minimum. The chi-square test keeps the minimum and is
-  still not computed on such a table. So the cross-tabulation widget
-  stores Fisher’s answer for a small table, and
-  [`Table_CrossTab()`](https://jwildfire.github.io/gsm.bio/reference/Table_CrossTab.md)
-  and
-  [`Visualize_CrossTab()`](https://jwildfire.github.io/gsm.bio/reference/Visualize_CrossTab.md)
-  print it. `nMinGroup` now applies to `"chisq"` only. Fisher’s test
-  still needs two or more rows and two or more columns with someone in
-  each, and it is still not computed for larger tables, as Not in this
-  release says below. bio.viz v0.3.0 carries the same change in its copy
-  of gsm.bio’s statistics file, so a chart with R in the browser answers
-  as the widget does. Decided by
-  [@jwildfire](https://github.com/jwildfire) on 2026-10-04.
+  where it returned no test. The chi-square test keeps the minimum.
   [obot.roadmap#353](https://github.com/jwildfire/obot.roadmap/issues/353),
-  [\#46](https://github.com/jwildfire/gsm.bio/issues/46),
-  [\#55](https://github.com/jwildfire/gsm.bio/pull/55),
-  [bio.viz#104](https://github.com/jwildfire/bio.viz/issues/104)
+  [\#46](https://github.com/jwildfire/gsm.bio/issues/46), PR
+  [\#55](https://github.com/jwildfire/gsm.bio/pull/55)
 
 ### Also in this release
 
-- **A saved page is opened in a browser by the tests.** The suite now
-  saves a group comparison widget, opens the file in a headless Chrome
-  with the network switched off, and walks the three levels as a reader
-  does. Every request the chart makes on the way has to be answered by
-  the result the page stores under its key, and the page has to ask for
-  nothing over the network. The same test holds R’s reading of an
-  unscheduled-visit pattern to the browser’s, name by name. The browser
-  is driven with the chromote package, which is suggested, not imported.
-  [\#53](https://github.com/jwildfire/gsm.bio/issues/53),
-  [\#57](https://github.com/jwildfire/gsm.bio/pull/57)
-- **The widgets carry bio.viz v0.3.0,** with the specification schema
-  the batch runner reads. They are copied from bio.viz `dev` at
+- **The widgets carry bio.viz v0.3.0,** copied from bio.viz at
   [a303f6b](https://github.com/jwildfire/bio.viz/commit/a303f6b06ce30f74ad61b74a46c3ec19bd044197),
-  a release build: every chart’s footnote reads “bio.viz 0.3.0”. The two
-  packages are released together, so the copy was made before bio.viz’s
-  v0.3.0 tag. From the day that tag exists the suite holds every copied
-  file to it, byte for byte. safety.viz stays at v1.9.0.
-  [\#59](https://github.com/jwildfire/gsm.bio/issues/59),
+  the commit its
+  [v0.3.0](https://github.com/jwildfire/bio.viz/releases/tag/v0.3.0) was
+  released from; the suite holds every copied file to that tag.
+  [\#59](https://github.com/jwildfire/gsm.bio/issues/59), PR
   [\#60](https://github.com/jwildfire/gsm.bio/pull/60)
-
-### Not in this release
-
-- **The difference grid in the widget.**
-  [`Analyze_DifferenceGrid()`](https://jwildfire.github.io/gsm.bio/reference/Analyze_DifferenceGrid.html)
-  ships, and nothing draws it yet. The chart’s grid of each biomarker’s
-  difference at each visit, a second opening view beside the trend
-  tiles, is paused and has moved to a requirement of its own, and the
-  widget’s grid with it. The widget has one opening view, the trend
-  tiles.
-  [obot.roadmap#371](https://github.com/jwildfire/obot.roadmap/issues/371)
-- **Fisher’s exact test for larger tables.** Fisher’s exact test is not
-  computed for larger tables: four categories by four with 200
-  participants can be enough, and so can three by three with 1,000. It
-  depends on how evenly the categories are filled: a table spread evenly
-  stops at those sizes, and one with most participants in a single
-  category can still be computed.
-  [`fisher.test()`](https://rdrr.io/r/stats/fisher.test.html) stops on
-  the size of its workspace, so the result has no p-value and carries
-  R’s own message about the workspace as its reason. This is not new in
-  v0.3.0. The chi-square test answers such a table. What to do instead,
-  a larger workspace, a simulated p-value or a plainer sentence, is a
-  statistical choice that has not been made.
+- **The tests open a saved page in a browser,** with the network off,
+  and every request its chart makes must be answered from the page.
+  [\#53](https://github.com/jwildfire/gsm.bio/issues/53), PR
+  [\#57](https://github.com/jwildfire/gsm.bio/pull/57)
+- **Not fixed: Fisher’s exact test on larger tables.** For a table of
+  four categories by four with 200 participants,
+  [`fisher.test()`](https://rdrr.io/r/stats/fisher.test.html) can stop
+  on its workspace limit, and the result carries R’s message and no
+  p-value. This is not new; the chi-square test answers such a table.
   [\#64](https://github.com/jwildfire/gsm.bio/issues/64)
+- **Not in this release: the widget’s difference grid,** paused with the
+  chart’s.
+  [obot.roadmap#371](https://github.com/jwildfire/obot.roadmap/issues/371)
 
 ### Tests and provenance
 
 340 tests (54,896 expectations on R 4.3.3) pass from the source tree,
-where none may skip. From there the suite needs to reach GitHub at any
-version of the package: on every run it asks, with git, for bio.viz’s
-tags and for gsm.bio’s, and a run that cannot ask fails. `R CMD check`
-runs the tests too, skipping the 15 that read the repository’s own
-files, open a browser or ask GitHub for a tag. Every statistic a widget
-stores, a figure prints or a table holds is held to the `Analyze_*()`
-function on rows the test works out from the study’s tables, and the row
-of tests under one biomarker over time is held to bio.viz’s own fixtures
-of what desktop R answered. The saved group comparison page is opened in
-a headless browser with no network, and every request its chart makes is
-answered from the page. The batch runner’s reader is held to bio.viz’s
-own reader, run in node on the same specifications: the format’s rules
-case by case, and every setting of every chart given each of 21 values
-(4,746 specifications). The rules R shares with the charts are held to
-frames, requests and filter states written by the vendored bundles:
+which needs to reach GitHub; `R CMD check` skips 15 of them. Every
+statistic a widget stores, a figure prints or a table holds is held to
+its `Analyze_*()` function, and the tests under one biomarker over time
+to bio.viz’s fixtures of what desktop R answered. The bundles are
 bio.viz `dev` at
-[a303f6b](https://github.com/jwildfire/bio.viz/commit/a303f6b06ce30f74ad61b74a46c3ec19bd044197),
-and through it safety.viz `dev` at
+[a303f6b](https://github.com/jwildfire/bio.viz/commit/a303f6b06ce30f74ad61b74a46c3ec19bd044197)
+and safety.viz `dev` at
 [096cc26](https://github.com/jwildfire/safety.viz/commit/096cc26d48e5d3cd1bf03eb78249658974c7a307).
 
 ## gsm.bio v0.2.0

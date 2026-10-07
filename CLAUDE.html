@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">gsm.bio</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -83,7 +83,7 @@
 <li>
 <code>Synthetic_Truth</code> is the data generator’s own parameter list. A test of a planted effect reads the truth from it and never types the number again.</li>
 <li>
-<code>NEWS.md</code> is always current on <code>dev</code>: unreleased work goes under the <code>vX.Y.Z (Upcoming)</code> heading as it lands, one user-facing bullet per feature linking its hub requirement and PR.</li>
+<code>NEWS.md</code> is always current on <code>dev</code>: unreleased work goes under the <code>vX.Y.Z (Upcoming)</code> heading as it lands, one user-facing bullet per feature linking its hub requirement and PR. A section is short, in the shape and within the limits of obot.agent’s release-notes skill (<code>skills/release-notes/SKILL.md</code>, with its checker <code>check-notes.mjs</code>): a <code>**See it move:**</code> line to the release’s demo page, an introduction, then only the headings What’s new, Deprecated, Removed, Also in this release, and Tests and provenance. A section is at most 600 words, with at most six bullets under What’s new of at most 70 words each; a link counts as its text, and the issue and pull-request links that close a bullet are not counted. The detail goes on the release’s demo page, not in the notes. @jwildfire, 2026-10-06, on notes of 1,754 words: “Release notes are way too wordy. … see the latests safety.viz releases notes for a decent template. The details go in the demo page.” <code>tests/testthat/test-repository.R</code> holds the newest released section and the upcoming one to these limits, by <code>tests/testthat/helper-news.R</code>; the sections released before them (v0.2.0, v0.1.0) are left as they were published.</li>
 <li>One branch per task, <code>&lt;task-number&gt;-&lt;slug&gt;</code>, off <code>dev</code>; the PR body carries <code>Closes #&lt;task&gt;</code> and the definition-of-done evidence.</li>
 </ul></div>
 

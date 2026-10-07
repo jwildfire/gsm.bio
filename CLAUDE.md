@@ -166,6 +166,21 @@ runs one requirement per session
   again.
 - `NEWS.md` is always current on `dev`: unreleased work goes under the
   `vX.Y.Z (Upcoming)` heading as it lands, one user-facing bullet per
-  feature linking its hub requirement and PR.
+  feature linking its hub requirement and PR. A section is short, in the
+  shape and within the limits of obot.agent’s release-notes skill
+  (`skills/release-notes/SKILL.md`, with its checker `check-notes.mjs`):
+  a `**See it move:**` line to the release’s demo page, an introduction,
+  then only the headings What’s new, Deprecated, Removed, Also in this
+  release, and Tests and provenance. A section is at most 600 words,
+  with at most six bullets under What’s new of at most 70 words each; a
+  link counts as its text, and the issue and pull-request links that
+  close a bullet are not counted. The detail goes on the release’s demo
+  page, not in the notes. @jwildfire, 2026-10-06, on notes of 1,754
+  words: “Release notes are way too wordy. … see the latests safety.viz
+  releases notes for a decent template. The details go in the demo
+  page.” `tests/testthat/test-repository.R` holds the newest released
+  section and the upcoming one to these limits, by
+  `tests/testthat/helper-news.R`; the sections released before them
+  (v0.2.0, v0.1.0) are left as they were published.
 - One branch per task, `<task-number>-<slug>`, off `dev`; the PR body
   carries `Closes #<task>` and the definition-of-done evidence.
