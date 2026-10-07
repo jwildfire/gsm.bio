@@ -69,7 +69,7 @@ test_that("README.md gives the install lines for the newest release, or the rele
   }
 })
 
-test_that("NEWS.md opens with the v0.3.0 section, Upcoming until its tag, above the v0.2.0 and v0.1.0 releases (#1, #29, #44, #50, #59)", {
+test_that("NEWS.md opens with the upcoming v0.4.0 section, above the v0.3.0, v0.2.0 and v0.1.0 releases (#1, #29, #44, #50, #59, #69)", {
   strPath <- if (bSourceTree()) {
     testthat::test_path("..", "..", "NEWS.md")
   } else {
@@ -80,10 +80,77 @@ test_that("NEWS.md opens with the v0.3.0 section, Upcoming until its tag, above 
 
   chrHeadings <- grep("^# ", readLines(strPath, warn = FALSE), value = TRUE)
   # The release step drops "(Upcoming)" when it publishes the tag.
-  expect_true(chrHeadings[1] %in% c("# gsm.bio v0.3.0 (Upcoming)", "# gsm.bio v0.3.0"), label = chrHeadings[1])
-  expect_identical(chrHeadings[2:3], c("# gsm.bio v0.2.0", "# gsm.bio v0.1.0"))
+  expect_true(chrHeadings[1] %in% c("# gsm.bio v0.4.0 (Upcoming)", "# gsm.bio v0.4.0"), label = chrHeadings[1])
+  expect_identical(chrHeadings[2:4], c("# gsm.bio v0.3.0", "# gsm.bio v0.2.0", "# gsm.bio v0.1.0"))
   # Only the newest section is ever Upcoming.
   expect_false(any(grepl("(Upcoming)", chrHeadings[-1], fixed = TRUE)))
+})
+
+test_that("the newest release's notes in NEWS.md, and the section collecting the next release, keep the release notes' shape and length (#69)", {
+  strPath <- if (bSourceTree()) {
+    testthat::test_path("..", "..", "NEWS.md")
+  } else {
+    system.file("NEWS.md", package = "gsm.bio")
+  }
+  expect_true(nzchar(strPath) && file.exists(strPath), label = "NEWS.md exists")
+  skip_if_not(nzchar(strPath) && file.exists(strPath), "NEWS.md is missing")
+  lSections <- lNewsSections(strPath)
+  bUpcoming <- vapply(lSections, function(chrLines) grepl(" (Upcoming)", chrLines[1], fixed = TRUE), logical(1))
+
+  # The newest released section: the whole shape, and every limit.
+  iReleased <- which(!bUpcoming)[1]
+  lReleased <- lNewsCheck(lSections[[iReleased]])
+  expect_identical(lReleased$problems, character(0), label = paste0("what is wrong with the v", names(lSections)[iReleased], " notes"))
+  expect_lte(lReleased$total, lNewsLimits$section)
+  expect_gt(lReleased$total, 0)
+  # The section collecting the next release: the headings and the lengths as
+  # it grows, and the whole shape once it is the release this tree prepares.
+  for (iAt in which(bUpcoming)) {
+    bPreparing <- identical(names(lSections)[iAt], as.character(utils::packageVersion("gsm.bio")))
+    expect_identical(
+      lNewsCheck(lSections[[iAt]], bReleased = bPreparing)$problems, character(0),
+      label = paste0("what is wrong with the v", names(lSections)[iAt], " notes")
+    )
+  }
+
+  # Words are counted as a reader meets them. A link counts as its text.
+  expect_identical(nNewsWords("the [annotated demo](https://example.org/a/long/address) has it"), 5L)
+  # The issue and pull-request links that close a bullet are not counted;
+  # the same link inside a sentence is read, and so counted.
+  expect_identical(nNewsWords("**A claim.** Two more. [obot.roadmap#367](https://e.org/367), [#53](https://e.org/53), PR [#57](https://e.org/57)"), 4L)
+  expect_identical(nNewsWords("See [#64](https://e.org/64) for more."), 4L)
+  # Marks and a dash alone are not words, and code counts as it reads.
+  expect_identical(nNewsWords("**Bold**, `code_name()` \u2014 and _more_"), 4L)
+
+  # The rules can fail. A release's notes written to the template pass, and
+  # each limit refuses one thing more.
+  strWords <- function(nWords) paste(rep("word", nWords), collapse = " ")
+  chrNotes <- function(chrNew = "- **A claim.** More.", strIntro = "What the release is.", chrRest = character(0)) {
+    c(
+      "# gsm.bio v9.9.9", "", "**See it move:** the [demo](https://example.org/demo) has the detail.", "", strIntro, "",
+      "## What's new", "", chrNew, chrRest, "", "## Tests and provenance", "", "Ten tests pass."
+    )
+  }
+  Problems <- function(...) lNewsCheck(chrNotes(...))$problems
+  expect_identical(Problems(), character(0))
+  expect_identical(Problems(chrNew = paste0("- **A claim.** ", strWords(68L), " [#1](https://e.org/1)")), character(0))
+  expect_match(Problems(chrNew = paste0("- **A claim.** ", strWords(69L), " [#1](https://e.org/1)")), "^71 words, limit 70, under \"What's new\"")
+  expect_match(Problems(chrNew = rep("- **A claim.** More.", 7L)), "\"What's new\" has 7 bullets; the limit is 6.", fixed = TRUE)
+  expect_match(Problems(strIntro = strWords(81L)), "The introduction is 81 words; the limit is 80.", fixed = TRUE)
+  expect_match(Problems(chrRest = c("", "## Not in this release", "", "- **Something.** Later.")), "\"## Not in this release\" is not one of the headings", fixed = TRUE)
+  expect_match(Problems(chrRest = c("", "## Also in this release", "", paste0("- **A fix.** ", strWords(59L)))), "^61 words, limit 60, under \"Also in this release\"")
+  expect_match(Problems(chrNew = "- A claim with no bold."), "does not open with its claim in bold", fixed = TRUE)
+  chrLong <- Problems(chrNew = rep(paste0("- **A claim.** ", strWords(60L)), 6L), chrRest = c("", "## Also in this release", "", rep(paste0("- **A fix.** ", strWords(50L)), 5L)))
+  expect_match(chrLong, "^The section is [0-9]+ words; the limit is 600\\.")
+  # A release's notes open on the line to the demo page; a section still
+  # collecting work need not yet.
+  chrNoDemo <- chrNotes()[-(3:4)]
+  expect_match(lNewsCheck(chrNoDemo)$problems[1], "does not open with a \"**See it move:**\" line", fixed = TRUE)
+  expect_identical(lNewsCheck(c("# gsm.bio v9.9.9 (Upcoming)", "", "The next version."), bReleased = FALSE)$problems, character(0))
+  expect_identical(lNewsCheck(chrNoDemo[-(3:4)], bReleased = FALSE)$problems, character(0))
+  # The sections released before the limits are left as they were published,
+  # and are over them: the check finds that in real notes.
+  expect_gt(length(lNewsCheck(lSections[["0.2.0"]])$problems), 0L)
 })
 
 test_that("the R CMD check workflow has one job named R-CMD-check that fails on notes (#1)", {

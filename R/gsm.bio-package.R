@@ -37,7 +37,8 @@
 #' Version 0.3.0 is released: the statistics functions, a synthetic biomarker
 #' study with known planted effects, a widget for each of bio.viz's six charts,
 #' the group comparison at its three levels, and from R a static figure, a
-#' statistics table, RTF and batch runs of chart specifications.
+#' statistics table, RTF and batch runs of chart specifications. Version 0.4.0
+#' is in development on `dev`.
 #'
 #' @importFrom stats aov chisq.test cor.test fisher.test kruskal.test p.adjust
 #' @importFrom stats lm loess t.test wilcox.test
