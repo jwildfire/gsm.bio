@@ -97,18 +97,19 @@ test_that("the reads recorded for a session with no node are bio.viz's reader's 
 
 test_that("over every setting of every chart, given each of 21 values, gsm.bio accepts and refuses as bio.viz's reader does, but for the differences listed (#39)", {
   lCases <- lFuzzCases()
-  expect_identical(length(lCases), 4578L)
+  expect_identical(length(lCases), 4746L)
   lMine <- lFuzzMine(lCases)
   lTheirs <- lFuzzTheirs(lCases)
   bDiffers <- vapply(names(lCases), function(strCase) {
     !identical(lMine[[strCase]]$accepted, lTheirs[[strCase]]$accepted) || !identical(lMine[[strCase]]$same, lTheirs[[strCase]]$same)
   }, logical(1))
   # The differences there are, each on purpose. A chart's `statistic` (and the
-  # scatter's `fit_statistic`) names the R function the page asks; bio.viz
-  # takes any name, and gsm.bio computes only the one Analyze_*() function the
-  # chart's statistics are, so it refuses any other with a sentence.
-  chrIntended <- names(lCases)[grepl("^[a-z-]+ [|] (statistic|fit_statistic) [|] \"[^\"]+\"$", names(lCases))]
-  expect_length(chrIntended, 28L)
+  # scatter's `fit_statistic`, and the group comparison's `statistic_by_visit`)
+  # names the R function the page asks; bio.viz takes any name, and gsm.bio
+  # computes only the one Analyze_*() function the chart's statistics are, so
+  # it refuses any other with a sentence.
+  chrIntended <- names(lCases)[grepl("^[a-z-]+ [|] (statistic|fit_statistic|statistic_by_visit) [|] \"[^\"]+\"$", names(lCases))]
+  expect_length(chrIntended, 32L)
   expect_identical(names(lCases)[bDiffers], chrIntended)
   for (strCase in chrIntended) {
     expect_match(lMine[[strCase]]$refusal, "gsm.bio computes", fixed = TRUE, label = strCase)
@@ -480,7 +481,7 @@ test_that("a view whose cut names what the tables lack fails on its own row with
 
 test_that("a specification nested far past the limit is refused with gsm.bio's depth sentence, not R's stack overflow (#48)", {
   for (nDeep in c(1000L, 100000L)) {
-    strDeep <- paste0('{"format":"bio.viz specification","format_version":1,"bio_viz_version":"0.2.0","chart":"cross-tab","settings":{"title":',
+    strDeep <- paste0('{"format":"bio.viz specification","format_version":1,"bio_viz_version":"0.3.0","chart":"cross-tab","settings":{"title":',
       strrep("[", nDeep), '"x"', strrep("]", nDeep), "}}")
     expect_error(Spec_Read(strDeep), "nested more than 64 deep", fixed = TRUE, label = paste(nDeep, "deep"))
   }

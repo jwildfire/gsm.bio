@@ -30,12 +30,20 @@ A \code{data.frame} of text: \code{Visit} (and \code{Panel} with \code{panel_by}
 row is of). \code{\link[=Write_RTF]{Write_RTF()}} writes it to RTF.
 }
 \description{
-The statistics of the view the group comparison chart opens on, as a table:
-one row per panel the chart tests, with R's method, each estimate and its
-interval, the counts, the p-value and its note, written as the chart prints
-them. The numbers are \code{\link[=Analyze_GroupDifference]{Analyze_GroupDifference()}}'s on the rows the chart
-draws in each panel, as \code{\link[=Widget_GroupComparison]{Widget_GroupComparison()}} stores them; with
-\code{pairwise = TRUE} each pair of groups has a row of its own beneath its panel.
+The statistics of one biomarker's visits, as the group comparison chart
+draws them a panel each, as a table: one row per panel the chart tests, with
+R's method, each estimate and its interval, the counts, the p-value and its
+note, written as the chart prints them. The numbers are
+\code{\link[=Analyze_GroupDifference]{Analyze_GroupDifference()}}'s on the rows the chart draws in each panel, as
+\code{\link[=Widget_GroupComparison]{Widget_GroupComparison()}} stores them; with \code{pairwise = TRUE} each pair of
+groups has a row of its own beneath its panel.
+}
+\details{
+The table is of the visits as panels whichever visits are chosen. The chart
+itself draws a biomarker with every visit chosen in one picture over time;
+the test it prints under a visit there is the test of that visit's row
+here. Unscheduled visits are left out as the chart leaves them out, unless
+\code{unscheduled_visits = TRUE} (see \code{\link[=Widget_GroupComparison]{Widget_GroupComparison()}}).
 }
 \section{Display rules}{
 

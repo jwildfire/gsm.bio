@@ -195,7 +195,7 @@ test_that("every widget hands its chart which R computed the stored results, so 
   strScripts <- strWidgetScripts("Widget_CrossTab")
   expect_match(strScripts, "BioViz.r.createConnection({ results: statistics.results, computedBy: statistics.computed_by })", fixed = TRUE)
   # The copied bundle takes the record, and its footnote says it.
-  strBundle <- paste(readLines(system.file("htmlwidgets", "lib", "bio.viz-0.2.0", "bio.viz.js", package = "gsm.bio"), warn = FALSE), collapse = "\n")
+  strBundle <- paste(readLines(strBioVizBundleFile(), warn = FALSE), collapse = "\n")
   expect_match(strBundle, "computedBy", fixed = TRUE)
   expect_match(strBundle, "stored with the page", fixed = TRUE)
   # The record the page carries has the members the connection checks.
@@ -283,4 +283,74 @@ test_that("the figure and the table name the odds ratio by its rows and columns,
   # A table bigger than two by two has no odds ratio to name; minus infinity is in words too.
   expect_identical(Output_EstimateText(list(name = "odds ratio", group = NA, estimate = -Inf, lower = -Inf, upper = 2, level = 0.95)),
     "odds ratio: minus infinity, 95% confidence interval minus infinity to 2.")
+})
+
+# Twenty participants in the two-by-three table of the task (#46): arm by
+# grade, with only two at grade 3, so a column is below the minimum group size.
+lSmallMargin <- function() {
+  dfParticipants <- Synthetic_Participants[1:20, ]
+  dfParticipants$ARMX <- rep(c("A", "B"), each = 10L)
+  dfParticipants$GRADE <- c(rep(c("1", "2", "3"), times = c(6L, 3L, 1L)), rep(c("1", "2", "3"), times = c(4L, 5L, 1L)))
+  list(
+    results = Synthetic_Results[Synthetic_Results$USUBJID %in% dfParticipants$USUBJID, ],
+    participants = dfParticipants,
+    settings = list(row_by = "ARMX", col_by = "GRADE"),
+    table = table(dfParticipants$ARMX, dfParticipants$GRADE)
+  )
+}
+
+test_that("on a table with a small margin the widget stores Fisher's exact test as R computed it and the chi-square test as refused, and the saved page holds both (#46)", {
+  lCase <- lSmallMargin()
+  lBase <- stats::fisher.test(lCase$table)
+  lWidget <- Widget_CrossTab(lCase$results, lCase$participants, lSettings = lCase$settings)
+  lResults <- lWidget$x$lStatistics$results
+  expect_identical(vapply(lResults, function(lResult) lResult$args$strMethod, character(1)), c("chisq", "fisher"))
+  expect_identical(vapply(lResults, function(lResult) lResult$rows, integer(1)), c(20L, 20L))
+  # Neither request sends a minimum group size: the minimum is R's.
+  for (lResult in lResults) expect_false("nMinGroup" %in% names(lResult$args))
+  lChisq <- lResults[[1]]$value
+  expect_identical(lChisq$status, "too_small")
+  expect_identical(lChisq$reason, "Not computed: col = 3 has 2. The minimum group size is 5.")
+  expect_null(lChisq$p_value)
+  lFisher <- lResults[[2]]$value
+  expect_identical(lFisher$status, "ok")
+  expect_identical(lFisher$p_value, lBase$p.value)
+  expect_identical(round(lFisher$p_value, 3), 0.809)
+  expect_identical(lFisher$method, "Fisher's Exact Test for Count Data")
+  expect_identical(
+    lFisher$notes,
+    list("Fisher's exact test is exact at any count, so the minimum group size of 5 is not applied to it. Below it here: col = 3 has 2.")
+  )
+  # In the saved page: R's answer, member by member.
+  lTheirs <- Analyze_Contingency(
+    data.frame(row = lCase$participants$ARMX, col = lCase$participants$GRADE, stringsAsFactors = FALSE),
+    "row", "col", strMethod = "fisher", chrRowGroups = c("A", "B"), chrColGroups = c("1", "2", "3")
+  )
+  lPage <- lPagePayload(strSavedPage(lWidget))$lStatistics$results
+  expect_identical(lPage[[2]]$args$strMethod, "fisher")
+  ExpectInPage(lPage[[2]]$value, lTheirs, "Fisher's exact test of the small-margin table")
+  expect_identical(lPage[[1]]$value$status, "too_small")
+})
+
+test_that("on a table with a small margin the statistics table and the figure print Fisher's p-value, and say why the chi-square test was not computed (#46)", {
+  lCase <- lSmallMargin()
+  lBase <- stats::fisher.test(lCase$table)
+  dfFisher <- Table_CrossTab(lCase$results, lCase$participants, c(lCase$settings, list(test = "fisher")))
+  expect_identical(nrow(dfFisher), 1L)
+  expect_identical(dfFisher$Method, "Fisher's Exact Test for Count Data")
+  expect_identical(dfFisher$`p-value`, Output_P(lBase$p.value))
+  expect_identical(dfFisher$`p-value`, "p = 0.809")
+  expect_identical(dfFisher$Counts, "n = 20")
+  expect_identical(attr(dfFisher, "results")[[1]]$status, "ok")
+  dfChisq <- Table_CrossTab(lCase$results, lCase$participants, c(lCase$settings, list(test = "chisq")))
+  expect_identical(dfChisq$`p-value`, "")
+  expect_identical(dfChisq$Note, "Not computed: col = 3 has 2. The minimum group size is 5.")
+  expect_identical(attr(dfChisq, "results")[[1]]$status, "too_small")
+  skip_if_not_installed("ggplot2")
+  strCaption <- Visualize_CrossTab(lCase$results, lCase$participants, c(lCase$settings, list(test = "fisher")))$labels$caption
+  expect_match(strCaption, "Fisher's Exact Test for Count Data: p = 0.809", fixed = TRUE)
+  expect_match(
+    Visualize_CrossTab(lCase$results, lCase$participants, lCase$settings)$labels$caption,
+    "Not computed: col = 3 has 2. The minimum group size is 5.", fixed = TRUE
+  )
 })

@@ -14,12 +14,12 @@ chrDependencies <- function(strField) {
   sort(sub("\\s*\\(.*\\)$", "", chrEntries))
 }
 
-test_that("the package loads and reports its version: 0.2.0, the v0.2.0 release (#1, #18, #44)", {
+test_that("the package loads and reports its version: 0.3.0, the v0.3.0 release (#1, #18, #44, #50, #59)", {
   expect_true(isNamespaceLoaded("gsm.bio"))
   expect_identical(utils::packageDescription("gsm.bio")$Package, "gsm.bio")
   # Between releases dev carries a development version, the last release with
-  # .9000; a release sets its own version, as v0.2.0 does here.
-  expect_identical(as.character(utils::packageVersion("gsm.bio")), "0.2.0")
+  # .9000; a release sets its own version, as v0.3.0 does here.
+  expect_identical(as.character(utils::packageVersion("gsm.bio")), "0.3.0")
 })
 
 test_that("the package imports stats and survival for the statistics, htmlwidgets for the widgets, and grDevices for the RTF writer (#1, #9, #38)", {
@@ -30,21 +30,27 @@ test_that("the package imports stats and survival for the statistics, htmlwidget
   expect_identical(chrDependencies("Remotes"), character(0))
 })
 
-test_that("what only a test, a static figure or the RTF writer needs is suggested, not imported (#1, #9, #37, #38)", {
+test_that("what only a test, a static figure or the RTF writer needs is suggested, not imported (#1, #9, #37, #38, #53)", {
   # effectsize checks the standardised difference; digest, jsonlite and
-  # rmarkdown check the vendored files and read a saved page back; ggplot2
-  # draws the static figures and r2rtf writes a table to RTF, and each says so
-  # when it is not installed; svglite writes a batch run's SVG figures.
-  expect_identical(chrDependencies("Suggests"), c("digest", "effectsize", "ggplot2", "jsonlite", "r2rtf", "rmarkdown", "svglite", "testthat"))
+  # rmarkdown check the vendored files and read a saved page back; chromote
+  # opens a saved page in a headless browser, for the tests that drive the
+  # chart itself; ggplot2 draws the static figures and r2rtf writes a table to
+  # RTF, and each says so when it is not installed; svglite writes a batch
+  # run's SVG figures.
+  expect_identical(
+    chrDependencies("Suggests"),
+    c("chromote", "digest", "effectsize", "ggplot2", "jsonlite", "r2rtf", "rmarkdown", "svglite", "testthat")
+  )
   expect_identical(utils::packageDescription("gsm.bio")[["Config/testthat/edition"]], "3")
 })
 
-test_that("the package exports the seven statistics functions, the widgets, the figures and the tables, and ships the synthetic study as its only data (#1, #2, #3, #4, #9, #12, #13, #16, #18, #35, #37, #38, #39)", {
+test_that("the package exports the nine statistics functions, the widgets, the figures and the tables, and ships the synthetic study as its only data (#1, #2, #3, #4, #9, #12, #13, #16, #18, #35, #37, #38, #39, #52)", {
   expect_setequal(
     getNamespaceExports("gsm.bio"),
     c(
-      "Analyze_GroupDifference", "Analyze_Correlation", "Analyze_CorrelationMatrix", "Analyze_Fit",
-      "Analyze_Contingency", "Analyze_Survival", "Analyze_Screen", "Widget_GroupComparison",
+      "Analyze_GroupDifference", "Analyze_GroupDifferenceBy", "Analyze_Correlation", "Analyze_CorrelationMatrix",
+      "Analyze_Fit", "Analyze_Contingency", "Analyze_Survival", "Analyze_Screen", "Analyze_DifferenceGrid",
+      "Widget_GroupComparison",
       "Widget_AssociationScatter", "Widget_CorrelationMatrix", "Widget_BiomarkerScreen",
       "Widget_CrossTab", "Widget_StratifiedSurvival",
       "Visualize_GroupComparison", "Visualize_AssociationScatter", "Visualize_CorrelationMatrix",

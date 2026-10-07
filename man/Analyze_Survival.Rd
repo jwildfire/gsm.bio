@@ -123,8 +123,10 @@ Other statistics:
 \code{\link{Analyze_Contingency}()},
 \code{\link{Analyze_Correlation}()},
 \code{\link{Analyze_CorrelationMatrix}()},
+\code{\link{Analyze_DifferenceGrid}()},
 \code{\link{Analyze_Fit}()},
 \code{\link{Analyze_GroupDifference}()},
+\code{\link{Analyze_GroupDifferenceBy}()},
 \code{\link{Analyze_Screen}()}
 }
 \concept{statistics}

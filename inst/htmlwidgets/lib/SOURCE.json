@@ -3,21 +3,16 @@
   "copied_by": "data-raw/vendor-bio-viz.R",
   "repository": "https://github.com/jwildfire/bio.viz",
   "ref": "dev",
-  "commit": "35ccfd323f49b3afdf1d9b9c20eedff0fe696a3b",
+  "commit": "a303f6b06ce30f74ad61b74a46c3ec19bd044197",
   "merged_to_dev": true,
-  "release": {
-    "tag": "v0.2.0",
-    "commit": "4440a4377935b3cc7263a07cb64db760b2d4a1a5",
-    "note": "Every file copied is byte for byte the same at bio.viz's release tag v0.2.0."
-  },
   "files": [
     {
-      "file": "bio.viz-0.2.0/bio.viz.js",
-      "source": "dist/bio.viz-0.2.0/bio.viz.js",
+      "file": "bio.viz-0.3.0/bio.viz.js",
+      "source": "dist/bio.viz-0.3.0/bio.viz.js",
       "library": "bio.viz",
-      "version": "0.2.0",
-      "sha256": "bc97967003012133b0e87a8f4d956286f88b6be92e5df0da67f3c6c233052bfa",
-      "bytes": 514047
+      "version": "0.3.0",
+      "sha256": "bddc0d0eb3cd8dca74ab9eae4c99e3cd516252d1f752bebb03adbfb1c73560c9",
+      "bytes": 582431
     },
     {
       "file": "safety.viz-1.9.0/safety.viz.js",

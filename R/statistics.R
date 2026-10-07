@@ -21,14 +21,16 @@ local({
 #'
 #' Every `Analyze_*` function returns the same plain named list, whatever it
 #' computed and whether or not it could compute it. A chart hands over a table
-#' with one row per participant and receives this back.
+#' with one row per participant and receives this back. The two functions that
+#' answer by level take one row per participant and level:
+#' [Analyze_GroupDifferenceBy()] and [Analyze_DifferenceGrid()].
 #'
 #' @section Members:
 #' Always all of these, always in this order, all in lower snake case.
 #'
 #' | Member | Holds |
 #' |---|---|
-#' | `status` | `"ok"`; `"too_small"` when a group is below the minimum size; `"error"` when R stopped or the request could not be met. |
+#' | `status` | `"ok"`; `"too_small"` when a group is below the minimum size, or a table has too few categories with anyone in them for Fisher's exact test; `"error"` when R stopped or the request could not be met. |
 #' | `reason` | Why there are no numbers, as text. `NA` when `status` is `"ok"`. For `"error"` it is R's own message where R raised one. |
 #' | `test` | The method asked for, as the caller named it, for example `"wilcoxon"`. |
 #' | `method` | The method's name as R reports it, for example `"Welch Two Sample t-test"`. |
@@ -40,7 +42,7 @@ local({
 #' | `dropped` | A data frame of `reason` and `n`: the rows left out and why. No rows when nothing was dropped. |
 #' | `warnings` | An unnamed list of the warnings R raised inside the wrapped call, as text. They are captured here and never printed. |
 #' | `notes` | An unnamed list of remarks of the package's own, as text. |
-#' | `rows` | A data frame for a function's many-row results: pairwise comparisons, per-group correlations, the pairs of a matrix, the points of a fitted line, the cells of a table, the groups of a survival comparison, the biomarkers of a screen. Its columns are given on each function's page. No rows when there are none. |
+#' | `rows` | A data frame for a function's many-row results: pairwise comparisons, the levels a group test was run at, per-group correlations, the pairs of a matrix, the points of a fitted line, the cells of a table, the groups of a survival comparison, the biomarkers of a screen, the cells of a grid of differences. Its columns are given on each function's page. No rows when there are none. |
 #'
 #' When `status` is not `"ok"`, `reason` says why and the numbers are withheld:
 #' `p_value` is `NA` and `estimates` and `statistic` have no rows. `counts` and
@@ -110,6 +112,9 @@ local({
 #' returns its interval with a little to spare, and it is the conventional
 #' floor for an expected count in a chi-squared test.
 #'
+#' Fisher's exact test is the one exception: it is exact at any count, so
+#' [Analyze_Contingency()] does not apply the minimum to it. See there.
+#'
 #' @section One definition:
 #' The functions are defined once, in the file
 #' `system.file("statistics", "statistics.R", package = "gsm.bio")`. The
@@ -119,9 +124,10 @@ local({
 #'
 #' @name StatisticsResult
 #' @aliases statistics-result
-#' @seealso [Analyze_GroupDifference()], [Analyze_Correlation()],
-#'   [Analyze_CorrelationMatrix()], [Analyze_Fit()], [Analyze_Contingency()],
-#'   [Analyze_Survival()], [Analyze_Screen()]
+#' @seealso [Analyze_GroupDifference()], [Analyze_GroupDifferenceBy()],
+#'   [Analyze_Correlation()], [Analyze_CorrelationMatrix()], [Analyze_Fit()],
+#'   [Analyze_Contingency()], [Analyze_Survival()], [Analyze_Screen()],
+#'   [Analyze_DifferenceGrid()]
 NULL
 
 #' Compare a numeric variable between groups
@@ -200,6 +206,109 @@ NULL
 #' @family statistics
 #' @export
 Analyze_GroupDifference <- Analyze_GroupDifference
+
+#' Compare a numeric variable between groups at each level of a column
+#'
+#' Runs the group test of [Analyze_GroupDifference()] within each level of one
+#' more column, a visit say, in one call, and returns one row per level: the
+#' test's p-value, that p-value adjusted across the levels, the counts, and
+#' for two groups the difference in means with its interval.
+#'
+#' The data are long: one row per participant and level, as a results table
+#' holds one biomarker across its visits. Each row of the answer is
+#' `Analyze_GroupDifference()`'s own answer on the rows of that level, with
+#' `bPairwise` off and the same groups named, so its unadjusted p-value is the
+#' one printed when the level is looked at alone with those groups.
+#'
+#' The groups are the same at every level: the ones named in `chrGroups`, or
+#' every group present anywhere among the levels answered. A group with nobody
+#' at a level is too small there; the level is not quietly compared without
+#' it. So with three or more groups, a level where one of them has nobody has
+#' no p-value here, while `Analyze_GroupDifference()` on that level's rows
+#' alone, with `chrGroups` left out, compares the groups that are there.
+#'
+#' The adjustment is [stats::p.adjust()] across the levels that have a
+#' p-value. A level that could not be computed, because a group is below the
+#' minimum size or its values do not vary, has its own `status` and `reason`,
+#' has no p-value, and is left out of the adjustment; `notes` says how many
+#' levels the adjustment covered, and each adjusted row carries that number as
+#' `adjusted_over`. The default is no adjustment: `p_value` is then each
+#' level's own p-value. Holm guards against any false lead among the levels;
+#' Benjamini-Hochberg controls the share of false leads among the levels picked
+#' out.
+#'
+#' The rows come back in the order of `chrBy`. R does not know the order of
+#' visits, so name them in `chrBy` to have them in theirs.
+#'
+#' @inheritParams Analyze_GroupDifference
+#' @param dfData `data.frame` One row per participant and level.
+#' @param strByCol `character` Name of the column holding the level of each
+#'   row, such as the visit. The test is run once within each level.
+#' @param chrGroups `character` The groups to compare at every level, in
+#'   order; the difference in means is the first minus the second. Rows in any
+#'   other group are dropped and counted. Default: `NULL`, every group present
+#'   among the levels answered, in sorted order.
+#' @param chrBy `character` The levels to answer, in order. Rows at any other
+#'   level are dropped and counted. A level named here that the data do not
+#'   hold is a row with nobody in any group. Default: `NULL`, every level
+#'   present, in sorted order.
+#' @param strPAdjust `character` The adjustment across the levels, one of
+#'   [stats::p.adjust.methods]. Default: `"none"`.
+#' @param nMinGroup `numeric` The smallest group the test is computed for. A
+#'   level where any group has fewer participants with a value has `status`
+#'   `"too_small"` in its row and no numbers. Default: `nMinGroupDefault`,
+#'   which is 5. See [StatisticsResult].
+#'
+#' @return The fixed result described in [StatisticsResult]. Here `p_value` is
+#'   `NA` and `estimates` and `statistic` have no rows; `method` is the first
+#'   computed level's; `counts` is a named list of level to participants used;
+#'   `dropped` counts the rows with no level or a level not asked for, and
+#'   then, within the levels answered, the rows the test left out; and `rows`
+#'   has one row per level, with the columns:
+#'
+#' * `by`, the level.
+#' * `group_1`, `group_2` and so on, one per group, the groups compared, the
+#'   same on every row; then `n_1`, `n_2` and so on, the participants used in
+#'   each at that level. With two groups these are the columns a pairwise
+#'   comparison of [Analyze_GroupDifference()] has.
+#' * `counts` (the groups together) and `dropped` (the rows of that level the
+#'   test left out).
+#' * `estimate`, `lower`, `upper` and `level`: with two groups, the difference
+#'   in means, `group_1` minus `group_2`, and its interval, from `t.test()`
+#'   (Welch) whatever the test; `NA` with more than two.
+#' * `method` and `statistic`, as R reports them for that level.
+#' * `p_unadjusted`, `p_value` (adjusted across the levels), `adjustment` and
+#'   `adjusted_over`.
+#' * `status`, `reason` and `warning` for that level.
+#'
+#' The result's own `status` is `"ok"` when any level is, `"too_small"` when
+#' every level is too small, and `"error"` when no level could be computed for
+#' any other reason. Each row gives its own reason.
+#'
+#' @examples
+#' # IL-6 by arm at every visit, with the p-values adjusted across the visits
+#' dfIL6 <- merge(
+#'   Synthetic_Results[Synthetic_Results$TEST == "IL-6", ],
+#'   Synthetic_Participants[c("USUBJID", "ARM")]
+#' )
+#'
+#' lResult <- Analyze_GroupDifferenceBy(
+#'   dfIL6, "STRESN", "ARM", "VISIT",
+#'   chrGroups = c("Treatment", "Placebo"),
+#'   chrBy = c("Baseline", "Week 2", "Week 4", "Week 8", "Week 12"),
+#'   strPAdjust = "holm"
+#' )
+#' lResult$rows[c("by", "n_1", "n_2", "estimate", "p_unadjusted", "p_value", "adjustment")]
+#'
+#' # The same p-value as the single function on one visit's rows
+#' Analyze_GroupDifference(
+#'   dfIL6[dfIL6$VISIT == "Week 4", ], "STRESN", "ARM",
+#'   chrGroups = c("Treatment", "Placebo")
+#' )$p_value
+#'
+#' @family statistics
+#' @export
+Analyze_GroupDifferenceBy <- Analyze_GroupDifferenceBy
 
 #' Correlate two numeric variables
 #'
@@ -407,6 +516,22 @@ Analyze_Fit <- Analyze_Fit
 #' which `chisq.test()` itself warns. When any cell is flagged, `notes` says
 #' how many, and R's warning is in `warnings`.
 #'
+#' The minimum group size, `nMinGroup`, applies to `"chisq"` only. A row or a
+#' column of the table that totals fewer participants stops the chi-squared
+#' test, with `status` `"too_small"`. Fisher's exact test is exact at any
+#' count, which is what it is for, so it is exempt: it runs on any table in
+#' which two or more rows and two or more columns have at least one
+#' participant, whatever `nMinGroup` is. When a row or a column is below the
+#' minimum, `notes` says so and names it. A category nobody is in is no row
+#' and no column: where that leaves fewer than two either way, the result has
+#' `status` `"too_small"` and R's reason, where `fisher.test()` itself would
+#' return a p-value of 1.
+#'
+#' R's own limits still apply to Fisher's exact test. For a larger table, four
+#' categories by four with 200 participants say, `fisher.test()` stops on the
+#' size of its workspace: the result then has `status` `"error"`, R's message
+#' as its `reason` and no p-value. `"chisq"` answers such a table.
+#'
 #' @inheritParams Analyze_GroupDifference
 #' @param strRowCol,strColCol `character` Names of the two categorical columns:
 #'   the rows and the columns of the table.
@@ -419,9 +544,10 @@ Analyze_Fit <- Analyze_Fit
 #'   present, in sorted order.
 #' @param nConfLevel `numeric` Confidence level of the odds ratio's interval.
 #'   Default: `0.95`.
-#' @param nMinGroup `numeric` The smallest category the test is computed for.
-#'   If any row or column of the table totals fewer participants, the result
-#'   has `status` `"too_small"` and no numbers. Default: `nMinGroupDefault`,
+#' @param nMinGroup `numeric` The smallest category the chi-squared test is
+#'   computed for. If any row or column of the table totals fewer
+#'   participants, the result for `"chisq"` has `status` `"too_small"` and no
+#'   numbers. It is not applied to `"fisher"`. Default: `nMinGroupDefault`,
 #'   which is 5. See [StatisticsResult].
 #'
 #' @return The fixed result described in [StatisticsResult]. Here `counts` is
@@ -437,6 +563,15 @@ Analyze_Fit <- Analyze_Fit
 #' lResult$rows
 #'
 #' Analyze_Contingency(Synthetic_Participants, "ARM", "RESPONSE", strMethod = "fisher")$estimates
+#'
+#' # A table with a small margin: twenty participants, two of them at grade 3.
+#' # Fisher's exact test runs; the chi-squared test is not computed.
+#' dfGrades <- data.frame(
+#'   arm = rep(c("A", "B"), each = 10),
+#'   grade = c(rep(1:3, times = c(6, 3, 1)), rep(1:3, times = c(4, 5, 1)))
+#' )
+#' Analyze_Contingency(dfGrades, "arm", "grade", strMethod = "fisher")$p_value
+#' Analyze_Contingency(dfGrades, "arm", "grade")$reason
 #'
 #' @family statistics
 #' @export
@@ -642,3 +777,91 @@ Analyze_Survival <- Analyze_Survival
 #' @family statistics
 #' @export
 Analyze_Screen <- Analyze_Screen
+
+#' The standardised difference for every biomarker at every level of a column
+#'
+#' Computes the standardised difference between two groups, the estimate of
+#' [Analyze_Screen()], for every biomarker at every level of one more column,
+#' a visit say, in one call, and returns one row per biomarker and level: a
+#' grid of biomarkers by visits, in long form.
+#'
+#' The data are long: one row per participant, biomarker and level, as a
+#' results table is, with the participant's group on each row. Nothing has to
+#' be reshaped to one column per biomarker first, as `Analyze_Screen()` needs.
+#' Each row of the answer is `Analyze_Screen()`'s own difference row for that
+#' biomarker on the rows of that level, so a cell and the screen run at that
+#' level agree exactly: the same estimate and interval, the same counts, and
+#' the same reason where it is not computed.
+#'
+#' The estimate is Hedges' g with its noncentral t interval, the first group
+#' minus the second: see the section on the standardised difference in
+#' [Analyze_Screen()]. The two groups are the same in every cell, so every
+#' difference in the grid is the same way round.
+#'
+#' No p-values are returned. A grid of many estimates is for seeing where and
+#' when two groups part, and a p-value in every cell would be many unadjusted
+#' tests. To test every biomarker at one level, use [Analyze_Screen()]; to
+#' test one biomarker at every level, use [Analyze_GroupDifferenceBy()].
+#'
+#' A cell that could not be computed has its own `status` and `reason` and no
+#' numbers: `"too_small"` when a group has fewer participants with a value
+#' than `nMinGroup`, which a cell with no rows at all is too, and `"error"`
+#' with R's reason when the values do not vary. Every biomarker has a row at
+#' every level, computed or not.
+#'
+#' The rows come back with the biomarkers in the order of `chrBiomarkers` and,
+#' within each, the levels in the order of `chrBy`. R does not know the order
+#' of visits, so name them in `chrBy` to have them in theirs.
+#'
+#' @inheritParams Analyze_GroupDifferenceBy
+#' @param dfData `data.frame` One row per participant, biomarker and level.
+#' @param strValueCol `character` Name of the numeric column holding the
+#'   biomarker's value.
+#' @param strBiomarkerCol `character` Name of the column holding the biomarker
+#'   of each row.
+#' @param strByCol `character` Name of the column holding the level of each
+#'   row, such as the visit.
+#' @param chrGroups `character` The two groups, in order; the difference is the
+#'   first minus the second. Rows in any other group are dropped and counted.
+#'   Default: `NULL`, the two groups present, in sorted order.
+#' @param chrBiomarkers `character` The biomarkers to answer, in order. Rows of
+#'   any other biomarker are dropped and counted. Default: `NULL`, every
+#'   biomarker present, in sorted order.
+#' @param chrBy `character` The levels to answer, in order. Rows at any other
+#'   level are dropped and counted. Default: `NULL`, every level present among
+#'   the biomarkers answered, in sorted order.
+#' @param nMinGroup `numeric` The smallest group a cell is computed for. A cell
+#'   where either group has fewer participants with a value has `status`
+#'   `"too_small"` in its row and no numbers. Default: `nMinGroupDefault`,
+#'   which is 5. See [StatisticsResult].
+#'
+#' @return The fixed result described in [StatisticsResult]. Here `test` is
+#'   `"difference"` and `method` names the estimate; `p_value` is `NA` and
+#'   `estimates` and `statistic` have no rows; `counts` is one whole number,
+#'   the rows used across the cells; `dropped` counts the rows with no
+#'   biomarker or level, or one not asked for, and then, within the cells, the
+#'   rows with no group, another group or no value; and `rows` is the grid in
+#'   long form, one row per biomarker and level, with the columns `biomarker`,
+#'   `by` (the level), `counts`, `n_1` and `n_2` (the two groups, first and
+#'   second), `dropped`, `estimate`, `lower`, `upper`, `level`, `status`,
+#'   `reason` and `warning`. The result's own `status` is `"ok"` when any cell
+#'   is, `"too_small"` when every cell is too small, and `"error"` when no cell
+#'   could be computed for any other reason, or when the groups are not
+#'   exactly two.
+#'
+#' @examples
+#' # Every biomarker at every visit, Treatment against Placebo
+#' dfLong <- merge(Synthetic_Results, Synthetic_Participants[c("USUBJID", "ARM")])
+#'
+#' lResult <- Analyze_DifferenceGrid(
+#'   dfLong, "STRESN", "ARM", "TEST", "VISIT",
+#'   chrGroups = c("Treatment", "Placebo"),
+#'   chrBy = c("Baseline", "Week 2", "Week 4", "Week 8", "Week 12")
+#' )
+#' nrow(lResult$rows)
+#' dfIL6 <- lResult$rows[lResult$rows$biomarker == "IL-6", ]
+#' dfIL6[c("biomarker", "by", "n_1", "n_2", "estimate", "lower", "upper")]
+#'
+#' @family statistics
+#' @export
+Analyze_DifferenceGrid <- Analyze_DifferenceGrid

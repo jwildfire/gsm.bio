@@ -17,10 +17,14 @@
 #   settings only the browser reads, by the rules bio.viz's charts check them
 #   by; a refusal of a value says it in R's words, which are not always
 #   bio.viz's. Which values are accepted is the same.
-# - A chart's `statistic`, and the scatter's `fit_statistic`, name the R
-#   function the page asks. bio.viz takes any name; gsm.bio computes each
-#   chart's statistics with one Analyze_*() function, and refuses any other
-#   name with a sentence.
+# - A chart's `statistic`, the scatter's `fit_statistic` and the group
+#   comparison's `statistic_by_visit` name the R function the page asks.
+#   bio.viz takes any name; gsm.bio computes each with one Analyze_*()
+#   function, and refuses any other name with a sentence.
+# - The group comparison's `unscheduled_visit_pattern` is a regular expression
+#   a browser reads. gsm.bio reads the patterns that mean the same in R (words
+#   set side by side with |, with or without the flag i; R/core.R) and refuses
+#   any other with a sentence that says to name the visits.
 # - bio.viz's reader checks the depth of a specification given as an object
 #   and not one given as text (bio.viz#74); gsm.bio checks both.
 
@@ -294,7 +298,7 @@ Spec_Read <- function(xSpecification) {
 # list is a column's name or { value_col, label }, or a list of them; a chart a
 # row opens is an object of its settings.
 lSpecNameLists <- list(
-  "group-comparison" = c("baseline_visits", "visits", "levels", "measures"),
+  "group-comparison" = c("baseline_visits", "visits", "levels", "unscheduled_visit_values", "measures"),
   "association-scatter" = c("baseline_visits", "measures"),
   "correlation-matrix" = c("baseline_visits", "biomarkers", "visits", "measures"),
   "biomarker-screen" = c("levels", "baseline_visits", "measures"),
@@ -302,7 +306,7 @@ lSpecNameLists <- list(
   "stratified-survival" = c("baseline_visits", "measures")
 )
 lSpecEmptyNameLists <- list(
-  "group-comparison" = c("visits", "levels"),
+  "group-comparison" = c("visits", "levels", "unscheduled_visit_values"),
   "correlation-matrix" = c("biomarkers", "visits")
 )
 lSpecFieldLists <- list(
@@ -322,7 +326,7 @@ lSpecNested <- list(
   )
 )
 lSpecStatistics <- list(
-  "group-comparison" = c(statistic = strGroupComparisonStatistic),
+  "group-comparison" = c(statistic = strGroupComparisonStatistic, statistic_by_visit = strGroupComparisonByVisit),
   "association-scatter" = c(statistic = strAssociationScatterStatistic, fit_statistic = strAssociationScatterFitStatistic),
   "correlation-matrix" = c(statistic = strCorrelationMatrixStatistic),
   "biomarker-screen" = c(statistic = strBiomarkerScreenStatistic),
@@ -378,7 +382,9 @@ Spec_CheckShapes <- function(strChart, lSettings) {
     if (Has(strKey) && Spec_IsText(xValue) && !identical(xValue, chrStatistics[[strKey]])) {
       Spec_Refuse(
         "`", strKey, "` names ", xValue, ", which gsm.bio does not compute: gsm.bio computes the ", strChart,
-        " chart", Spec_Apostrophe(), "s ", if (strKey == "fit_statistic") "fit" else "statistics", " with ", chrStatistics[[strKey]],
+        " chart", Spec_Apostrophe(), "s ",
+        switch(strKey, fit_statistic = "fit", statistic_by_visit = "tests under one biomarker's visits", "statistics"),
+        " with ", chrStatistics[[strKey]],
         " only, so `", strKey, "` is \"", chrStatistics[[strKey]], "\" or null."
       )
     }

@@ -390,3 +390,29 @@ test_that("an error from R is a row that says so, and the scatter table fills {n
   ))
   expect_identical(attr(dfScatter, "title"), "200 participants")
 })
+
+test_that("the table and the figure of the group comparison leave unscheduled visits out as the chart does (#53)", {
+  dfResults <- dfWithUnscheduled()
+  lSettings <- list(start_value = "IL-6", value_type = "change", group_by = "ARM")
+  # Left out, the default: the table is the one the study gives without them,
+  # and the baseline a change is measured from is Baseline, the first visit
+  # drawn, though an unscheduled visit sorts before it.
+  dfTable <- Table_GroupComparison(dfResults, Synthetic_Participants, lSettings)
+  dfPlain <- Table_GroupComparison(Synthetic_Results, Synthetic_Participants, lSettings)
+  expect_identical(dfTable$Visit, c("Week 2", "Week 4", "Week 8", "Week 12"))
+  expect_identical(attr(dfTable, "results"), attr(dfPlain, "results"))
+  expect_identical(as.data.frame(dfTable), as.data.frame(dfPlain), ignore_attr = TRUE)
+  # Switched on: a visit like any other, in visit order.
+  dfOn <- Table_GroupComparison(dfResults, Synthetic_Participants, c(lSettings, list(unscheduled_visits = TRUE, baseline_visits = "Baseline")))
+  expect_identical(dfOn$Visit, c("Unscheduled 1", "Week 2", "Week 4", "EARLY TERMINATION", "Week 8", "Week 12"))
+  # Named in a list, the visits are those.
+  dfListed <- Table_GroupComparison(dfResults, Synthetic_Participants, c(lSettings, list(baseline_visits = "Baseline", unscheduled_visit_values = "Week 2")))
+  expect_identical(dfListed$Visit, c("Unscheduled 1", "Week 4", "EARLY TERMINATION", "Week 8", "Week 12"))
+
+  skip_if_not_installed("ggplot2")
+  ggLeftOut <- Visualize_GroupComparison(dfResults, Synthetic_Participants, lSettings)
+  ggPlain <- Visualize_GroupComparison(Synthetic_Results, Synthetic_Participants, lSettings)
+  expect_identical(levels(ggLeftOut$data$heading), levels(ggPlain$data$heading))
+  expect_identical(ggLeftOut$data, ggPlain$data)
+  expect_length(levels(ggLeftOut$data$heading), 4L)
+})

@@ -1,6 +1,6 @@
 Package: gsm.bio
 Title: Statistics and Widgets for Biomarker Charts
-Version: 0.2.0
+Version: 0.3.0
 Authors@R: c(
     person("obot", role = c("aut", "cre"), email = "obot@users.noreply.github.com")
   )
@@ -22,6 +22,7 @@ Imports:
     stats,
     survival
 Suggests:
+    chromote,
     digest,
     effectsize,
     ggplot2,

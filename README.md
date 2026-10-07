@@ -8,7 +8,7 @@ Each statistic is a thin wrapper around a function from the stats or survival pa
 
 ```r
 # install.packages("remotes")
-remotes::install_github("jwildfire/gsm.bio@v0.2.0") # the v0.2.0 release, from its tag
+remotes::install_github("jwildfire/gsm.bio@v0.3.0") # the v0.3.0 release, from its tag
 remotes::install_github("jwildfire/gsm.bio@dev")    # what is on dev, the integration branch
 ```
 
@@ -16,17 +16,19 @@ remotes::install_github("jwildfire/gsm.bio@dev")    # what is on dev, the integr
 
 ## Statistics
 
-Each function takes a data frame with one row per participant and the names of its columns, and returns the same plain list: a status, the method's name as R reports it, the estimates with their intervals, the statistic, the p-value, the participants used, what was dropped and why, and a reason in place of the numbers when a group is too small.
+Each function takes a data frame with one row per participant and the names of its columns (the two that answer by level take one row per participant and level), and returns the same plain list: a status, the method's name as R reports it, the estimates with their intervals, the statistic, the p-value, the participants used, what was dropped and why, and a reason in place of the numbers when a group is too small.
 
 | Function | Wraps |
 |---|---|
 | `Analyze_GroupDifference()` | `t.test()` (Welch), `wilcox.test()`, `aov()`, `kruskal.test()`; pairwise comparisons adjusted by `p.adjust()` |
+| `Analyze_GroupDifferenceBy()` | The same test within each level of a column, such as each visit of one biomarker, in one call: one row per level, with the p-values adjusted across the levels by `p.adjust()` when a method is named |
 | `Analyze_Correlation()` | `cor.test()`, Pearson or Spearman, overall and per group |
 | `Analyze_CorrelationMatrix()` | `cor.test()` on every pair of columns, with the pair count per cell |
 | `Analyze_Fit()` | `lm()` for a line, with the slope and intercept, their intervals from `confint()` and the confidence band from `predict()`; `loess()` for a smooth, with its band from `predict(se = TRUE)`; overall and per group, as points a chart draws as they are |
 | `Analyze_Contingency()` | `chisq.test()`, with small expected counts flagged, and `fisher.test()` |
 | `Analyze_Survival()` | `survdiff()` for the log-rank test, `survfit()` for median survival with its log-log interval, `coxph()` for the hazard ratio between two groups |
 | `Analyze_Screen()` | One row per biomarker for one comparison: a standardised difference between two groups, a correlation with one variable, or a hazard ratio for high against low; p-values adjusted across the rows by `p.adjust()` |
+| `Analyze_DifferenceGrid()` | The screen's standardised difference between two groups for every biomarker at every level of a column, such as every visit, in one call: one row per biomarker and level, from long data, with no p-value |
 
 ```r
 library(gsm.bio)
@@ -43,7 +45,7 @@ A result is the answer of the R that computed it. R's own defaults can differ be
 
 ## Widgets
 
-`Widget_GroupComparison()` draws bio.viz's group comparison chart from R: one biomarker value across the levels of a category, as boxes, violins or points, with a test of the groups under each panel.
+`Widget_GroupComparison()` draws bio.viz's group comparison chart from R: how a biomarker value differs between the levels of a category, at three levels. It opens on a trend tile for every biomarker, a tile opens one biomarker across its visits with a test of the groups under each visit, and a visit opens that visit alone, as boxes, violins or points, with a test under each panel.
 
 ```r
 library(gsm.bio)
@@ -54,9 +56,9 @@ Widget_GroupComparison(
 )
 ```
 
-It takes the results table, optionally the participant table, and the chart's settings as a list under bio.viz's own names. The chart opens on an overview of every biomarker at every visit, which prints no test; a click on a biomarker opens it alone, with a panel for each visit and a test under each. `start_value = "IL-6"` opens that biomarker straight away.
+It takes the results table, optionally the participant table, and the chart's settings as a list under bio.viz's own names. The tiles draw each group's median across the visits and print no test. `start_value = "IL-6"` opens that biomarker over time straight away, and `visits` names the visits to open as panels. Unscheduled visits are left out at every level unless `unscheduled_visits = TRUE`.
 
-The tests are computed in R when the widget is made, by `Analyze_GroupDifference()`, for each biomarker at each visit panel the chart draws at the widget's settings, and are stored in the page. Saved with `htmlwidgets::saveWidget()`, the page is one file that shows them with no R and no network, and says under the chart which R version and gsm.bio version computed them. A view that was not computed, such as another test or a filter, says that statistics are unavailable for it; it never shows another view's numbers.
+The tests are computed in R when the widget is made and are stored in the page: for each biomarker, `Analyze_GroupDifferenceBy()`'s test under every visit of its picture over time, with the p-values as R gives them and under the adjustment `visit_adjustment` names when it names one, and `Analyze_GroupDifference()`'s test for each visit alone. Saved with `htmlwidgets::saveWidget()`, the page is one file that shows them with no R and no network, and says under the chart which R version and gsm.bio version computed them. A view that was not computed, such as another test or a filter, says that statistics are unavailable for it; it never shows another view's numbers.
 
 `Widget_AssociationScatter()` draws bio.viz's association scatter the same way: one point per participant with a variable on each axis, a correlation coefficient under each panel and, when asked for, a fitted line.
 
@@ -133,7 +135,7 @@ Widget_StratifiedSurvival(
 
 It stores `Analyze_Survival()`'s answer for the curves the settings open on. A cut's groups are handed to R high to low, so the hazard ratio is the higher group's hazard over the lower's.
 
-Every widget carries two JavaScript bundles, both copied from bio.viz with the commit and a checksum per file recorded in `inst/htmlwidgets/lib/SOURCE.json`: bio.viz v0.2.0, and safety.viz v1.9.0, the first safety.viz with the kit bio.viz's charts are built from. The safety.viz copy is the one bio.viz takes from safety.viz's `dev` branch at its v1.9.0 release preparation, and its commit is recorded too. gsm.safety carries an earlier safety.viz without the kit; once it carries v1.9.0, the widgets can take the bundle from there instead of carrying their own copy.
+Every widget carries two JavaScript bundles, both copied from bio.viz with the commit and a checksum per file recorded in `inst/htmlwidgets/lib/SOURCE.json`: bio.viz, as its `dev` branch stands at the recorded commit, and safety.viz v1.9.0, the first safety.viz with the kit bio.viz's charts are built from. When the copy of bio.viz is byte for byte one of its releases the record names the release. The safety.viz copy is the one bio.viz takes from safety.viz's `dev` branch at its v1.9.0 release preparation, and its commit is recorded too. gsm.safety carries an earlier safety.viz without the kit; once it carries v1.9.0, the widgets can take the bundle from there instead of carrying their own copy.
 
 ## Figures
 
@@ -205,7 +207,7 @@ The package ships a made-up biomarker study, so that a test can assert an answer
 
 ## Status
 
-Version 0.2.0 is the second release. It adds widgets for the cross-tabulation and the stratified survival chart, and hazard ratios in the biomarker screen. It also adds output from R: a static figure and a statistics table for every chart, the table written to RTF, and batch runs of the specifications bio.viz's charts write. [Version 0.1.0](https://github.com/jwildfire/gsm.bio/releases/tag/v0.1.0) was the first: seven statistics functions, the synthetic study, and widgets for the group comparison, the association scatter, the correlation matrix and the biomarker screen. [NEWS.md](https://github.com/jwildfire/gsm.bio/blob/dev/NEWS.md) has the notes for each, and the reference site is at <https://jwildfire.github.io/gsm.bio/>.
+[Version 0.3.0](https://github.com/jwildfire/gsm.bio/releases/tag/v0.3.0) is released, the third release. It draws the group comparison at three levels, a trend tile for every biomarker, one biomarker across its visits and one visit, with R's test under each visit stored in the page. It also adds two statistics functions that answer by level in one call, and one rule for unscheduled visits in the widget, the figure and the table. [Version 0.2.0](https://github.com/jwildfire/gsm.bio/releases/tag/v0.2.0) was the second. It added widgets for the cross-tabulation and the stratified survival chart, hazard ratios in the biomarker screen, and output from R: a static figure and a statistics table for every chart, the table written to RTF, and batch runs of the specifications bio.viz's charts write. [Version 0.1.0](https://github.com/jwildfire/gsm.bio/releases/tag/v0.1.0) was the first: seven statistics functions, the synthetic study, and widgets for the group comparison, the association scatter, the correlation matrix and the biomarker screen. [NEWS.md](https://github.com/jwildfire/gsm.bio/blob/dev/NEWS.md) has the notes for each, and the reference site is at <https://jwildfire.github.io/gsm.bio/>.
 
 The design is on the obot roadmap: [bio.viz and gsm.bio](https://jwildfire.github.io/obot.roadmap/requirements/design/353_design.html).
 

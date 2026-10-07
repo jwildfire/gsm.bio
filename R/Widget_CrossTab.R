@@ -31,7 +31,10 @@
 #' participant who has a category each way, and the categories in the table's
 #' order. The widget stores R's answer for the table the settings open on, by
 #' chi-square and by Fisher's exact test, so the Test control is answered
-#' either way. A reader who moves the rows, the columns or a filter to a view
+#' either way. Where a row or a column of the table has fewer participants
+#' than R's minimum group size, the chi-square test is stored as not computed,
+#' with R's reason, and Fisher's exact test, which is exempt from the minimum,
+#' is stored as R computed it. A reader who moves the rows, the columns or a filter to a view
 #' that was not computed is told that statistics are unavailable for it; the
 #' page never shows one table's test under another.
 #'

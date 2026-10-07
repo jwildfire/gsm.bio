@@ -231,10 +231,18 @@ test_that("a numeric visit, panel, group or colour column is keyed as text, as t
   lGroup <- Make(Widget_GroupComparison, list(start_value = "IL-6", value_type = "change", group_by = "DOSE", color_by = "SEXN", panel_by = "SEXN", visits = c(4, 12)))
   expect_gt(length(lGroup), 0L)
   expect_identical(chrKeyNumbers(lGroup), character(0))
-  expect_setequal(vapply(lGroup, function(lResult) lResult$dataId$visit, character(1)), c("4", "12"))
-  expect_setequal(vapply(lGroup, function(lResult) lResult$dataId$panel, character(1)), c("1", "2"))
-  expect_identical(lGroup[[1]]$dataId$groups, list("0", "2.5"))
-  expect_identical(lGroup[[1]]$dataId$baseline_visits, list("0"))
+  # Each visit after the baseline alone, a panel per sex, and the visits over
+  # time (#53): a visit is text wherever a key names one.
+  lPanels <- Filter(function(lResult) identical(lResult$name, "Analyze_GroupDifference"), lGroup)
+  lTimes <- Filter(function(lResult) identical(lResult$name, "Analyze_GroupDifferenceBy"), lGroup)
+  expect_setequal(vapply(lPanels, function(lResult) lResult$dataId$visit, character(1)), c("2", "4", "8", "12"))
+  expect_setequal(vapply(lPanels, function(lResult) lResult$dataId$panel, character(1)), c("1", "2"))
+  expect_identical(lPanels[[1]]$dataId$groups, list("0", "2.5"))
+  expect_identical(lPanels[[1]]$dataId$baseline_visits, list("0"))
+  expect_gt(length(lTimes), 0L)
+  expect_identical(lTimes[[1]]$dataId$visits, list("2", "4", "8", "12"))
+  expect_identical(lTimes[[1]]$args$chrBy, list("2", "4", "8", "12"))
+  expect_identical(lTimes[[1]]$dataId$groups, list("0", "2.5"))
 
   lScatter <- Make(Widget_AssociationScatter, list(
     x = list(measure = "TNF-alpha", visit = "0"), y = list(measure = "IL-10", visit = "0"), color_by = "ARMN", panel_by = "SEXN"

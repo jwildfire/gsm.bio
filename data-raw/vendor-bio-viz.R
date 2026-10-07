@@ -6,8 +6,9 @@
 #   Rscript data-raw/vendor-bio-viz.R --ref <ref>   another branch, or one commit
 #
 # Run from the repository root, by hand, when bio.viz's `dev` moves. It needs
-# git, a network connection and node; the output is committed. Four things are
-# copied or written:
+# git, a network connection and node; the output is committed. It is the one
+# command of a copy: everything below is copied or written by it, and what the
+# tests record of the copied bundle is recorded again at the end.
 #
 # 1. The two bundles the widgets load, into inst/htmlwidgets/lib/, with their
 #    record, SOURCE.json, beside them and each widget's dependency file,
@@ -43,7 +44,15 @@
 #    on, which R's Chart_Filters() is held to.
 # 5. The release: when bio.viz's tag for the version copied, v<version>, holds
 #    every copied file byte for byte, the three records name it as `release`
-#    beside the commit copied from.
+#    beside the commit copied from. Between bio.viz's releases its dev branch
+#    differs from the tag, and the records name no release. Nor do they when
+#    the two packages are released together and the copy is made before
+#    bio.viz's tag: tests/testthat/test-vendored.R then holds the copy to a
+#    release build from bio.viz's dev, and to the tag from the day it exists.
+# 6. tests/testthat/fixtures/specifications/bioviz-reader.json and
+#    bioviz-fuzz.json, what the copied bundle's own specification reader makes
+#    of the tests' cases (data-raw/specifications/record-readers.R, which needs
+#    devtools): recorded for a session with no node.
 #
 # tests/testthat/test-vendored.R fails the suite when a copied file and its
 # record disagree, or when the three records name different bundles.
@@ -302,7 +311,11 @@ if (length(chrTagged) > 0L) {
   strPeeled <- grep("\\^\\{\\}$", chrTagged, value = TRUE)
   strTagCommit <- sub("\\s.*$", "", if (length(strPeeled) > 0L) strPeeled[1] else chrTagged[1])
   lCopied <- c(lBundles, list(lSchema), lFixtures)
-  bSame <- all(vapply(lCopied, function(lFile) identical(Sha256(ReadAt(lFile$source, strTagCommit)), lFile$sha256), logical(1)))
+  # A file the tag does not have is a file that differs: dev has moved on.
+  bSame <- all(vapply(lCopied, function(lFile) {
+    rawTagged <- tryCatch(suppressWarnings(ReadAt(lFile$source, strTagCommit)), error = function(e) NULL)
+    !is.null(rawTagged) && identical(Sha256(rawTagged), lFile$sha256)
+  }, logical(1)))
   if (bSame) {
     lRelease <- list(
       tag = strTag, commit = strTagCommit,
@@ -319,6 +332,13 @@ if (!is.null(lRelease)) {
     lRecord <- c(lRecord[seq_len(iAfter)], list(release = lRelease), lRecord[-seq_len(iAfter)])
     WriteJson(lRecord, strRecord)
   }
+}
+
+# ---- 6. What the copied bundle's specification reader makes of the tests' cases --
+
+iStatus <- system2(file.path(R.home("bin"), "Rscript"), file.path("data-raw", "specifications", "record-readers.R"))
+if (!identical(iStatus, 0L)) {
+  stop("data-raw/specifications/record-readers.R did not run: the bundles were copied, and the recorded reads are not theirs yet")
 }
 
 cat(sprintf(
