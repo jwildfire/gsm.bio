@@ -284,3 +284,23 @@ test_that("once bio.viz's tag for the copied version exists, every copied file i
     succeed("a development version carries bio.viz's dev, which has moved on from the tag")
   }
 })
+
+test_that("a tag question nothing answers is an error with what git said, never read as no such tag, and a tag that does not exist is no lines and no error (#67)", {
+  skip_if_not(bSourceTree(), "a tag is asked of GitHub, from the source tree only")
+  # An address nothing answers at: the name is reserved, so it resolves
+  # nowhere and git stops at once. Asked once, so the test does not wait
+  # between tries. The error carries what git said, which names the address.
+  strNowhere <- "https://nohost.invalid/jwildfire/gsm.bio.git"
+  cndError <- tryCatch(chrRemoteTag(strNowhere, "v0.1.0", nTries = 1L), error = function(cndError) cndError)
+  expect_s3_class(cndError, "error")
+  expect_false(is.character(cndError), label = "an answer where git could not ask")
+  expect_match(conditionMessage(cndError), "git ls-remote --tags did not run: ", fixed = TRUE)
+  expect_match(conditionMessage(cndError), "nohost.invalid", fixed = TRUE)
+  # A repository that answers: a tag it does not have is no lines, with no
+  # error, and a tag it has is one line, the tag's.
+  strHere <- "https://github.com/jwildfire/gsm.bio.git"
+  expect_identical(chrRemoteTag(strHere, "v0.0.0-no-such-tag"), character(0))
+  chrReleased <- chrRemoteTag(strHere, "v0.1.0")
+  expect_length(chrReleased, 1L)
+  expect_match(chrReleased, "^[0-9a-f]{40}\\trefs/tags/v0\\.1\\.0$")
+})
