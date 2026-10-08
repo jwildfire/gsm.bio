@@ -9,6 +9,10 @@ publishes from the section verbatim.
 
 The next version of gsm.bio. Its work lands on `dev` and is listed here as it does.
 
+## What's new
+
+- **The widgets run in a Shiny page, with the session answering their statistics.** Each widget has an output and a render function, and [`Serve_Statistics()`](https://jwildfire.github.io/gsm.bio/reference/Serve_Statistics.html), called once in the server function, answers whatever a chart asks: every view has its numbers, computed by the server's R and said so under the chart. The session runs the nine statistics functions and no other. [obot.roadmap#399](https://github.com/jwildfire/obot.roadmap/issues/399), [#71](https://github.com/jwildfire/gsm.bio/issues/71)
+
 # gsm.bio v0.3.0
 
 **See it move:** the [annotated v0.3.0 demo](https://jwildfire.github.io/obot.roadmap/reports/biomarker-v0.3-demo/) has captures, try-it steps and the detail behind everything below; its last section is the widget.

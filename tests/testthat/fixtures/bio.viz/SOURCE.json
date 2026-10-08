@@ -3,13 +3,8 @@
   "copied_by": "data-raw/vendor-bio-viz.R",
   "repository": "https://github.com/jwildfire/bio.viz",
   "ref": "dev",
-  "commit": "a303f6b06ce30f74ad61b74a46c3ec19bd044197",
+  "commit": "93f14b07ea5c2b8dee91b462b1c083dc0be30dad",
   "merged_to_dev": true,
-  "release": {
-    "tag": "v0.3.0",
-    "commit": "4a85d613dc7fbea1a604b34d1e057d61865747c0",
-    "note": "Every file copied is byte for byte the same at bio.viz's release tag v0.3.0."
-  },
   "files": [
     {
       "file": "group-statistics/SOURCE.json",

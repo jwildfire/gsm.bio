@@ -40,6 +40,14 @@ reference:
       - Widget_BiomarkerScreen
       - Widget_CrossTab
       - Widget_StratifiedSurvival
+  - title: Widgets in a Shiny page
+    desc: >
+      The same widgets drawn in a Shiny page, where the R session behind the
+      page answers every statistic a chart asks for, so every view a reader
+      reaches has its numbers. shiny is suggested, not imported.
+    contents:
+      - Serve_Statistics
+      - gsm.bio-shiny
   - title: Figures
     desc: >
       The same views as static ggplot2 figures, for a report or a slide, with

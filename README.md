@@ -137,6 +137,27 @@ It stores `Analyze_Survival()`'s answer for the curves the settings open on. A c
 
 Every widget carries two JavaScript bundles, both copied from bio.viz with the commit and a checksum per file recorded in `inst/htmlwidgets/lib/SOURCE.json`: bio.viz, as its `dev` branch stands at the recorded commit, and safety.viz v1.9.0, the first safety.viz with the kit bio.viz's charts are built from. When the copy of bio.viz is byte for byte one of its releases the record names the release. The safety.viz copy is the one bio.viz takes from safety.viz's `dev` branch at its v1.9.0 release preparation, and its commit is recorded too. gsm.safety carries an earlier safety.viz without the kit; once it carries v1.9.0, the widgets can take the bundle from there instead of carrying their own copy.
 
+## Widgets in a Shiny page
+
+A saved page answers only the statistics stored when it was made. In a Shiny page the R session behind it answers every one: each widget has an output and a render function, and `Serve_Statistics()`, called once in the server function, answers whatever a chart asks. A reader who changes the test, the group or a filter gets R's result for that view, and the line under the chart says it was computed on this server and by which R.
+
+```r
+library(shiny)
+library(gsm.bio)
+
+shinyApp(
+  ui = fluidPage(Widget_GroupComparisonOutput("chart")),
+  server = function(input, output, session) {
+    Serve_Statistics()
+    output$chart <- renderWidget_GroupComparison(
+      Widget_GroupComparison(Synthetic_Results, Synthetic_Participants)
+    )
+  }
+)
+```
+
+The session runs the nine `Analyze_*` functions and no other; a page that asks for any other name is told so and nothing is called. The rows a chart draws are sent with each request, and nothing is kept between requests. shiny is suggested, not imported.
+
 ## Figures
 
 Each chart also has a static figure, for a report or a slide: `Visualize_GroupComparison()`, `Visualize_AssociationScatter()`, `Visualize_CorrelationMatrix()`, `Visualize_BiomarkerScreen()`, `Visualize_CrossTab()` and `Visualize_StratifiedSurvival()`. Each takes the same tables and settings as its widget and returns a `ggplot`. The statistics printed under it come from the same `Analyze_*()` call on the same rows. ggplot2 is suggested, not imported: install it to draw figures.

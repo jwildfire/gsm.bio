@@ -79,7 +79,8 @@ test_that("every widget's dependency file loads the two recorded bundles, safety
   Versions <- function(strLibrary) {
     Filter(function(lFile) lFile$library == strLibrary, lRecord$files)[[1]]$version
   }
-  chrWidgets <- grep("^Widget_", getNamespaceExports("gsm.bio"), value = TRUE)
+  # The widgets, not the Shiny output function each has beside it (#71).
+  chrWidgets <- grep("Output$", grep("^Widget_", getNamespaceExports("gsm.bio"), value = TRUE), value = TRUE, invert = TRUE)
   expect_gt(length(chrWidgets), 1)
 
   for (strWidget in chrWidgets) {
