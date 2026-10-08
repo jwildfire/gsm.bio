@@ -190,6 +190,15 @@ lOpenPage <- function(strFile, nWidth = 1200L, nHeight = 900L, strAddress = NULL
       lBrowser$screenshot(strPicture, selector = "html", scale = 1, show = FALSE)
       invisible(strPicture)
     },
+    # Gives a file input of the page a file of this machine, as a reader who
+    # chose it would (#73).
+    Upload = function(strSelector, strUpload) {
+      nRoot <- lBrowser$DOM$getDocument()$root$nodeId
+      nInput <- lBrowser$DOM$querySelector(nRoot, strSelector)$nodeId
+      if (is.null(nInput) || nInput == 0) stop("the page has no file input ", strSelector, call. = FALSE)
+      lBrowser$DOM$setFileInputFiles(files = list(normalizePath(strUpload)), nodeId = nInput)
+      invisible(strUpload)
+    },
     Requests = function() chrRequests,
     Errors = function() chrErrors,
     Close = function() invisible(tryCatch(lBrowser$close(), error = function(cndError) NULL))
