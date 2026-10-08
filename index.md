@@ -264,6 +264,38 @@ gsm.safety carries an earlier safety.viz without the kit; once it
 carries v1.9.0, the widgets can take the bundle from there instead of
 carrying their own copy.
 
+## Widgets in a Shiny page
+
+A saved page answers only the statistics stored when it was made. In a
+Shiny page the R session behind it answers every one: each widget has an
+output and a render function, and
+[`Serve_Statistics()`](https://jwildfire.github.io/gsm.bio/reference/Serve_Statistics.md),
+called once in the server function, answers whatever a chart asks. A
+reader who changes the test, the group or a filter gets R’s result for
+that view, and the line under the chart says it was computed on this
+server and by which R.
+
+``` r
+
+library(shiny)
+library(gsm.bio)
+
+shinyApp(
+  ui = fluidPage(Widget_GroupComparisonOutput("chart")),
+  server = function(input, output, session) {
+    Serve_Statistics()
+    output$chart <- renderWidget_GroupComparison(
+      Widget_GroupComparison(Synthetic_Results, Synthetic_Participants)
+    )
+  }
+)
+```
+
+The session runs the nine `Analyze_*` functions and no other; a page
+that asks for any other name is told so and nothing is called. The rows
+a chart draws are sent with each request, and nothing is kept between
+requests. shiny is suggested, not imported.
+
 ## Figures
 
 Each chart also has a static figure, for a report or a slide:

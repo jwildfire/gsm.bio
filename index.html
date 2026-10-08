@@ -205,10 +205,29 @@
 <p>Every widget carries two JavaScript bundles, both copied from bio.viz with the commit and a checksum per file recorded in <code>inst/htmlwidgets/lib/SOURCE.json</code>: bio.viz, as its <code>dev</code> branch stands at the recorded commit, and safety.viz v1.9.0, the first safety.viz with the kit bio.viz’s charts are built from. When the copy of bio.viz is byte for byte one of its releases the record names the release. The safety.viz copy is the one bio.viz takes from safety.viz’s <code>dev</code> branch at its v1.9.0 release preparation, and its commit is recorded too. gsm.safety carries an earlier safety.viz without the kit; once it carries v1.9.0, the widgets can take the bundle from there instead of carrying their own copy.</p>
 </div>
 <div class="section level2">
+<h2 id="widgets-in-a-shiny-page">Widgets in a Shiny page<a class="anchor" aria-label="anchor" href="#widgets-in-a-shiny-page"></a>
+</h2>
+<p>A saved page answers only the statistics stored when it was made. In a Shiny page the R session behind it answers every one: each widget has an output and a render function, and <code><a href="reference/Serve_Statistics.html">Serve_Statistics()</a></code>, called once in the server function, answers whatever a chart asks. A reader who changes the test, the group or a filter gets R’s result for that view, and the line under the chart says it was computed on this server and by which R.</p>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://shiny.posit.co/" class="external-link">shiny</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/jwildfire/gsm.bio" class="external-link">gsm.bio</a></span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/pkg/shiny/man/shinyApp.html" class="external-link">shinyApp</a></span><span class="op">(</span></span>
+<span>  ui <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/pkg/shiny/man/fluidPage.html" class="external-link">fluidPage</a></span><span class="op">(</span><span class="fu"><a href="reference/gsm.bio-shiny.html">Widget_GroupComparisonOutput</a></span><span class="op">(</span><span class="st">"chart"</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>  server <span class="op">=</span> <span class="kw">function</span><span class="op">(</span><span class="va">input</span>, <span class="va">output</span>, <span class="va">session</span><span class="op">)</span> <span class="op">{</span></span>
+<span>    <span class="fu"><a href="reference/Serve_Statistics.html">Serve_Statistics</a></span><span class="op">(</span><span class="op">)</span></span>
+<span>    <span class="va">output</span><span class="op">$</span><span class="va">chart</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/gsm.bio-shiny.html">renderWidget_GroupComparison</a></span><span class="op">(</span></span>
+<span>      <span class="fu"><a href="reference/Widget_GroupComparison.html">Widget_GroupComparison</a></span><span class="op">(</span><span class="va">Synthetic_Results</span>, <span class="va">Synthetic_Participants</span><span class="op">)</span></span>
+<span>    <span class="op">)</span></span>
+<span>  <span class="op">}</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>The session runs the nine <code>Analyze_*</code> functions and no other; a page that asks for any other name is told so and nothing is called. The rows a chart draws are sent with each request, and nothing is kept between requests. shiny is suggested, not imported.</p>
+</div>
+<div class="section level2">
 <h2 id="figures">Figures<a class="anchor" aria-label="anchor" href="#figures"></a>
 </h2>
 <p>Each chart also has a static figure, for a report or a slide: <code><a href="reference/Visualize_GroupComparison.html">Visualize_GroupComparison()</a></code>, <code><a href="reference/Visualize_AssociationScatter.html">Visualize_AssociationScatter()</a></code>, <code><a href="reference/Visualize_CorrelationMatrix.html">Visualize_CorrelationMatrix()</a></code>, <code><a href="reference/Visualize_BiomarkerScreen.html">Visualize_BiomarkerScreen()</a></code>, <code><a href="reference/Visualize_CrossTab.html">Visualize_CrossTab()</a></code> and <code><a href="reference/Visualize_StratifiedSurvival.html">Visualize_StratifiedSurvival()</a></code>. Each takes the same tables and settings as its widget and returns a <code>ggplot</code>. The statistics printed under it come from the same <code>Analyze_*()</code> call on the same rows. ggplot2 is suggested, not imported: install it to draw figures.</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/Visualize_StratifiedSurvival.html">Visualize_StratifiedSurvival</a></span><span class="op">(</span></span>
 <span>  <span class="va">Synthetic_Results</span>,</span>
 <span>  <span class="va">Synthetic_Participants</span>,</span>
@@ -226,7 +245,7 @@
 <h2 id="tables">Tables<a class="anchor" aria-label="anchor" href="#tables"></a>
 </h2>
 <p>Each chart’s statistics also come as a table, for a report: <code><a href="reference/Table_GroupComparison.html">Table_GroupComparison()</a></code>, <code><a href="reference/Table_AssociationScatter.html">Table_AssociationScatter()</a></code>, <code><a href="reference/Table_CorrelationMatrix.html">Table_CorrelationMatrix()</a></code>, <code><a href="reference/Table_BiomarkerScreen.html">Table_BiomarkerScreen()</a></code>, <code><a href="reference/Table_CrossTab.html">Table_CrossTab()</a></code> and <code><a href="reference/Table_StratifiedSurvival.html">Table_StratifiedSurvival()</a></code>. Each takes the same tables and settings as its widget and returns a data frame, one row per statistic R computed for the view the chart opens on. A row gives the method, each estimate with its interval, the counts, and the p-value written by the display rules: three decimals, <code>p &lt; 0.001</code> below that, labelled exploratory with its adjustment named, and no stars. A statistic R did not compute carries R’s reason instead.</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">dfTable</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/Table_StratifiedSurvival.html">Table_StratifiedSurvival</a></span><span class="op">(</span></span>
 <span>  <span class="va">Synthetic_Results</span>,</span>
 <span>  <span class="va">Synthetic_Participants</span>,</span>
@@ -244,7 +263,7 @@
 <h2 id="batch-runs">Batch runs<a class="anchor" aria-label="anchor" href="#batch-runs"></a>
 </h2>
 <p>A bio.viz chart writes what it draws as a specification, JSON data (bio.viz’s docs/output.md, “Specifications”). <code><a href="reference/Run_Specifications.html">Run_Specifications()</a></code> reads a list of them and draws each against a dataset, as a figure by its <code>Visualize_*()</code> function and an RTF table by its <code>Table_*()</code> function and <code><a href="reference/Write_RTF.html">Write_RTF()</a></code>, into a folder, with a manifest. With <code>bAcrossBiomarkers = TRUE</code> one specification is drawn once per biomarker.</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">dfManifest</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/Run_Specifications.html">Run_Specifications</a></span><span class="op">(</span></span>
 <span>  <span class="st">"specifications.json"</span>,</span>
 <span>  <span class="va">Synthetic_Results</span>,</span>
