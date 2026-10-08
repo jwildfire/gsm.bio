@@ -7,6 +7,14 @@ as it does.
 
 ### What’s new
 
+- **The six charts are one app.**
+  [`RunApp()`](https://jwildfire.github.io/gsm.bio/reference/RunApp.html)
+  returns a Shiny app that lists the charts beside one chart drawn at a
+  time, on your own results table, with participants and outcomes when
+  you have them, or on the synthetic study. It is the last line of an
+  `app.R` on a server.
+  [obot.roadmap#399](https://github.com/jwildfire/obot.roadmap/issues/399),
+  [\#72](https://github.com/jwildfire/gsm.bio/issues/72)
 - **The widgets run in a Shiny page, with the session answering their
   statistics.** Each widget has an output and a render function, and
   [`Serve_Statistics()`](https://jwildfire.github.io/gsm.bio/reference/Serve_Statistics.html),

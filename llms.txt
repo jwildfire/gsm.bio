@@ -264,6 +264,27 @@ gsm.safety carries an earlier safety.viz without the kit; once it
 carries v1.9.0, the widgets can take the bundle from there instead of
 carrying their own copy.
 
+## The app
+
+[`RunApp()`](https://jwildfire.github.io/gsm.bio/reference/RunApp.md) is
+the six charts as one Shiny app: a list of the charts beside one chart
+drawn at a time, with every statistic computed on request by the R
+session behind the page.
+
+``` r
+
+library(gsm.bio)
+
+RunApp()                                   # the synthetic study
+RunApp(dfResults, dfParticipants)          # a study's own tables
+```
+
+It reads its tables under gsm.bio’s column names: `USUBJID`, `TEST`,
+`STRESN`, `VISIT` and `VISITNUM` in the results. Participants and
+outcomes are optional. It returns the app and starts nothing, so the
+same call is the last line of an `app.R` on a server such as Posit
+Connect.
+
 ## Widgets in a Shiny page
 
 A saved page answers only the statistics stored when it was made. In a
@@ -532,12 +553,15 @@ saved page shows them with no R and no network.
 - [`Widget_StratifiedSurvival()`](https://jwildfire.github.io/gsm.bio/reference/Widget_StratifiedSurvival.md)
   : Stratified Survival Widget
 
-## Widgets in a Shiny page
+## The app, and widgets in a Shiny page
 
-The same widgets drawn in a Shiny page, where the R session behind the
-page answers every statistic a chart asks for, so every view a reader
-reaches has its numbers. shiny is suggested, not imported.
+The six charts as one Shiny app, and the pieces it is made of: the
+widgets drawn in a Shiny page, where the R session behind the page
+answers every statistic a chart asks for, so every view a reader reaches
+has its numbers. shiny is suggested, not imported.
 
+- [`RunApp()`](https://jwildfire.github.io/gsm.bio/reference/RunApp.md)
+  : Run the six charts as one Shiny app
 - [`Serve_Statistics()`](https://jwildfire.github.io/gsm.bio/reference/Serve_Statistics.md)
   : Answer the widgets' statistics from a Shiny session
 - [`Widget_GroupComparisonOutput()`](https://jwildfire.github.io/gsm.bio/reference/gsm.bio-shiny.md)

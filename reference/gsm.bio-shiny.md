@@ -75,6 +75,7 @@ page opens sooner than a saved page is made.
 [`Serve_Statistics()`](https://jwildfire.github.io/gsm.bio/reference/Serve_Statistics.md)
 
 Other shiny:
+[`RunApp()`](https://jwildfire.github.io/gsm.bio/reference/RunApp.md),
 [`Serve_Statistics()`](https://jwildfire.github.io/gsm.bio/reference/Serve_Statistics.md)
 
 ## Examples

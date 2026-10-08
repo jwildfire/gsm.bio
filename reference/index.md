@@ -55,12 +55,15 @@ saved page shows them with no R and no network.
 - [`Widget_StratifiedSurvival()`](https://jwildfire.github.io/gsm.bio/reference/Widget_StratifiedSurvival.md)
   : Stratified Survival Widget
 
-## Widgets in a Shiny page
+## The app, and widgets in a Shiny page
 
-The same widgets drawn in a Shiny page, where the R session behind the
-page answers every statistic a chart asks for, so every view a reader
-reaches has its numbers. shiny is suggested, not imported.
+The six charts as one Shiny app, and the pieces it is made of: the
+widgets drawn in a Shiny page, where the R session behind the page
+answers every statistic a chart asks for, so every view a reader reaches
+has its numbers. shiny is suggested, not imported.
 
+- [`RunApp()`](https://jwildfire.github.io/gsm.bio/reference/RunApp.md)
+  : Run the six charts as one Shiny app
 - [`Serve_Statistics()`](https://jwildfire.github.io/gsm.bio/reference/Serve_Statistics.md)
   : Answer the widgets' statistics from a Shiny session
 - [`Widget_GroupComparisonOutput()`](https://jwildfire.github.io/gsm.bio/reference/gsm.bio-shiny.md)

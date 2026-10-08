@@ -264,6 +264,27 @@ gsm.safety carries an earlier safety.viz without the kit; once it
 carries v1.9.0, the widgets can take the bundle from there instead of
 carrying their own copy.
 
+## The app
+
+[`RunApp()`](https://jwildfire.github.io/gsm.bio/reference/RunApp.md) is
+the six charts as one Shiny app: a list of the charts beside one chart
+drawn at a time, with every statistic computed on request by the R
+session behind the page.
+
+``` r
+
+library(gsm.bio)
+
+RunApp()                                   # the synthetic study
+RunApp(dfResults, dfParticipants)          # a study's own tables
+```
+
+It reads its tables under gsm.bio’s column names: `USUBJID`, `TEST`,
+`STRESN`, `VISIT` and `VISITNUM` in the results. Participants and
+outcomes are optional. It returns the app and starts nothing, so the
+same call is the last line of an `app.R` on a server such as Posit
+Connect.
+
 ## Widgets in a Shiny page
 
 A saved page answers only the statistics stored when it was made. In a

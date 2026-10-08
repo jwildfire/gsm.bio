@@ -58,6 +58,7 @@ The `renderWidget_*()` functions in
 [gsm.bio-shiny](https://jwildfire.github.io/gsm.bio/reference/gsm.bio-shiny.md).
 
 Other shiny:
+[`RunApp()`](https://jwildfire.github.io/gsm.bio/reference/RunApp.md),
 [`gsm.bio-shiny`](https://jwildfire.github.io/gsm.bio/reference/gsm.bio-shiny.md)
 
 ## Examples
