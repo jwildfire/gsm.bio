@@ -49,12 +49,6 @@ ExpectNoNetwork <- function(lPage) {
   expect_identical(lPage$Errors(), character(0), label = "errors the page raised")
 }
 
-# The chart's own footnote, the last under it: when and by which bio.viz it was
-# drawn, and what stands behind each statistic.
-strDrawnBy <- function(lPage) {
-  lPage$Evaluate("Array.from(document.querySelectorAll('.bv-foot-line')).map((line) => line.textContent).join(' ')")
-}
-
 test_that("a saved page, opened with no network, shows the three levels and answers every request they make from its stored results (#53, #59)", {
   NeedBrowser()
   chrBiomarkers <- chrSyntheticBiomarkers()

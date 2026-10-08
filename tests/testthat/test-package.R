@@ -30,21 +30,22 @@ test_that("the package imports stats and survival for the statistics, htmlwidget
   expect_identical(chrDependencies("Remotes"), character(0))
 })
 
-test_that("what only a test, a static figure or the RTF writer needs is suggested, not imported (#1, #9, #37, #38, #53)", {
+test_that("what only a test, a static figure, the RTF writer or a Shiny page needs is suggested, not imported (#1, #9, #37, #38, #53, #71)", {
   # effectsize checks the standardised difference; digest, jsonlite and
   # rmarkdown check the vendored files and read a saved page back; chromote
   # opens a saved page in a headless browser, for the tests that drive the
   # chart itself; ggplot2 draws the static figures and r2rtf writes a table to
   # RTF, and each says so when it is not installed; svglite writes a batch
-  # run's SVG figures.
+  # run's SVG figures; shiny draws the widgets in a Shiny page, whose session
+  # answers their statistics (#71), and says so when it is not installed.
   expect_identical(
     chrDependencies("Suggests"),
-    c("chromote", "digest", "effectsize", "ggplot2", "jsonlite", "r2rtf", "rmarkdown", "svglite", "testthat")
+    c("chromote", "digest", "effectsize", "ggplot2", "jsonlite", "r2rtf", "rmarkdown", "shiny", "svglite", "testthat")
   )
   expect_identical(utils::packageDescription("gsm.bio")[["Config/testthat/edition"]], "3")
 })
 
-test_that("the package exports the nine statistics functions, the widgets, the figures and the tables, and ships the synthetic study as its only data (#1, #2, #3, #4, #9, #12, #13, #16, #18, #35, #37, #38, #39, #52)", {
+test_that("the package exports the nine statistics functions, the widgets with their Shiny output and render functions, the figures and the tables, and ships the synthetic study as its only data (#1, #2, #3, #4, #9, #12, #13, #16, #18, #35, #37, #38, #39, #52, #71)", {
   expect_setequal(
     getNamespaceExports("gsm.bio"),
     c(
@@ -53,6 +54,11 @@ test_that("the package exports the nine statistics functions, the widgets, the f
       "Widget_GroupComparison",
       "Widget_AssociationScatter", "Widget_CorrelationMatrix", "Widget_BiomarkerScreen",
       "Widget_CrossTab", "Widget_StratifiedSurvival",
+      "Widget_GroupComparisonOutput", "Widget_AssociationScatterOutput", "Widget_CorrelationMatrixOutput",
+      "Widget_BiomarkerScreenOutput", "Widget_CrossTabOutput", "Widget_StratifiedSurvivalOutput",
+      "renderWidget_GroupComparison", "renderWidget_AssociationScatter", "renderWidget_CorrelationMatrix",
+      "renderWidget_BiomarkerScreen", "renderWidget_CrossTab", "renderWidget_StratifiedSurvival",
+      "Serve_Statistics",
       "Visualize_GroupComparison", "Visualize_AssociationScatter", "Visualize_CorrelationMatrix",
       "Visualize_BiomarkerScreen", "Visualize_CrossTab", "Visualize_StratifiedSurvival",
       "Table_GroupComparison", "Table_AssociationScatter", "Table_CorrelationMatrix",
