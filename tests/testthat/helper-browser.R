@@ -274,6 +274,8 @@ lRunApp <- function(strApp, nPatience = 90) {
   strPid <- file.path(strDir, "pid")
   strScript <- file.path(strDir, "app.R")
   writeLines(c(
+    # The second session finds its packages where this one does.
+    sprintf(".libPaths(%s)", paste(deparse(.libPaths()), collapse = "")),
     sprintf("pkgload::load_all(%s, quiet = TRUE, export_all = FALSE, helpers = FALSE)", deparse(strSourceRoot())),
     sprintf("writeLines(as.character(Sys.getpid()), %s)", deparse(strPid)),
     "nPort <- httpuv::randomPort()",
