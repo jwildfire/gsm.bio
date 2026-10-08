@@ -192,7 +192,7 @@ test_that("every widget has an output function and a render function, and a widg
       Widget_GroupComparison(Synthetic_Results, Synthetic_Participants, lSettings = lSettings)
     )
     output$quoted <- renderWidget_CrossTab(
-      quote(Widget_CrossTab(Synthetic_Results, Synthetic_Participants, lSettings = list(row_by = "ARM", column_by = "RESPONSE"))),
+      quote(Widget_CrossTab(Synthetic_Results, Synthetic_Participants, lSettings = list(row_by = "ARM", col_by = "RESPONSE"))),
       quoted = TRUE
     )
   }
