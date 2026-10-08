@@ -45,7 +45,7 @@ test_that("what only a test, a static figure, the RTF writer or a Shiny page nee
   expect_identical(utils::packageDescription("gsm.bio")[["Config/testthat/edition"]], "3")
 })
 
-test_that("the package exports the nine statistics functions, the widgets with their Shiny output and render functions, the figures and the tables, and ships the synthetic study as its only data (#1, #2, #3, #4, #9, #12, #13, #16, #18, #35, #37, #38, #39, #52, #71)", {
+test_that("the package exports the nine statistics functions, the widgets with their Shiny output and render functions and the app they make, the figures and the tables, and ships the synthetic study as its only data (#1, #2, #3, #4, #9, #12, #13, #16, #18, #35, #37, #38, #39, #52, #71, #72)", {
   expect_setequal(
     getNamespaceExports("gsm.bio"),
     c(
@@ -58,7 +58,7 @@ test_that("the package exports the nine statistics functions, the widgets with t
       "Widget_BiomarkerScreenOutput", "Widget_CrossTabOutput", "Widget_StratifiedSurvivalOutput",
       "renderWidget_GroupComparison", "renderWidget_AssociationScatter", "renderWidget_CorrelationMatrix",
       "renderWidget_BiomarkerScreen", "renderWidget_CrossTab", "renderWidget_StratifiedSurvival",
-      "Serve_Statistics",
+      "Serve_Statistics", "RunApp",
       "Visualize_GroupComparison", "Visualize_AssociationScatter", "Visualize_CorrelationMatrix",
       "Visualize_BiomarkerScreen", "Visualize_CrossTab", "Visualize_StratifiedSurvival",
       "Table_GroupComparison", "Table_AssociationScatter", "Table_CorrelationMatrix",

@@ -79,6 +79,7 @@ if (requireNamespace("shiny", quietly = TRUE)) {
 \code{\link[=Serve_Statistics]{Serve_Statistics()}}
 
 Other shiny: 
+\code{\link{RunApp}()},
 \code{\link{Serve_Statistics}()}
 }
 \concept{shiny}

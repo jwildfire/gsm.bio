@@ -62,6 +62,7 @@ if (interactive() && requireNamespace("shiny", quietly = TRUE)) {
 The \verb{renderWidget_*()} functions in \link{gsm.bio-shiny}.
 
 Other shiny: 
+\code{\link{RunApp}()},
 \code{\link{gsm.bio-shiny}}
 }
 \concept{shiny}
