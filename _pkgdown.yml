@@ -40,12 +40,14 @@ reference:
       - Widget_BiomarkerScreen
       - Widget_CrossTab
       - Widget_StratifiedSurvival
-  - title: Widgets in a Shiny page
+  - title: The app, and widgets in a Shiny page
     desc: >
-      The same widgets drawn in a Shiny page, where the R session behind the
-      page answers every statistic a chart asks for, so every view a reader
+      The six charts as one Shiny app, and the pieces it is made of: the
+      widgets drawn in a Shiny page, where the R session behind the page
+      answers every statistic a chart asks for, so every view a reader
       reaches has its numbers. shiny is suggested, not imported.
     contents:
+      - RunApp
       - Serve_Statistics
       - gsm.bio-shiny
   - title: Figures

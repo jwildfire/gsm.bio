@@ -137,6 +137,19 @@ It stores `Analyze_Survival()`'s answer for the curves the settings open on. A c
 
 Every widget carries two JavaScript bundles, both copied from bio.viz with the commit and a checksum per file recorded in `inst/htmlwidgets/lib/SOURCE.json`: bio.viz, as its `dev` branch stands at the recorded commit, and safety.viz v1.9.0, the first safety.viz with the kit bio.viz's charts are built from. When the copy of bio.viz is byte for byte one of its releases the record names the release. The safety.viz copy is the one bio.viz takes from safety.viz's `dev` branch at its v1.9.0 release preparation, and its commit is recorded too. gsm.safety carries an earlier safety.viz without the kit; once it carries v1.9.0, the widgets can take the bundle from there instead of carrying their own copy.
 
+## The app
+
+`RunApp()` is the six charts as one Shiny app: a list of the charts beside one chart drawn at a time, with every statistic computed on request by the R session behind the page.
+
+```r
+library(gsm.bio)
+
+RunApp()                                   # the synthetic study
+RunApp(dfResults, dfParticipants)          # a study's own tables
+```
+
+It reads its tables under gsm.bio's column names: `USUBJID`, `TEST`, `STRESN`, `VISIT` and `VISITNUM` in the results. Participants and outcomes are optional. It returns the app and starts nothing, so the same call is the last line of an `app.R` on a server such as Posit Connect.
+
 ## Widgets in a Shiny page
 
 A saved page answers only the statistics stored when it was made. In a Shiny page the R session behind it answers every one: each widget has an output and a render function, and `Serve_Statistics()`, called once in the server function, answers whatever a chart asks. A reader who changes the test, the group or a filter gets R's result for that view, and the line under the chart says it was computed on this server and by which R.

@@ -11,6 +11,7 @@ The next version of gsm.bio. Its work lands on `dev` and is listed here as it do
 
 ## What's new
 
+- **The six charts are one app.** [`RunApp()`](https://jwildfire.github.io/gsm.bio/reference/RunApp.html) returns a Shiny app that lists the charts beside one chart drawn at a time, on your own results table, with participants and outcomes when you have them, or on the synthetic study. It is the last line of an `app.R` on a server. [obot.roadmap#399](https://github.com/jwildfire/obot.roadmap/issues/399), [#72](https://github.com/jwildfire/gsm.bio/issues/72)
 - **The widgets run in a Shiny page, with the session answering their statistics.** Each widget has an output and a render function, and [`Serve_Statistics()`](https://jwildfire.github.io/gsm.bio/reference/Serve_Statistics.html), called once in the server function, answers whatever a chart asks: every view has its numbers, computed by the server's R and said so under the chart. The session runs the nine statistics functions and no other. [obot.roadmap#399](https://github.com/jwildfire/obot.roadmap/issues/399), [#71](https://github.com/jwildfire/gsm.bio/issues/71)
 
 # gsm.bio v0.3.0
