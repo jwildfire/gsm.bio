@@ -17,12 +17,42 @@ charts from R, as widgets that carry R’s answers in the page.
 ``` r
 
 # install.packages("remotes")
-remotes::install_github("jwildfire/gsm.bio@v0.3.0") # the v0.3.0 release, from its tag
+remotes::install_github("jwildfire/gsm.bio@v0.4.0") # the v0.4.0 release, from its tag
 remotes::install_github("jwildfire/gsm.bio@dev")    # what is on dev, the integration branch
 ```
 
 [NEWS](https://github.com/jwildfire/gsm.bio/blob/dev/NEWS.md) lists what
 each release holds, and what is on `dev` for the next.
+
+## Run the app
+
+The quickest way to see your own biomarker data in the charts. You need
+R, and nothing else to set up.
+
+``` r
+
+# 1. Once: install the packages. remotes installs gsm.bio from GitHub, shiny
+#    runs the app, and haven reads .xpt and .sas7bdat files.
+install.packages(c("remotes", "shiny", "haven"))
+remotes::install_github("jwildfire/gsm.bio@v0.4.0")
+
+# 2. Each time: run the app. Your browser opens on it.
+gsm.bio::RunApp()
+```
+
+3.  The app opens on a made-up study, so you can look around first.
+    Choose a chart from the list on the left.
+4.  To load your own data, click Data, choose your results file (`.csv`,
+    `.xpt` or `.sas7bdat`), say which column is which, and press “Draw
+    the charts on these files”. The Data page shows the tables that are
+    loaded.
+5.  To stop the app, press Esc in the R console.
+
+Your file stays on your machine: the app runs in your own R session.
+[The app](#the-app), below, has the details, and the article [The app,
+and putting it on Posit
+Connect](https://jwildfire.github.io/gsm.bio/articles/app.html) says how
+to host it for other people.
 
 ## Statistics
 
@@ -483,13 +513,17 @@ is used.
 ## Status
 
 [Version
-0.3.0](https://github.com/jwildfire/gsm.bio/releases/tag/v0.3.0) is
-released, the third release. It draws the group comparison at three
-levels, a trend tile for every biomarker, one biomarker across its
-visits and one visit, with R’s test under each visit stored in the page.
-It also adds two statistics functions that answer by level in one call,
-and one rule for unscheduled visits in the widget, the figure and the
-table. [Version
+0.4.0](https://github.com/jwildfire/gsm.bio/releases/tag/v0.4.0) is
+released, the fourth release. It adds the app: the six charts as one
+Shiny app that reads a study’s own files, answers every statistic from
+the R session behind the page, and deploys to Posit Connect as one file.
+Each widget also runs in a Shiny page of your own. [Version
+0.3.0](https://github.com/jwildfire/gsm.bio/releases/tag/v0.3.0) was the
+third. It drew the group comparison at three levels, a trend tile for
+every biomarker, one biomarker across its visits and one visit, with R’s
+test under each visit stored in the page. It also added two statistics
+functions that answer by level in one call, and one rule for unscheduled
+visits in the widget, the figure and the table. [Version
 0.2.0](https://github.com/jwildfire/gsm.bio/releases/tag/v0.2.0) was the
 second. It added widgets for the cross-tabulation and the stratified
 survival chart, hazard ratios in the biomarker screen, and output from

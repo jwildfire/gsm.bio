@@ -54,11 +54,14 @@ and the functions beside it. ggplot2 is suggested, not imported.
 
 ## Status
 
-Version 0.3.0 is released: the statistics functions, a synthetic
+Version 0.4.0 is released: the statistics functions, a synthetic
 biomarker study with known planted effects, a widget for each of
-bio.viz's six charts, the group comparison at its three levels, and from
-R a static figure, a statistics table, RTF and batch runs of chart
-specifications. Version 0.4.0 is in development on `dev`.
+bio.viz's six charts, the group comparison at its three levels, from R a
+static figure, a statistics table, RTF and batch runs of chart
+specifications, and the six charts as one Shiny app,
+[`RunApp()`](https://jwildfire.github.io/gsm.bio/reference/RunApp.md),
+that reads a study's own files and answers every statistic from the R
+session behind the page.
 
 ## See also
 

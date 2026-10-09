@@ -22,7 +22,7 @@
 
     <a class="navbar-brand me-2" href="index.html">gsm.bio</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -63,9 +63,28 @@
 </h2>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># install.packages("remotes")</span></span>
-<span><span class="fu">remotes</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"jwildfire/gsm.bio@v0.3.0"</span><span class="op">)</span> <span class="co"># the v0.3.0 release, from its tag</span></span>
+<span><span class="fu">remotes</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"jwildfire/gsm.bio@v0.4.0"</span><span class="op">)</span> <span class="co"># the v0.4.0 release, from its tag</span></span>
 <span><span class="fu">remotes</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"jwildfire/gsm.bio@dev"</span><span class="op">)</span>    <span class="co"># what is on dev, the integration branch</span></span></code></pre></div>
 <p><a href="https://github.com/jwildfire/gsm.bio/blob/dev/NEWS.md" class="external-link">NEWS</a> lists what each release holds, and what is on <code>dev</code> for the next.</p>
+</div>
+<div class="section level2">
+<h2 id="run-the-app">Run the app<a class="anchor" aria-label="anchor" href="#run-the-app"></a>
+</h2>
+<p>The quickest way to see your own biomarker data in the charts. You need R, and nothing else to set up.</p>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># 1. Once: install the packages. remotes installs gsm.bio from GitHub, shiny</span></span>
+<span><span class="co">#    runs the app, and haven reads .xpt and .sas7bdat files.</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"remotes"</span>, <span class="st">"shiny"</span>, <span class="st">"haven"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu">remotes</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"jwildfire/gsm.bio@v0.4.0"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># 2. Each time: run the app. Your browser opens on it.</span></span>
+<span><span class="fu">gsm.bio</span><span class="fu">::</span><span class="fu"><a href="reference/RunApp.html">RunApp</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<ol start="3" style="list-style-type: decimal">
+<li>The app opens on a made-up study, so you can look around first. Choose a chart from the list on the left.</li>
+<li>To load your own data, click Data, choose your results file (<code>.csv</code>, <code>.xpt</code> or <code>.sas7bdat</code>), say which column is which, and press “Draw the charts on these files”. The Data page shows the tables that are loaded.</li>
+<li>To stop the app, press Esc in the R console.</li>
+</ol>
+<p>Your file stays on your machine: the app runs in your own R session. <a href="#the-app">The app</a>, below, has the details, and the article <a href="https://jwildfire.github.io/gsm.bio/articles/app.html">The app, and putting it on Posit Connect</a> says how to host it for other people.</p>
 </div>
 <div class="section level2">
 <h2 id="statistics">Statistics<a class="anchor" aria-label="anchor" href="#statistics"></a>
@@ -128,7 +147,7 @@
 </tr>
 </tbody>
 </table>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/jwildfire/gsm.bio" class="external-link">gsm.bio</a></span><span class="op">)</span></span>
 <span><span class="va">lResult</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/Analyze_Contingency.html">Analyze_Contingency</a></span><span class="op">(</span><span class="va">Synthetic_Participants</span>, <span class="st">"ARM"</span>, <span class="st">"RESPONSE"</span><span class="op">)</span></span>
 <span><span class="va">lResult</span><span class="op">$</span><span class="va">method</span></span>
@@ -141,7 +160,7 @@
 <h2 id="widgets">Widgets<a class="anchor" aria-label="anchor" href="#widgets"></a>
 </h2>
 <p><code><a href="reference/Widget_GroupComparison.html">Widget_GroupComparison()</a></code> draws bio.viz’s group comparison chart from R: how a biomarker value differs between the levels of a category, at three levels. It opens on a trend tile for every biomarker, a tile opens one biomarker across its visits with a test of the groups under each visit, and a visit opens that visit alone, as boxes, violins or points, with a test under each panel.</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/jwildfire/gsm.bio" class="external-link">gsm.bio</a></span><span class="op">)</span></span>
 <span><span class="fu"><a href="reference/Widget_GroupComparison.html">Widget_GroupComparison</a></span><span class="op">(</span></span>
 <span>  <span class="va">Synthetic_Results</span>,</span>
@@ -151,7 +170,7 @@
 <p>It takes the results table, optionally the participant table, and the chart’s settings as a list under bio.viz’s own names. The tiles draw each group’s median across the visits and print no test. <code>start_value = "IL-6"</code> opens that biomarker over time straight away, and <code>visits</code> names the visits to open as panels. Unscheduled visits are left out at every level unless <code>unscheduled_visits = TRUE</code>.</p>
 <p>The tests are computed in R when the widget is made and are stored in the page: for each biomarker, <code><a href="reference/Analyze_GroupDifferenceBy.html">Analyze_GroupDifferenceBy()</a></code>’s test under every visit of its picture over time, with the p-values as R gives them and under the adjustment <code>visit_adjustment</code> names when it names one, and <code><a href="reference/Analyze_GroupDifference.html">Analyze_GroupDifference()</a></code>’s test for each visit alone. Saved with <code><a href="https://rdrr.io/pkg/htmlwidgets/man/saveWidget.html" class="external-link">htmlwidgets::saveWidget()</a></code>, the page is one file that shows them with no R and no network, and says under the chart which R version and gsm.bio version computed them. A view that was not computed, such as another test or a filter, says that statistics are unavailable for it; it never shows another view’s numbers.</p>
 <p><code><a href="reference/Widget_AssociationScatter.html">Widget_AssociationScatter()</a></code> draws bio.viz’s association scatter the same way: one point per participant with a variable on each axis, a correlation coefficient under each panel and, when asked for, a fitted line.</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/Widget_AssociationScatter.html">Widget_AssociationScatter</a></span><span class="op">(</span></span>
 <span>  <span class="va">Synthetic_Results</span>,</span>
 <span>  <span class="va">Synthetic_Participants</span>,</span>
@@ -164,7 +183,7 @@
 <span><span class="op">)</span></span></code></pre></div>
 <p>For the pair the settings open on it stores <code><a href="reference/Analyze_Correlation.html">Analyze_Correlation()</a></code>’s answer for Pearson’s and for Spearman’s coefficient and <code><a href="reference/Analyze_Fit.html">Analyze_Fit()</a></code>’s for the linear fit and for the smooth, four results for each panel, so the Method and Fitted line controls of a saved page are answered. The fitted line is drawn from R’s stored points. Another variable, colour, filter or scale is a view that was not computed, and says so.</p>
 <p><code><a href="reference/Widget_CorrelationMatrix.html">Widget_CorrelationMatrix()</a></code> draws bio.viz’s correlation matrix: a grid over several biomarkers at one visit, or one biomarker at several visits, each pair a cell with its coefficient and its own pair count, and no p-values. A click on a cell opens that pair’s association scatter in place, with a way back.</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/Widget_CorrelationMatrix.html">Widget_CorrelationMatrix</a></span><span class="op">(</span></span>
 <span>  <span class="va">Synthetic_Results</span>,</span>
 <span>  <span class="va">Synthetic_Participants</span>,</span>
@@ -172,14 +191,14 @@
 <span><span class="op">)</span></span></code></pre></div>
 <p>It stores <code><a href="reference/Analyze_CorrelationMatrix.html">Analyze_CorrelationMatrix()</a></code>’s answer for the grid the settings open on and, for every cell, exactly what the scatter that cell opens asks of R, so a saved page opens any cell’s scatter with its coefficient, interval and p-value. On the synthetic study that is one grid and 132 scatters, one for each cell on either side of the diagonal.</p>
 <p><code><a href="reference/Widget_BiomarkerScreen.html">Widget_BiomarkerScreen()</a></code> draws bio.viz’s biomarker screen: one row per biomarker at one visit, each with its estimate and interval on one shared axis and its raw and adjusted p-values, as a standardised difference between two groups, a correlation with one variable or, given an outcomes table, a hazard ratio of high against low. A click on a row opens that biomarker’s group comparison, association scatter or survival curves in place, with a way back.</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/Widget_BiomarkerScreen.html">Widget_BiomarkerScreen</a></span><span class="op">(</span></span>
 <span>  <span class="va">Synthetic_Results</span>,</span>
 <span>  <span class="va">Synthetic_Participants</span>,</span>
 <span>  lSettings <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>visit <span class="op">=</span> <span class="st">"Week 4"</span>, value_type <span class="op">=</span> <span class="st">"change"</span>, group_by <span class="op">=</span> <span class="st">"ARM"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <p>It stores <code><a href="reference/Analyze_Screen.html">Analyze_Screen()</a></code>’s answer for the screen the settings open on and, for every row, exactly what the chart that row opens asks of R: for a difference the group comparison at the screen’s one visit, of the two groups, with Welch’s test; for a correlation the scatter with the biomarker along the bottom and the variable up the side; for a hazard ratio the survival curves of the biomarker cut where the screen cut it. On the synthetic study, Placebo against Treatment, that is one screen and twelve group comparisons. The outcomes table is <code>dfOutcomes</code>, the screen’s last argument, given by name, so every v0.1.0 call works as it did:</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/Widget_BiomarkerScreen.html">Widget_BiomarkerScreen</a></span><span class="op">(</span></span>
 <span>  <span class="va">Synthetic_Results</span>,</span>
 <span>  <span class="va">Synthetic_Participants</span>,</span>
@@ -187,7 +206,7 @@
 <span>  dfOutcomes <span class="op">=</span> <span class="va">Synthetic_Outcomes</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <p><code><a href="reference/Widget_CrossTab.html">Widget_CrossTab()</a></code> draws bio.viz’s cross-tabulation: a two-way table of counts with its totals and percentages, beside stacked bars, and R’s chi-square or Fisher’s exact test under it. A click on a count lists that cell’s participants.</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/Widget_CrossTab.html">Widget_CrossTab</a></span><span class="op">(</span></span>
 <span>  <span class="va">Synthetic_Results</span>,</span>
 <span>  <span class="va">Synthetic_Participants</span>,</span>
@@ -195,7 +214,7 @@
 <span><span class="op">)</span></span></code></pre></div>
 <p>It stores <code><a href="reference/Analyze_Contingency.html">Analyze_Contingency()</a></code>’s answer for the table the settings open on, by both tests. Either variable of the table, and the groups or the panels of <code><a href="reference/Widget_GroupComparison.html">Widget_GroupComparison()</a></code>, can be a biomarker or a number cut into groups at its median, tertiles, quartiles or typed points, by the cut rule bio.viz uses in every chart: <code><a href="https://rdrr.io/r/stats/quantile.html" class="external-link">quantile()</a></code> with its default for the points, and <code><a href="https://rdrr.io/r/base/cut.html" class="external-link">cut()</a></code> with a value on a point in the lower group.</p>
 <p><code><a href="reference/Widget_StratifiedSurvival.html">Widget_StratifiedSurvival()</a></code> draws bio.viz’s stratified survival chart: a Kaplan-Meier curve for each group on one endpoint of an outcomes table, the number at risk beneath, and R’s log-rank test, each group’s median and the hazard ratio under them. The outcomes table is read as ADaM holds time to event (<code>PARAMCD</code>, <code>PARAM</code>, <code>AVAL</code>, and <code>CNSR</code> with 1 for censored), or with an event flag the other way round. A click on a curve or a count at risk lists those participants.</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/Widget_StratifiedSurvival.html">Widget_StratifiedSurvival</a></span><span class="op">(</span></span>
 <span>  <span class="va">Synthetic_Results</span>,</span>
 <span>  <span class="va">Synthetic_Participants</span>,</span>
@@ -209,7 +228,7 @@
 <h2 id="the-app">The app<a class="anchor" aria-label="anchor" href="#the-app"></a>
 </h2>
 <p><code><a href="reference/RunApp.html">RunApp()</a></code> is the six charts as one Shiny app: a list of the charts beside one chart drawn at a time, with every statistic computed on request by the R session behind the page.</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/jwildfire/gsm.bio" class="external-link">gsm.bio</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="reference/RunApp.html">RunApp</a></span><span class="op">(</span><span class="op">)</span>                                   <span class="co"># the synthetic study</span></span>
@@ -222,7 +241,7 @@
 <h2 id="widgets-in-a-shiny-page">Widgets in a Shiny page<a class="anchor" aria-label="anchor" href="#widgets-in-a-shiny-page"></a>
 </h2>
 <p>A saved page answers only the statistics stored when it was made. In a Shiny page the R session behind it answers every one: each widget has an output and a render function, and <code><a href="reference/Serve_Statistics.html">Serve_Statistics()</a></code>, called once in the server function, answers whatever a chart asks. A reader who changes the test, the group or a filter gets R’s result for that view, and the line under the chart says it was computed on this server and by which R.</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://shiny.posit.co/" class="external-link">shiny</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/jwildfire/gsm.bio" class="external-link">gsm.bio</a></span><span class="op">)</span></span>
 <span></span>
@@ -241,7 +260,7 @@
 <h2 id="figures">Figures<a class="anchor" aria-label="anchor" href="#figures"></a>
 </h2>
 <p>Each chart also has a static figure, for a report or a slide: <code><a href="reference/Visualize_GroupComparison.html">Visualize_GroupComparison()</a></code>, <code><a href="reference/Visualize_AssociationScatter.html">Visualize_AssociationScatter()</a></code>, <code><a href="reference/Visualize_CorrelationMatrix.html">Visualize_CorrelationMatrix()</a></code>, <code><a href="reference/Visualize_BiomarkerScreen.html">Visualize_BiomarkerScreen()</a></code>, <code><a href="reference/Visualize_CrossTab.html">Visualize_CrossTab()</a></code> and <code><a href="reference/Visualize_StratifiedSurvival.html">Visualize_StratifiedSurvival()</a></code>. Each takes the same tables and settings as its widget and returns a <code>ggplot</code>. The statistics printed under it come from the same <code>Analyze_*()</code> call on the same rows. ggplot2 is suggested, not imported: install it to draw figures.</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/Visualize_StratifiedSurvival.html">Visualize_StratifiedSurvival</a></span><span class="op">(</span></span>
 <span>  <span class="va">Synthetic_Results</span>,</span>
 <span>  <span class="va">Synthetic_Participants</span>,</span>
@@ -259,7 +278,7 @@
 <h2 id="tables">Tables<a class="anchor" aria-label="anchor" href="#tables"></a>
 </h2>
 <p>Each chart’s statistics also come as a table, for a report: <code><a href="reference/Table_GroupComparison.html">Table_GroupComparison()</a></code>, <code><a href="reference/Table_AssociationScatter.html">Table_AssociationScatter()</a></code>, <code><a href="reference/Table_CorrelationMatrix.html">Table_CorrelationMatrix()</a></code>, <code><a href="reference/Table_BiomarkerScreen.html">Table_BiomarkerScreen()</a></code>, <code><a href="reference/Table_CrossTab.html">Table_CrossTab()</a></code> and <code><a href="reference/Table_StratifiedSurvival.html">Table_StratifiedSurvival()</a></code>. Each takes the same tables and settings as its widget and returns a data frame, one row per statistic R computed for the view the chart opens on. A row gives the method, each estimate with its interval, the counts, and the p-value written by the display rules: three decimals, <code>p &lt; 0.001</code> below that, labelled exploratory with its adjustment named, and no stars. A statistic R did not compute carries R’s reason instead.</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">dfTable</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/Table_StratifiedSurvival.html">Table_StratifiedSurvival</a></span><span class="op">(</span></span>
 <span>  <span class="va">Synthetic_Results</span>,</span>
 <span>  <span class="va">Synthetic_Participants</span>,</span>
@@ -277,7 +296,7 @@
 <h2 id="batch-runs">Batch runs<a class="anchor" aria-label="anchor" href="#batch-runs"></a>
 </h2>
 <p>A bio.viz chart writes what it draws as a specification, JSON data (bio.viz’s docs/output.md, “Specifications”). <code><a href="reference/Run_Specifications.html">Run_Specifications()</a></code> reads a list of them and draws each against a dataset, as a figure by its <code>Visualize_*()</code> function and an RTF table by its <code>Table_*()</code> function and <code><a href="reference/Write_RTF.html">Write_RTF()</a></code>, into a folder, with a manifest. With <code>bAcrossBiomarkers = TRUE</code> one specification is drawn once per biomarker.</p>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">dfManifest</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/Run_Specifications.html">Run_Specifications</a></span><span class="op">(</span></span>
 <span>  <span class="st">"specifications.json"</span>,</span>
 <span>  <span class="va">Synthetic_Results</span>,</span>
@@ -300,7 +319,7 @@
 <div class="section level2">
 <h2 id="status">Status<a class="anchor" aria-label="anchor" href="#status"></a>
 </h2>
-<p><a href="https://github.com/jwildfire/gsm.bio/releases/tag/v0.3.0" class="external-link">Version 0.3.0</a> is released, the third release. It draws the group comparison at three levels, a trend tile for every biomarker, one biomarker across its visits and one visit, with R’s test under each visit stored in the page. It also adds two statistics functions that answer by level in one call, and one rule for unscheduled visits in the widget, the figure and the table. <a href="https://github.com/jwildfire/gsm.bio/releases/tag/v0.2.0" class="external-link">Version 0.2.0</a> was the second. It added widgets for the cross-tabulation and the stratified survival chart, hazard ratios in the biomarker screen, and output from R: a static figure and a statistics table for every chart, the table written to RTF, and batch runs of the specifications bio.viz’s charts write. <a href="https://github.com/jwildfire/gsm.bio/releases/tag/v0.1.0" class="external-link">Version 0.1.0</a> was the first: seven statistics functions, the synthetic study, and widgets for the group comparison, the association scatter, the correlation matrix and the biomarker screen. <a href="https://github.com/jwildfire/gsm.bio/blob/dev/NEWS.md" class="external-link">NEWS.md</a> has the notes for each, and the reference site is at <a href="https://jwildfire.github.io/gsm.bio/" class="uri">https://jwildfire.github.io/gsm.bio/</a>.</p>
+<p><a href="https://github.com/jwildfire/gsm.bio/releases/tag/v0.4.0" class="external-link">Version 0.4.0</a> is released, the fourth release. It adds the app: the six charts as one Shiny app that reads a study’s own files, answers every statistic from the R session behind the page, and deploys to Posit Connect as one file. Each widget also runs in a Shiny page of your own. <a href="https://github.com/jwildfire/gsm.bio/releases/tag/v0.3.0" class="external-link">Version 0.3.0</a> was the third. It drew the group comparison at three levels, a trend tile for every biomarker, one biomarker across its visits and one visit, with R’s test under each visit stored in the page. It also added two statistics functions that answer by level in one call, and one rule for unscheduled visits in the widget, the figure and the table. <a href="https://github.com/jwildfire/gsm.bio/releases/tag/v0.2.0" class="external-link">Version 0.2.0</a> was the second. It added widgets for the cross-tabulation and the stratified survival chart, hazard ratios in the biomarker screen, and output from R: a static figure and a statistics table for every chart, the table written to RTF, and batch runs of the specifications bio.viz’s charts write. <a href="https://github.com/jwildfire/gsm.bio/releases/tag/v0.1.0" class="external-link">Version 0.1.0</a> was the first: seven statistics functions, the synthetic study, and widgets for the group comparison, the association scatter, the correlation matrix and the biomarker screen. <a href="https://github.com/jwildfire/gsm.bio/blob/dev/NEWS.md" class="external-link">NEWS.md</a> has the notes for each, and the reference site is at <a href="https://jwildfire.github.io/gsm.bio/" class="uri">https://jwildfire.github.io/gsm.bio/</a>.</p>
 <p>The design is on the obot roadmap: <a href="https://jwildfire.github.io/obot.roadmap/requirements/design/353_design.html" class="external-link">bio.viz and gsm.bio</a>.</p>
 </div>
 <div class="section level2">

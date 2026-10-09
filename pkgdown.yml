@@ -4,7 +4,7 @@ pkgdown_sha: ~
 articles:
   articles/app: app.html
   articles/gallery: gallery.html
-last_built: 2026-10-09T03:33Z
+last_built: 2026-10-09T03:47Z
 urls:
   reference: https://jwildfire.github.io/gsm.bio/reference
   article: https://jwildfire.github.io/gsm.bio/articles
