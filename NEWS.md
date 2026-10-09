@@ -23,7 +23,7 @@ gsm.bio v0.4.0 is the six charts as one Shiny app. It reads a study from your ow
 ## Also in this release
 
 - **Not tested: the app on a Posit Connect server.** No one has deployed it yet. The app is tested in a browser on one machine; the first deployment is the check on the rest. [#74](https://github.com/jwildfire/gsm.bio/issues/74)
-- **A file that would be read short is not drawn.** A `.csv` with a byte outside UTF-8, or a quote never closed, is refused, and the page says why. [#86](https://github.com/jwildfire/gsm.bio/issues/86), [#97](https://github.com/jwildfire/gsm.bio/issues/97), PRs [#91](https://github.com/jwildfire/gsm.bio/pull/91), [#104](https://github.com/jwildfire/gsm.bio/pull/104)
+- **A file that would be read short is not drawn.** A `.csv` with a byte outside UTF-8, or a quote out of place, is refused, and the page says why. [#86](https://github.com/jwildfire/gsm.bio/issues/86), [#97](https://github.com/jwildfire/gsm.bio/issues/97), PRs [#91](https://github.com/jwildfire/gsm.bio/pull/91), [#104](https://github.com/jwildfire/gsm.bio/pull/104)
 - **Not fixed: an `.xpt` file that has been cut short is read short,** with no word from haven. Check the rows the Data page counts against your own. [#90](https://github.com/jwildfire/gsm.bio/issues/90)
 - **A widget's text keeps its size in a Shiny page.** Each output function writes one rule into the page so that Shiny's default page does not shrink it. [#80](https://github.com/jwildfire/gsm.bio/issues/80), PR [#81](https://github.com/jwildfire/gsm.bio/pull/81)
 - **The widgets carry bio.viz v0.4.0,** which adds the way a chart reaches R on a server. [#79](https://github.com/jwildfire/gsm.bio/issues/79), [#93](https://github.com/jwildfire/gsm.bio/issues/93), PRs [#82](https://github.com/jwildfire/gsm.bio/pull/82), [#94](https://github.com/jwildfire/gsm.bio/pull/94)
@@ -31,7 +31,7 @@ gsm.bio v0.4.0 is the six charts as one Shiny app. It reads a study from your ow
 
 ## Tests and provenance
 
-410 tests (56,933 expectations on R 4.3.3) pass from the source tree; `R CMD check` skips 36 of them. The app is run by a second R session and driven in a headless browser, where every answer on each of the six charts is held to its `Analyze_*()` function. The bundles are bio.viz `dev` at [066bbec](https://github.com/jwildfire/bio.viz/commit/066bbec7795c5fe07aa1c16d5ab4fcecb5682d5d) and safety.viz `dev` at [096cc26](https://github.com/jwildfire/safety.viz/commit/096cc26d48e5d3cd1bf03eb78249658974c7a307).
+413 tests (61,643 expectations on R 4.3.3) pass from the source tree; `R CMD check` skips 36 of them. The app is run by a second R session and driven in a headless browser, where every answer on each of the six charts is held to its `Analyze_*()` function. The bundles are bio.viz `dev` at [066bbec](https://github.com/jwildfire/bio.viz/commit/066bbec7795c5fe07aa1c16d5ab4fcecb5682d5d) and safety.viz `dev` at [096cc26](https://github.com/jwildfire/safety.viz/commit/096cc26d48e5d3cd1bf03eb78249658974c7a307).
 
 # gsm.bio v0.3.0
 
