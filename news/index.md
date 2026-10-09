@@ -22,6 +22,14 @@ as it does.
   column is said. Nothing is kept after the session.
   [obot.roadmap#399](https://github.com/jwildfire/obot.roadmap/issues/399),
   [\#73](https://github.com/jwildfire/gsm.bio/issues/73)
+- **How to put the app on Posit Connect.** The article [The app, and
+  putting it on Posit
+  Connect](https://jwildfire.github.io/gsm.bio/articles/app.html) gives
+  the one-file deployment, which ships with the package, the `rsconnect`
+  call, what the server needs and the times measured on the synthetic
+  study. No one has deployed it to a Connect server yet.
+  [obot.roadmap#399](https://github.com/jwildfire/obot.roadmap/issues/399),
+  [\#74](https://github.com/jwildfire/gsm.bio/issues/74)
 - **The widgets run in a Shiny page, with the session answering their
   statistics.** Each widget has an output and a render function, and
   [`Serve_Statistics()`](https://jwildfire.github.io/gsm.bio/reference/Serve_Statistics.html),

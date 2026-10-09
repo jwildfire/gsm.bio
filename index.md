@@ -292,6 +292,13 @@ column is which, filled in where a column has gsm.bio’s own name. The
 file is held in the session’s memory and nowhere else. `.xpt` and
 `.sas7bdat` files are read with haven, which is suggested, not imported.
 
+The article [The app, and putting it on Posit
+Connect](https://jwildfire.github.io/gsm.bio/articles/app.html) has the
+`app.R` a server runs, which ships with the package at
+`system.file("app", "app.R", package = "gsm.bio")`, the call that
+deploys it, what the server needs and what was measured. No one has
+deployed the app to a Connect server yet, and the article says so.
+
 ## Widgets in a Shiny page
 
 A saved page answers only the statistics stored when it was made. In a
