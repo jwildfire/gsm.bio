@@ -92,28 +92,29 @@ Serve_Answer <- function(lRequest) {
   if (!is.list(lRequest) || is.null(names(lRequest))) {
     return(NULL)
   }
-  xId <- lRequest$id
+  # A member is read by its exact name: `$` would take `idx` for `id` (#86).
+  xId <- lRequest[["id"]]
   if (!is.numeric(xId) || length(xId) != 1L || is.na(xId)) {
     return(NULL)
   }
   Refuse <- function(...) list(id = xId, ok = FALSE, message = paste0(...))
   # The page asks first whether this session answers statistics at all.
-  if (isTRUE(lRequest$hello)) {
+  if (isTRUE(lRequest[["hello"]])) {
     return(list(id = xId, ok = TRUE, value = NULL))
   }
   lFunctions <- Serve_Functions()
-  strName <- lRequest$name
+  strName <- lRequest[["name"]]
   if (!is.character(strName) || length(strName) != 1L || is.na(strName) || !strName %in% names(lFunctions)) {
     return(Refuse(
       "This server runs gsm.bio's statistics functions and no other: ",
       paste(names(lFunctions), collapse = ", "), "."
     ))
   }
-  lColumns <- lRequest$columns
+  lColumns <- lRequest[["columns"]]
   if (!is.null(lColumns) && (!is.list(lColumns) || (length(lColumns) > 0L && is.null(names(lColumns))))) {
     return(Refuse("The rows of a request are sent as named columns."))
   }
-  lArgs <- lRequest$args
+  lArgs <- lRequest[["args"]]
   if (!is.null(lArgs) && (!is.list(lArgs) || (length(lArgs) > 0L && is.null(names(lArgs))))) {
     return(Refuse("The arguments of a request are sent by name."))
   }
@@ -234,7 +235,11 @@ Serve_Statistics <- function(session = shiny::getDefaultReactiveDomain()) {
 #' the page: its chart asks the Shiny session for every statistic, which
 #' [Serve_Statistics()], called once in the server function, answers. Without
 #' that call the chart is drawn and, after waiting twenty seconds for the
-#' session to say it answers, says that statistics are unavailable and why.
+#' session to say it answers, says that statistics are unavailable because the
+#' session did not answer in that time. A chart says the same when R is busy
+#' for longer than that as it first asks, which a page cannot tell from a
+#' session that answers none; it asks again by itself once the session does
+#' answer.
 #'
 #' The stored results are not computed for a widget drawn this way, so the page
 #' opens sooner than a saved page is made.

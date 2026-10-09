@@ -48,6 +48,33 @@ App_FileType <- function(strName) {
   if (length(strType) == 0L) "" else strType
 }
 
+# R's words about a file name it by where the server keeps it: a temporary
+# path, under a name the server gave it, which means nothing to a reader and
+# is not theirs to see. The file's own name is put in its place, however the
+# path is written.
+App_SaidOf <- function(chrSaid, strPath, strName) {
+  chrPaths <- unique(c(
+    strPath, path.expand(strPath),
+    normalizePath(strPath, mustWork = FALSE), normalizePath(strPath, winslash = "/", mustWork = FALSE)
+  ))
+  chrPaths <- chrPaths[!is.na(chrPaths) & nzchar(chrPaths)]
+  for (strOne in chrPaths[order(-nchar(chrPaths))]) {
+    chrSaid <- gsub(strOne, strName, chrSaid, fixed = TRUE)
+  }
+  chrSaid
+}
+
+# The one warning of R's a file is read through: that its last line has no
+# line end, which R says of a short file and reads the line all the same.
+# Every other warning is one a file can be read short under, with no error:
+# a byte that is not in the file's encoding and a quote that is never closed
+# both stop read.csv() where they are, and it returns the rows before them
+# (#86). The warning is known by R's English words, so an R that speaks
+# another language refuses such a file, which is the safe way to be wrong.
+App_ReadThrough <- function(chrWarned) {
+  grepl("^incomplete final line found", chrWarned)
+}
+
 #' Read a file a reader chose
 #'
 #' @param strPath `character` Where the file is.
@@ -55,8 +82,10 @@ App_FileType <- function(strName) {
 #'   this name.
 #'
 #' @return A data frame of base R columns. An error, with a sentence for the
-#'   reader, for a type the app does not read, a file R cannot read, a file
-#'   with no rows or no columns, and a SAS file when haven is not installed.
+#'   reader, for a type the app does not read, a file R cannot read, a file R
+#'   warned of as it read it, a file with no rows or no columns, and a SAS
+#'   file when haven is not installed. A sentence names the file as the reader
+#'   does, never by its path on the server.
 #'
 #' @keywords internal
 #' @noRd
@@ -71,8 +100,8 @@ App_ReadFile <- function(strPath, strName) {
       "Install it with install.packages(\"haven\"), or load the table as a .csv file."
     )
   }
-  # What R warns of in a file it does read, such as a last line with no line
-  # end, is not the reader's concern: the table is checked below.
+  # What R warns of as it reads is kept: a file is not drawn on a warning.
+  chrWarned <- character(0)
   dfTable <- tryCatch(
     withCallingHandlers(
       switch(strType,
@@ -83,12 +112,23 @@ App_ReadFile <- function(strPath, strName) {
         .xpt = haven::read_xpt(strPath),
         .sas7bdat = haven::read_sas(strPath)
       ),
-      warning = function(cndWarning) invokeRestart("muffleWarning")
+      warning = function(cndWarning) {
+        chrWarned <<- c(chrWarned, conditionMessage(cndWarning))
+        invokeRestart("muffleWarning")
+      }
     ),
     error = function(cndError) {
-      App_Stop(strName, " could not be read as a ", strType, " file: ", conditionMessage(cndError))
+      App_Stop(strName, " could not be read as a ", strType, " file: ", App_SaidOf(conditionMessage(cndError), strPath, strName))
     }
   )
+  chrWarned <- chrWarned[!App_ReadThrough(chrWarned)]
+  if (length(chrWarned) > 0L) {
+    App_Stop(
+      strName, " was not loaded: R warned as it read the file, and a file R warns of may have been read short. ",
+      "R said: ", paste(sub("[.]$", "", App_SaidOf(unique(chrWarned), strPath, strName)), collapse = "; "), ".",
+      if (strType == ".csv") " The app reads a .csv file as comma-separated text in UTF-8."
+    )
+  }
   # A plain data frame of plain columns: what SAS said of a column beside its
   # values (a label, a format) is not a value.
   dfTable <- as.data.frame(dfTable, stringsAsFactors = FALSE)

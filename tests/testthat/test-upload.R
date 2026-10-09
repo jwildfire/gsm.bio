@@ -319,3 +319,192 @@ test_that("in a browser a results file of each type the app reads is loaded, its
   expect_false(isTRUE(lRefused$Evaluate("Boolean(document.querySelector('#gsm_bio_column_results_TEST'))")))
   expect_identical(lRefused$Evaluate("document.querySelector('#gsm_bio_source').textContent"), "Drawn on the synthetic study that ships with gsm.bio.")
 })
+
+# ---- A file R warns of as it reads it (#86) ----------------------------------
+
+# The release review's two files, made here byte for byte: a results table of
+# 100 rows whose row 50 holds what stops read.csv() there with a warning and
+# no error. `latin1` has the micro sign as Latin-1 writes it, one byte that is
+# not UTF-8; `quote` has a quote that is never closed.
+strShortRead <- function(strWhich) {
+  chrLines <- c("USUBJID,TEST,STRESN,VISIT,VISITNUM,NOTE", sprintf("S%03d,CRP,%d,Week 1,1,ok", 1:100, 1:100))
+  chrLines[51] <- switch(strWhich,
+    latin1 = "S050,CRP,50,Week 1,1,@mol/L",
+    quote = "S050,CRP,50,Week 1,1,5\" tube"
+  )
+  xBytes <- charToRaw(paste0(paste(chrLines, collapse = "\n"), "\n"))
+  xBytes[xBytes == charToRaw("@")] <- as.raw(0xb5)
+  strDir <- tempfile("gsm-bio-short")
+  dir.create(strDir)
+  strFile <- file.path(strDir, paste0(strWhich, ".csv"))
+  writeBin(xBytes, strFile)
+  strFile
+}
+
+# What R says of a file as read.csv() reads it the way the app does: the rows
+# it gives and the warnings it raises.
+lReadPlainly <- function(strFile) {
+  chrWarned <- character(0)
+  dfRead <- withCallingHandlers(
+    utils::read.csv(strFile, check.names = FALSE, stringsAsFactors = FALSE, na.strings = c("", "NA"), fileEncoding = "UTF-8-BOM"),
+    warning = function(cndWarning) {
+      chrWarned <<- c(chrWarned, conditionMessage(cndWarning))
+      invokeRestart("muffleWarning")
+    }
+  )
+  list(rows = nrow(dfRead), warned = chrWarned)
+}
+
+# Every form the path of a file can be written in: no sentence for a reader
+# holds any of them, or the directory, or the name the server gave the file.
+ExpectNoPath <- function(strSaid, strFile, strLabel) {
+  for (strPart in unique(c(strFile, normalizePath(strFile), dirname(strFile), dirname(normalizePath(strFile)), tempdir(), normalizePath(tempdir())))) {
+    expect_false(grepl(strPart, strSaid, fixed = TRUE), label = paste(strLabel, "holds", strPart))
+  }
+}
+
+# The sentence App_ReadFile() stops with.
+strRefused <- function(strFile, strName) {
+  tryCatch(
+    {
+      App_ReadFile(strFile, strName)
+      NA_character_
+    },
+    error = function(cndError) conditionMessage(cndError)
+  )
+}
+
+test_that("a .csv file R warns of as it reads it, a byte that is not UTF-8 or a quote never closed in row 50 of 100, gives a sentence with R's own words and no table (#86)", {
+  lSaid <- list(
+    latin1 = "invalid input found on input connection 'latin1.csv'",
+    quote = "EOF within quoted string"
+  )
+  for (strWhich in names(lSaid)) {
+    strFile <- strShortRead(strWhich)
+    strName <- paste0(strWhich, ".csv")
+    # The file is what the review found: R reads 50 of its 100 rows, and warns.
+    lPlain <- lReadPlainly(strFile)
+    expect_identical(lPlain$rows, 50L, label = paste(strWhich, "rows R reads"))
+    expect_length(lPlain$warned, 1L)
+    # No table, and a sentence: the file's name, that R warned, and R's words.
+    strSaid <- strRefused(strFile, strName)
+    expect_identical(
+      strSaid,
+      paste0(
+        strName, " was not loaded: R warned as it read the file, and a file R warns of may have been read short. ",
+        "R said: ", lSaid[[strWhich]], ". The app reads a .csv file as comma-separated text in UTF-8."
+      ),
+      label = strWhich
+    )
+    ExpectNoPath(strSaid, strFile, strWhich)
+  }
+  # A byte R reads as the end of a text is warned of too, though every row is read.
+  strNul <- tempfile(fileext = ".csv")
+  writeBin(c(charToRaw("A,B\n1,2\n3,"), as.raw(0), charToRaw("4\n5,6\n")), strNul)
+  expect_match(strRefused(strNul, "nul.csv"), "nul.csv was not loaded: .* R said: line 3 appears to contain embedded nulls\\.")
+})
+
+test_that("a .csv file whose last line has no line end is read with all its rows, whether or not R warns of it, and so is one with Windows line ends or a byte-order mark (#86)", {
+  # Three lines: R warns that the last is incomplete, and reads it.
+  strShort <- tempfile(fileext = ".csv")
+  cat("USUBJID,STRESN\nBIO-001,1.5\nBIO-002,2.5", file = strShort)
+  lPlain <- lReadPlainly(strShort)
+  expect_match(lPlain$warned, "^incomplete final line found by readTableHeader")
+  expect_identical(lPlain$rows, 2L)
+  expect_no_warning(dfShort <- App_ReadFile(strShort, "short.csv"))
+  expect_identical(dfShort, data.frame(USUBJID = c("BIO-001", "BIO-002"), STRESN = c(1.5, 2.5)))
+  # A hundred lines: R does not warn.
+  strLong <- tempfile(fileext = ".csv")
+  cat(paste(c("USUBJID,STRESN", sprintf("BIO-%03d,%d", 1:100, 1:100)), collapse = "\n"), file = strLong)
+  expect_identical(lReadPlainly(strLong)$warned, character(0))
+  dfLong <- App_ReadFile(strLong, "long.csv")
+  expect_identical(nrow(dfLong), 100L)
+  expect_identical(dfLong$STRESN, 1:100)
+  # Windows line ends, after a byte-order mark.
+  strWindows <- tempfile(fileext = ".csv")
+  writeBin(c(as.raw(c(0xef, 0xbb, 0xbf)), charToRaw("USUBJID,STRESN\r\nBIO-001,1.5\r\nBIO-002,2.5\r\n")), strWindows)
+  expect_identical(App_ReadFile(strWindows, "windows.csv"), data.frame(USUBJID = c("BIO-001", "BIO-002"), STRESN = c(1.5, 2.5)))
+})
+
+test_that("an .xpt or .sas7bdat file R cannot read is named by its own name and never by where the server keeps it, and one haven warns of gives no table (#86)", {
+  skip_if_not_installed("haven")
+  strDir <- tempfile("gsm-bio-upload")
+  dir.create(strDir)
+  # Shiny keeps an upload under a name of its own: 0.xpt, in a temporary folder.
+  strKept <- file.path(strDir, "0.xpt")
+  writeLines("not a table", strKept)
+  for (strName in c("results.xpt", "results.sas7bdat")) {
+    strSaid <- strRefused(strKept, strName)
+    strType <- App_FileType(strName)
+    expect_match(strSaid, sprintf("^%s could not be read as a %s file: ", strName, strType), label = strName)
+    # haven names the file it failed on: by the reader's name for it.
+    expect_match(strSaid, sprintf(": Failed to parse %s: ", strName), fixed = TRUE, label = strName)
+    ExpectNoPath(strSaid, strKept, strName)
+    expect_false(grepl("0.xpt", strSaid, fixed = TRUE), label = paste(strName, "holds the server's name for the file"))
+  }
+  # haven warned of nothing in the files tried when this was written. Should
+  # it, the file is refused as a .csv is: with the warning's words, less the path.
+  strRead <- strWritten(Synthetic_Outcomes, ".xpt", "outcomes")
+  local_mocked_bindings(
+    read_xpt = function(file, ...) {
+      warning("Some rows of ", normalizePath(file), " were not read", call. = FALSE)
+      Synthetic_Outcomes
+    },
+    .package = "haven"
+  )
+  strWarned <- strRefused(strRead, "outcomes.xpt")
+  expect_identical(
+    strWarned,
+    "outcomes.xpt was not loaded: R warned as it read the file, and a file R warns of may have been read short. R said: Some rows of outcomes.xpt were not read."
+  )
+})
+
+test_that("in a session a .csv file R read short is said in the file's place and again on the button, and the charts are left as they were (#86)", {
+  skip_if_not_installed("shiny")
+  skip_if_not_installed("haven")
+  lWas <- options(shiny.maxRequestSize = getOption("shiny.maxRequestSize"))
+  on.exit(options(lWas), add = TRUE)
+  Payload <- function(strJson) jsonlite::fromJSON(strJson, simplifyVector = FALSE)$x
+  Html <- function(xOutput) as.character(xOutput$html)
+  lFiles <- list(latin1 = strShortRead("latin1"), quote = strShortRead("quote"))
+  strBroken <- file.path(dirname(lFiles$latin1), "0.xpt")
+  writeLines("not a table", strBroken)
+
+  shiny::testServer(RunApp(), {
+    nSynthetic <- nrow(Synthetic_Results)
+    nApplied <- 0L
+    for (strWhich in names(lFiles)) {
+      session$setInputs(gsm_bio_file_results = dfChosen(lFiles[[strWhich]]))
+      strPlace <- Html(output$gsm_bio_columns_results)
+      expect_match(strPlace, "gsm-bio-app-problem", fixed = TRUE, label = strWhich)
+      expect_match(strPlace, sprintf("%s.csv was not loaded: R warned as it read the file", strWhich), fixed = TRUE, label = strWhich)
+      expect_match(strPlace, if (strWhich == "latin1") "invalid input found on input connection" else "EOF within quoted string", fixed = TRUE)
+      # Nothing of the file is offered: no rows counted, no column to say.
+      expect_false(grepl("50 rows", strPlace, fixed = TRUE), label = paste(strWhich, "counts the rows read"))
+      expect_false(grepl("gsm_bio_column_results_", strPlace, fixed = TRUE), label = paste(strWhich, "asks for columns"))
+      ExpectNoPath(strPlace, lFiles[[strWhich]], strWhich)
+      # The columns said all the same, as a reader who had them from a file
+      # before would have: the button says the problem and draws nothing.
+      nApplied <- nApplied + 1L
+      session$setInputs(
+        gsm_bio_column_results_USUBJID = "USUBJID", gsm_bio_column_results_TEST = "TEST", gsm_bio_column_results_STRESN = "STRESN",
+        gsm_bio_column_results_VISIT = "VISIT", gsm_bio_column_results_VISITNUM = "VISITNUM", gsm_bio_apply = nApplied
+      )
+      strButton <- Html(output$gsm_bio_data_said)
+      expect_match(strButton, "gsm-bio-app-problem", fixed = TRUE, label = strWhich)
+      expect_match(strButton, sprintf("%s.csv was not loaded: R warned as it read the file", strWhich), fixed = TRUE, label = strWhich)
+      expect_identical(output$gsm_bio_source, "Drawn on the synthetic study that ships with gsm.bio.")
+      for (strChart in setdiff(names(chrAppCharts), "StratifiedSurvival")) {
+        expect_length(Payload(output[[strChart]])$dfResults$USUBJID, nSynthetic)
+      }
+    }
+    # A SAS file that cannot be read: no path of the server in either place.
+    session$setInputs(gsm_bio_file_results = transform(dfChosen(strBroken), name = "results.xpt"))
+    strPlace <- Html(output$gsm_bio_columns_results)
+    expect_match(strPlace, "results.xpt could not be read as a .xpt file: Failed to parse results.xpt", fixed = TRUE)
+    ExpectNoPath(strPlace, strBroken, "the file's place")
+    session$setInputs(gsm_bio_apply = nApplied + 1L)
+    ExpectNoPath(Html(output$gsm_bio_data_said), strBroken, "the button")
+    expect_length(Payload(output$GroupComparison)$dfResults$USUBJID, nSynthetic)
+  })
+})

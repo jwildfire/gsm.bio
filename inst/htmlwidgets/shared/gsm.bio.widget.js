@@ -20,8 +20,15 @@ window.GsmBioWidget = (function() {
     const REQUEST = 'gsm_bio_request';
     const ANSWER = 'gsm-bio-answer';
     // How long a page waits for its Shiny session, and then for the session to
-    // say it answers statistics, before saying it does not.
-    const PATIENCE = 20000;
+    // say it answers statistics, before saying it has not, in milliseconds. A
+    // page's own script may set another time before its first widget asks, as
+    // the tests do, to wait two seconds and not twenty. No setting of a widget
+    // reads it and nothing in R sets it.
+    const limits = { patience: 20000 };
+    const patience = function() {
+        const seconds = limits.patience / 1000;
+        return seconds + (seconds === 1 ? ' second' : ' seconds');
+    };
 
     // An error that says R was not reached, which the connection answers as
     // unavailable and never as an error of R's.
@@ -56,6 +63,8 @@ window.GsmBioWidget = (function() {
         let last = 0;
         let queue = [];
         let ended = false;
+        // What is done when a session that was given up on answers after all.
+        let late = [];
         const connected = function() {
             return Boolean(shiny.shinyapp && typeof shiny.shinyapp.isConnected === 'function' && shiny.shinyapp.isConnected());
         };
@@ -112,7 +121,7 @@ window.GsmBioWidget = (function() {
                     return resolve();
                 const timer = setTimeout(function() {
                     reject(unreachable('the page has no session with the server'));
-                }, PATIENCE);
+                }, limits.patience);
                 on('shiny:connected', function() {
                     clearTimeout(timer);
                     resolve();
@@ -121,17 +130,30 @@ window.GsmBioWidget = (function() {
         };
         return {
             // A session answers statistics only when its server function calls
-            // Serve_Statistics(): the page asks, and a session that does not say
-            // so in time is one that answers none.
+            // Serve_Statistics(): the page asks. A session that does not say so
+            // in time may answer none, or its R may be busy with other work, a
+            // long job of another reader's among it: the page cannot tell the
+            // two apart, and says what it knows (#86). The question stays
+            // asked. A busy R answers it when it is free, and whoever was told
+            // the session did not answer is told then that it does.
             start: function() {
                 return session().then(function() {
                     return new Promise(function(resolve, reject) {
+                        let gaveUp = false;
                         const timer = setTimeout(function() {
-                            reject(unreachable('its session answers no statistics: Serve_Statistics() is not called in the server function'));
-                        }, PATIENCE);
+                            gaveUp = true;
+                            reject(unreachable('its session did not answer within ' + patience() +
+                                ': it may be busy, or Serve_Statistics() may not be called in the server function'));
+                        }, limits.patience);
                         ask({ hello: true }).then(function() {
                             clearTimeout(timer);
                             resolve();
+                            // One that returns false is done with, and is not told again.
+                            if (gaveUp) {
+                                late = late.filter(function(heard) {
+                                    return heard() !== false;
+                                });
+                            }
                         }, function(error) {
                             clearTimeout(timer);
                             reject(error);
@@ -145,6 +167,11 @@ window.GsmBioWidget = (function() {
                     columns: toColumns(request && request.data),
                     args: (request && request.args) || {}
                 });
+            },
+            // `heard` is called each time a session that was given up on
+            // answers after all, until it returns false.
+            whenLate: function(heard) {
+                late.push(heard);
             }
         };
     };
@@ -214,6 +241,43 @@ window.GsmBioWidget = (function() {
     const factory = function(make, functions) {
         return function(el, width, height) {
             let instance = null;
+            // Whether the chart is told when a session that was given up on
+            // answers, and whether it has been told while it was not shown.
+            let listening = false;
+            let overdue = false;
+            // Whether the chart holds an answer that says R was not reached.
+            const unreached = function() {
+                return Boolean(instance) && typeof instance.statistics === 'function' &&
+                    instance.statistics().some(function(asked) {
+                        return Boolean(asked.answer) && asked.answer.status === 'unavailable' &&
+                            asked.answer.reason === 'load-failed';
+                    });
+            };
+            // The session answers after all: a chart that was told it did not
+            // is drawn again as it stands, which asks R again (#86). A chart
+            // that is not shown has no size to be drawn at, and is drawn when
+            // it is shown. An element no longer in the page is done with.
+            const askAgain = function() {
+                if (!el.isConnected)
+                    return false;
+                if (!unreached())
+                    return true;
+                if (el.offsetParent === null)
+                    overdue = true;
+                else
+                    instance.render();
+                return true;
+            };
+            // Shiny says when an output is shown, hidden or resized. It calls
+            // `resize` only when the size has changed, which a tab opened a
+            // second time has not.
+            const shownAgain = function() {
+                if (!overdue || el.offsetParent === null)
+                    return;
+                overdue = false;
+                if (unreached())
+                    instance.render();
+            };
             return {
                 renderValue: function(x) {
                     if (x.bDebug)
@@ -228,6 +292,7 @@ window.GsmBioWidget = (function() {
                     if (instance && typeof instance.destroy === 'function')
                         instance.destroy();
                     instance = null;
+                    overdue = false;
                     el.innerHTML = '';
                     // As wide as its container and as tall as the chart, unless a
                     // size was asked for: a page that gives every widget a fixed
@@ -255,6 +320,11 @@ window.GsmBioWidget = (function() {
                         settings.connection = isServed(statistics)
                             ? BioViz.r.createConnection({ server: { engine: engineOfPage(), computedBy: servedBy(statistics) } })
                             : BioViz.r.createConnection({ results: statistics.results, computedBy: statistics.computed_by });
+                        if (isServed(statistics) && !listening) {
+                            listening = true;
+                            engineOfPage().whenLate(askAgain);
+                            window.jQuery(el).on('shiny:visualchange', shownAgain);
+                        }
                         instance = make(chart, settings);
                         // The tables the chart is given: the results, the
                         // participants when there are any, and the outcomes
@@ -307,5 +377,5 @@ window.GsmBioWidget = (function() {
         };
     };
 
-    return { factory: factory, shinyEngine: shinyEngine, toColumns: toColumns };
+    return { factory: factory, shinyEngine: shinyEngine, toColumns: toColumns, limits: limits };
 })();

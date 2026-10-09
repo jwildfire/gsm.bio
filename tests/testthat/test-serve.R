@@ -135,6 +135,32 @@ test_that("a batch is answered in order under its own ids, an R error comes back
   expect_identical(Serve_Reply("[{\"id\":3,\"hello\":true}]"), list(list(id = 3L, ok = TRUE, value = NULL)))
 })
 
+test_that("a request is read by the exact names of its members: one whose name only begins as `id`, `hello`, `name`, `columns` or `args` does is not that member (#86)", {
+  dfRows <- dfServeRows()
+  # No `id`: nothing to answer under, whatever else begins with those letters.
+  expect_identical(Serve_Reply("[{\"idx\":7,\"hello\":true}]"), list())
+  expect_identical(Serve_Reply("[{\"identity\":7,\"name\":\"Analyze_Fit\"}]"), list())
+  # `helloThere` is no hello, and `namesake` no name: each is a request that
+  # names no function, and is refused as one.
+  for (strRequest in c("[{\"id\":3,\"helloThere\":true}]", "[{\"id\":3,\"namesake\":\"Analyze_Fit\",\"columns\":{}}]")) {
+    lAnswer <- Serve_Reply(strRequest)[[1]]
+    expect_identical(lAnswer$id, 3L)
+    expect_false(lAnswer$ok)
+    expect_match(lAnswer$message, "^This server runs gsm.bio's statistics functions and no other: ")
+  }
+  # Rows and arguments under longer names are not the rows and the arguments:
+  # the function is called with neither, as it is for a request that has none.
+  strAsked <- strRequests(list(
+    id = 5L, name = "Analyze_GroupDifference", data = dfRows, args = list(strValueCol = "STRESN", strGroupCol = "ARM")
+  ))
+  lWhole <- Serve_Reply(strAsked)[[1]]
+  expect_identical(lWhole$value, StoredValue(Analyze_GroupDifference(dfRows, "STRESN", "ARM")))
+  strLonger <- sub("\"args\":", "\"arguments\":", sub("\"columns\":", "\"columnsSent\":", strAsked, fixed = TRUE), fixed = TRUE)
+  expect_false(identical(strLonger, strAsked))
+  expect_identical(Serve_Reply(strLonger), Serve_Reply("[{\"id\":5,\"name\":\"Analyze_GroupDifference\"}]"))
+  expect_false(identical(Serve_Reply(strLonger)[[1]], lWhole))
+})
+
 test_that("a missing value in a column reaches R as missing, whatever the column holds, and a request with no rows is answered (#71)", {
   dfRows <- dfServeRows()
   dfRows$STRESN[c(2, 5)] <- NA
@@ -223,7 +249,7 @@ shiny::shinyApp(
 )
 "
 
-test_that("in a Shiny page a view the saved widget does not store is answered by the session with what the statistics function returns for the same rows, and the page says it was computed on this server (#71)", {
+test_that("in a Shiny page a view the saved widget does not store is answered by the session with what the statistics function returns for the same rows, and the page says it was computed on this server, on a line that prints R's answer (#71, #86)", {
   NeedApp()
   lSettings <- list(start_value = "CRP", visits = "Week 4", group_by = "ARM")
   # What a saved widget holds: Welch's test, the one the settings open on, and
@@ -273,12 +299,19 @@ test_that("in a Shiny page a view the saved widget does not store is answered by
   strServer <- sprintf("computed by R %s with gsm.bio %s on this server.", strR, strGsmBio)
   expect_match(strDrawnBy(lPage), strServer, fixed = TRUE)
   expect_match(lView$lines[[1]], "p = ", fixed = TRUE)
+  # The line under the chart prints the answer: R's method, the p-value of
+  # the function called directly, written by the line's rule, and the counts
+  # (#86).
+  nP <- Analyze_GroupDifference(dfServeRows(), "STRESN", "ARM", strMethod = "wilcoxon")$p_value
+  expect_identical(lExpected[[strKey]]$value$p_value, nP)
+  expect_match(lView$lines[[1]], Output_P(nP), fixed = TRUE)
+  expect_true(startsWith(lView$lines[[1]], Output_StatisticText(lExpected[[strKey]]$value)), label = "the line opens with R's answer written out")
   expect_match(lView$provenance[[1]], sprintf("^Statistics: computed on request by R %s with gsm.bio %s on this server\\.", strR, strGsmBio))
   expect_identical(lView$errors, list())
   expect_identical(lPage$Errors(), character(0))
 })
 
-test_that("a session whose server function does not call Serve_Statistics() draws the chart and says its statistics are unavailable and why, and a session that ends is said to be out of reach, not an error of R's (#71)", {
+test_that("a session whose server function does not call Serve_Statistics() draws the chart and says its statistics are unavailable because the session did not answer in twenty seconds, and a session that ends is said to be out of reach, not an error of R's (#71, #86)", {
   NeedApp()
   lApp <- lRunApp(strServedApp)
   on.exit(lApp$Stop(), add = TRUE)
@@ -293,7 +326,10 @@ test_that("a session whose server function does not call Serve_Statistics() draw
   expect_identical(lSaid$statistics[[1]]$answer$status, "unavailable")
   expect_identical(
     lSaid$statistics[[1]]$answer$message,
-    "Statistics are unavailable: R on the server could not be reached (its session answers no statistics: Serve_Statistics() is not called in the server function)."
+    paste0(
+      "Statistics are unavailable: R on the server could not be reached (its session did not answer within 20 seconds: ",
+      "it may be busy, or Serve_Statistics() may not be called in the server function)."
+    )
   )
   expect_false(any(grepl("p = ", unlist(lSaid$lines), fixed = TRUE)))
   lSilent$Close()
@@ -314,4 +350,140 @@ test_that("a session whose server function does not call Serve_Statistics() draw
     "Statistics are unavailable: R on the server could not be reached (the session with the server has ended; reload the page)."
   )
   expect_false(any(grepl("p = ", unlist(lView$lines), fixed = TRUE)))
+})
+
+# ---- A session that is slow to answer (#86) -----------------------------------
+
+# A group comparison in an app whose R can be kept busy, as another reader's
+# long job keeps the one R process of a server busy. R does nothing else from
+# the moment the page names a file until that file is there, so the test says
+# when R is free and nothing is timed.
+#
+# The page's own script sets how long a widget waits for its session to two
+# seconds, in place of twenty; it keeps what the chart said of its statistic
+# each time that changed; and it makes R busy as the chart's first value
+# arrives, before the chart has asked anything.
+strBusyApp <- function(strFirst) {
+  strScript <- paste(
+    "window.GsmBioWidget.limits.patience = 2000;",
+    "window.gsmBioSeen = [];",
+    "setInterval(function() {",
+    "  const widget = window.HTMLWidgets && HTMLWidgets.find('#chart');",
+    "  const chart = widget && widget.chart && widget.chart();",
+    "  if (!chart) return;",
+    "  const asked = chart.statistics()[0];",
+    "  const now = !asked ? 'nothing asked' : !asked.answer ? 'waiting' : asked.answer.status + (asked.answer.message ? ': ' + asked.answer.message : '');",
+    "  if (window.gsmBioSeen[window.gsmBioSeen.length - 1] !== now) window.gsmBioSeen.push(now);",
+    "}, 20);",
+    "window.gsmBioBusy = function(file) { Shiny.setInputValue('busy', file, { priority: 'event' }); return true; };",
+    "window.gsmBioFirst = true;",
+    "$(document).on('shiny:value', function(event) {",
+    "  if (event.name !== 'chart' || !window.gsmBioFirst) return;",
+    "  window.gsmBioFirst = false;",
+    sprintf("  window.gsmBioBusy(%s);", jsonlite::toJSON(strFirst, auto_unbox = TRUE)),
+    "});",
+    "Shiny.addCustomMessageHandler('pong', function(count) { window.gsmBioPong = count; });",
+    sep = "\n"
+  )
+  sprintf("
+shiny::shinyApp(
+  ui = shiny::fluidPage(
+    shiny::tabsetPanel(
+      shiny::tabPanel('Chart', Widget_GroupComparisonOutput('chart')),
+      shiny::tabPanel('Other', shiny::tags$p('No chart here.'))
+    ),
+    shiny::tags$script(shiny::HTML(%s))
+  ),
+  server = function(input, output, session) {
+    Serve_Statistics()
+    shiny::observeEvent(input$busy, {
+      nStart <- Sys.time()
+      while (!file.exists(input$busy) && difftime(Sys.time(), nStart, units = 'secs') < 120) Sys.sleep(0.05)
+    })
+    shiny::observeEvent(input$ping, session$sendCustomMessage('pong', input$ping))
+    output$chart <- renderWidget_GroupComparison({
+      input$again
+      Widget_GroupComparison(
+        Synthetic_Results, Synthetic_Participants,
+        lSettings = list(start_value = 'CRP', visits = 'Week 4', group_by = 'ARM')
+      )
+    })
+  }
+)
+", paste(deparse(strScript), collapse = ""))
+}
+
+test_that("a chart that asks while R is busy past the time it waits says the session did not answer in time, which is all it knows, and prints its statistic once R is free with no control changed; a chart that is not shown then asks when it is (#86)", {
+  NeedApp()
+  lSettings <- list(start_value = "CRP", visits = "Week 4", group_by = "ARM")
+  lStored <- Widget_GroupComparison(Synthetic_Results, Synthetic_Participants, lSettings = lSettings)$x$lStatistics$results
+  lStored <- stats::setNames(lStored, vapply(lStored, function(lResult) Chart_KeyText(lResult[c("name", "args", "dataId")]), character(1)))
+  strDir <- tempfile("gsm-bio-busy")
+  dir.create(strDir)
+  chrFree <- file.path(strDir, c("first", "second"))
+  strLate <- paste0(
+    "unavailable: Statistics are unavailable: R on the server could not be reached (its session did not answer within 2 seconds: ",
+    "it may be busy, or Serve_Statistics() may not be called in the server function)."
+  )
+  Seen <- function(lPage) unlist(lPage$Evaluate("window.gsmBioSeen"))
+  Last <- "window.gsmBioSeen[window.gsmBioSeen.length - 1]"
+  # The session has answered everything the page sent it before this returns.
+  nPings <- 0L
+  Answered <- function(lPage) {
+    nPings <<- nPings + 1L
+    lPage$Evaluate(sprintf("Shiny.setInputValue('ping', %d, { priority: 'event' })", nPings))
+    bWaitFor(lPage, sprintf("window.gsmBioPong === %d", nPings))
+  }
+  # The chart's answer is R's, called directly, and so is the line printed.
+  ExpectAnswer <- function(lView) {
+    lAsked <- lView$statistics[[1]]
+    strKey <- Chart_KeyText(lAsked[c("name", "args", "dataId")])
+    expect_true(strKey %in% names(lStored))
+    expect_identical(lAsked$answer$status, "ok")
+    expect_identical(lAsked$answer$form, "server")
+    expect_equal(lAsked$answer$value, lStored[[strKey]]$value, tolerance = 1e-14)
+    expect_identical(lAsked$answer$value$p_value, Analyze_GroupDifference(dfServeRows(), "STRESN", "ARM")$p_value)
+    expect_true(startsWith(lView$lines[[1]], Output_StatisticText(lStored[[strKey]]$value)), label = "the line opens with R's answer written out")
+  }
+
+  lApp <- lRunApp(strBusyApp(chrFree[1]))
+  on.exit(lApp$Stop(), add = TRUE)
+  on.exit(file.create(chrFree), add = TRUE)
+  lPage <- lOpenPage(NULL, strAddress = lApp$address)
+  on.exit(lPage$Close(), add = TRUE)
+
+  # R is busy as the chart first asks. The chart waits its two seconds and
+  # says what it knows: nothing of a call that is in fact made.
+  expect_true(bWaitFor(lPage, sprintf("/^unavailable/.test(%s)", Last)), label = "the chart gave up on a busy session")
+  expect_identical(Seen(lPage), c("waiting", strLate))
+  lGaveUp <- lPage$Look()
+  expect_gt(lGaveUp$canvases, 0L)
+  expect_false(any(grepl("p = |p < ", unlist(lGaveUp$lines))))
+  expect_match(lGaveUp$lines[[1]], "its session did not answer within 2 seconds", fixed = TRUE)
+  # R is free. Nothing in the page is touched: the chart asks again by itself.
+  file.create(chrFree[1])
+  expect_true(bWaitFor(lPage, sprintf("%s === 'ok'", Last)), label = "the chart printed its statistic once R was free")
+  expect_identical(Seen(lPage), c("waiting", strLate, "waiting", "ok"))
+  ExpectAnswer(lPage$Look())
+
+  # The chart is drawn again while R is busy, gives up again, and its tab is
+  # left before R is free. A chart that is not shown is not drawn: it keeps
+  # what it said until its tab is opened, and asks then.
+  lPage$Evaluate(sprintf(
+    "(() => { Shiny.setInputValue('again', 1, { priority: 'event' }); setTimeout(() => window.gsmBioBusy(%s), 0); return true; })()",
+    jsonlite::toJSON(chrFree[2], auto_unbox = TRUE)
+  ))
+  expect_true(bWaitFor(lPage, sprintf("window.gsmBioSeen.length === 6 && /^unavailable/.test(%s)", Last)), label = "the chart gave up a second time")
+  expect_identical(Seen(lPage), c("waiting", strLate, "waiting", "ok", "waiting", strLate))
+  lPage$Evaluate("document.querySelector('a[data-value=\"Other\"]').click()")
+  expect_true(bWaitFor(lPage, "document.querySelector('#chart').offsetParent === null"), label = "the chart's tab was left")
+  file.create(chrFree[2])
+  expect_true(Answered(lPage), label = "the session answered what it was sent")
+  expect_identical(lPage$Evaluate("window.gsmBioPage.chart().statistics()[0].answer.status"), "unavailable")
+  expect_identical(Seen(lPage), c("waiting", strLate, "waiting", "ok", "waiting", strLate))
+  lPage$Evaluate("document.querySelector('a[data-value=\"Chart\"]').click()")
+  expect_true(bWaitFor(lPage, sprintf("%s === 'ok'", Last)), label = "the chart asked when its tab was opened")
+  expect_identical(Seen(lPage), c("waiting", strLate, "waiting", "ok", "waiting", strLate, "waiting", "ok"))
+  ExpectAnswer(lPage$Look())
+  expect_identical(lPage$Errors(), character(0))
 })
