@@ -7,41 +7,49 @@ demo](https://jwildfire.github.io/obot.roadmap/reports/biomarker-v0.4-demo/)
 has captures, try-it steps and the detail behind everything below.
 
 gsm.bio v0.4.0 is the six charts as one Shiny app. It reads a study from
-your own files, takes every statistic from the R session behind the
-page, and deploys to Posit Connect as one file. Nothing a widget, a
-figure or a table did in v0.3.0 has changed. It needs shiny to run the
-app, and is released together with bio.viz v0.4.0.
+your own files and takes every statistic from the R session behind the
+page. It is written to go on Posit Connect as one file, and no one has
+put it there yet. Nothing a widget, a figure or a table did in v0.3.0
+has changed. It needs shiny, and is released together with bio.viz
+v0.4.0.
 
 ### What’s new
 
 - **The six charts are one app.**
   [`RunApp()`](https://jwildfire.github.io/gsm.bio/reference/RunApp.html)
-  returns a Shiny app that lists the charts beside one chart drawn at a
-  time, on your own results table, with participants and outcomes when
-  you have them, or on the synthetic study.
+  returns a Shiny app with a header, a pill for each chart, and a chip
+  that says what the charts are drawn on: your own results table, with
+  participants and outcomes when you have them, or the synthetic study.
   [obot.roadmap#399](https://github.com/jwildfire/obot.roadmap/issues/399),
-  [\#72](https://github.com/jwildfire/gsm.bio/issues/72), PR
-  [\#76](https://github.com/jwildfire/gsm.bio/pull/76)
-- **The app reads your own files.** Its Data view takes a results file,
+  [obot.roadmap#400](https://github.com/jwildfire/obot.roadmap/issues/400),
+  [\#72](https://github.com/jwildfire/gsm.bio/issues/72),
+  [\#84](https://github.com/jwildfire/gsm.bio/issues/84), PRs
+  [\#76](https://github.com/jwildfire/gsm.bio/pull/76),
+  [\#92](https://github.com/jwildfire/gsm.bio/pull/92)
+- **The app reads your own files.** Its Data page takes a results file,
   and optionally participants and outcomes, as `.csv`, `.xpt` or
-  `.sas7bdat`. R reads each on the server and asks which column is
-  which, filled in where a name matches; the charts are drawn once every
-  column is said. Nothing is kept after the session.
+  `.sas7bdat`. Each file’s card asks which column is which, filled in
+  where a name matches and marked in amber where you have still to say.
+  A rail counts what is left. Nothing is kept after the session.
   [obot.roadmap#399](https://github.com/jwildfire/obot.roadmap/issues/399),
-  [\#73](https://github.com/jwildfire/gsm.bio/issues/73), PR
-  [\#77](https://github.com/jwildfire/gsm.bio/pull/77)
-- **The Data view shows what is loaded.** The tables the charts are
-  drawn on are listed there ten rows at a time, with where each came
+  [obot.roadmap#400](https://github.com/jwildfire/obot.roadmap/issues/400),
+  [\#73](https://github.com/jwildfire/gsm.bio/issues/73),
+  [\#85](https://github.com/jwildfire/gsm.bio/issues/85), PRs
+  [\#77](https://github.com/jwildfire/gsm.bio/pull/77),
+  [\#95](https://github.com/jwildfire/gsm.bio/pull/95)
+- **The Data page shows what is loaded.** The tables the charts are
+  drawn on are there in tabs, ten rows at a time, with where each came
   from, and a file just chosen shows its first rows under its own column
-  names.
+  names. A file chosen by mistake is taken away from its card.
   [obot.roadmap#399](https://github.com/jwildfire/obot.roadmap/issues/399),
-  [\#80](https://github.com/jwildfire/gsm.bio/issues/80), PR
-  [\#81](https://github.com/jwildfire/gsm.bio/pull/81)
+  [\#80](https://github.com/jwildfire/gsm.bio/issues/80),
+  [\#85](https://github.com/jwildfire/gsm.bio/issues/85), PRs
+  [\#81](https://github.com/jwildfire/gsm.bio/pull/81),
+  [\#95](https://github.com/jwildfire/gsm.bio/pull/95)
 - **Every view has its statistics, from the server’s R.** In the app a
   chart asks the R session behind the page each time, so a view no saved
   widget stores is answered, and the line under the chart says which R
-  computed it. The session runs the nine statistics functions and no
-  other.
+  computed it.
   [obot.roadmap#399](https://github.com/jwildfire/obot.roadmap/issues/399),
   [\#71](https://github.com/jwildfire/gsm.bio/issues/71), PR
   [\#75](https://github.com/jwildfire/gsm.bio/pull/75)
@@ -55,9 +63,8 @@ app, and is released together with bio.viz v0.4.0.
 - **How to put the app on Posit Connect.** The article [The app, and
   putting it on Posit
   Connect](https://jwildfire.github.io/gsm.bio/articles/app.html) gives
-  the one-file deployment, which ships with the package, the `rsconnect`
-  call, what the server needs and the times measured on the synthetic
-  study.
+  the one-file deployment, the `rsconnect` call, what the server needs
+  and the times measured on the synthetic study.
   [obot.roadmap#399](https://github.com/jwildfire/obot.roadmap/issues/399),
   [\#74](https://github.com/jwildfire/gsm.bio/issues/74), PR
   [\#78](https://github.com/jwildfire/gsm.bio/pull/78)
@@ -65,36 +72,39 @@ app, and is released together with bio.viz v0.4.0.
 ### Also in this release
 
 - **Not tested: the app on a Posit Connect server.** No one has deployed
-  it yet. The app is tested in a browser on one machine, and the record
-  Connect installs from was written once for real; the first deployment
-  is the check on the rest.
+  it yet. The app is tested in a browser on one machine; the first
+  deployment is the check on the rest.
   [\#74](https://github.com/jwildfire/gsm.bio/issues/74)
-- **The app’s look is a first version.** It is a default Shiny page, a
-  list of links beside the chart, and it is released as it is. A
-  designed header, navigation and Data page are the next release’s work.
-  [obot.roadmap#400](https://github.com/jwildfire/obot.roadmap/issues/400)
-- **A chart in a Shiny page has text its own size.** Shiny’s default
-  page shrank it; each output function now writes one rule into the page
-  that gives the root font size back to the browser.
+- **A file R warns about as it reads it is not drawn.** A `.csv` with a
+  byte outside UTF-8, or a quote never closed, would otherwise be read
+  short; the page says so in R’s words.
+  [\#86](https://github.com/jwildfire/gsm.bio/issues/86), PR
+  [\#91](https://github.com/jwildfire/gsm.bio/pull/91)
+- **Not fixed: an `.xpt` file that has been cut short is read short,**
+  with no word from haven. Check the rows the Data page counts against
+  your own. [\#90](https://github.com/jwildfire/gsm.bio/issues/90)
+- **A widget’s text keeps its size in a Shiny page.** Each output
+  function writes one rule into the page so that Shiny’s default page
+  does not shrink it.
   [\#80](https://github.com/jwildfire/gsm.bio/issues/80), PR
   [\#81](https://github.com/jwildfire/gsm.bio/pull/81)
-- **The widgets carry bio.viz v0.4.0,** copied from bio.viz at
-  [066bbec](https://github.com/jwildfire/bio.viz/commit/066bbec7795c5fe07aa1c16d5ab4fcecb5682d5d)
-  on its `dev` branch; the suite holds every copied file to bio.viz’s
-  v0.4.0 tag from the day it exists.
-  [\#79](https://github.com/jwildfire/gsm.bio/issues/79), PR
-  [\#82](https://github.com/jwildfire/gsm.bio/pull/82)
+- **The widgets carry bio.viz v0.4.0,** which adds the way a chart
+  reaches R on a server.
+  [\#79](https://github.com/jwildfire/gsm.bio/issues/79),
+  [\#93](https://github.com/jwildfire/gsm.bio/issues/93), PRs
+  [\#82](https://github.com/jwildfire/gsm.bio/pull/82),
+  [\#94](https://github.com/jwildfire/gsm.bio/pull/94)
 - **Not fixed: Fisher’s exact test on larger tables,** as in v0.3.0: the
   result carries R’s message and no p-value.
   [\#64](https://github.com/jwildfire/gsm.bio/issues/64)
 
 ### Tests and provenance
 
-368 tests (55,487 expectations on R 4.3.3) pass from the source tree,
-which needs to reach GitHub; `R CMD check` skips 22 of them. The app is
-tested in a headless browser against a second R session: every statistic
-a chart shows there is held to its `Analyze_*()` function called with no
-page between. The bundles are bio.viz `dev` at
+396 tests (56,376 expectations on R 4.3.3) pass from the source tree;
+`R CMD check` skips 32 of them. The app is run by a second R session and
+driven in a headless browser, where every answer on each of the six
+charts is held to its `Analyze_*()` function. The bundles are bio.viz
+`dev` at
 [066bbec](https://github.com/jwildfire/bio.viz/commit/066bbec7795c5fe07aa1c16d5ab4fcecb5682d5d)
 and safety.viz `dev` at
 [096cc26](https://github.com/jwildfire/safety.viz/commit/096cc26d48e5d3cd1bf03eb78249658974c7a307).
