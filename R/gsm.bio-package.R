@@ -34,12 +34,13 @@
 #' suggested, not imported.
 #'
 #' @section Status:
-#' Version 0.4.0 holds the statistics functions, a synthetic biomarker
+#' Version 0.4.0 is released: the statistics functions, a synthetic biomarker
 #' study with known planted effects, a widget for each of bio.viz's six charts,
 #' the group comparison at its three levels, from R a static figure, a
 #' statistics table, RTF and batch runs of chart specifications, and the six
 #' charts as one Shiny app, [RunApp()], that reads a study's own files and
-#' answers every statistic from the R session behind the page.
+#' answers every statistic from the R session behind the page. The next
+#' version is in development on `dev`.
 #'
 #' @importFrom stats aov chisq.test cor.test fisher.test kruskal.test p.adjust
 #' @importFrom stats lm loess t.test wilcox.test

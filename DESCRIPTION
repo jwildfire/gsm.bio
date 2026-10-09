@@ -1,6 +1,6 @@
 Package: gsm.bio
 Title: Statistics and Widgets for Biomarker Charts
-Version: 0.4.0
+Version: 0.4.0.9000
 Authors@R: c(
     person("obot", role = c("aut", "cre"), email = "obot@users.noreply.github.com")
   )
