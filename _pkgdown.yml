@@ -96,3 +96,7 @@ articles:
     navbar: ~
     contents:
       - articles/gallery
+  - title: The app
+    navbar: ~
+    contents:
+      - articles/app
