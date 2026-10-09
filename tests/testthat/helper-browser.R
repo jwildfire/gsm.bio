@@ -142,7 +142,10 @@ lStartBrowser <- function(nWidth, nHeight, nTries = 3L) {
 # one move and the view after it; `Evaluate(strCode)`, an expression's value,
 # read back from JSON; `Picture(strFile)`, a screenshot of the whole page;
 # `Requests()`, the address of every request the page has made; and `Close()`.
-lOpenPage <- function(strFile, nWidth = 1200L, nHeight = 900L, strAddress = NULL) {
+# `bPhone` opens the page as a phone of that width and height does (#84), and
+# `chrBlocked` names addresses the page cannot reach, as a server behind a
+# firewall cannot; `Press(strKey)` presses a key where the focus is.
+lOpenPage <- function(strFile, nWidth = 1200L, nHeight = 900L, strAddress = NULL, bPhone = FALSE, chrBlocked = character(0)) {
   # A saved file is opened with the network off. A page served by a session on
   # this machine (`strAddress`, #71) is opened with it on: its server is local.
   strUrl <- if (is.null(strAddress)) paste0("file://", normalizePath(strFile)) else strAddress
@@ -160,6 +163,12 @@ lOpenPage <- function(strFile, nWidth = 1200L, nHeight = 900L, strAddress = NULL
   # No network: a request to anywhere but the file itself fails.
   if (is.null(strAddress)) {
     lBrowser$Network$emulateNetworkConditions(offline = TRUE, latency = 0, downloadThroughput = 0, uploadThroughput = 0)
+  }
+  if (bPhone) {
+    lBrowser$Emulation$setDeviceMetricsOverride(width = nWidth, height = nHeight, deviceScaleFactor = 2, mobile = TRUE)
+  }
+  if (length(chrBlocked) > 0L) {
+    lBrowser$Network$setBlockedURLs(urls = as.list(chrBlocked))
   }
   lLoaded <- lBrowser$Page$loadEventFired(wait_ = FALSE, timeout_ = nBrowserPatience)
   lBrowser$Page$navigate(strUrl, wait_ = FALSE)
@@ -198,6 +207,18 @@ lOpenPage <- function(strFile, nWidth = 1200L, nHeight = 900L, strAddress = NULL
       if (is.null(nInput) || nInput == 0) stop("the page has no file input ", strSelector, call. = FALSE)
       lBrowser$DOM$setFileInputFiles(files = list(normalizePath(strUpload)), nodeId = nInput)
       invisible(strUpload)
+    },
+    # A key pressed where the focus is, as a reader at a keyboard presses it:
+    # Enter on a link follows it, and an arrow walks a row of tabs (#84).
+    Press = function(strKey) {
+      nCode <- c(Enter = 13L, ArrowLeft = 37L, ArrowRight = 39L)[[strKey]]
+      for (strType in c("keyDown", "keyUp")) {
+        lBrowser$Input$dispatchKeyEvent(
+          type = strType, key = strKey, code = strKey, windowsVirtualKeyCode = nCode, nativeVirtualKeyCode = nCode,
+          text = if (identical(strType, "keyDown") && identical(strKey, "Enter")) "\r"
+        )
+      }
+      invisible(strKey)
     },
     Requests = function() chrRequests,
     Errors = function() chrErrors,
