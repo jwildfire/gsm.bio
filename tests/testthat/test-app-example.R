@@ -61,3 +61,38 @@ test_that("the article gives the app.R that ships, the manifest it quotes lists 
   chrReadme <- readLines(file.path(strRoot, "README.md"), warn = FALSE)
   expect_true(any(grepl("https://jwildfire.github.io/gsm.bio/articles/app.html", chrReadme, fixed = TRUE)))
 })
+
+test_that("the article's install line names a release and its times say what they were measured at, and the README says how to stop the app from a terminal and that no one has deployed it (#86)", {
+  skip_if_not(bSourceTree(), "the article and the README are in the repository, not in the built package")
+  strRoot <- strSourceRoot()
+  chrArticle <- readLines(file.path(strRoot, "vignettes", "articles", "app.Rmd"), warn = FALSE)
+  # A deployer installs a release by its tag: a line with no tag installs the
+  # default branch, which is `dev`.
+  chrInstall <- grep("install_github(", chrArticle, fixed = TRUE, value = TRUE)
+  expect_gt(length(chrInstall), 0L)
+  expect_true(all(grepl("install_github\\(\"jwildfire/gsm\\.bio@v[0-9]+\\.[0-9]+\\.[0-9]+\"\\)", chrInstall)))
+  # The times: the R, the version and the commit they were measured at.
+  strTimes <- grep("^On the synthetic study, ", chrArticle, value = TRUE)
+  expect_length(strTimes, 1L)
+  for (strFact in c("R 4.3.3", "gsm.bio 0.3.0.9000", "commit c52f2c7")) {
+    expect_match(strTimes, strFact, fixed = TRUE)
+  }
+  # The footnote it quotes is an example, on the R the times were measured on.
+  strQuoted <- grep("on this server\"", chrArticle, value = TRUE)
+  expect_length(strQuoted, 1L)
+  expect_match(strQuoted, "for example, \"computed by R 4.3.3 with gsm.bio ", fixed = TRUE)
+
+  chrReadme <- readLines(file.path(strRoot, "README.md"), warn = FALSE)
+  strStop <- grep("^[0-9]+\\. To stop the app", chrReadme, value = TRUE)
+  expect_length(strStop, 1L)
+  expect_match(strStop, "Esc", fixed = TRUE)
+  expect_match(strStop, "stop button", fixed = TRUE)
+  expect_match(strStop, "in R started from a terminal, press Ctrl-C", fixed = TRUE)
+  # Nothing waits for the tag or runs ahead of it, and every paragraph that
+  # names Posit Connect as where the app goes says no one has put it there.
+  expect_false(any(grepl("is released", chrReadme, fixed = TRUE)))
+  strStatus <- chrReadme[which(chrReadme == "## Status") + 2L]
+  expect_match(strStatus, "^Version [0-9.]+ is the ")
+  expect_match(strStatus, "Posit Connect", fixed = TRUE)
+  expect_match(strStatus, "no one has deployed it to a Connect server yet", fixed = TRUE)
+})

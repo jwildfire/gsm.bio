@@ -34,7 +34,7 @@
 #' suggested, not imported.
 #'
 #' @section Status:
-#' Version 0.4.0 is released: the statistics functions, a synthetic biomarker
+#' Version 0.4.0 holds the statistics functions, a synthetic biomarker
 #' study with known planted effects, a widget for each of bio.viz's six charts,
 #' the group comparison at its three levels, from R a static figure, a
 #' statistics table, RTF and batch runs of chart specifications, and the six
