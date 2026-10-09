@@ -79,7 +79,7 @@ app, and is released together with bio.viz v0.4.0.
   [\#80](https://github.com/jwildfire/gsm.bio/issues/80), PR
   [\#81](https://github.com/jwildfire/gsm.bio/pull/81)
 - **The widgets carry bio.viz v0.4.0,** copied from bio.viz at
-  [1f0390f](https://github.com/jwildfire/bio.viz/commit/1f0390fc9c3ddb2015383c56db42dc4efd130afd)
+  [066bbec](https://github.com/jwildfire/bio.viz/commit/066bbec7795c5fe07aa1c16d5ab4fcecb5682d5d)
   on its `dev` branch; the suite holds every copied file to bio.viz’s
   v0.4.0 tag from the day it exists.
   [\#79](https://github.com/jwildfire/gsm.bio/issues/79), PR
@@ -95,7 +95,7 @@ which needs to reach GitHub; `R CMD check` skips 22 of them. The app is
 tested in a headless browser against a second R session: every statistic
 a chart shows there is held to its `Analyze_*()` function called with no
 page between. The bundles are bio.viz `dev` at
-[1f0390f](https://github.com/jwildfire/bio.viz/commit/1f0390fc9c3ddb2015383c56db42dc4efd130afd)
+[066bbec](https://github.com/jwildfire/bio.viz/commit/066bbec7795c5fe07aa1c16d5ab4fcecb5682d5d)
 and safety.viz `dev` at
 [096cc26](https://github.com/jwildfire/safety.viz/commit/096cc26d48e5d3cd1bf03eb78249658974c7a307).
 
