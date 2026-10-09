@@ -285,6 +285,13 @@ outcomes are optional. It returns the app and starts nothing, so the
 same call is the last line of an `app.R` on a server such as Posit
 Connect.
 
+A reader can load a study of their own in the app’s Data view: a results
+file, and optionally participants and outcomes, as `.csv`, `.xpt` or
+`.sas7bdat`. R reads the file on the server and the view asks which
+column is which, filled in where a column has gsm.bio’s own name. The
+file is held in the session’s memory and nowhere else. `.xpt` and
+`.sas7bdat` files are read with haven, which is suggested, not imported.
+
 ## Widgets in a Shiny page
 
 A saved page answers only the statistics stored when it was made. In a

@@ -62,11 +62,13 @@ runs one requirement per session
 - Every `test_that()` name ends with the issue it proves, `(#N)`;
   `tests/testthat/test-qcthat-convention.R` fails the suite otherwise.
 - Imports are stats and survival for the statistics, htmlwidgets for the
-  widgets, and grDevices (part of R) for the device
+  widgets, and two packages that are part of R, grDevices for the device
   [`Write_RTF()`](https://jwildfire.github.io/gsm.bio/reference/Write_RTF.md)
-  measures text on, and nothing else; `tests/testthat/test-package.R`
-  fails the suite otherwise. A package needed only to check a result
-  goes under Suggests.
+  measures text on and utils for
+  [`read.csv()`](https://rdrr.io/r/utils/read.table.html) on a file a
+  reader loads in the app, and nothing else;
+  `tests/testthat/test-package.R` fails the suite otherwise. A package
+  needed only to check a result goes under Suggests.
 - A statistic is a thin wrapper around the base R function the design
   names. Nothing is reimplemented except the standardised difference.
 - The statistics have one definition: `inst/statistics/statistics.R`.

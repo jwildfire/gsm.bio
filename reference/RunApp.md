@@ -81,6 +81,29 @@ column. Called with no table, the app opens on
 and
 [Synthetic_Outcomes](https://jwildfire.github.io/gsm.bio/reference/Synthetic_Outcomes.md).
 
+## A reader's own files
+
+The first entry of the list is the Data view. A reader chooses a results
+file there, and optionally a participants and an outcomes file, each a
+`.csv`, `.xpt` or `.sas7bdat` file. R reads it on the server. Under each
+file the view asks which of its columns is each one the charts need,
+filled in already where a column has gsm.bio's own name. On the button
+the columns are renamed to gsm.bio's names and the charts are drawn on
+the reader's tables.
+
+Nothing is drawn on a table until every column is said: a column left
+unsaid, a column chosen twice, a result that is text and a file R cannot
+read are each answered with a sentence, and the tables already drawn
+stay. A column of the file that already had one of gsm.bio's names, and
+was not the one chosen for it, is kept with `_original` added to its
+name.
+
+A file is held in the session's memory and nowhere else. Nothing is
+written to the server beyond Shiny's own temporary copy of an upload,
+which goes when the session ends, and nothing is kept between sessions.
+A `.xpt` or `.sas7bdat` file is read with haven, which is suggested, not
+imported: without it the view says so and reads `.csv` files only.
+
 ## On a server
 
 `RunApp()` returns the app and starts nothing itself, so the same call

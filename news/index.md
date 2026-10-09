@@ -15,6 +15,13 @@ as it does.
   `app.R` on a server.
   [obot.roadmap#399](https://github.com/jwildfire/obot.roadmap/issues/399),
   [\#72](https://github.com/jwildfire/gsm.bio/issues/72)
+- **The app reads your own files.** Its Data view takes a results file,
+  and optionally participants and outcomes, as `.csv`, `.xpt` or
+  `.sas7bdat`. R reads each on the server and asks which column is
+  which, filled in where a name matches; the charts are drawn once every
+  column is said. Nothing is kept after the session.
+  [obot.roadmap#399](https://github.com/jwildfire/obot.roadmap/issues/399),
+  [\#73](https://github.com/jwildfire/gsm.bio/issues/73)
 - **The widgets run in a Shiny page, with the session answering their
   statistics.** Each widget has an output and a render function, and
   [`Serve_Statistics()`](https://jwildfire.github.io/gsm.bio/reference/Serve_Statistics.html),

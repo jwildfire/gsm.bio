@@ -45,6 +45,9 @@
 <strong>The six charts are one app.</strong> <a href="https://jwildfire.github.io/gsm.bio/reference/RunApp.html"><code>RunApp()</code></a> returns a Shiny app that lists the charts beside one chart drawn at a time, on your own results table, with participants and outcomes when you have them, or on the synthetic study. It is the last line of an <code>app.R</code> on a server. <a href="https://github.com/jwildfire/obot.roadmap/issues/399" class="external-link">obot.roadmap#399</a>, <a href="https://github.com/jwildfire/gsm.bio/issues/72" class="external-link">#72</a>
 </li>
 <li>
+<strong>The app reads your own files.</strong> Its Data view takes a results file, and optionally participants and outcomes, as <code>.csv</code>, <code>.xpt</code> or <code>.sas7bdat</code>. R reads each on the server and asks which column is which, filled in where a name matches; the charts are drawn once every column is said. Nothing is kept after the session. <a href="https://github.com/jwildfire/obot.roadmap/issues/399" class="external-link">obot.roadmap#399</a>, <a href="https://github.com/jwildfire/gsm.bio/issues/73" class="external-link">#73</a>
+</li>
+<li>
 <strong>The widgets run in a Shiny page, with the session answering their statistics.</strong> Each widget has an output and a render function, and <a href="https://jwildfire.github.io/gsm.bio/reference/Serve_Statistics.html"><code>Serve_Statistics()</code></a>, called once in the server function, answers whatever a chart asks: every view has its numbers, computed by the server’s R and said so under the chart. The session runs the nine statistics functions and no other. <a href="https://github.com/jwildfire/obot.roadmap/issues/399" class="external-link">obot.roadmap#399</a>, <a href="https://github.com/jwildfire/gsm.bio/issues/71" class="external-link">#71</a>
 </li>
 </ul></div>

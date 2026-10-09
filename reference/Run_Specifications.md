@@ -242,7 +242,7 @@ if (requireNamespace("ggplot2", quietly = TRUE) && requireNamespace("r2rtf", qui
 #>         title subtitle
 #> 1 IL-6 by ARM     <NA>
 #>                                                                                                                                                                                                                                                                                                                                                           statistics
-#> 1 Week 4 Welch Two Sample t-test: p < 0.001 (Placebo n = 95, Treatment n = 91). Exploratory, unadjusted. Difference in means (Placebo - Treatment): 1.235, 95% confidence interval 0.844 to 1.626. | Drawn on 2026-10-08 by gsm.bio 0.3.0.9000. Statistics: Welch Two Sample t-test (Placebo n = 95, Treatment n = 91); computed by R 4.6.1 with gsm.bio 0.3.0.9000.
+#> 1 Week 4 Welch Two Sample t-test: p < 0.001 (Placebo n = 95, Treatment n = 91). Exploratory, unadjusted. Difference in means (Placebo - Treatment): 1.235, 95% confidence interval 0.844 to 1.626. | Drawn on 2026-10-09 by gsm.bio 0.3.0.9000. Statistics: Welch Two Sample t-test (Placebo n = 95, Treatment n = 91); computed by R 4.6.1 with gsm.bio 0.3.0.9000.
 #>                    figure                   table
 #> 1 01-group-comparison.png 01-group-comparison.rtf
 ```

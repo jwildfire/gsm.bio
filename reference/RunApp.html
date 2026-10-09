@@ -126,6 +126,28 @@ Called with no table, the app opens on <a href="Synthetic_Results.html">Syntheti
 <a href="Synthetic_Participants.html">Synthetic_Participants</a> and <a href="Synthetic_Outcomes.html">Synthetic_Outcomes</a>.</p>
     </div>
     <div class="section level2">
+    <h2 id="a-reader-s-own-files">A reader's own files<a class="anchor" aria-label="anchor" href="#a-reader-s-own-files"></a></h2>
+
+
+<p>The first entry of the list is the Data view. A reader chooses a results
+file there, and optionally a participants and an outcomes file, each a
+<code>.csv</code>, <code>.xpt</code> or <code>.sas7bdat</code> file. R reads it on the server. Under each
+file the view asks which of its columns is each one the charts need, filled
+in already where a column has gsm.bio's own name. On the button the columns
+are renamed to gsm.bio's names and the charts are drawn on the reader's
+tables.</p>
+<p>Nothing is drawn on a table until every column is said: a column left
+unsaid, a column chosen twice, a result that is text and a file R cannot
+read are each answered with a sentence, and the tables already drawn stay.
+A column of the file that already had one of gsm.bio's names, and was not
+the one chosen for it, is kept with <code>_original</code> added to its name.</p>
+<p>A file is held in the session's memory and nowhere else. Nothing is written
+to the server beyond Shiny's own temporary copy of an upload, which goes
+when the session ends, and nothing is kept between sessions. A <code>.xpt</code> or
+<code>.sas7bdat</code> file is read with haven, which is suggested, not imported:
+without it the view says so and reads <code>.csv</code> files only.</p>
+    </div>
+    <div class="section level2">
     <h2 id="on-a-server">On a server<a class="anchor" aria-label="anchor" href="#on-a-server"></a></h2>
 
 
