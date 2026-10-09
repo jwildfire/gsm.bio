@@ -5,6 +5,11 @@
   "ref": "dev",
   "commit": "066bbec7795c5fe07aa1c16d5ab4fcecb5682d5d",
   "merged_to_dev": true,
+  "release": {
+    "tag": "v0.4.0",
+    "commit": "0f707891c4370d8ff151bc674ea35b3c6ecd3dbc",
+    "note": "Every file copied is byte for byte the same at bio.viz's release tag v0.4.0."
+  },
   "files": [
     {
       "file": "specification.schema.json",
