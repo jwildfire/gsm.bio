@@ -69,7 +69,7 @@ test_that("README.md gives the install lines for the newest release, or the rele
   }
 })
 
-test_that("NEWS.md opens with the upcoming v0.4.0 section, above the v0.3.0, v0.2.0 and v0.1.0 releases (#1, #29, #44, #50, #59, #69)", {
+test_that("NEWS.md opens with the v0.4.0 section, Upcoming until its tag, above the v0.3.0, v0.2.0 and v0.1.0 releases (#1, #29, #44, #50, #59, #69, #79)", {
   strPath <- if (bSourceTree()) {
     testthat::test_path("..", "..", "NEWS.md")
   } else {

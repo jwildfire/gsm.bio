@@ -481,7 +481,7 @@ test_that("a view whose cut names what the tables lack fails on its own row with
 
 test_that("a specification nested far past the limit is refused with gsm.bio's depth sentence, not R's stack overflow (#48)", {
   for (nDeep in c(1000L, 100000L)) {
-    strDeep <- paste0('{"format":"bio.viz specification","format_version":1,"bio_viz_version":"0.3.0","chart":"cross-tab","settings":{"title":',
+    strDeep <- paste0('{"format":"bio.viz specification","format_version":1,"bio_viz_version":"0.4.0","chart":"cross-tab","settings":{"title":',
       strrep("[", nDeep), '"x"', strrep("]", nDeep), "}}")
     expect_error(Spec_Read(strDeep), "nested more than 64 deep", fixed = TRUE, label = paste(nDeep, "deep"))
   }

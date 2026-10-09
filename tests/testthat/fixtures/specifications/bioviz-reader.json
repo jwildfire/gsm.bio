@@ -654,12 +654,12 @@
   {
     "case": "a setting the chart does not have",
     "accepted": false,
-    "refusal": "bio.viz: this specification of the cross-tab chart, written by bio.viz 0.3.0, holds `colour`, which is not a setting of that chart in this version."
+    "refusal": "bio.viz: this specification of the cross-tab chart, written by bio.viz 0.4.0, holds `colour`, which is not a setting of that chart in this version."
   },
   {
     "case": "the page's connection",
     "accepted": false,
-    "refusal": "bio.viz: this specification of the cross-tab chart, written by bio.viz 0.3.0, holds `connection`, which is not a setting of that chart in this version."
+    "refusal": "bio.viz: this specification of the cross-tab chart, written by bio.viz 0.4.0, holds `connection`, which is not a setting of that chart in this version."
   },
   {
     "case": "settings that are not an object",
@@ -679,7 +679,7 @@
   {
     "case": "a setting named __proto__",
     "accepted": false,
-    "refusal": "bio.viz: this specification of the cross-tab chart, written by bio.viz 0.3.0, holds `__proto__`, which is not a setting of that chart in this version."
+    "refusal": "bio.viz: this specification of the cross-tab chart, written by bio.viz 0.4.0, holds `__proto__`, which is not a setting of that chart in this version."
   },
   {
     "case": "filters that are not a list",
