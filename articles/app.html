@@ -141,7 +141,8 @@ a reader who comes back loads the file and says its columns again.</p>
 </h2>
 <p>Every statistic is computed on request by the R session behind the
 page, by gsm.bio’s own <code>Analyze_*()</code> functions, and the line
-under a chart says so: “computed by R 4.5.1 with gsm.bio 0.4.0 on this
+under a chart says so, naming the R and the gsm.bio of the server it
+runs on: for example, “computed by R 4.3.3 with gsm.bio 0.4.0 on this
 server”. A saved widget page can answer only what was stored when it was
 made; the app answers every view its controls reach.</p>
 <ul>
@@ -181,9 +182,11 @@ the file’s own comments show how.</p>
 <p>What the server needs:</p>
 <ul>
 <li>gsm.bio installed on your own machine from GitHub, with
-<code>remotes::install_github("jwildfire/gsm.bio")</code> or pak.
-rsconnect records where each package was installed from and refuses one
-it cannot trace to a source, so a copy loaded from a checkout with
+<code>remotes::install_github("jwildfire/gsm.bio@v0.4.0")</code> or pak.
+The tag names the release: without it the line installs the default
+branch, <code>dev</code>, which is the work in progress. rsconnect
+records where each package was installed from and refuses one it cannot
+trace to a source, so a copy loaded from a checkout with
 <code>devtools::load_all()</code> will not deploy.</li>
 <li>A route from the Connect server to GitHub, to install gsm.bio there,
 and to a CRAN repository for shiny, haven and the rest. gsm.bio is not
@@ -209,9 +212,10 @@ waits for R to start. “Min processes” of 1 keeps one running.</li>
 </h2>
 <p>On the synthetic study, 11,472 results rows for 200 participants and
 12 biomarkers, with the browser and the server on one machine (R 4.3.3,
-an Apple laptop). A network adds its own time.
-<code>data-raw/app-timing.R</code> in the repository measures it
-again.</p>
+an Apple laptop). The times were measured at gsm.bio 0.3.0.9000, commit
+c52f2c7, when the app was first whole, and not again at the release. A
+network adds its own time. <code>data-raw/app-timing.R</code> in the
+repository measures it again.</p>
 <p>From choosing a chart in the list to R’s answer on the page, which
 includes sending the tables to the page and drawing the chart:</p>
 <table class="table">

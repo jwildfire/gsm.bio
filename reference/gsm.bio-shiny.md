@@ -6,7 +6,10 @@ the page: its chart asks the Shiny session for every statistic, which
 [`Serve_Statistics()`](https://jwildfire.github.io/gsm.bio/reference/Serve_Statistics.md),
 called once in the server function, answers. Without that call the chart
 is drawn and, after waiting twenty seconds for the session to say it
-answers, says that statistics are unavailable and why.
+answers, says that statistics are unavailable because the session did
+not answer in that time. A chart says the same when R is busy for longer
+than that as it first asks, which a page cannot tell from a session that
+answers none; it asks again by itself once the session does answer.
 
 ## Usage
 

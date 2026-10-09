@@ -46,7 +46,8 @@ gsm.bio::RunApp()
     `.xpt` or `.sas7bdat`), say which column is which, and press “Draw
     the charts on these files”. The Data page shows the tables that are
     loaded.
-5.  To stop the app, press Esc in the R console.
+5.  To stop the app: in RStudio, press Esc in the R console or click its
+    stop button; in R started from a terminal, press Ctrl-C.
 
 Your file stays on your machine: the app runs in your own R session.
 [The app](#the-app), below, has the details, and the article [The app,
@@ -512,11 +513,12 @@ is used.
 
 ## Status
 
-[Version
-0.4.0](https://github.com/jwildfire/gsm.bio/releases/tag/v0.4.0) is
-released, the fourth release. It adds the app: the six charts as one
-Shiny app that reads a study’s own files, answers every statistic from
-the R session behind the page, and deploys to Posit Connect as one file.
+Version 0.4.0 is the fourth, and the one this page describes; the
+[releases page](https://github.com/jwildfire/gsm.bio/releases) lists
+each version that is published. It adds the app: the six charts as one
+Shiny app that reads a study’s own files and answers every statistic
+from the R session behind the page. The app is written to go on Posit
+Connect as one file, and no one has deployed it to a Connect server yet.
 Each widget also runs in a Shiny page of your own. [Version
 0.3.0](https://github.com/jwildfire/gsm.bio/releases/tag/v0.3.0) was the
 third. It drew the group comparison at three levels, a trend tile for

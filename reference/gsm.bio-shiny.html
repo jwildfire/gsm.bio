@@ -4,12 +4,20 @@ makes them. A widget drawn with its render function stores no results in
 the page: its chart asks the Shiny session for every statistic, which
 Serve_Statistics(), called once in the server function, answers. Without
 that call the chart is drawn and, after waiting twenty seconds for the
-session to say it answers, says that statistics are unavailable and why."><meta property="og:description" content="An output function and a render function for each widget, as htmlwidgets
+session to say it answers, says that statistics are unavailable because the
+session did not answer in that time. A chart says the same when R is busy
+for longer than that as it first asks, which a page cannot tell from a
+session that answers none; it asks again by itself once the session does
+answer."><meta property="og:description" content="An output function and a render function for each widget, as htmlwidgets
 makes them. A widget drawn with its render function stores no results in
 the page: its chart asks the Shiny session for every statistic, which
 Serve_Statistics(), called once in the server function, answers. Without
 that call the chart is drawn and, after waiting twenty seconds for the
-session to say it answers, says that statistics are unavailable and why."></head><body>
+session to say it answers, says that statistics are unavailable because the
+session did not answer in that time. A chart says the same when R is busy
+for longer than that as it first asks, which a page cannot tell from a
+session that answers none; it asks again by itself once the session does
+answer."></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -54,7 +62,11 @@ makes them. A widget drawn with its render function stores no results in
 the page: its chart asks the Shiny session for every statistic, which
 <code><a href="Serve_Statistics.html">Serve_Statistics()</a></code>, called once in the server function, answers. Without
 that call the chart is drawn and, after waiting twenty seconds for the
-session to say it answers, says that statistics are unavailable and why.</p>
+session to say it answers, says that statistics are unavailable because the
+session did not answer in that time. A chart says the same when R is busy
+for longer than that as it first asks, which a page cannot tell from a
+session that answers none; it asks again by itself once the session does
+answer.</p>
     </div>
 
     <div class="section level2">

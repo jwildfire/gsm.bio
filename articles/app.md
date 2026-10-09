@@ -80,7 +80,8 @@ The app accepts files up to 100 MB. Shiny’s own limit is 5 MB;
 
 Every statistic is computed on request by the R session behind the page,
 by gsm.bio’s own `Analyze_*()` functions, and the line under a chart
-says so: “computed by R 4.5.1 with gsm.bio 0.4.0 on this server”. A
+says so, naming the R and the gsm.bio of the server it runs on: for
+example, “computed by R 4.3.3 with gsm.bio 0.4.0 on this server”. A
 saved widget page can answer only what was stored when it was made; the
 app answers every view its controls reach.
 
@@ -127,10 +128,12 @@ rsconnect::deployApp("gsm-bio-app", appName = "gsm-bio", appTitle = "Biomarker c
 What the server needs:
 
 - gsm.bio installed on your own machine from GitHub, with
-  `remotes::install_github("jwildfire/gsm.bio")` or pak. rsconnect
-  records where each package was installed from and refuses one it
-  cannot trace to a source, so a copy loaded from a checkout with
-  `devtools::load_all()` will not deploy.
+  `remotes::install_github("jwildfire/gsm.bio@v0.4.0")` or pak. The tag
+  names the release: without it the line installs the default branch,
+  `dev`, which is the work in progress. rsconnect records where each
+  package was installed from and refuses one it cannot trace to a
+  source, so a copy loaded from a checkout with `devtools::load_all()`
+  will not deploy.
 - A route from the Connect server to GitHub, to install gsm.bio there,
   and to a CRAN repository for shiny, haven and the rest. gsm.bio is not
   on CRAN.
@@ -153,8 +156,10 @@ Two settings on the content’s Runtime tab are worth a look:
 
 On the synthetic study, 11,472 results rows for 200 participants and 12
 biomarkers, with the browser and the server on one machine (R 4.3.3, an
-Apple laptop). A network adds its own time. `data-raw/app-timing.R` in
-the repository measures it again.
+Apple laptop). The times were measured at gsm.bio 0.3.0.9000, commit
+c52f2c7, when the app was first whole, and not again at the release. A
+network adds its own time. `data-raw/app-timing.R` in the repository
+measures it again.
 
 From choosing a chart in the list to R’s answer on the page, which
 includes sending the tables to the page and drawing the chart:
