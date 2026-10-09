@@ -56,7 +56,9 @@ A Shiny app object. Printing it runs the app.
 
 The charts are the package's widgets with the controls they have. Shiny
 holds the tables and answers the statistics, and does nothing else: no
-control of a chart is made again as a Shiny input.
+control of a chart is made again as a Shiny input. The Data page's own
+controls are Shiny inputs: the three files, a select for each column of
+a chosen file, the control that takes a file away, and the button.
 
 ## The page
 
@@ -109,32 +111,51 @@ and
 
 ## A reader's own files
 
-The first pill is the Data view. A reader chooses a results file there,
-and optionally a participants and an outcomes file, each a `.csv`,
-`.xpt` or `.sas7bdat` file. R reads it on the server. Under each file
-the view asks which of its columns is each one the charts need, filled
-in already where a column has gsm.bio's own name. On the button the
-columns are renamed to gsm.bio's names and the charts are drawn on the
-reader's tables.
+The first pill opens the Data page. It has a card for each table:
+results, which the charts need, and participants and outcomes, which are
+optional. A reader chooses a file in a card, each a `.csv`, `.xpt` or
+`.sas7bdat` file, and R reads it on the server. The card then asks which
+of the file's columns is each one the charts need. A column that has
+gsm.bio's own name is filled in already and tagged "same name"; one the
+reader has still to say is amber and tagged "say which". On the button
+the columns are renamed to gsm.bio's names and the charts are drawn on
+the reader's tables, and the page lists the charts that are ready, each
+with what it draws. Each opens from that list, and a chart that lacks a
+table says which.
+
+A rail beside the cards, above them on a phone, counts what is left in
+three steps: the files chosen and any R could not read, the columns
+still to say, and the charts that are ready. Under the steps it says
+what the charts are drawn on now.
 
 Nothing is drawn on a table until every column is said: a column left
 unsaid, a column chosen twice, a result that is text and a file R cannot
-read are each answered with a sentence, and the tables already drawn
-stay. A column of the file that already had one of gsm.bio's names, and
-was not the one chosen for it, is kept with `_original` added to its
-name.
+read are each answered with a sentence beside the button, and the tables
+already drawn stay. A file R cannot read is also reported in the card it
+was chosen in. A column of the file that already had one of gsm.bio's
+names, and was not the one chosen for it, is kept with `_original` added
+to its name.
 
-The Data view also shows what is loaded: the tables the charts are drawn
+A file is taken away with the Remove control in its card. Until it is,
+it is one of the files the button draws: the page names them all beside
+the button, so a file chosen for an earlier study is seen before it is
+drawn with a later one. An optional file R could not read holds the
+button until it is removed or another is chosen in its place.
+
+The Data page also shows what is loaded: the tables the charts are drawn
 on, ten rows at a time, with where each came from and its rows and
 columns. A file just chosen shows its first rows under its own column
 names, so a reader can tell which column is which. Values are shown as R
-holds them.
+holds them. A number is written in full to the fifteen digits that
+identify it, never as `1e+05`, unless it is a thousand million million
+or more, or smaller than a part in that many; those are left in R's
+scientific form.
 
 A file is held in the session's memory and nowhere else. Nothing is
 written to the server beyond Shiny's own temporary copy of an upload,
 which goes when the session ends, and nothing is kept between sessions.
 A `.xpt` or `.sas7bdat` file is read with haven, which is suggested, not
-imported: without it the view says so and reads `.csv` files only.
+imported: without it the page says so and reads `.csv` files only.
 
 ## On a server
 

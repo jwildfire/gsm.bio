@@ -41,11 +41,15 @@ gsm.bio::RunApp()
 ```
 
 3.  The app opens on a made-up study, so you can look around first.
-    Choose a chart from the list on the left.
-4.  To load your own data, click Data, choose your results file (`.csv`,
-    `.xpt` or `.sas7bdat`), say which column is which, and press “Draw
-    the charts on these files”. The Data page shows the tables that are
-    loaded.
+    Choose a chart from the row of pills at the top of the page.
+4.  To load your own data, click Data and choose your results file
+    (`.csv`, `.xpt` or `.sas7bdat`). The page asks which column of the
+    file is which, and marks in amber the ones you have still to say.
+    Then press “Draw the charts on these files”: the page lists the
+    charts that are ready, and each opens from that list. The list on
+    the left of the Data page counts what is left to do, and a file
+    chosen by mistake is taken away with the Remove button in its card.
+    The Data page also shows the tables that are loaded.
 5.  To stop the app: in RStudio, press Esc in the R console or click its
     stop button; in R started from a terminal, press Ctrl-C.
 
@@ -298,9 +302,9 @@ carrying their own copy.
 ## The app
 
 [`RunApp()`](https://jwildfire.github.io/gsm.bio/reference/RunApp.md) is
-the six charts as one Shiny app: a list of the charts beside one chart
-drawn at a time, with every statistic computed on request by the R
-session behind the page.
+the six charts as one Shiny app: a row of pills in the page’s header,
+one for each chart, over one chart drawn at a time, with every statistic
+computed on request by the R session behind the page.
 
 ``` r
 
@@ -316,14 +320,22 @@ outcomes are optional. It returns the app and starts nothing, so the
 same call is the last line of an `app.R` on a server such as Posit
 Connect.
 
-A reader can load a study of their own in the app’s Data view: a results
+A reader can load a study of their own on the app’s Data page: a results
 file, and optionally participants and outcomes, as `.csv`, `.xpt` or
-`.sas7bdat`. R reads the file on the server and the view asks which
-column is which, filled in where a column has gsm.bio’s own name. The
-Data view shows what is loaded, too: the tables the charts are drawn on,
-ten rows at a time, and the first rows of a file just chosen. The file
-is held in the session’s memory and nowhere else. `.xpt` and `.sas7bdat`
-files are read with haven, which is suggested, not imported.
+`.sas7bdat`. The page has a card for each table, and a rail beside the
+cards that counts what is left to do: the files chosen, the columns
+still to say, and the charts that are ready. R reads a file on the
+server and its card asks which column is which, filled in where a column
+has gsm.bio’s own name and marked in amber where the reader has still to
+say. A file is taken away with the Remove control in its card, and
+before the button is pressed the page names every file it would draw.
+Once the charts are drawn the page lists the ones that are ready, and
+says which table a chart that is not ready lacks. The Data page shows
+what is loaded, too: the tables the charts are drawn on, ten rows at a
+time, and the first rows of a file just chosen, with every number
+written in full. The file is held in the session’s memory and nowhere
+else. `.xpt` and `.sas7bdat` files are read with haven, which is
+suggested, not imported.
 
 The article [The app, and putting it on Posit
 Connect](https://jwildfire.github.io/gsm.bio/articles/app.html) has the

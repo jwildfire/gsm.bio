@@ -47,24 +47,42 @@ RunApp(
 
 ## A reader’s own files
 
-The first entry in the app’s list is the Data view. A reader chooses a
-results file there, and optionally a participants and an outcomes file,
-each a `.csv`, `.xpt` or `.sas7bdat` file.
+The first pill in the app’s header opens the Data page. It has a card
+for each table: results, which the charts need, and participants and
+outcomes, which are optional. A reader chooses a file in a card, each a
+`.csv`, `.xpt` or `.sas7bdat` file.
 
 - R reads the file on the server. `.xpt` and `.sas7bdat` files are read
   with haven.
-- The view shows the file’s first rows as R read them, under the file’s
-  own column names.
-- Under each file the view asks which column is each one the charts
-  need. A column that already has gsm.bio’s name for it is filled in.
+- The card shows the file’s first rows as R read them, under the file’s
+  own column names. A number is written in full, not as `1e+05`.
+- The card asks which column of the file is each one the charts need. A
+  column that already has gsm.bio’s name for it is filled in and tagged
+  “same name”. One the reader has still to say is amber and tagged “say
+  which”.
+- A file R cannot read is reported in the card it was chosen in, with
+  R’s sentence.
+- A file is taken away with the Remove control in its card. Until then
+  it is one of the files the button draws, and the page names them all
+  beside the button, so a file chosen for an earlier study is seen
+  before it is drawn again.
 - On the button the columns are renamed to gsm.bio’s names and the
-  charts are drawn on the reader’s tables.
+  charts are drawn on the reader’s tables. The page then lists the
+  charts that are ready, each with what it draws, and each opens from
+  the list. A chart that lacks a table says which.
 - Nothing is drawn on a table until every column is said. A column left
   unsaid, a column chosen twice, a result that is text and a file R
-  cannot read are each answered with a sentence, and the charts stay as
-  they were.
+  cannot read are each answered with a sentence beside the button, and
+  the charts stay as they were. An optional file R cannot read holds the
+  button until it is removed or another is chosen.
 
-Above the files the Data view shows what is loaded: the tables the
+A rail beside the cards, above them on a phone, counts what is left in
+three steps: the files chosen and any R could not read, the columns
+still to say, and the charts that are ready. Under the steps it says
+what the charts are drawn on now, which stays the tables they were on
+until the button is pressed.
+
+Above the cards the Data page shows what is loaded: the tables the
 charts are drawn on, ten rows at a time, with where each came from.
 After the button it shows the reader’s tables.
 
@@ -161,8 +179,8 @@ c52f2c7, when the app was first whole, and not again at the release. A
 network adds its own time. `data-raw/app-timing.R` in the repository
 measures it again.
 
-From choosing a chart in the list to R’s answer on the page, which
-includes sending the tables to the page and drawing the chart:
+From choosing a chart to R’s answer on the page, which includes sending
+the tables to the page and drawing the chart:
 
 | Chart               | Time   | Largest message to the session |
 |---------------------|--------|--------------------------------|

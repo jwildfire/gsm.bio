@@ -108,25 +108,42 @@ under that chart’s name and bio.viz’s setting names:</p>
 <div class="section level2">
 <h2 id="a-readers-own-files">A reader’s own files<a class="anchor" aria-label="anchor" href="#a-readers-own-files"></a>
 </h2>
-<p>The first entry in the app’s list is the Data view. A reader chooses
-a results file there, and optionally a participants and an outcomes
-file, each a <code>.csv</code>, <code>.xpt</code> or
-<code>.sas7bdat</code> file.</p>
+<p>The first pill in the app’s header opens the Data page. It has a card
+for each table: results, which the charts need, and participants and
+outcomes, which are optional. A reader chooses a file in a card, each a
+<code>.csv</code>, <code>.xpt</code> or <code>.sas7bdat</code> file.</p>
 <ul>
 <li>R reads the file on the server. <code>.xpt</code> and
 <code>.sas7bdat</code> files are read with haven.</li>
-<li>The view shows the file’s first rows as R read them, under the
-file’s own column names.</li>
-<li>Under each file the view asks which column is each one the charts
-need. A column that already has gsm.bio’s name for it is filled in.</li>
+<li>The card shows the file’s first rows as R read them, under the
+file’s own column names. A number is written in full, not as
+<code>1e+05</code>.</li>
+<li>The card asks which column of the file is each one the charts need.
+A column that already has gsm.bio’s name for it is filled in and tagged
+“same name”. One the reader has still to say is amber and tagged “say
+which”.</li>
+<li>A file R cannot read is reported in the card it was chosen in, with
+R’s sentence.</li>
+<li>A file is taken away with the Remove control in its card. Until then
+it is one of the files the button draws, and the page names them all
+beside the button, so a file chosen for an earlier study is seen before
+it is drawn again.</li>
 <li>On the button the columns are renamed to gsm.bio’s names and the
-charts are drawn on the reader’s tables.</li>
+charts are drawn on the reader’s tables. The page then lists the charts
+that are ready, each with what it draws, and each opens from the list. A
+chart that lacks a table says which.</li>
 <li>Nothing is drawn on a table until every column is said. A column
 left unsaid, a column chosen twice, a result that is text and a file R
-cannot read are each answered with a sentence, and the charts stay as
-they were.</li>
+cannot read are each answered with a sentence beside the button, and the
+charts stay as they were. An optional file R cannot read holds the
+button until it is removed or another is chosen.</li>
 </ul>
-<p>Above the files the Data view shows what is loaded: the tables the
+<p>A rail beside the cards, above them on a phone, counts what is left
+in three steps: the files chosen and any R could not read, the columns
+still to say, and the charts that are ready. Under the steps it says
+what the charts are drawn on now, which stays the tables they were on
+until the button is pressed.</p>
+<p>Above the cards the Data page shows what is loaded: the tables the
 charts are drawn on, ten rows at a time, with where each came from.
 After the button it shows the reader’s tables.</p>
 <p>The file is held in the R session’s memory and nowhere else. Nothing
@@ -216,8 +233,8 @@ an Apple laptop). The times were measured at gsm.bio 0.3.0.9000, commit
 c52f2c7, when the app was first whole, and not again at the release. A
 network adds its own time. <code>data-raw/app-timing.R</code> in the
 repository measures it again.</p>
-<p>From choosing a chart in the list to R’s answer on the page, which
-includes sending the tables to the page and drawing the chart:</p>
+<p>From choosing a chart to R’s answer on the page, which includes
+sending the tables to the page and drawing the chart:</p>
 <table class="table">
 <thead><tr class="header">
 <th>Chart</th>
