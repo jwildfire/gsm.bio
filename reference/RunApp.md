@@ -1,9 +1,9 @@
 # Run the six charts as one Shiny app
 
-A Shiny app with a list of the six bio.viz charts beside one chart drawn
-at a time, on the tables it is given or, given none, on the synthetic
-study that ships with the package. The R session behind the page answers
-every statistic a chart asks for
+A Shiny app of the six bio.viz charts, one drawn at a time and chosen
+from a row of pills in the page's header, on the tables it is given or,
+given none, on the synthetic study that ships with the package. The R
+session behind the page answers every statistic a chart asks for
 ([`Serve_Statistics()`](https://jwildfire.github.io/gsm.bio/reference/Serve_Statistics.md)),
 so a reader who changes a test, a group or a filter gets R's result for
 that view, and the line under the chart says it was computed on this
@@ -58,6 +58,32 @@ The charts are the package's widgets with the controls they have. Shiny
 holds the tables and answers the statistics, and does nothing else: no
 control of a chart is made again as a Shiny input.
 
+## The page
+
+A header band carries the app's name, "Biomarker charts", with the mark
+gsm.bio and its version beside it; a row of pills, Data first and then
+the six charts; and a chip that says what the charts are drawn on, on
+every page, and opens Data when it is pressed. The chart has the page's
+width under the band, and one footer line says which R computes the
+statistics and that a reader's files are held for the session only.
+
+- A pill is a link of Shiny's own tab set. A keyboard reaches the chosen
+  pill with the Tab key and walks the row with the arrow keys, and a
+  pill pointed at says in one line what its chart draws.
+
+- A chart that cannot be drawn on the tables there are has its pill
+  dimmed, with the reason as its hover text. The pill still opens the
+  chart's page, which holds the same sentence.
+
+- On a phone the header is two rows and the pills scroll sideways in
+  their own row, with the chosen one brought into view.
+
+- The page asks Google Fonts for the two fonts bio.viz's and
+  safety.viz's sites use, Instrument Sans and Instrument Serif, and for
+  nothing else outside its own server. It does not wait for them: where
+  they cannot be reached, as behind a firewall, the page is drawn in the
+  system's fonts.
+
 ## The tables
 
 The app reads its tables under gsm.bio's column names, so a table with
@@ -72,7 +98,7 @@ other names is renamed before the call:
 
 - outcomes, optional: `USUBJID`, `PARAMCD`, `PARAM`, `AVAL` and `CNSR`.
   Without it the stratified survival chart is replaced by a sentence
-  saying so.
+  saying so, and its pill is dimmed.
 
 A table that lacks a column is refused with a sentence naming the
 column. Called with no table, the app opens on
@@ -83,13 +109,13 @@ and
 
 ## A reader's own files
 
-The first entry of the list is the Data view. A reader chooses a results
-file there, and optionally a participants and an outcomes file, each a
-`.csv`, `.xpt` or `.sas7bdat` file. R reads it on the server. Under each
-file the view asks which of its columns is each one the charts need,
-filled in already where a column has gsm.bio's own name. On the button
-the columns are renamed to gsm.bio's names and the charts are drawn on
-the reader's tables.
+The first pill is the Data view. A reader chooses a results file there,
+and optionally a participants and an outcomes file, each a `.csv`,
+`.xpt` or `.sas7bdat` file. R reads it on the server. Under each file
+the view asks which of its columns is each one the charts need, filled
+in already where a column has gsm.bio's own name. On the button the
+columns are renamed to gsm.bio's names and the charts are drawn on the
+reader's tables.
 
 Nothing is drawn on a table until every column is said: a column left
 unsaid, a column chosen twice, a result that is text and a file R cannot
