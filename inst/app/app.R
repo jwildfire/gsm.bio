@@ -3,8 +3,8 @@
 # This file is the whole deployment: put it in a folder of its own and deploy
 # the folder (the article "The app, and putting it on Posit Connect" on
 # gsm.bio's site has the call). As it stands it opens on the synthetic study
-# that ships with gsm.bio, and a reader loads a study of their own in the
-# app's Data view.
+# that ships with gsm.bio, and a reader loads a study of their own on the
+# app's Data page.
 #
 # To open on a study's own tables, read them here and hand them to RunApp():
 #

@@ -174,6 +174,8 @@ A reader can load a study of their own on the app's Data page: a results file, a
 
 The article [The app, and putting it on Posit Connect](https://jwildfire.github.io/gsm.bio/articles/app.html) has the `app.R` a server runs, which ships with the package at `system.file("app", "app.R", package = "gsm.bio")`, the call that deploys it, what the server needs and what was measured. No one has deployed the app to a Connect server yet, and the article says so.
 
+The server needs no route to anywhere for the page's sake. The page asks one thing of anywhere but its own server: two typefaces from Google Fonts, Instrument Sans and Instrument Serif. The reader's browser asks, not the server: three requests as the app opens, to two hosts, `fonts.googleapis.com` for a style sheet and `fonts.gstatic.com` for two font files. A request carries the app's address, and the reader's network address and browser as any request does, and nothing of the study: no table, no file's name, no statistic. A page that comes to show a letter from outside the Western European alphabets, in a file's name or a table's value, asks the second host for one more font file, the one that has such letters. Where the requests are blocked, as behind a firewall, the app is drawn in the system's fonts and works the same.
+
 ## Widgets in a Shiny page
 
 A saved page answers only the statistics stored when it was made. In a Shiny page the R session behind it answers every one: each widget has an output and a render function, and `Serve_Statistics()`, called once in the server function, answers whatever a chart asks. A reader who changes the test, the group or a filter gets R's result for that view, and the line under the chart says it was computed on this server and by which R.
