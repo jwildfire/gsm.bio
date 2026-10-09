@@ -108,47 +108,83 @@ App_Lacks <- function(strChart, lStudy) {
   NULL
 }
 
-# The names of the Data view's inputs and outputs: a file, the place its
-# columns are asked for, and one select per column.
+# The names of the Data view's inputs and outputs: a file and its card, the
+# place its columns are asked for, one select per column with its tag, and the
+# control that takes the file away.
 App_Id <- function(strWhat, strTable, strColumn = NULL) {
   paste(c("gsm_bio", strWhat, strTable, strColumn), collapse = "_")
 }
 
-App_DataView <- function() {
+# The Data page (#85): a rail that counts what is left to do, and beside it
+# the tables the charts are drawn on, a card for each table a reader may
+# choose a file for, and the button. It is written for the tables the app
+# opens on, and the session writes the rail again as a reader goes.
+App_DataView <- function(lStudy = App_Study(NULL, NULL, NULL)) {
   lTables <- App_Tables()
-  lParts <- lapply(names(lTables), function(strTable) {
+  lCards <- lapply(names(lTables), function(strTable) {
     lTable <- lTables[[strTable]]
-    shiny::tagList(
-      shiny::tags$h2(paste0(lTable$label, if (lTable$needed) "" else ", optional")),
-      shiny::tags$p(class = "gsm-bio-app-what", paste0(toupper(substr(lTable$what, 1L, 1L)), substring(lTable$what, 2L), ".")),
-      shiny::fileInput(App_Id("file", strTable), label = NULL, accept = chrAppFileTypes, width = "100%"),
+    shiny::tags$section(
+      class = "gsm-bio-app-card gsm-bio-app-file", id = App_Id("card", strTable),
+      shiny::tags$div(
+        class = "gsm-bio-app-file-head",
+        shiny::tags$h3(lTable$label),
+        if (lTable$needed) App_TagOf("need", "needed") else App_TagOf("optional", "optional"),
+        shiny::tags$span(class = "gsm-bio-app-file-what", paste0(lTable$what, "; a ", App_TypesSaid(), " file"))
+      ),
+      # Shiny's own file control, drawn as a place to choose a file.
+      shiny::fileInput(
+        App_Id("file", strTable),
+        label = NULL, accept = chrAppFileTypes, width = "100%",
+        buttonLabel = sprintf("Choose the %s file", tolower(lTable$label)), placeholder = "No file chosen"
+      ),
+      # The chosen file: the session writes it, with the columns it asks for.
       shiny::uiOutput(App_Id("columns", strTable))
     )
   })
   shiny::tagList(
-    # What is loaded: the tables the charts are drawn on, ten rows at a time.
-    shiny::tags$div(
-      class = "gsm-bio-app-viewer",
-      shiny::tags$h2("The tables the charts are drawn on"),
-      # A tab for each table there is: the session writes them, because a
-      # reader can load other tables.
-      shiny::uiOutput("gsm_bio_view_tabs"),
-      shiny::uiOutput("gsm_bio_view"),
-      shiny::tags$div(
-        class = "gsm-bio-app-turn",
-        shiny::actionButton("gsm_bio_view_previous", "Previous rows"),
-        shiny::actionButton("gsm_bio_view_next", "Next rows")
+    shiny::tags$aside(
+      class = "gsm-bio-app-rail", `aria-label` = "What is left to do",
+      shiny::tags$p(class = "gsm-bio-app-kicker", "Workflow"),
+      shiny::tags$div(id = "gsm_bio_rail", class = "shiny-html-output", App_Rail(App_Steps(lStudy, list(), list(), FALSE))),
+      shiny::tags$p(
+        class = "gsm-bio-app-step-note gsm-bio-app-session",
+        "A file you choose is read by R on this server and held in this session's memory only. Nothing is kept when the session ends."
       )
     ),
-    shiny::tags$h2("A study of your own"),
-    shiny::tags$p(
-      "To draw the charts on a study of your own, choose its results table as a .csv, .xpt or .sas7bdat file, ",
-      "say which column is which, and press the button. The file is read by R on this server and held in memory ",
-      "for this session only."
-    ),
-    lParts,
-    shiny::actionButton("gsm_bio_apply", "Draw the charts on these files", class = "btn-primary"),
-    shiny::uiOutput("gsm_bio_data_said")
+    shiny::tags$div(
+      class = "gsm-bio-app-cards",
+      # What is loaded: the tables the charts are drawn on, ten rows at a time.
+      shiny::tags$section(
+        class = "gsm-bio-app-card gsm-bio-app-viewer",
+        shiny::tags$h2("The tables the charts are drawn on"),
+        # A tab for each table there is: the session writes them, because a
+        # reader can load other tables.
+        shiny::uiOutput("gsm_bio_view_tabs"),
+        shiny::uiOutput("gsm_bio_view"),
+        shiny::tags$div(
+          class = "gsm-bio-app-turn",
+          shiny::actionButton("gsm_bio_view_previous", "Previous rows"),
+          shiny::actionButton("gsm_bio_view_next", "Next rows")
+        )
+      ),
+      shiny::tags$h2(class = "gsm-bio-app-unseen", "A study of your own"),
+      lCards,
+      shiny::tags$div(
+        class = "gsm-bio-app-draw",
+        shiny::tags$div(
+          class = "gsm-bio-app-draw-button",
+          shiny::actionButton("gsm_bio_apply", "Draw the charts on these files", class = "btn-primary"),
+          # The files the button would draw, by name.
+          shiny::tags$div(
+            id = "gsm_bio_data_files", class = "shiny-html-output",
+            shiny::tags$p(class = "gsm-bio-app-what", App_Will(list()))
+          )
+        ),
+        # What R said of the last press: why nothing was drawn, or that the
+        # charts are drawn and which are ready.
+        shiny::uiOutput("gsm_bio_data_said", `aria-live` = "polite")
+      )
+    )
   )
 }
 
@@ -170,7 +206,7 @@ App_Ui <- function(lStudy = App_Study(NULL, NULL, NULL)) {
     )
   }
   lPages <- c(
-    list(Data = shiny::tags$div(class = "gsm-bio-app-card gsm-bio-app-data", App_DataView())),
+    list(Data = shiny::tags$div(class = "gsm-bio-app-data", App_DataView(lStudy))),
     stats::setNames(lapply(names(chrAppCharts), Chart), names(chrAppCharts))
   )
   lTabs <- App_Tabs(lStudy, lPages)
@@ -191,13 +227,59 @@ App_Ui <- function(lStudy = App_Study(NULL, NULL, NULL)) {
 }
 
 # The Data view's side of the session: the files as they are read, the columns
-# asked for under each, and the button that draws the charts on them.
+# asked for under each, the control that takes a file away, the rail's count
+# of what is left, and the button that draws the charts on the files.
 App_DataServer <- function(input, output, session, rStudy) {
   lTables <- App_Tables()
+  chrTables <- stats::setNames(names(lTables), names(lTables))
   # Each file a reader has chosen: its name with its table, or with the
   # sentence saying why it could not be read.
   rFiles <- shiny::reactiveValues()
+  # What R said of the last press of the button, and whether the charts are
+  # drawn on the files as they are now.
   rSaid <- shiny::reactiveVal(NULL)
+  rDrawn <- shiny::reactiveVal(FALSE)
+  # The files held, in the tables' order.
+  rHeld <- shiny::reactive({
+    Filter(Negate(is.null), lapply(chrTables, function(strTable) rFiles[[strTable]]))
+  })
+  # The reader's column for one the charts need: what its select says, and
+  # before the page has said, the column of that name if the file has one.
+  Chosen <- function(strTable, strColumn, chrColumns) {
+    strChosen <- input[[App_Id("column", strTable, strColumn)]]
+    if (length(strChosen) != 1L) {
+      return(App_Guess(chrColumns, strColumn))
+    }
+    if (strChosen %in% chrColumns) strChosen else ""
+  }
+  rChosen <- shiny::reactive({
+    lapply(chrTables, function(strTable) {
+      lFile <- rFiles[[strTable]]
+      if (is.null(lFile$table)) {
+        return(NULL)
+      }
+      vapply(names(lTables[[strTable]]$columns), function(strColumn) Chosen(strTable, strColumn, names(lFile$table)), character(1))
+    })
+  })
+  # The files are other files: what R said of the last press was of the ones
+  # there were, and the charts are not drawn on these.
+  Changed <- function() {
+    rSaid(NULL)
+    rDrawn(FALSE)
+  }
+  # A column said after the button was pressed: R's refusal was of what was
+  # said then, and the charts, if they were drawn, are not drawn on this.
+  lSaidBefore <- NULL
+  shiny::observeEvent(rChosen(), {
+    lSaidNow <- rChosen()
+    if (!is.null(lSaidBefore) && !identical(lSaidBefore, lSaidNow)) {
+      if (isTRUE(shiny::isolate(rSaid())$problem)) {
+        rSaid(NULL)
+      }
+      rDrawn(FALSE)
+    }
+    lSaidBefore <<- lSaidNow
+  })
   for (strEach in names(lTables)) {
     local({
       strTable <- strEach
@@ -209,17 +291,44 @@ App_DataServer <- function(input, output, session, rStudy) {
           list(name = strName, table = App_ReadFile(lChosen$datapath[1], strName)),
           error = function(cndError) list(name = strName, problem = conditionMessage(cndError))
         )
+        Changed()
+      })
+      # A file is taken away with the control in its card (#85). It is not a
+      # control of a chart: it is the Data page's own, as the button is.
+      shiny::observeEvent(input[[App_Id("remove", strTable)]], {
+        rFiles[[strTable]] <- NULL
+        Changed()
       })
       output[[App_Id("columns", strTable)]] <- shiny::renderUI({
         lFile <- rFiles[[strTable]]
         if (is.null(lFile)) {
           return(NULL)
         }
+        xHead <- shiny::tags$div(
+          class = "gsm-bio-app-chosen-head",
+          shiny::tags$span(class = "gsm-bio-app-chosen-name", lFile$name),
+          shiny::actionButton(
+            App_Id("remove", strTable), "Remove",
+            class = "gsm-bio-app-remove", `aria-label` = paste("Remove", lFile$name), `data-file` = App_Id("file", strTable)
+          )
+        )
         if (!is.null(lFile$problem)) {
-          return(shiny::tags$p(class = "gsm-bio-app-problem", lFile$problem))
+          return(shiny::tagList(
+            xHead,
+            shiny::tags$p(class = "gsm-bio-app-problem", lFile$problem),
+            shiny::tags$p(class = "gsm-bio-app-what", if (lTable$needed) {
+              "Choose another results file, or remove this one."
+            } else {
+              sprintf(
+                "Choose another file, or remove this one: the charts can be drawn without %s %s table.",
+                if (identical(strTable, "outcomes")) "an" else "a", strTable
+              )
+            })
+          ))
         }
         chrColumns <- names(lFile$table)
         shiny::tagList(
+          xHead,
           shiny::tags$p(class = "gsm-bio-app-what", sprintf(
             "%s: %s rows, %s columns. Which column is which?",
             lFile$name, format(nrow(lFile$table), big.mark = ","), length(chrColumns)
@@ -227,12 +336,22 @@ App_DataServer <- function(input, output, session, rStudy) {
           shiny::tags$div(
             class = "gsm-bio-app-columns",
             lapply(names(lTable$columns), function(strColumn) {
-              shiny::selectInput(
+              strGuess <- App_Guess(chrColumns, strColumn)
+              xSelect <- shiny::selectInput(
                 App_Id("column", strTable, strColumn),
                 label = lTable$columns[[strColumn]],
                 choices = c("Not said yet" = "", chrColumns),
-                selected = App_Guess(chrColumns, strColumn),
+                selected = strGuess,
                 selectize = FALSE
+              )
+              shiny::tags$div(
+                class = "gsm-bio-app-ask", `data-column` = strColumn,
+                # A select that must have a value: the page marks it while it
+                # has none, by a rule of its own style.
+                App_Change(xSelect, "select", function(xTag) shiny::tagAppendAttributes(xTag, required = NA)),
+                # Its tag, as the card is written; the session writes it
+                # again as the reader says.
+                shiny::tags$span(id = App_Id("tag", strTable, strColumn), class = "shiny-html-output", App_Tag(strGuess, strColumn))
               )
             })
           ),
@@ -246,34 +365,47 @@ App_DataServer <- function(input, output, session, rStudy) {
           App_RowsTable(utils::head(lFile$table, nAppPreviewRows))
         )
       })
+      for (strOne in names(lTable$columns)) {
+        local({
+          strColumn <- strOne
+          output[[App_Id("tag", strTable, strColumn)]] <- shiny::renderUI({
+            lFile <- rFiles[[strTable]]
+            shiny::req(lFile$table)
+            App_Tag(Chosen(strTable, strColumn, names(lFile$table)), strColumn)
+          })
+        })
+      }
     })
   }
+  output$gsm_bio_rail <- shiny::renderUI({
+    App_Rail(App_Steps(rStudy(), rHeld(), rChosen(), rDrawn()))
+  })
+  output$gsm_bio_data_files <- shiny::renderUI({
+    shiny::tags$p(class = "gsm-bio-app-what", App_Will(rHeld()))
+  })
   shiny::observeEvent(input$gsm_bio_apply, {
     lNew <- tryCatch(
       {
-        if (is.null(rFiles$results)) {
+        lHeld <- rHeld()
+        if (is.null(lHeld$results)) {
           App_Stop("Choose a results file first: the charts are drawn from the results table.")
         }
+        lSaid <- rChosen()
         lMapped <- list()
-        for (strTable in names(lTables)) {
-          lFile <- rFiles[[strTable]]
-          if (is.null(lFile)) next
+        for (strTable in names(lHeld)) {
+          lFile <- lHeld[[strTable]]
           if (!is.null(lFile$problem)) {
             App_Stop(lFile$problem)
           }
-          chrNeed <- names(lTables[[strTable]]$columns)
-          chrChosen <- vapply(chrNeed, function(strColumn) {
-            strChosen <- input[[App_Id("column", strTable, strColumn)]]
-            if (is.null(strChosen)) "" else strChosen
-          }, character(1))
-          lMapped[[strTable]] <- App_MapTable(lFile$table, chrChosen, lTables[[strTable]], lFile$name)
+          lMapped[[strTable]] <- App_MapTable(lFile$table, lSaid[[strTable]], lTables[[strTable]], lFile$name)
         }
-        chrFiles <- vapply(names(lMapped), function(strTable) rFiles[[strTable]]$name, character(1))
+        # The files by name, each under its table: what the study chip (#84)
+        # and the rail call a reader's study.
+        chrFiles <- vapply(lHeld, function(lFile) lFile$name, character(1))
         list(
           results = lMapped$results, participants = lMapped$participants, outcomes = lMapped$outcomes,
           source = paste0(paste(chrFiles, collapse = ", "), ", loaded in this session"),
-          # The files by name: what the study chip calls a reader's study (#84).
-          files = unname(chrFiles)
+          files = chrFiles
         )
       },
       error = function(cndError) conditionMessage(cndError)
@@ -283,7 +415,8 @@ App_DataServer <- function(input, output, session, rStudy) {
       rSaid(list(problem = TRUE, text = lNew))
     } else {
       rStudy(lNew)
-      rSaid(list(problem = FALSE, text = paste0("The charts are drawn on ", lNew$source, ". Choose a chart from the list.")))
+      rSaid(list(problem = FALSE, study = lNew))
+      rDrawn(TRUE)
     }
   })
   output$gsm_bio_data_said <- shiny::renderUI({
@@ -291,7 +424,7 @@ App_DataServer <- function(input, output, session, rStudy) {
     if (is.null(lSaid)) {
       return(NULL)
     }
-    shiny::tags$p(class = if (lSaid$problem) "gsm-bio-app-problem" else "gsm-bio-app-what", lSaid$text)
+    if (lSaid$problem) shiny::tags$p(class = "gsm-bio-app-problem", lSaid$text) else App_Ready(lSaid$study)
   })
   invisible(NULL)
 }
@@ -351,7 +484,9 @@ App_Server <- function(lStudy, lSettings) {
 #'
 #' The charts are the package's widgets with the controls they have. Shiny
 #' holds the tables and answers the statistics, and does nothing else: no
-#' control of a chart is made again as a Shiny input.
+#' control of a chart is made again as a Shiny input. The Data page's own
+#' controls are Shiny inputs: the three files, a select for each column of a
+#' chosen file, the control that takes a file away, and the button.
 #'
 #' @section The page:
 #' A header band carries the app's name, "Biomarker charts", with the mark
@@ -392,30 +527,49 @@ App_Server <- function(lStudy, lSettings) {
 #' [Synthetic_Participants] and [Synthetic_Outcomes].
 #'
 #' @section A reader's own files:
-#' The first pill is the Data view. A reader chooses a results
-#' file there, and optionally a participants and an outcomes file, each a
-#' `.csv`, `.xpt` or `.sas7bdat` file. R reads it on the server. Under each
-#' file the view asks which of its columns is each one the charts need, filled
-#' in already where a column has gsm.bio's own name. On the button the columns
-#' are renamed to gsm.bio's names and the charts are drawn on the reader's
-#' tables.
+#' The first pill opens the Data page. It has a card for each table: results,
+#' which the charts need, and participants and outcomes, which are optional.
+#' A reader chooses a file in a card, each a `.csv`, `.xpt` or `.sas7bdat`
+#' file, and R reads it on the server. The card then asks which of the file's
+#' columns is each one the charts need. A column that has gsm.bio's own name
+#' is filled in already and tagged "same name"; one the reader has still to
+#' say is amber and tagged "say which". On the button the columns are renamed
+#' to gsm.bio's names and the charts are drawn on the reader's tables, and the
+#' page lists the charts that are ready, each with what it draws. Each opens
+#' from that list, and a chart that lacks a table says which.
+#'
+#' A rail beside the cards, above them on a phone, counts what is left in
+#' three steps: the files chosen and any R could not read, the columns still
+#' to say, and the charts that are ready. Under the steps it says what the
+#' charts are drawn on now.
 #'
 #' Nothing is drawn on a table until every column is said: a column left
 #' unsaid, a column chosen twice, a result that is text and a file R cannot
-#' read are each answered with a sentence, and the tables already drawn stay.
-#' A column of the file that already had one of gsm.bio's names, and was not
-#' the one chosen for it, is kept with `_original` added to its name.
+#' read are each answered with a sentence beside the button, and the tables
+#' already drawn stay. A file R cannot read is also reported in the card it
+#' was chosen in. A column of the file that already had one of gsm.bio's
+#' names, and was not the one chosen for it, is kept with `_original` added to
+#' its name.
 #'
-#' The Data view also shows what is loaded: the tables the charts are drawn
+#' A file is taken away with the Remove control in its card. Until it is, it
+#' is one of the files the button draws: the page names them all beside the
+#' button, so a file chosen for an earlier study is seen before it is drawn
+#' with a later one. An optional file R could not read holds the button until
+#' it is removed or another is chosen in its place.
+#'
+#' The Data page also shows what is loaded: the tables the charts are drawn
 #' on, ten rows at a time, with where each came from and its rows and columns.
 #' A file just chosen shows its first rows under its own column names, so a
-#' reader can tell which column is which. Values are shown as R holds them.
+#' reader can tell which column is which. Values are shown as R holds them. A
+#' number is written in full to the fifteen digits that identify it, never as
+#' `1e+05`, unless it is a thousand million million or more, or smaller than
+#' a part in that many; those are left in R's scientific form.
 #'
 #' A file is held in the session's memory and nowhere else. Nothing is written
 #' to the server beyond Shiny's own temporary copy of an upload, which goes
 #' when the session ends, and nothing is kept between sessions. A `.xpt` or
 #' `.sas7bdat` file is read with haven, which is suggested, not imported:
-#' without it the view says so and reads `.csv` files only.
+#' without it the page says so and reads `.csv` files only.
 #'
 #' @section On a server:
 #' `RunApp()` returns the app and starts nothing itself, so the same call

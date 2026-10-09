@@ -278,7 +278,7 @@ strShellLook <- "(() => {
     window: window.innerWidth, room: document.documentElement.clientWidth, wide: Math.max(document.documentElement.scrollWidth, document.body.scrollWidth),
     name: box(head.querySelector('.gsm-bio-app-name')), study: box(document.querySelector('#gsm_bio_study')), row: box(row), pill: active && box(active),
     rowScrolls: row.scrollWidth - row.clientWidth, rowAt: row.scrollLeft, rowOverflow: getComputedStyle(row).overflowX,
-    card: page && page.querySelector('.gsm-bio-app-card') && box(page.querySelector('.gsm-bio-app-card')),
+    card: page && page.querySelector('.gsm-bio-app-data, .gsm-bio-app-card') && box(page.querySelector('.gsm-bio-app-data, .gsm-bio-app-card')),
     main: box(document.querySelector('.gsm-bio-app-main'))
   };
 })()"
@@ -359,9 +359,10 @@ test_that("in a browser each pill opens its page by a click and by the keyboard,
     expect_identical(lNow$chosen$selected, list(strPill), label = paste(strPill, "is the one pill said to be selected"))
     expect_identical(lNow$chosen$stop, list(strPill), label = paste(strPill, "is the row's stop of the Tab key"))
     expect_lte(lNow$wide, lNow$window, label = paste(strPill, "reaches no wider than the window"))
-    # A chart has the page's width: its card runs from one margin to the other.
-    # The room is the window's less a scroll bar, which takes none of it on a
-    # Mac and fifteen pixels on the Linux of CI.
+    # A chart has the page's width: its card runs from one margin to the
+    # other. So does the Data page, which is a rail and its cards (#85). The
+    # room is the window's less a scroll bar, which takes none of it on a Mac
+    # and fifteen pixels on the Linux of CI.
     expect_gte(lNow$card$width, lNow$room - 42, label = paste(strPill, "has the page's width"))
   }
   # By keyboard: from the chosen pill, where the Tab key stops, the arrow keys

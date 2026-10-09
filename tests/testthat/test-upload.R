@@ -508,3 +508,574 @@ test_that("in a session a .csv file R read short is said in the file's place and
     expect_length(Payload(output$GroupComparison)$dfResults$USUBJID, nSynthetic)
   })
 })
+
+# ---- The Data page's layout: a rail, the viewer and a card for each table (#85)
+
+# A page's words, without its markup.
+strPageText <- function(strHtml) {
+  trimws(gsub("\\s+", " ", gsub("<[^>]+>", " ", strHtml)))
+}
+
+# One part of a page, from the tag that opens it to the tag that closes it.
+strPagePart <- function(strHtml, strOpens, strCloses) {
+  strFlat <- gsub("\n\\s*", "", strHtml)
+  chrPart <- regmatches(strFlat, regexpr(paste0(strOpens, ".*?", strCloses), strFlat, perl = TRUE))
+  if (length(chrPart) == 0L) "" else chrPart
+}
+
+# The files of the design's three states: a results file with two columns
+# under names of its own, a participants file under gsm.bio's, and a file of a
+# type the app does not read.
+lLayoutFiles <- function() {
+  strDir <- tempfile("gsm-bio-layout")
+  dir.create(strDir)
+  dfResults <- Synthetic_Results
+  names(dfResults)[match(c("USUBJID", "TEST"), names(dfResults))] <- c("SUBJID", "LBTEST")
+  lFiles <- list(results = file.path(strDir, "lb.csv"), participants = file.path(strDir, "dm.csv"), outcomes = file.path(strDir, "notes.xlsx"))
+  utils::write.csv(dfResults, lFiles$results, row.names = FALSE, na = "")
+  utils::write.csv(Synthetic_Participants, lFiles$participants, row.names = FALSE, na = "")
+  writeLines("not a table", lFiles$outcomes)
+  lFiles
+}
+strNotRead <- "The app reads .csv, .xpt, .sas7bdat files, and notes.xlsx is none of them."
+strUnsaid <- "Say which column of lb.csv is each of these, and the charts can be drawn: participant, biomarker."
+
+test_that("the Data page opens as a rail beside the viewer and a card for each table: results tagged needed, participants and outcomes optional, each with its file control, and the button with its two places beside it (#85)", {
+  skip_if_not_installed("shiny")
+  strPage <- gsub("\n\\s*", "", as.character(App_Ui()))
+  At <- function(strWhat) regexpr(strWhat, strPage, fixed = TRUE)[1]
+  # The rail is first, then the viewer, the three cards in order, the button.
+  chrOrder <- c(
+    "<aside class=\"gsm-bio-app-rail\"", "<section class=\"gsm-bio-app-card gsm-bio-app-viewer\"",
+    "id=\"gsm_bio_card_results\"", "id=\"gsm_bio_card_participants\"", "id=\"gsm_bio_card_outcomes\"", "id=\"gsm_bio_apply\""
+  )
+  nAt <- vapply(chrOrder, At, numeric(1))
+  expect_true(all(nAt > 0))
+  expect_identical(order(nAt), seq_along(nAt))
+  # The viewer keeps its tabs, its rows and its two buttons, in a card.
+  strViewer <- strPagePart(strPage, "<section class=\"gsm-bio-app-card gsm-bio-app-viewer\"", "</section>")
+  for (strId in c("gsm_bio_view_tabs", "gsm_bio_view", "gsm_bio_view_previous", "gsm_bio_view_next")) {
+    expect_match(strViewer, sprintf("id=\"%s\"", strId), fixed = TRUE)
+  }
+  # A card for each table: its name, whether the charts need it, what it is
+  # and the files the app reads, a place to choose a file, and the place the
+  # session writes the chosen file in.
+  lTables <- App_Tables()
+  for (strTable in names(lTables)) {
+    strCard <- strPagePart(strPage, sprintf("<section class=\"gsm-bio-app-card gsm-bio-app-file\" id=\"gsm_bio_card_%s\"", strTable), "</section>")
+    expect_true(nzchar(strCard), label = strTable)
+    expect_match(strCard, sprintf("<h3[^>]*>%s</h3>", lTables[[strTable]]$label), label = strTable)
+    strTag <- if (lTables[[strTable]]$needed) "<span class=\"gsm-bio-app-tag gsm-bio-app-tag-need\">needed</span>" else "<span class=\"gsm-bio-app-tag gsm-bio-app-tag-optional\">optional</span>"
+    expect_match(strCard, strTag, fixed = TRUE, label = strTable)
+    expect_match(strPageText(strCard), paste0(lTables[[strTable]]$what, "; a .csv, .xpt or .sas7bdat file"), fixed = TRUE, label = strTable)
+    expect_match(strCard, sprintf("<input id=\"gsm_bio_file_%s\"[^>]*type=\"file\"", strTable), label = strTable)
+    expect_match(strCard, sprintf("id=\"gsm_bio_columns_%s\" class=\"shiny-html-output\"", strTable), fixed = TRUE, label = strTable)
+  }
+  expect_match(strPage, ">Choose the results file<", fixed = TRUE)
+  # The button, and beside it what it will draw and what R said of the last press.
+  strDraw <- strPagePart(strPage, "<div class=\"gsm-bio-app-draw\"", "</div>\\s*</div>\\s*</div>")
+  expect_match(strDraw, "id=\"gsm_bio_apply\"", fixed = TRUE)
+  expect_lt(regexpr("id=\"gsm_bio_apply\"", strDraw, fixed = TRUE)[1], regexpr("id=\"gsm_bio_data_said\"", strDraw, fixed = TRUE)[1])
+  expect_match(strDraw, "id=\"gsm_bio_data_files\"", fixed = TRUE)
+
+  # The rail as the page is written, before a session answers: three steps,
+  # what the charts are drawn on, and that a file is held for the session only.
+  strRail <- strPagePart(strPage, "<aside class=\"gsm-bio-app-rail\"", "</aside>")
+  expect_match(strRail, "id=\"gsm_bio_rail\" class=\"shiny-html-output\"", fixed = TRUE)
+  expect_identical(
+    strPageText(strRail),
+    paste(
+      "Workflow",
+      "Done: Choose files none chosen The charts are drawn on the synthetic study that ships with gsm.bio. Choose a results file to draw them on a study of your own.",
+      "Done: Say which column is which nothing to say",
+      "Next: Draw the charts 6 of 6 charts ready Open group comparison",
+      "Drawn on",
+      "Results 11,472 rows, 6 columns Participants 200 rows, 6 columns",
+      sprintf("Outcomes %s rows, %d columns", format(nrow(Synthetic_Outcomes), big.mark = ","), ncol(Synthetic_Outcomes)),
+      "A file you choose is read by R on this server and held in this session's memory only. Nothing is kept when the session ends."
+    )
+  )
+})
+
+test_that("the rail's three steps count what is left: files chosen and not read, columns still to say, and the charts that are ready or wait on a step (#85)", {
+  lTables <- App_Tables()
+  dfResults <- Synthetic_Results[Synthetic_Results$TEST %in% c("CRP", "IL-6"), ]
+  dfOwn <- dfResults
+  names(dfOwn)[match(c("USUBJID", "TEST"), names(dfOwn))] <- c("SUBJID", "LBTEST")
+  lSynthetic <- App_Study(NULL, NULL, NULL)
+  # What a reader has said of a file's columns when they have said nothing:
+  # the columns that already have gsm.bio's names.
+  Guessed <- function(lFiles) {
+    lapply(stats::setNames(names(lFiles), names(lFiles)), function(strTable) {
+      if (is.null(lFiles[[strTable]]$table)) {
+        return(NULL)
+      }
+      vapply(names(lTables[[strTable]]$columns), function(strColumn) App_Guess(names(lFiles[[strTable]]$table), strColumn), character(1))
+    })
+  }
+  Steps <- function(lStudy, lFiles, lChosen = Guessed(lFiles), bDrawn = FALSE) App_Steps(lStudy, lFiles, lChosen, bDrawn)
+
+  # As the app opens: nothing chosen, nothing to say, every chart ready.
+  lOpens <- Steps(lSynthetic, list())
+  expect_identical(lOpens$files[c("state", "says")], list(state = "done", says = "none chosen"))
+  expect_identical(lOpens$columns[c("state", "says", "notes")], list(state = "done", says = "nothing to say", notes = character(0)))
+  expect_identical(lOpens$charts[c("state", "says", "notes", "open")], list(state = "next", says = "6 of 6 charts ready", notes = character(0), open = "GroupComparison"))
+  expect_false(lOpens$drawn$still)
+  expect_identical(lOpens$drawn$tables[["Results"]], "11,472 rows, 6 columns")
+
+  # A results file with two columns to say, a participants file with none,
+  # and an outcomes file R could not read.
+  lFiles <- list(
+    results = list(name = "lb.xpt", table = dfOwn), participants = list(name = "dm.csv", table = Synthetic_Participants),
+    outcomes = list(name = "notes.xlsx", problem = strNotRead)
+  )
+  lHalf <- Steps(lSynthetic, lFiles)
+  expect_identical(lHalf$files$state, "next")
+  expect_identical(lHalf$files$says, "lb.xpt, dm.csv, notes.xlsx, 1 not read")
+  expect_identical(lHalf$files$notes, "notes.xlsx was not read: choose another file for the outcomes table, or remove it. The charts can be drawn without an outcomes table.")
+  expect_identical(lHalf$columns[c("state", "says", "notes")], list(state = "next", says = "2 of 6 columns still to say", notes = "In lb.xpt: participant, biomarker."))
+  expect_identical(lHalf$charts[c("state", "says")], list(state = "waiting", says = "waiting on step 1"))
+  expect_null(lHalf$charts$open)
+  # The charts stay where they were, and the rail says so.
+  expect_true(lHalf$drawn$still)
+  expect_identical(lHalf$drawn$tables[["Results"]], "11,472 rows, 6 columns")
+  expect_match(lHalf$drawn$note, "The charts stay on these tables until", fixed = TRUE)
+
+  # The unreadable file taken away: the columns are what is left.
+  lFiles$outcomes <- NULL
+  lAsked <- Steps(lSynthetic, lFiles)
+  expect_identical(lAsked$files[c("state", "says", "notes")], list(state = "done", says = "lb.xpt, dm.csv", notes = character(0)))
+  expect_identical(lAsked$columns$state, "next")
+  expect_identical(lAsked$charts[c("state", "says")], list(state = "waiting", says = "waiting on step 2"))
+  # Every column said: the button is what is left, and it would draw five charts.
+  lChosen <- Guessed(lFiles)
+  lChosen$results[c("USUBJID", "TEST")] <- c("SUBJID", "LBTEST")
+  lSaid <- Steps(lSynthetic, lFiles, lChosen)
+  expect_identical(lSaid$columns[c("state", "says", "notes")], list(state = "done", says = "6 of 6 columns said", notes = character(0)))
+  expect_identical(lSaid$charts$state, "next")
+  expect_identical(lSaid$charts$says, "5 of 6 charts can be drawn")
+  expect_identical(lSaid$charts$notes, c("Press the button under the cards.", "Stratified survival needs an outcomes table."))
+  # A column said that the file does not have is not said.
+  lChosen$results[["TEST"]] <- "MARKER"
+  expect_identical(Steps(lSynthetic, lFiles, lChosen)$columns$says, "1 of 6 columns still to say")
+
+  # Drawn on the reader's files: every step done, five charts ready, and the
+  # chart that is not says which table it lacks.
+  lDrawn <- list(
+    results = dfResults, participants = Synthetic_Participants, outcomes = NULL,
+    source = "lb.xpt, dm.csv, loaded in this session", files = c(results = "lb.xpt", participants = "dm.csv")
+  )
+  lChosen$results[["TEST"]] <- "LBTEST"
+  lDone <- Steps(lDrawn, lFiles, lChosen, bDrawn = TRUE)
+  expect_identical(vapply(lDone[c("files", "columns", "charts")], function(lStep) lStep$state, character(1)), c(files = "done", columns = "done", charts = "done"))
+  expect_identical(lDone$charts$says, "5 of 6 charts ready")
+  expect_identical(lDone$charts$notes, App_Lacks("StratifiedSurvival", lDrawn))
+  expect_identical(lDone$charts$open, "GroupComparison")
+  expect_false(lDone$drawn$still)
+  expect_identical(lDone$drawn$tables, c(
+    Results = sprintf("lb.xpt, %s rows", format(nrow(dfResults), big.mark = ",")), Participants = "dm.csv, 200 rows", Outcomes = "none"
+  ))
+
+  # Files chosen with no results file among them: that is what is left.
+  lNoResults <- Steps(lSynthetic, list(participants = list(name = "dm.csv", table = Synthetic_Participants)))
+  expect_identical(lNoResults$files$state, "next")
+  expect_identical(lNoResults$files$notes, "Choose a results file: the charts are drawn from the results table.")
+  # A results file R could not read.
+  lBad <- Steps(lSynthetic, list(results = list(name = "lb.xlsx", problem = "no")))
+  expect_identical(lBad$files$says, "lb.xlsx, 1 not read")
+  expect_identical(lBad$files$notes, "lb.xlsx was not read: choose another results file.")
+  expect_identical(lBad$columns$says, "nothing to say")
+})
+
+test_that("a column question is tagged same name where the file's column has gsm.bio's name, say which where the reader has still to say, and said where they have; its select is one the page marks while it is unsaid (#85)", {
+  skip_if_not_installed("shiny")
+  expect_identical(as.character(App_Tag("USUBJID", "USUBJID")), "<span class=\"gsm-bio-app-tag gsm-bio-app-tag-same\">same name</span>")
+  expect_identical(as.character(App_Tag("", "USUBJID")), "<span class=\"gsm-bio-app-tag gsm-bio-app-tag-need\">say which</span>")
+  expect_identical(as.character(App_Tag("SUBJID", "USUBJID")), "<span class=\"gsm-bio-app-tag gsm-bio-app-tag-said\">said</span>")
+  # An unsaid select is amber by a rule of the page's own style: it is a
+  # select that must have a value, and has none.
+  expect_match(strAppStyle, ".gsm-bio-app-ask select:invalid {", fixed = TRUE)
+})
+
+test_that("in a session the Data page counts what is left as a reader goes: a file chosen with two columns to say, a file R could not read reported in its own card, R's sentence at the button, and the charts that are ready once they are drawn (#85)", {
+  skip_if_not_installed("shiny")
+  lWas <- options(shiny.maxRequestSize = getOption("shiny.maxRequestSize"))
+  on.exit(options(lWas), add = TRUE)
+  lFiles <- lLayoutFiles()
+  # An output with nothing in it has no markup: its words are none.
+  Html <- function(xOutput) paste(as.character(xOutput$html), collapse = "")
+  shiny::testServer(RunApp(), {
+    Rail <- function() strPageText(Html(output$gsm_bio_rail))
+    expect_match(Rail(), "Done: Choose files none chosen", fixed = TRUE)
+    expect_match(Rail(), "Next: Draw the charts 6 of 6 charts ready", fixed = TRUE)
+    expect_identical(strPageText(Html(output$gsm_bio_data_files)), "No file is chosen: the button has nothing to draw.")
+
+    # The three files chosen. The results file's card: its name, the sentence
+    # with its rows and columns, a question for each column with its tag, and
+    # its first rows; and a way to take the file away.
+    session$setInputs(gsm_bio_file_results = dfChosen(lFiles$results), gsm_bio_file_participants = dfChosen(lFiles$participants), gsm_bio_file_outcomes = dfChosen(lFiles$outcomes))
+    strCard <- Html(output$gsm_bio_columns_results)
+    expect_match(strCard, "<span class=\"gsm-bio-app-chosen-name\">lb.csv</span>", fixed = TRUE)
+    expect_match(strCard, "lb.csv: 11,472 rows, 6 columns. Which column is which?", fixed = TRUE)
+    expect_match(strCard, "<button [^>]*id=\"gsm_bio_remove_results\"[^>]*>")
+    expect_match(strCard, "The first 5 rows of lb.csv, as R read them:", fixed = TRUE)
+    for (strColumn in names(App_Tables()$results$columns)) {
+      # A question: from where it opens to the next question, or to the rows.
+      strAsk <- strPagePart(strCard, sprintf("<div class=\"gsm-bio-app-ask\" data-column=\"%s\"", strColumn), "(?=<div class=\"gsm-bio-app-ask\"|<p class=\"gsm-bio-app-what\")")
+      expect_match(strAsk, sprintf("<select [^>]*id=\"gsm_bio_column_results_%s\"[^>]*required", strColumn), label = strColumn)
+      expect_match(strAsk, sprintf("id=\"gsm_bio_tag_results_%s\" class=\"shiny-html-output\"", strColumn), fixed = TRUE, label = strColumn)
+      # The tag as the card is written, and as the session writes it after.
+      strTag <- if (strColumn %in% c("USUBJID", "TEST")) "say which" else "same name"
+      expect_match(strPageText(strAsk), paste0("^", sub(",.*$", "", App_Tables()$results$columns[[strColumn]])), label = strColumn)
+      expect_match(strPageText(strAsk), paste0(strTag, "$"), label = strColumn)
+      expect_identical(strPageText(Html(output[[paste0("gsm_bio_tag_results_", strColumn)]])), strTag, label = strColumn)
+    }
+    expect_match(Html(output$gsm_bio_tag_results_USUBJID), "gsm-bio-app-tag-need", fixed = TRUE)
+    expect_match(Html(output$gsm_bio_tag_results_STRESN), "gsm-bio-app-tag-same", fixed = TRUE)
+    expect_identical(strPageText(Html(output$gsm_bio_tag_participants_USUBJID)), "same name")
+    # The file R could not read: R's sentence in the card it was chosen in,
+    # with what to do about it and the way to take it away.
+    strBad <- Html(output$gsm_bio_columns_outcomes)
+    expect_match(strBad, sprintf("<p class=\"gsm-bio-app-problem\">%s</p>", strNotRead), fixed = TRUE)
+    expect_match(strBad, "<button [^>]*id=\"gsm_bio_remove_outcomes\"[^>]*>")
+    expect_match(strPageText(strBad), "Choose another file, or remove this one: the charts can be drawn without an outcomes table.", fixed = TRUE)
+    expect_false(grepl("gsm_bio_column_outcomes_", strBad, fixed = TRUE))
+    # The rail counts all of it, and the charts are still on the synthetic study.
+    expect_match(Rail(), "Next: Choose files lb.csv, dm.csv, notes.xlsx, 1 not read notes.xlsx was not read", fixed = TRUE)
+    expect_match(Rail(), "Next: Say which column is which 2 of 6 columns still to say In lb.csv: participant, biomarker.", fixed = TRUE)
+    expect_match(Rail(), "Waiting: Draw the charts waiting on step 1", fixed = TRUE)
+    expect_match(Rail(), "Drawn on, still Results 11,472 rows, 6 columns", fixed = TRUE)
+    expect_identical(strPageText(Html(output$gsm_bio_data_files)), "These files: lb.csv (results), dm.csv (participants), notes.xlsx (outcomes, not read).")
+
+    # The button pressed with two columns unsaid: R's sentence, as it was.
+    session$setInputs(gsm_bio_apply = 1)
+    expect_identical(Html(output$gsm_bio_data_said), sprintf("<p class=\"gsm-bio-app-problem\">%s</p>", strUnsaid))
+    expect_identical(output$gsm_bio_source, "Drawn on the synthetic study that ships with gsm.bio.")
+
+    # One column said: its tag, and the rail's count, follow.
+    session$setInputs(gsm_bio_column_results_USUBJID = "SUBJID")
+    expect_identical(Html(output$gsm_bio_tag_results_USUBJID), "<span class=\"gsm-bio-app-tag gsm-bio-app-tag-said\">said</span>")
+    expect_match(Rail(), "1 of 6 columns still to say In lb.csv: biomarker.", fixed = TRUE)
+    session$setInputs(gsm_bio_column_results_TEST = "LBTEST")
+    expect_match(Rail(), "Done: Say which column is which 6 of 6 columns said", fixed = TRUE)
+    # The file R could not read still holds the button, with R's sentence.
+    session$setInputs(gsm_bio_apply = 2)
+    expect_identical(Html(output$gsm_bio_data_said), sprintf("<p class=\"gsm-bio-app-problem\">%s</p>", strNotRead))
+    expect_identical(output$gsm_bio_source, "Drawn on the synthetic study that ships with gsm.bio.")
+
+    # Taken away, it holds nothing: its card is empty, the rail says the
+    # button is what is left, and a press of the last sentence is gone.
+    session$setInputs(gsm_bio_remove_outcomes = 1)
+    expect_identical(strPageText(Html(output$gsm_bio_columns_outcomes)), "")
+    expect_identical(strPageText(Html(output$gsm_bio_data_said)), "")
+    expect_match(Rail(), "Done: Choose files lb.csv, dm.csv Done: Say which column is which 6 of 6 columns said Next: Draw the charts 5 of 6 charts can be drawn", fixed = TRUE)
+    expect_identical(strPageText(Html(output$gsm_bio_data_files)), "These files: lb.csv (results), dm.csv (participants).")
+
+    # Drawn: the page says so beside the button and lists the charts, each
+    # with what it draws, and the one that lacks a table with which.
+    session$setInputs(gsm_bio_apply = 3)
+    expect_identical(output$gsm_bio_source, "Drawn on lb.csv, dm.csv, loaded in this session.")
+    strDone <- Html(output$gsm_bio_data_said)
+    expect_match(strDone, "<div class=\"gsm-bio-app-done\">", fixed = TRUE)
+    expect_match(strPageText(strDone), "^The charts are drawn on lb.csv, dm.csv, loaded in this session\\. 5 of the 6 charts are ready\\. Open one here, or from the row of pills at the top of the page\\.")
+    expect_false(grepl("from the list", strDone, fixed = TRUE))
+    chrItems <- regmatches(gsub("\n\\s*", "", strDone), gregexpr("<li[^>]*>.*?</li>", gsub("\n\\s*", "", strDone), perl = TRUE))[[1]]
+    expect_identical(
+      vapply(chrItems, strPageText, character(1), USE.NAMES = FALSE),
+      c(
+        paste(chrAppCharts[1:5], chrAppWhat[names(chrAppCharts)[1:5]]),
+        paste("Stratified survival", "The stratified survival chart reads an outcomes table, with a time and a censor flag for each participant, and this app has none.")
+      )
+    )
+    # Each is a link the page opens its chart with, not an input.
+    expect_identical(
+      regmatches(strDone, gregexpr("data-gsm-bio-open=\"[^\"]*\"", strDone))[[1]],
+      sprintf("data-gsm-bio-open=\"%s\"", names(chrAppCharts))
+    )
+    expect_false(grepl("<(input|select|button|textarea)|action-button", strDone))
+    expect_match(Rail(), "Done: Choose files lb.csv, dm.csv Done: Say which column is which 6 of 6 columns said Done: Draw the charts 5 of 6 charts ready", fixed = TRUE)
+    expect_match(Rail(), "Drawn on Results lb.csv, 11,472 rows Participants dm.csv, 200 rows Outcomes none", fixed = TRUE)
+  })
+})
+
+test_that("in a session a file can be taken away: a second study's results are drawn alone once the first study's other files are removed, and until then the page names every file the button would draw (#85)", {
+  skip_if_not_installed("shiny")
+  lWas <- options(shiny.maxRequestSize = getOption("shiny.maxRequestSize"))
+  on.exit(options(lWas), add = TRUE)
+  # The release review's two studies: A, the synthetic study in three files;
+  # B, another study's results alone, with participants A does not have.
+  dfB <- Synthetic_Results[Synthetic_Results$TEST == "CRP", ]
+  dfB$USUBJID <- paste0("B-", dfB$USUBJID)
+  lA <- list(
+    results = strWritten(Synthetic_Results, ".csv", "A_results"), participants = strWritten(Synthetic_Participants, ".csv", "A_participants"),
+    outcomes = strWritten(Synthetic_Outcomes, ".csv", "A_outcomes")
+  )
+  strB <- strWritten(dfB, ".csv", "B_results")
+  strBroken <- file.path(dirname(strB), "notes.xlsx")
+  writeLines("not a table", strBroken)
+  Payload <- function(strJson) jsonlite::fromJSON(strJson, simplifyVector = FALSE)$x
+  # An output with nothing in it has no markup: its words are none.
+  Html <- function(xOutput) paste(as.character(xOutput$html), collapse = "")
+  shiny::testServer(RunApp(), {
+    Rail <- function() strPageText(Html(output$gsm_bio_rail))
+    Will <- function() strPageText(Html(output$gsm_bio_data_files))
+    session$setInputs(gsm_bio_file_results = dfChosen(lA$results), gsm_bio_file_participants = dfChosen(lA$participants), gsm_bio_file_outcomes = dfChosen(lA$outcomes))
+    session$setInputs(
+      gsm_bio_column_results_USUBJID = "USUBJID", gsm_bio_column_results_TEST = "TEST", gsm_bio_column_results_STRESN = "STRESN",
+      gsm_bio_column_results_VISIT = "VISIT", gsm_bio_column_results_VISITNUM = "VISITNUM", gsm_bio_column_participants_USUBJID = "USUBJID",
+      gsm_bio_column_outcomes_USUBJID = "USUBJID", gsm_bio_column_outcomes_PARAMCD = "PARAMCD", gsm_bio_column_outcomes_PARAM = "PARAM",
+      gsm_bio_column_outcomes_AVAL = "AVAL", gsm_bio_column_outcomes_CNSR = "CNSR"
+    )
+    session$setInputs(gsm_bio_apply = 1)
+    expect_identical(output$gsm_bio_source, "Drawn on A_results.csv, A_participants.csv, A_outcomes.csv, loaded in this session.")
+    expect_identical(Will(), "These files: A_results.csv (results), A_participants.csv (participants), A_outcomes.csv (outcomes).")
+
+    # Study B's results chosen, and nothing else touched: before the button
+    # is pressed the page names the three files it would draw, in the place
+    # beside the button, in the rail and in each file's own card.
+    session$setInputs(gsm_bio_file_results = dfChosen(strB))
+    expect_identical(Will(), "These files: B_results.csv (results), A_participants.csv (participants), A_outcomes.csv (outcomes).")
+    expect_match(Rail(), "Choose files B_results.csv, A_participants.csv, A_outcomes.csv", fixed = TRUE)
+    expect_match(Rail(), "Drawn on, still Results A_results.csv,", fixed = TRUE)
+    expect_match(Html(output$gsm_bio_columns_participants), "<span class=\"gsm-bio-app-chosen-name\">A_participants.csv</span>", fixed = TRUE)
+    expect_match(Html(output$gsm_bio_columns_outcomes), "<span class=\"gsm-bio-app-chosen-name\">A_outcomes.csv</span>", fixed = TRUE)
+    # The confirmation of the last press is of the files drawn then: it is gone.
+    expect_identical(strPageText(Html(output$gsm_bio_data_said)), "")
+
+    # A's participants and outcomes taken away: B's results are what is left,
+    # and the button draws them alone.
+    session$setInputs(gsm_bio_remove_participants = 1)
+    session$setInputs(gsm_bio_remove_outcomes = 1)
+    expect_identical(Will(), "These files: B_results.csv (results).")
+    expect_identical(strPageText(Html(output$gsm_bio_columns_participants)), "")
+    expect_identical(strPageText(Html(output$gsm_bio_columns_outcomes)), "")
+    session$setInputs(gsm_bio_apply = 2)
+    expect_identical(output$gsm_bio_source, "Drawn on B_results.csv, loaded in this session.")
+    lDrawn <- Payload(output$GroupComparison)
+    expect_length(lDrawn$dfResults$USUBJID, nrow(dfB))
+    expect_true(all(startsWith(unlist(lDrawn$dfResults$USUBJID), "B-")))
+    expect_null(lDrawn$dfParticipants)
+    expect_null(Payload(output$BiomarkerScreen)$dfOutcomes)
+    expect_match(Html(output$gsm_bio_place_StratifiedSurvival), "The stratified survival chart reads an outcomes table", fixed = TRUE)
+    expect_match(Rail(), "Drawn on Results B_results.csv, 956 rows Participants none Outcomes none", fixed = TRUE)
+
+    # An optional file R could not read holds the button until it is taken
+    # away, and then holds nothing.
+    session$setInputs(gsm_bio_file_outcomes = dfChosen(strBroken))
+    session$setInputs(gsm_bio_apply = 3)
+    expect_match(Html(output$gsm_bio_data_said), strNotRead, fixed = TRUE)
+    session$setInputs(gsm_bio_remove_outcomes = 2)
+    session$setInputs(gsm_bio_apply = 4)
+    expect_match(Html(output$gsm_bio_data_said), "The charts are drawn on B_results.csv, loaded in this session.", fixed = TRUE)
+
+    # The results file taken away: the others are no study without one, and
+    # the charts stay where they are.
+    session$setInputs(gsm_bio_file_participants = dfChosen(lA$participants))
+    session$setInputs(gsm_bio_remove_results = 1)
+    expect_identical(Will(), "These files: A_participants.csv (participants). There is no results file among them.")
+    expect_match(Rail(), "Next: Choose files A_participants.csv Choose a results file: the charts are drawn from the results table.", fixed = TRUE)
+    session$setInputs(gsm_bio_apply = 5)
+    expect_match(Html(output$gsm_bio_data_said), "Choose a results file first", fixed = TRUE)
+    expect_identical(output$gsm_bio_source, "Drawn on B_results.csv, loaded in this session.")
+  })
+})
+
+# The Data page walked through the design's states in a browser, with what is
+# measured in each: how wide the page is against its window, and where the
+# parts are. A width is measured against the room the page has, which is the
+# window less a scroll bar where the browser draws one beside the page.
+lWalkDataPage <- function(lPage, lFiles) {
+  lSeen <- list()
+  strLook <- "(() => {
+    const box = (selector) => { const node = document.querySelector(selector); if (!node) return null; const at = node.getBoundingClientRect(); return { left: at.left, right: at.right, top: at.top, bottom: at.bottom, width: at.width }; };
+    const words = (selector) => { const node = document.querySelector(selector); return node ? node.textContent.replace(/\\s+/g, ' ').trim() : null; };
+    return {
+      window: window.innerWidth, room: document.documentElement.clientWidth, wide: Math.max(document.documentElement.scrollWidth, document.body.scrollWidth),
+      rail: box('.gsm-bio-app-rail'), cards: box('.gsm-bio-app-cards'), viewer: box('.gsm-bio-app-viewer'), button: box('#gsm_bio_apply'), said: box('#gsm_bio_data_said > *'),
+      railSays: words('#gsm_bio_rail'), saidSays: words('#gsm_bio_data_said'), willSays: words('#gsm_bio_data_files'),
+      steps: Array.from(document.querySelectorAll('#gsm_bio_rail .gsm-bio-app-step')).map((step) => step.dataset.state),
+      asks: Array.from(document.querySelectorAll('#gsm_bio_columns_results .gsm-bio-app-ask')).map((ask) => { const select = ask.querySelector('select'); const style = getComputedStyle(select);
+        return { column: ask.dataset.column, value: select.value, unsaid: select.matches(':invalid'), edge: style.borderTopColor, ground: style.backgroundColor, tag: ask.querySelector('.gsm-bio-app-tag').textContent, need: ask.querySelector('.gsm-bio-app-tag').classList.contains('gsm-bio-app-tag-need') }; }),
+      outcomes: { card: box('#gsm_bio_card_outcomes'), problem: box('#gsm_bio_card_outcomes .gsm-bio-app-problem'), says: words('#gsm_bio_card_outcomes .gsm-bio-app-problem'), remove: Boolean(document.querySelector('#gsm_bio_remove_outcomes')),
+                  file: document.querySelector('#gsm_bio_file_outcomes').value, named: document.querySelector('#gsm_bio_card_outcomes input[type=\"text\"]').value }
+    };
+  })()"
+  Wait <- function(strCondition, strLabel) expect_true(bWaitFor(lPage, strCondition), label = strLabel)
+  Say <- function(strColumn, strValue) {
+    lPage$Evaluate(sprintf(
+      "(() => { const node = document.querySelector('#gsm_bio_column_results_%s'); node.value = '%s'; node.dispatchEvent(new Event('change', { bubbles: true })); return node.value; })()",
+      strColumn, strValue
+    ))
+  }
+  lPage$Evaluate("document.querySelector('#gsm_bio_chart a[data-value=\"Data\"]').click()")
+  Wait("document.querySelector('#gsm_bio_view table') && document.querySelector('#gsm_bio_rail .gsm-bio-app-step')", "the Data page is drawn")
+  lSeen$opens <- lPage$Evaluate(strLook)
+
+  # A results file with two columns to say, a participants file, and a file
+  # R cannot read; then the button.
+  lPage$Upload("#gsm_bio_file_results", lFiles$results)
+  Wait("document.querySelector('#gsm_bio_column_results_VISITNUM')", "the results file's columns are asked for")
+  lPage$Upload("#gsm_bio_file_participants", lFiles$participants)
+  Wait("document.querySelector('#gsm_bio_column_participants_USUBJID')", "the participants file's column is asked for")
+  lPage$Upload("#gsm_bio_file_outcomes", lFiles$outcomes)
+  Wait("document.querySelector('#gsm_bio_card_outcomes .gsm-bio-app-problem')", "the unreadable file is reported")
+  Wait("(document.querySelector('#gsm_bio_rail') || {}).textContent.includes('2 of 6 columns still to say')", "the rail counts the columns")
+  lSeen$chosen <- lPage$Evaluate(strLook)
+  lPage$Evaluate("document.querySelector('#gsm_bio_apply').click()")
+  Wait("(document.querySelector('#gsm_bio_data_said') || {}).textContent.includes('Say which column of lb.csv')", "R's sentence is shown")
+  lSeen$pressed <- lPage$Evaluate(strLook)
+
+  # The unreadable file taken away with its Remove control.
+  lPage$Evaluate("document.querySelector('#gsm_bio_remove_outcomes').click()")
+  Wait("!document.querySelector('#gsm_bio_card_outcomes .gsm-bio-app-problem') && !document.querySelector('#gsm_bio_remove_outcomes')", "the unreadable file is gone from its card")
+  lSeen$removed <- lPage$Evaluate(strLook)
+
+  # The two columns said, and the button.
+  Say("USUBJID", "SUBJID")
+  Say("TEST", "LBTEST")
+  Wait("(document.querySelector('#gsm_bio_rail') || {}).textContent.includes('6 of 6 columns said')", "the rail counts every column said")
+  lSeen$said <- lPage$Evaluate(strLook)
+  lPage$Evaluate("document.querySelector('#gsm_bio_apply').click()")
+  Wait("document.querySelector('#gsm_bio_data_said .gsm-bio-app-done')", "the page says the charts are drawn")
+  Wait("document.querySelector('#gsm_bio_source').textContent === 'Drawn on lb.csv, dm.csv, loaded in this session.'", "the chip follows")
+  Wait("(document.querySelector('#gsm_bio_rail') || {}).textContent.includes('5 of 6 charts ready')", "the rail counts the charts")
+  lSeen$applied <- lPage$Evaluate(strLook)
+  lSeen
+}
+
+test_that("in a browser the Data page is a rail beside its cards: unsaid columns are amber and tagged, R's sentence is beside the button, an unreadable file is reported in its card and taken away there, and the charts that are ready open from the list (#85)", {
+  NeedApp()
+  lFiles <- lLayoutFiles()
+  lApp <- lRunApp("RunApp()")
+  on.exit(lApp$Stop(), add = TRUE)
+  lPage <- lOpenPage(NULL, nWidth = 1280L, nHeight = 900L, strAddress = lApp$address, chrBlocked = c("*fonts.googleapis.com*", "*fonts.gstatic.com*"))
+  on.exit(lPage$Close(), add = TRUE)
+  lSeen <- lWalkDataPage(lPage, lFiles)
+  for (strState in names(lSeen)) {
+    expect_lte(lSeen[[strState]]$wide, lSeen[[strState]]$room, label = paste(strState, "reaches no wider than the page's room"))
+    expect_lte(lSeen[[strState]]$cards$right, lSeen[[strState]]$room, label = paste(strState, "has the cards inside the page's room"))
+    # The rail is beside the cards, and both are inside the page.
+    expect_lte(lSeen[[strState]]$rail$right, lSeen[[strState]]$cards$left, label = paste(strState, "has the rail beside the cards"))
+    expect_lt(abs(lSeen[[strState]]$rail$top - lSeen[[strState]]$cards$top), 2, label = paste(strState, "has the rail level with the cards"))
+    expect_gte(lSeen[[strState]]$cards$width, 900, label = paste(strState, "leaves the cards the width"))
+  }
+  # As it opens.
+  expect_identical(unlist(lSeen$opens$steps), c("done", "done", "next"))
+  expect_match(lSeen$opens$railSays, "6 of 6 charts ready", fixed = TRUE)
+  expect_identical(lSeen$opens$willSays, "No file is chosen: the button has nothing to draw.")
+  # Two columns to say: their selects are amber and tagged, the others are not.
+  lAsks <- lSeen$chosen$asks
+  expect_identical(vapply(lAsks, function(lAsk) lAsk$column, character(1)), names(App_Tables()$results$columns))
+  bUnsaid <- vapply(lAsks, function(lAsk) lAsk$unsaid, logical(1))
+  expect_identical(bUnsaid, c(TRUE, TRUE, FALSE, FALSE, FALSE))
+  expect_identical(vapply(lAsks, function(lAsk) lAsk$tag, character(1)), c("say which", "say which", "same name", "same name", "same name"))
+  expect_identical(vapply(lAsks, function(lAsk) lAsk$need, logical(1)), bUnsaid)
+  expect_identical(unique(vapply(lAsks[bUnsaid], function(lAsk) lAsk$edge, character(1))), "rgb(224, 164, 103)")
+  expect_identical(unique(vapply(lAsks[bUnsaid], function(lAsk) lAsk$ground, character(1))), "rgb(255, 247, 237)")
+  expect_false("rgb(224, 164, 103)" %in% vapply(lAsks[!bUnsaid], function(lAsk) lAsk$edge, character(1)))
+  expect_identical(unlist(lSeen$chosen$steps), c("next", "next", "waiting"))
+  expect_match(lSeen$chosen$railSays, "lb.csv, dm.csv, notes.xlsx, 1 not read", fixed = TRUE)
+  expect_identical(lSeen$chosen$willSays, "These files: lb.csv (results), dm.csv (participants), notes.xlsx (outcomes, not read).")
+  # The file R could not read: R's sentence, inside the card it was chosen in.
+  expect_identical(lSeen$chosen$outcomes$says, strNotRead)
+  expect_gte(lSeen$chosen$outcomes$problem$top, lSeen$chosen$outcomes$card$top)
+  expect_lte(lSeen$chosen$outcomes$problem$bottom, lSeen$chosen$outcomes$card$bottom)
+  expect_true(lSeen$chosen$outcomes$remove)
+  expect_match(lSeen$chosen$outcomes$named, "notes.xlsx", fixed = TRUE)
+  # The button pressed: R's sentence, as it was, beside the button.
+  expect_identical(lSeen$pressed$saidSays, strUnsaid)
+  expect_gte(lSeen$pressed$said$left, lSeen$pressed$button$right)
+  expect_lt(lSeen$pressed$said$top, lSeen$pressed$button$bottom)
+  expect_gt(lSeen$pressed$said$bottom, lSeen$pressed$button$top)
+  # Taken away: the card is as it opened, the file control is empty, and the
+  # sentence of the last press, which was of other files, is gone.
+  expect_null(lSeen$removed$outcomes$says)
+  expect_identical(lSeen$removed$outcomes$file, "")
+  expect_identical(lSeen$removed$outcomes$named, "")
+  expect_identical(lSeen$removed$willSays, "These files: lb.csv (results), dm.csv (participants).")
+  expect_identical(unlist(lSeen$removed$steps), c("done", "next", "waiting"))
+  # Said: nothing amber, every tag said or same name.
+  expect_false(any(vapply(lSeen$said$asks, function(lAsk) lAsk$unsaid, logical(1))))
+  expect_identical(vapply(lSeen$said$asks, function(lAsk) lAsk$tag, character(1)), c("said", "said", "same name", "same name", "same name"))
+  expect_identical(unlist(lSeen$said$steps), c("done", "done", "next"))
+  # Drawn: the page says so beside the button and lists the charts.
+  expect_identical(unlist(lSeen$applied$steps), c("done", "done", "done"))
+  expect_match(lSeen$applied$saidSays, "^The charts are drawn on lb.csv, dm.csv, loaded in this session\\. 5 of the 6 charts are ready\\.")
+  expect_gte(lSeen$applied$said$left, lSeen$applied$button$right)
+  lReady <- lPage$Evaluate("Array.from(document.querySelectorAll('#gsm_bio_data_said li')).map((item) => ({ chart: item.querySelector('a').dataset.gsmBioOpen, says: item.textContent.replace(/\\s+/g, ' ').trim(), lacks: item.classList.contains('gsm-bio-app-ready-lacks') }))")
+  expect_identical(vapply(lReady, function(lOne) lOne$chart, character(1)), names(chrAppCharts))
+  expect_identical(vapply(lReady, function(lOne) lOne$lacks, logical(1)), c(FALSE, FALSE, FALSE, FALSE, FALSE, TRUE))
+  expect_identical(lReady[[2]]$says, paste(chrAppCharts[["AssociationScatter"]], chrAppWhat[["AssociationScatter"]]))
+  expect_match(lReady[[6]]$says, "reads an outcomes table", fixed = TRUE)
+
+  # A chart of the list opens from it, and so does the rail's. A reader goes
+  # from page to page no faster than the page tells the session which of its
+  # parts are in view, so each step waits for that: Shiny 1.14 loses track of
+  # a part shown, hidden and shown again inside one frame of the browser.
+  Open <- function(strClick, strPage) {
+    lPage$Evaluate(sprintf("document.querySelector('%s').click()", strClick))
+    expect_true(bWaitFor(lPage, sprintf(
+      "document.querySelector('.gsm-bio-app-main > .tab-content > .tab-pane.active').dataset.value === '%s' && Shiny.shinyapp.$inputValues.gsm_bio_chart === '%s' && Shiny.shinyapp.$inputValues['.clientdata_output_gsm_bio_rail_hidden'] === %s",
+      strPage, strPage, if (identical(strPage, "Data")) "false" else "true"
+    )), label = paste(strClick, "opens", strPage))
+  }
+  Open("#gsm_bio_data_said a[data-gsm-bio-open=\"AssociationScatter\"]", "AssociationScatter")
+  expect_identical(lPage$Evaluate("window.scrollY"), 0L)
+  Open("#gsm_bio_chart a[data-value=\"Data\"]", "Data")
+  Open("#gsm_bio_rail a[data-gsm-bio-open]", "GroupComparison")
+  Open("#gsm_bio_chart a[data-value=\"Data\"]", "Data")
+
+  # The inputs the page has sent the session, beside the one the charts ask R
+  # through (#71): the ones the page is written with, and the ones the
+  # session writes for a chosen file, which are a select for each column and
+  # the control that takes the file away. No chart control is among them.
+  expect_setequal(
+    setdiff(sub(":.*$", "", unlist(lPage$Evaluate("Object.keys(Shiny.shinyapp.$inputValues).filter((name) => !name.startsWith('.clientdata'))"))), strServeInput),
+    c(
+      "gsm_bio_chart", "gsm_bio_view_table", "gsm_bio_view_previous", "gsm_bio_view_next",
+      "gsm_bio_file_results", "gsm_bio_file_participants", "gsm_bio_file_outcomes", "gsm_bio_apply",
+      paste0("gsm_bio_column_results_", names(App_Tables()$results$columns)), "gsm_bio_column_participants_USUBJID",
+      "gsm_bio_remove_results", "gsm_bio_remove_participants", "gsm_bio_remove_outcomes"
+    )
+  )
+
+  # The same file chosen again after it was taken away is read again, and is
+  # taken away again.
+  lPage$Upload("#gsm_bio_file_outcomes", lFiles$outcomes)
+  expect_true(bWaitFor(lPage, "document.querySelector('#gsm_bio_card_outcomes .gsm-bio-app-problem')"), label = "the file taken away can be chosen again")
+  lPage$Evaluate("document.querySelector('#gsm_bio_remove_outcomes').click()")
+  expect_true(bWaitFor(lPage, "!document.querySelector('#gsm_bio_card_outcomes .gsm-bio-app-problem')"), label = "and taken away again")
+  expect_identical(lPage$Errors(), character(0))
+})
+
+test_that("on a 390-pixel phone the Data page is one column, the rail first, and does not scroll sideways as it opens, with a file chosen and two columns unsaid, with the button pressed, with an unreadable file, or once the charts are drawn (#85)", {
+  NeedApp()
+  lFiles <- lLayoutFiles()
+  lApp <- lRunApp("RunApp()")
+  on.exit(lApp$Stop(), add = TRUE)
+  lPage <- lOpenPage(NULL, nWidth = 390L, nHeight = 844L, strAddress = lApp$address, bPhone = TRUE, chrBlocked = c("*fonts.googleapis.com*", "*fonts.gstatic.com*"))
+  on.exit(lPage$Close(), add = TRUE)
+  lSeen <- lWalkDataPage(lPage, lFiles)
+  expect_named(lSeen, c("opens", "chosen", "pressed", "removed", "said", "applied"))
+  for (strState in names(lSeen)) {
+    lState <- lSeen[[strState]]
+    expect_identical(lState$window, 390L, label = strState)
+    expect_lte(lState$room, 390, label = strState)
+    expect_lte(lState$wide, lState$room, label = paste(strState, "does not scroll sideways"))
+    # One column: the rail over the cards, each inside the window.
+    expect_lte(lState$rail$bottom, lState$cards$top, label = paste(strState, "has the rail over the cards"))
+    expect_gte(lState$rail$left, 0, label = strState)
+    expect_lte(lState$rail$right, lState$room, label = strState)
+    expect_lte(lState$cards$right, lState$room, label = strState)
+    expect_lte(lState$button$right, lState$room, label = strState)
+  }
+  # The states are the ones meant.
+  expect_identical(vapply(lSeen$chosen$asks, function(lAsk) lAsk$unsaid, logical(1)), c(TRUE, TRUE, FALSE, FALSE, FALSE))
+  expect_identical(lSeen$pressed$saidSays, strUnsaid)
+  expect_lte(lSeen$pressed$said$right, lSeen$pressed$room)
+  expect_identical(lSeen$chosen$outcomes$says, strNotRead)
+  expect_lte(lSeen$chosen$outcomes$problem$right, lSeen$chosen$room)
+  expect_match(lSeen$applied$saidSays, "5 of the 6 charts are ready", fixed = TRUE)
+  expect_lte(lSeen$applied$said$right, lSeen$applied$room)
+  expect_identical(lPage$Errors(), character(0))
+})

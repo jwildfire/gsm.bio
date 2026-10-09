@@ -6,7 +6,8 @@
 # set, so each is a link a keyboard reaches and the session knows which is
 # chosen; the chip and every pill are written by the session, which knows the
 # tables there are. Nothing here is a Shiny input, and nothing inside a chart
-# is styled.
+# is styled. The style and the script of the Data page (#85) are here as
+# well, with the shell's: its rail, its cards and the button's row.
 
 # What a pill says when it is pointed at: one line of what its page draws.
 chrAppWhat <- c(
@@ -78,25 +79,102 @@ strAppStyle <- "
 
 .gsm-bio-app-main { flex: 1 0 auto; min-width: 0; padding: 18px 20px 10px; }
 .gsm-bio-app-card { min-width: 0; padding: 10px; border: 1px solid #e4e6e3; border-radius: 12px; background: #fff; }
-.gsm-bio-app-card.gsm-bio-app-data { padding: 4px 20px 20px; }
 .gsm-bio-app-foot { margin-top: 8px; padding: 10px 24px; border-top: 1px solid #ece2d7; background: #faf6f1; color: #6b5d52; font-size: 11.5px; line-height: 17px; }
 .gsm-bio-app-foot p { margin: 0; }
 
-.gsm-bio-app h2 { font-size: 16px; margin: 20px 0 4px; }
-.gsm-bio-app .gsm-bio-app-what { color: #52616f; font-size: 13px; }
 .gsm-bio-app .gsm-bio-app-lacks { margin: 14px 12px; font-size: 14px; }
-.gsm-bio-app .gsm-bio-app-problem { color: #a4262c; }
-.gsm-bio-app .gsm-bio-app-columns { display: flex; flex-wrap: wrap; gap: 0 16px; }
-.gsm-bio-app .gsm-bio-app-columns .form-group { min-width: 180px; }
-.gsm-bio-app .gsm-bio-app-rows { overflow-x: auto; margin: 4px 0 8px; }
-.gsm-bio-app .gsm-bio-app-table { border-collapse: collapse; font-size: 13px; white-space: nowrap; }
-.gsm-bio-app .gsm-bio-app-table th, .gsm-bio-app .gsm-bio-app-table td { border-bottom: 1px solid #dde3ea; padding: 3px 10px 3px 0; text-align: left; }
-.gsm-bio-app .gsm-bio-app-table th { color: #52616f; font-weight: 600; }
-.gsm-bio-app .gsm-bio-app-table .gsm-bio-app-row { color: #7a8794; }
-.gsm-bio-app .gsm-bio-app-turn { display: flex; gap: 8px; margin: 0 0 24px; }
-.gsm-bio-app .gsm-bio-app-viewer .nav-tabs { margin: 8px 0; }
-.gsm-bio-app .gsm-bio-app-viewer .tab-content { display: none; }
 
+.gsm-bio-app-data { display: grid; grid-template-columns: 270px minmax(0, 1fr); gap: 18px; align-items: start; color: #2a211b; }
+.gsm-bio-app-data .gsm-bio-app-card { padding: 14px 16px; border-color: #ece2d7; border-radius: 10px; }
+.gsm-bio-app-cards { min-width: 0; }
+.gsm-bio-app-cards > * + * { margin-top: 12px; }
+.gsm-bio-app-data h2, .gsm-bio-app-data h3, .gsm-bio-app-chosen-name { margin: 0; font: 600 13px/18px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color: #2a211b; overflow-wrap: anywhere; }
+.gsm-bio-app-data h2 { margin-bottom: 8px; }
+.gsm-bio-app-data .gsm-bio-app-what { margin: 0 0 6px; color: #6b5d52; font-size: 12.5px; line-height: 18px; overflow-wrap: anywhere; }
+.gsm-bio-app-data .gsm-bio-app-problem { margin: 0 0 6px; padding: 8px 12px; border: 1px solid #fecaca; border-left: 3px solid #b91c1c; border-radius: 6px; background: #fff5f5; color: #7f1d1d; font-size: 12.5px; line-height: 18px; overflow-wrap: anywhere; }
+.gsm-bio-app-data .btn { padding: 6px 12px; border: 1px solid #cfc6b9; border-radius: 6px; background: #fff; box-shadow: none; color: #2a211b; font-size: 12.5px; line-height: 18px; white-space: normal; }
+.gsm-bio-app-data .btn:hover, .gsm-bio-app-data .btn:focus { border-color: #c2410c; background: #fff; color: #2a211b; }
+.gsm-bio-app-data .btn:focus-visible, .gsm-bio-app-data a:focus-visible, .gsm-bio-app-data select:focus-visible { outline: 2px solid #1f2328; outline-offset: 1px; }
+.gsm-bio-app-tag { display: inline-block; padding: 1px 6px; border: 1px solid transparent; border-radius: 4px; font: 600 10px/14px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: 0.6px; text-transform: uppercase; white-space: nowrap; }
+.gsm-bio-app-tag-same { background: #dcfce7; color: #166534; }
+.gsm-bio-app-tag-optional, .gsm-bio-app-tag-said { background: #f5efe7; color: #6b5d52; }
+.gsm-bio-app-tag-need { border-color: #fed7aa; background: #fff7ed; color: #9a3412; }
+
+.gsm-bio-app-rail { padding: 16px; border: 1px solid #e4e6e3; border-radius: 12px; background: #fff; }
+.gsm-bio-app-rail p { margin: 0; }
+.gsm-bio-app-rail .gsm-bio-app-kicker { margin-bottom: 8px; font: 600 10.5px/14px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: 1.3px; text-transform: uppercase; color: #6b5d52; }
+.gsm-bio-app-steps { margin: 0; padding: 0; list-style: none; counter-reset: gsm-bio-step; }
+.gsm-bio-app-step { display: flex; align-items: flex-start; gap: 10px; padding: 6px 0 12px; counter-increment: gsm-bio-step; }
+.gsm-bio-app-step-mark { flex: none; width: 24px; height: 24px; background: #271810; color: #fff; clip-path: polygon(25% 5%, 75% 5%, 100% 50%, 75% 95%, 25% 95%, 0 50%); font: 600 11px/24px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; text-align: center; }
+.gsm-bio-app-step-mark::before { content: counter(gsm-bio-step); }
+.gsm-bio-app-step-done .gsm-bio-app-step-mark::before { content: '\\2713'; }
+.gsm-bio-app-step-next .gsm-bio-app-step-mark { background: #6c3270; }
+.gsm-bio-app-step-waiting .gsm-bio-app-step-mark { background: #cfc6b9; color: #2a211b; }
+.gsm-bio-app-step-body { min-width: 0; }
+.gsm-bio-app-rail .gsm-bio-app-step-title { color: #1f2328; font-size: 13.5px; font-weight: 600; line-height: 24px; }
+.gsm-bio-app-rail .gsm-bio-app-step-waiting .gsm-bio-app-step-title { color: #6b5d52; }
+.gsm-bio-app-step-says { color: #6b5d52; font: 12px/18px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; overflow-wrap: anywhere; }
+.gsm-bio-app-rail .gsm-bio-app-step-note { margin-top: 6px; color: #6b5d52; font-size: 12px; line-height: 18px; overflow-wrap: anywhere; }
+.gsm-bio-app-open { display: inline-block; margin-top: 8px; padding: 6px 12px; border: 1px solid #cfc6b9; border-radius: 6px; background: #fff; color: #2a211b; font-size: 12.5px; line-height: 18px; text-decoration: none; }
+.gsm-bio-app-open:hover, .gsm-bio-app-open:focus { border-color: #c2410c; color: #2a211b; text-decoration: none; }
+.gsm-bio-app-drawn { margin-top: 2px; padding-top: 12px; border-top: 1px solid #ece2d7; }
+.gsm-bio-app-drawn ul { margin: 0; padding: 0; list-style: none; }
+.gsm-bio-app-drawn li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 8px; padding: 3px 0; color: #6b5d52; font-size: 12px; line-height: 18px; overflow-wrap: anywhere; }
+.gsm-bio-app-drawn .gsm-bio-app-dot { align-self: center; }
+.gsm-bio-app-drawn-name { color: #1f2328; font: 600 12.5px/18px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+.gsm-bio-app-drawn-none .gsm-bio-app-dot { background: #cfc6b9; }
+.gsm-bio-app-drawn-none .gsm-bio-app-drawn-name { color: #6b5d52; }
+.gsm-bio-app-rail .gsm-bio-app-session { margin-top: 12px; padding-top: 10px; border-top: 1px solid #ece2d7; }
+
+.gsm-bio-app-viewer .nav-tabs { display: flex; flex-wrap: wrap; gap: 4px; margin: 0 0 8px; border-bottom: 1px solid #ece2d7; }
+.gsm-bio-app-viewer .nav-tabs::before, .gsm-bio-app-viewer .nav-tabs::after { display: none; }
+.gsm-bio-app-viewer .nav-tabs > li { float: none; margin: 0 0 -1px; }
+.gsm-bio-app-viewer .nav-tabs > li > a, .gsm-bio-app-viewer .nav-tabs > li > a:hover, .gsm-bio-app-viewer .nav-tabs > li > a:focus, .gsm-bio-app-viewer .nav-tabs > li.active > a, .gsm-bio-app-viewer .nav-tabs > li.active > a:hover, .gsm-bio-app-viewer .nav-tabs > li.active > a:focus { margin: 0; padding: 6px 10px; border: 0; border-bottom: 2px solid transparent; border-radius: 0; background: transparent; color: #6b5d52; font-size: 12.5px; line-height: 18px; }
+.gsm-bio-app-viewer .nav-tabs > li.active > a, .gsm-bio-app-viewer .nav-tabs > li.active > a:hover, .gsm-bio-app-viewer .nav-tabs > li.active > a:focus { border-bottom-color: #f97316; color: #2a211b; font-weight: 600; }
+.gsm-bio-app-viewer .tab-content { display: none; }
+.gsm-bio-app .gsm-bio-app-rows { overflow-x: auto; margin: 4px 0 8px; }
+.gsm-bio-app .gsm-bio-app-table { border-collapse: collapse; color: #2a211b; font-size: 12px; line-height: 18px; white-space: nowrap; }
+.gsm-bio-app .gsm-bio-app-table th, .gsm-bio-app .gsm-bio-app-table td { padding: 4px 12px 4px 0; border-bottom: 1px solid #ece2d7; text-align: left; }
+.gsm-bio-app .gsm-bio-app-table th { color: #6b5d52; font: 600 10.5px/18px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: 0.6px; }
+.gsm-bio-app .gsm-bio-app-table .gsm-bio-app-row { color: #7a6d62; }
+.gsm-bio-app .gsm-bio-app-turn { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 0; }
+
+.gsm-bio-app-file-head { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin-bottom: 10px; }
+.gsm-bio-app-file-what { color: #6b5d52; font-size: 12px; line-height: 18px; }
+.gsm-bio-app-file .shiny-input-container { margin: 0; }
+.gsm-bio-app-file .input-group { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; width: 100%; padding: 12px 14px; border: 1.5px dashed #cfc6b9; border-radius: 10px; background: #fff; }
+.gsm-bio-app-file .input-group-btn { display: block; width: auto; }
+.gsm-bio-app-file .input-group .btn-file { border-radius: 6px; }
+.gsm-bio-app-file .input-group > .form-control { flex: 1 1 140px; float: none; width: auto; min-width: 0; height: auto; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; color: #6b5d52; font-size: 12.5px; line-height: 18px; }
+.gsm-bio-app-file .progress { height: 0; margin: 0; border-radius: 6px; background: #f5efe7; box-shadow: none; }
+.gsm-bio-app-file .progress[style*='visible'] { height: 18px; margin-top: 8px; }
+.gsm-bio-app-file .progress-bar { background-color: #ece2d7; box-shadow: none; color: #5c4f45; font-size: 11.5px; line-height: 18px; }
+.gsm-bio-app-file .progress-bar.progress-bar-danger, .gsm-bio-app-file .progress-bar.bar-danger { background-color: #b91c1c; color: #fff; }
+.gsm-bio-app-chosen-head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: 12px 0 6px; }
+.gsm-bio-app-data .gsm-bio-app-remove { margin-left: auto; padding: 3px 10px; font-size: 12px; }
+.gsm-bio-app-columns { display: grid; gap: 6px; max-width: 660px; margin: 8px 0 14px; }
+.gsm-bio-app-ask { display: grid; grid-template-columns: 170px minmax(0, 1fr) 84px; align-items: center; gap: 4px 12px; font-size: 12.5px; }
+.gsm-bio-app-ask .form-group { display: contents; }
+.gsm-bio-app-ask label { margin: 0; color: #2a211b; font-weight: 400; line-height: 18px; }
+.gsm-bio-app-ask select.form-control { width: 100%; height: 30px; padding: 4px 8px; border: 1px solid #cfc6b9; border-radius: 6px; background-color: #fff; box-shadow: none; color: #2a211b; font-size: 12.5px; }
+.gsm-bio-app-ask select:invalid { border-color: #e0a467; background-color: #fff7ed; color: #9a3412; }
+
+.gsm-bio-app-draw { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 12px 14px; margin-top: 14px; }
+.gsm-bio-app-draw-button { flex: 0 1 330px; min-width: 0; }
+.gsm-bio-app-draw > .shiny-html-output { flex: 1 1 320px; min-width: 0; }
+.gsm-bio-app-data .gsm-bio-app-draw .btn-primary, .gsm-bio-app-data .gsm-bio-app-draw .btn-primary:hover, .gsm-bio-app-data .gsm-bio-app-draw .btn-primary:focus { padding: 7px 13px; border-color: #271810; background: #271810; color: #f5ede4; }
+.gsm-bio-app-data .gsm-bio-app-draw .btn-primary:hover { background: #3a271c; }
+.gsm-bio-app-draw .gsm-bio-app-what { margin: 6px 0 0; }
+.gsm-bio-app-done { padding: 8px 12px; border: 1px solid #bbf7d0; border-left: 3px solid #166534; border-radius: 6px; background: #f0fdf4; color: #14532d; font-size: 12.5px; line-height: 18px; }
+.gsm-bio-app-done p { margin: 0 0 6px; }
+.gsm-bio-app-ready { margin: 0; padding: 0; list-style: none; }
+.gsm-bio-app-ready li { display: flex; flex-wrap: wrap; gap: 0 8px; padding: 2px 0; }
+.gsm-bio-app-ready a, .gsm-bio-app-ready a:hover, .gsm-bio-app-ready a:focus { color: #14532d; font-weight: 600; text-decoration: underline; }
+.gsm-bio-app-ready .gsm-bio-app-ready-lacks, .gsm-bio-app-ready .gsm-bio-app-ready-lacks a { color: #57534e; }
+
+@media (max-width: 900px) {
+  .gsm-bio-app-data { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+}
 @media (max-width: 640px) {
   .gsm-bio-app-head { gap: 4px 12px; padding: 12px 14px 0; }
   .gsm-bio-app-head h1 { font-size: 20px; }
@@ -107,7 +185,9 @@ strAppStyle <- "
   .gsm-bio-app-version, .gsm-bio-app-study .gsm-bio-app-meta { display: none; }
   .gsm-bio-app-main { padding: 12px 10px; }
   .gsm-bio-app-card { padding: 4px; }
-  .gsm-bio-app-card.gsm-bio-app-data { padding: 2px 12px 16px; }
+  .gsm-bio-app-data .gsm-bio-app-card, .gsm-bio-app-rail { padding: 12px; }
+  .gsm-bio-app-ask { grid-template-columns: minmax(0, 1fr) auto; }
+  .gsm-bio-app-ask label { grid-column: 1 / -1; }
   .gsm-bio-app-foot { padding: 10px 14px; }
 }
 @media (min-width: 1880px) {
@@ -119,7 +199,10 @@ strAppStyle <- "
 # What the page does beyond Shiny's own script: the chosen pill is brought
 # into view where the row of pills scrolls, and the chip opens Data. Shiny's
 # tab set does the rest: it opens a pill's page, says which pill is selected
-# to a reader who cannot see it, and walks the row with the arrow keys.
+# to a reader who cannot see it, and walks the row with the arrow keys. On the
+# Data page (#85) a link that names a chart opens it, and the control that
+# takes a file away empties the file's own control as well, which the session
+# cannot do, so the same file can be chosen again.
 strAppScript <- "
 (function () {
   var $ = window.jQuery;
@@ -135,6 +218,22 @@ strAppScript <- "
   $(document).on('click', '#gsm_bio_study', function (event) {
     event.preventDefault();
     document.querySelector('#gsm_bio_chart a[data-value=\"Data\"]').click();
+  });
+  $(document).on('click', '[data-gsm-bio-open]', function (event) {
+    event.preventDefault();
+    var pill = document.querySelector('#gsm_bio_chart a[data-value=\"' + this.getAttribute('data-gsm-bio-open') + '\"]');
+    if (pill) {
+      pill.click();
+      window.scrollTo(0, 0);
+    }
+  });
+  $(document).on('click', '.gsm-bio-app-remove', function () {
+    var file = document.getElementById(this.getAttribute('data-file'));
+    if (!file) return;
+    var place = $(file).closest('.shiny-input-container');
+    file.value = '';
+    place.find('input[type=\"text\"]').val('');
+    place.find('.progress').css('visibility', 'hidden');
   });
 })();
 "
@@ -200,15 +299,15 @@ App_PillId <- function(strPill) {
   paste0("gsm_bio_pill_", strPill)
 }
 
-# Every link of a tag, changed.
-App_Links <- function(xTag, Change) {
+# Every tag of one name inside a tag, changed: a link, a select, a list.
+App_Change <- function(xTag, strName, Change) {
   if (inherits(xTag, "shiny.tag")) {
-    if (identical(xTag$name, "a")) {
+    if (identical(xTag$name, strName)) {
       return(Change(xTag))
     }
-    xTag$children <- lapply(xTag$children, App_Links, Change)
+    xTag$children <- lapply(xTag$children, App_Change, strName, Change)
   } else if (is.list(xTag)) {
-    xTag[] <- lapply(xTag, App_Links, Change)
+    xTag[] <- lapply(xTag, App_Change, strName, Change)
   }
   xTag
 }
@@ -237,7 +336,7 @@ App_Tabs <- function(lStudy, lPages) {
   if (length(bList) != 2L || sum(bList) != 1L) {
     App_Stop("shiny wrote the app's tab set as something other than a list of links and their pages, which this version of gsm.bio does not know how to lay out.")
   }
-  xList <- App_Links(xSet$children[[which(bList)]], function(xLink) {
+  xList <- App_Change(xSet$children[[which(bList)]], "a", function(xLink) {
     shiny::tagAppendAttributes(xLink, title = chrAppWhat[[xLink$attribs[["data-value"]]]])
   })
   list(pills = xList, pages = xSet$children[[which(!bList)]])

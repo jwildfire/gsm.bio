@@ -48,11 +48,45 @@ test_that("rows are shown under the table's own column names, each with its numb
   expect_identical(lShown$rows, list(
     c("1,231", "S-001", "1.23456789012345", "TRUE", "2026-01-31"),
     c("1,232", "&lt;b&gt;S-002&lt;/b&gt;", "NA", "FALSE", "NA"),
-    c("1,233", "NA", "1e-12", "NA", "2026-02-01")
+    # A number is written in full, not as 1e-12 (#85).
+    c("1,233", "NA", "0.000000000001", "NA", "2026-02-01")
   ))
   expect_false(grepl("<b>", strHtml, fixed = TRUE))
   # No rows: the header alone.
   expect_identical(lShownTable(as.character(App_RowsTable(dfRows[0, ])))$rows, list())
+})
+
+test_that("a number is shown in full and not in scientific notation, to the fifteen digits that identify it, whole or negative, and a missing one as NA; only a number too large or too small to write out is left as R writes it (#85)", {
+  # The release review's three: R's own as.character() gives 1e+05, 3e+05 and
+  # sixteen digits of a third.
+  expect_identical(App_Cell(c(100000, 3e5, 1 / 3)), c("100000", "300000", "0.333333333333333"))
+  # A whole number, as a number and as an integer, and a negative.
+  expect_identical(App_Cell(c(42, 0, -17, 1234567)), c("42", "0", "-17", "1234567"))
+  expect_identical(App_Cell(c(100000L, -3L, NA)), c("100000", "-3", "NA"))
+  expect_identical(App_Cell(c(-2.5, -100000, -1 / 3)), c("-2.5", "-100000", "-0.333333333333333"))
+  # No value is padded to the width of another, and each keeps its own digits.
+  expect_identical(App_Cell(c(1, 10.25, 1000.125, 0.1 + 0.2)), c("1", "10.25", "1000.125", "0.3"))
+  expect_identical(App_Cell(c(1.23456789012345, 6.927, 5.9)), c("1.23456789012345", "6.927", "5.9"))
+  # A missing value, among numbers and alone.
+  expect_identical(App_Cell(c(NA, 2.5, NaN)), c("NA", "2.5", "NA"))
+  expect_identical(App_Cell(NA_real_), "NA")
+  # Small and large values are written out as far as fifteen digits reach:
+  # from a part in a thousand million million to just under a thousand
+  # million million.
+  expect_identical(App_Cell(c(1e-12, 0.000001234, 1e-15)), c("0.000000000001", "0.000001234", "0.000000000000001"))
+  expect_identical(App_Cell(c(1e12, 123456789012345, 999999999999999)), c("1000000000000", "123456789012345", "999999999999999"))
+  # Beyond that a number written out would be a row of zeros hundreds long, or
+  # digits R does not hold: it is left in R's own scientific form, to the same
+  # fifteen digits.
+  expect_identical(App_Cell(c(1e-16, 1.5e-300, -2.5e-20)), c("1e-16", "1.5e-300", "-2.5e-20"))
+  expect_identical(App_Cell(c(1e15, 1e22, 1.5e300, -6.02214076e23)), c("1e+15", "1e+22", "1.5e+300", "-6.02214076e+23"))
+  expect_identical(App_Cell(c(Inf, -Inf)), c("Inf", "-Inf"))
+  # What is not a number is as it was: text, a date, a truth value, a factor.
+  expect_identical(App_Cell(c("1e+05", NA, "0.10")), c("1e+05", "NA", "0.10"))
+  expect_identical(App_Cell(as.Date(c("2026-01-31", NA))), c("2026-01-31", "NA"))
+  expect_identical(App_Cell(c(TRUE, NA)), c("TRUE", "NA"))
+  expect_identical(App_Cell(factor(c("a", NA, "b"))), c("a", "NA", "b"))
+  expect_identical(App_Cell(numeric(0)), character(0))
 })
 
 test_that("in a session the viewer shows the synthetic study's results as the app opens, turns its pages, shows the participants and the outcomes, and follows a reader's file once it is drawn (#80)", {
@@ -75,7 +109,8 @@ test_that("in a session the viewer shows the synthetic study's results as the ap
     chrValues <- sub(".*data-value=\"([^\"]*)\".*", "\\1", chrTabs)
     list(
       tabs = stats::setNames(gsub("<[^>]+>", "", chrTabs), chrValues),
-      chosen = chrValues[grepl("^<li class=\"active\"", chrTabs)],
+      # A tab's item says it is one of a row of tabs as well (#85).
+      chosen = chrValues[grepl("^<li[^>]* class=\"active\"", chrTabs)],
       id = grepl("id=\"gsm_bio_view_table\"", strFlat, fixed = TRUE)
     )
   }
@@ -273,4 +308,43 @@ test_that("a chart in a Shiny page has text the size it has in a saved page: an 
   expect_identical(lPage$Evaluate(strSizes), lWant)
   # Shiny's own text is sized in pixels, and stays as it was.
   expect_identical(lPage$Evaluate("getComputedStyle(document.body).fontSize"), "14px")
+})
+
+test_that("the viewer's tabs are said to be tabs, the chosen one selected, as the session writes them; in a browser the arrow keys walk them and show each table's rows (#85)", {
+  skip_if_not_installed("shiny")
+  lWas <- options(shiny.maxRequestSize = getOption("shiny.maxRequestSize"))
+  on.exit(options(lWas), add = TRUE)
+  shiny::testServer(RunApp(), {
+    strTabs <- gsub("\n\\s*", "", as.character(output$gsm_bio_view_tabs$html))
+    expect_match(strTabs, "<ul class=\"nav nav-tabs shiny-tab-input\" id=\"gsm_bio_view_table\"[^>]* role=\"tablist\"")
+    chrLinks <- regmatches(strTabs, gregexpr("<a [^>]*>", strTabs))[[1]]
+    expect_length(chrLinks, 3L)
+    expect_true(all(grepl(" role=\"tab\"", chrLinks, fixed = TRUE)))
+    expect_identical(grepl(" aria-selected=\"true\"", chrLinks, fixed = TRUE), c(TRUE, FALSE, FALSE))
+    expect_identical(grepl(" aria-selected=\"false\"", chrLinks, fixed = TRUE), c(FALSE, TRUE, TRUE))
+    expect_identical(lengths(regmatches(strTabs, gregexpr("<li[^>]* role=\"presentation\"", strTabs))), 3L)
+  })
+
+  NeedApp()
+  lApp <- lRunApp("RunApp()")
+  on.exit(lApp$Stop(), add = TRUE)
+  lPage <- lOpenPage(NULL, strAddress = lApp$address)
+  on.exit(lPage$Close(), add = TRUE)
+  lPage$Evaluate("document.querySelector('a[data-value=\"Data\"]').click()")
+  strSaid <- "((document.querySelector('#gsm_bio_view .gsm-bio-app-what') || {}).textContent || '')"
+  strChosen <- "Array.from(document.querySelectorAll('#gsm_bio_view_table a[aria-selected=\"true\"]')).map((tab) => tab.dataset.value)"
+  expect_true(bWaitFor(lPage, sprintf("%s.startsWith('Results, ')", strSaid)), label = "the viewer opens on the results")
+  lPage$Evaluate("document.querySelector('#gsm_bio_view_table li.active > a').focus()")
+  lPage$Press("ArrowRight")
+  expect_true(bWaitFor(lPage, sprintf("%s.startsWith('Participants, ')", strSaid)), label = "the right arrow shows the participants")
+  expect_identical(lPage$Evaluate("document.activeElement.dataset.value"), "participants")
+  expect_identical(unlist(lPage$Evaluate(strChosen)), "participants")
+  lPage$Press("ArrowRight")
+  expect_true(bWaitFor(lPage, sprintf("%s.startsWith('Outcomes, ')", strSaid)), label = "and again the outcomes")
+  lPage$Press("ArrowRight")
+  expect_true(bWaitFor(lPage, sprintf("%s.startsWith('Results, ')", strSaid)), label = "and round to the results")
+  lPage$Press("ArrowLeft")
+  expect_true(bWaitFor(lPage, sprintf("%s.startsWith('Outcomes, ')", strSaid)), label = "the left arrow goes back")
+  expect_identical(unlist(lPage$Evaluate(strChosen)), "outcomes")
+  expect_identical(lPage$Errors(), character(0))
 })
