@@ -255,14 +255,31 @@ Serve_Statistics <- function(session = shiny::getDefaultReactiveDomain()) {
 #'   Widget_GroupComparisonOutput("chart")
 #' }
 #'
+#' @section The size of a chart's text:
+#' A chart sizes its text from the page's root font size. Shiny's default page
+#' sets that to 10 pixels, which would draw a chart's text far smaller than a
+#' saved page does, so an output function also writes one rule into the page,
+#' `html { font-size: 100%; }`, which gives the root back to the browser.
+#' Shiny's own text is sized in pixels and does not change.
+#'
 #' @seealso [Serve_Statistics()]
 #' @family shiny
 #' @name gsm.bio-shiny
 NULL
 
+# A chart sizes its text from the page's root, as a saved page's chart does,
+# where the root is the browser's own size. Shiny's default page (Bootstrap 3)
+# sets the root to 10 pixels and sizes its own text in pixels, so a chart in it
+# was drawn with text five eighths the size (#80). The rule gives the root
+# back to the browser; it is written once a page however many widgets it has.
+strShinyRoot <- "html { font-size: 100%; }"
+
 Widget_Output <- function(strName, outputId, width, height) {
   Serve_NeedShiny(paste0(strName, "Output"))
-  htmlwidgets::shinyWidgetOutput(outputId, strName, width, height, package = "gsm.bio")
+  shiny::tagList(
+    shiny::singleton(shiny::tags$style(shiny::HTML(strShinyRoot))),
+    htmlwidgets::shinyWidgetOutput(outputId, strName, width, height, package = "gsm.bio")
+  )
 }
 
 # The widget's expression is evaluated by Widget_Served(), found in an

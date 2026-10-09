@@ -47,12 +47,16 @@ test_that("RunApp() returns a Shiny app that lists the six charts, on the synthe
     "Every statistic is computed on request by R %s on this server", paste(R.version$major, R.version$minor, sep = ".")
   ), fixed = TRUE)
   # No control of a chart is made again as a Shiny input: the page's inputs
-  # are the Data view's three files and its button (#73), and nothing else.
+  # are the Data view's: the viewer's table and its two buttons (#80), the
+  # three files and their button (#73), and nothing else.
   chrInputs <- regmatches(strPage, gregexpr("<(input|select|button|textarea)[^>]*>", strPage))[[1]]
   chrIds <- regmatches(chrInputs, regexpr("id=\"[^\"]*\"", chrInputs))
   expect_identical(
     chrIds,
-    c("id=\"gsm_bio_file_results\"", "id=\"gsm_bio_file_participants\"", "id=\"gsm_bio_file_outcomes\"", "id=\"gsm_bio_apply\"")
+    c(
+      "id=\"gsm_bio_view_table\"", "id=\"gsm_bio_view_previous\"", "id=\"gsm_bio_view_next\"",
+      "id=\"gsm_bio_file_results\"", "id=\"gsm_bio_file_participants\"", "id=\"gsm_bio_file_outcomes\"", "id=\"gsm_bio_apply\""
+    )
   )
   # An input with no name of its own is a file input's own line saying which file.
   expect_true(all(grepl("readonly", chrInputs[!grepl("id=", chrInputs, fixed = TRUE)], fixed = TRUE)))

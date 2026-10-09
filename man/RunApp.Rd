@@ -82,6 +82,11 @@ read are each answered with a sentence, and the tables already drawn stay.
 A column of the file that already had one of gsm.bio's names, and was not
 the one chosen for it, is kept with \verb{_original} added to its name.
 
+The Data view also shows what is loaded: the tables the charts are drawn
+on, ten rows at a time, with where each came from and its rows and columns.
+A file just chosen shows its first rows under its own column names, so a
+reader can tell which column is which. Values are shown as R holds them.
+
 A file is held in the session's memory and nowhere else. Nothing is written
 to the server beyond Shiny's own temporary copy of an upload, which goes
 when the session ends, and nothing is kept between sessions. A \code{.xpt} or

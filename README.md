@@ -150,7 +150,7 @@ RunApp(dfResults, dfParticipants)          # a study's own tables
 
 It reads its tables under gsm.bio's column names: `USUBJID`, `TEST`, `STRESN`, `VISIT` and `VISITNUM` in the results. Participants and outcomes are optional. It returns the app and starts nothing, so the same call is the last line of an `app.R` on a server such as Posit Connect.
 
-A reader can load a study of their own in the app's Data view: a results file, and optionally participants and outcomes, as `.csv`, `.xpt` or `.sas7bdat`. R reads the file on the server and the view asks which column is which, filled in where a column has gsm.bio's own name. The file is held in the session's memory and nowhere else. `.xpt` and `.sas7bdat` files are read with haven, which is suggested, not imported.
+A reader can load a study of their own in the app's Data view: a results file, and optionally participants and outcomes, as `.csv`, `.xpt` or `.sas7bdat`. R reads the file on the server and the view asks which column is which, filled in where a column has gsm.bio's own name. The Data view shows what is loaded, too: the tables the charts are drawn on, ten rows at a time, and the first rows of a file just chosen. The file is held in the session's memory and nowhere else. `.xpt` and `.sas7bdat` files are read with haven, which is suggested, not imported.
 
 The article [The app, and putting it on Posit Connect](https://jwildfire.github.io/gsm.bio/articles/app.html) has the `app.R` a server runs, which ships with the package at `system.file("app", "app.R", package = "gsm.bio")`, the call that deploys it, what the server needs and what was measured. No one has deployed the app to a Connect server yet, and the article says so.
 
