@@ -84,35 +84,95 @@ App_ReadThrough <- function(chrWarned) {
   grepl("^incomplete final line found", chrWarned)
 }
 
-# How much of a file is looked at at a time: a megabyte, so a file of the
-# largest size the app accepts is never held whole to be counted.
+# How much of a file is searched for quotes at a time: a megabyte.
 nAppPiece <- 1048576L
 
-# What a .csv file's own bytes say, which R's reader does not (#97): whether
-# its double-quote characters come to an odd number, and whether it ends with
-# a line end. In a .csv file a quote that opens a value closes it, and a quote
-# inside a value is written twice, so a whole file has an even number; with an
-# odd number one is never closed, and R reads on from it to the end of the
-# file as one value. R's reader takes every quote as opening or closing one,
-# so the count says exactly whether R ends inside a quote. A quote is one byte
-# in UTF-8 and is part of no other character, so the bytes are counted as they
-# are. An even number of stray quotes is not known this way.
+#' Whether every quote of a .csv file is in its place
+#'
+#' R's reader takes every double quote as opening or closing a quoted
+#' stretch, wherever it is, and drops it: `5" tube` on one row and `6" tube`
+#' on another are read as one value that runs from the first to the second,
+#' and every row between them is lost, with no warning and no error. So the
+#' file's own bytes are held to what a quote must be (#97). The quotes are
+#' numbered 1, 2, 3 and on, as R takes them: an odd one opens a quoted
+#' stretch and an even one closes it. A file is well formed exactly when
+#'
+#' - every odd quote is at the start of a value: it is the file's first byte,
+#'   or its first after a UTF-8 byte-order mark, or the byte before it is a
+#'   comma or a line break; or it comes straight after the even quote before
+#'   it, as the second half of a quote written twice inside a value;
+#' - every even quote is at the end of a value: it is the file's last byte,
+#'   or the byte after it is a comma or a line break; or the byte after it is
+#'   a quote, as the first half of a quote written twice;
+#' - there is an even number of them, so the last stretch is closed.
+#'
+#' Then the stretches R makes are the values in quotes the file's writer
+#' meant, and R's rows are the file's. A quote is one byte in UTF-8 and is
+#' part of no other character, so the bytes are read as they are. The file is
+#' held whole as bytes, which is far less than R's reader holds of it, and its
+#' quotes are found a piece at a time; nothing is done once for each byte or
+#' each quote.
+#'
+#' @param strPath `character` Where the file is.
+#' @param nPiece `numeric` How many bytes are searched for quotes at a time.
+#'
+#' @return A list. `misplaced` is the line of the file, its header being line
+#'   1, that holds the first quote out of its place, or `NA` when every quote
+#'   is in its place. `opened` is the line the quoted stretch began on that a
+#'   misplaced closing quote would close, or that is never closed, or `NA`.
+#'   `open` is whether the number of quotes is odd. `ends` is whether the
+#'   file's last byte is a line break.
+#'
+#' @keywords internal
+#' @noRd
 App_CsvBytes <- function(strPath, nPiece = nAppPiece) {
-  xFile <- file(strPath, open = "rb")
-  on.exit(close(xFile), add = TRUE)
-  bOdd <- FALSE
-  xLast <- raw(0)
-  repeat {
-    xBytes <- readBin(xFile, what = "raw", n = nPiece)
-    if (length(xBytes) == 0L) {
-      break
-    }
-    if (sum(xBytes == as.raw(0x22)) %% 2L == 1L) {
-      bOdd <- !bOdd
-    }
-    xLast <- xBytes[length(xBytes)]
+  xBytes <- readBin(strPath, what = "raw", n = file.size(strPath))
+  nBytes <- length(xBytes)
+  Is <- function(xOf, nByte) xOf == as.raw(nByte)
+  Breaks <- function(xOf) Is(xOf, 0x0a) | Is(xOf, 0x0d)
+  lSaid <- list(misplaced = NA_integer_, opened = NA_integer_, open = FALSE, ends = nBytes > 0L && Breaks(xBytes[nBytes]))
+  # Where the quotes are, in the order R takes them: whole numbers, unless
+  # the file is too large for R to count its bytes in them.
+  bSmall <- nBytes < .Machine$integer.max
+  nStarts <- seq(1, by = nPiece, length.out = ceiling(nBytes / nPiece))
+  nAt <- unlist(lapply(nStarts, function(nStart) {
+    which(Is(xBytes[nStart:min(nStart + nPiece - 1, nBytes)], 0x22)) + if (bSmall) as.integer(nStart - 1) else nStart - 1
+  }))
+  nQuotes <- length(nAt)
+  if (nQuotes == 0L) {
+    return(lSaid)
   }
-  list(odd = bOdd, ends = length(xLast) == 1L && (xLast == as.raw(0x0a) || xLast == as.raw(0x0d)))
+  bOpens <- seq_len(nQuotes) %% 2L == 1L
+  # An odd quote, at the start of a value or straight after the quote before.
+  nOpens <- nAt[bOpens]
+  xBefore <- xBytes[pmax(nOpens - 1L, 1L)]
+  bBom <- nBytes >= 3L && identical(xBytes[1:3], as.raw(c(0xef, 0xbb, 0xbf)))
+  bStarts <- logical(nQuotes)
+  bStarts[bOpens] <- nOpens == 1 | (bBom & nOpens == 4) | Is(xBefore, 0x2c) | Breaks(xBefore)
+  bFollows <- c(FALSE, diff(nAt) == 1L)
+  # An even quote, at the end of a value or straight before another quote.
+  nCloses <- nAt[!bOpens]
+  xAfter <- xBytes[pmin(nCloses + 1L, nBytes)]
+  bInPlace <- bStarts | (bOpens & bFollows)
+  bInPlace[!bOpens] <- nCloses == nBytes | Is(xAfter, 0x2c) | Breaks(xAfter) | Is(xAfter, 0x22)
+  # The line a byte is on, as an editor counts lines: one more than the line
+  # breaks before it, where a carriage return with a line feed is one break.
+  Line <- function(nByte) {
+    xUpTo <- xBytes[seq_len(nByte - 1)]
+    nReturns <- which(Is(xUpTo, 0x0d))
+    as.integer(sum(Is(xUpTo, 0x0a)) + sum(!Is(xBytes[nReturns + 1], 0x0a)) + 1L)
+  }
+  iFirst <- match(FALSE, bInPlace)
+  lSaid$open <- nQuotes %% 2L == 1L
+  if (!is.na(iFirst)) {
+    lSaid$misplaced <- Line(nAt[iFirst])
+    if (!bOpens[iFirst]) {
+      lSaid$opened <- Line(nAt[max(which(bStarts[seq_len(iFirst)]))])
+    }
+  } else if (lSaid$open) {
+    lSaid$opened <- Line(nAt[max(which(bStarts))])
+  }
+  lSaid
 }
 
 # A .csv file as the app reads it: comma-separated text in UTF-8, with or
@@ -129,7 +189,7 @@ App_ReadCsv <- function(strPath) {
 #'
 #' @return A data frame of base R columns. An error, with a sentence for the
 #'   reader, for a type the app does not read, a file R cannot read, a file R
-#'   warned of as it read it, a `.csv` file with a quote that is never closed,
+#'   warned of as it read it, a `.csv` file with a quote out of its place,
 #'   a file with no rows or no columns, and a SAS file when haven is not
 #'   installed. A sentence names the file as the reader does, never by its
 #'   path on the server.
@@ -178,15 +238,26 @@ App_ReadFile <- function(strPath, strName) {
   }
   if (strType == ".csv") {
     # What R did not warn of, or warned of only as a last line with no line
-    # end: the file's own bytes say whether a quote in it is left open, and
-    # whether its last line is what R says it is (#97).
+    # end: the file's own bytes say whether every quote in it is in its
+    # place, and whether its last line is what R says it is (#97). A refusal
+    # names the line and says what a quote must be, and nothing of the line.
     lBytes <- tryCatch(App_CsvBytes(strPath), error = function(cndError) {
       App_Stop(strName, " could not be read as a .csv file: ", App_SaidOf(conditionMessage(cndError), strPath, strName))
     })
-    if (lBytes$odd) {
+    strRule <- " A value that holds a comma, a quote or a line break is written inside quotes, and a quote inside it is written twice."
+    if (!is.na(lBytes$misplaced)) {
       App_Stop(
-        strName, " was not loaded: a quote in it is never closed, so R would read it short. ",
-        "The file has an odd number of double-quote characters, and in a .csv file a quote that opens a value closes it, and a quote inside a value is written twice."
+        strName, " was not loaded: a double quote on line ", format(lBytes$misplaced, big.mark = ","), " of the file is out of place",
+        if (!is.na(lBytes$opened) && lBytes$opened < lBytes$misplaced) {
+          paste0(", in a value in quotes that begins on line ", format(lBytes$opened, big.mark = ","))
+        },
+        ", and R reads a file short from such a quote.", strRule
+      )
+    }
+    if (lBytes$open) {
+      App_Stop(
+        strName, " was not loaded: a double quote on line ", format(lBytes$opened, big.mark = ","),
+        " of the file opens a value that is never closed, and R reads a file short from such a quote.", strRule
       )
     }
     if (any(bLastLine) && lBytes$ends) {
@@ -237,9 +308,19 @@ strAppNoName <- "A file with no name"
 #' path, of a file that is there and is no folder, directly inside a folder of
 #' that name, directly inside this process's temporary folder. The paths are
 #' compared as the file system resolves them, so a path with `..` in it, a
-#' link to a file elsewhere and a web address all fail. A reader cannot name
-#' another reader's upload either: its folder's name is 96 random bits that
-#' are never sent to a page.
+#' link to a file elsewhere and a web address all fail.
+#'
+#' What the rule is, and is not. It takes a file in an upload folder of this R
+#' process. That is not the same as a file this session uploaded with this
+#' card's control: Shiny keeps no record a server function can ask of which
+#' session made which folder. A page is sent the name of the folder of each
+#' upload it makes itself: Shiny answers the start of an upload with it, as
+#' the upload's number. So its own folder's name is no secret from a page,
+#' and the most it could do with one is name a file its reader uploaded to
+#' one card as the file of another. It is never sent the name of another
+#' reader's folder. Between readers on one server the rule rests on that
+#' name, 96 random bits, staying unknown to them, as Shiny's own session
+#' tokens do.
 #'
 #' Should a later Shiny keep uploads somewhere else, every upload would be
 #' refused: the tests that choose a file in a browser fail then, and this is

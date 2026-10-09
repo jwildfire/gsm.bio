@@ -1383,31 +1383,104 @@ test_that("in a browser a page that sets a file input itself, to a file on the s
   expect_identical(lPage$Errors(), character(0))
 })
 
-# ---- A quote never closed on a file's first lines (#97) ----------------------
+# ---- A quote out of its place in a .csv file (#97) ---------------------------
 
 # The third review's file, made here byte for byte: a results table of 1,000
 # rows under gsm.bio's own column names. `nOpen` is the row whose visit opens a
 # quote that is never closed, 0 for the header's; `bEnds` is whether the file
 # ends with a line ending.
-strOpenQuote <- function(nOpen = NULL, bEnds = TRUE, chrRows = sprintf("s%d,IL-6,%d,Baseline,0", 1:1000, 1:1000)) {
+strOpenQuote <- function(nOpen = NULL, bEnds = TRUE, chrRows = sprintf("s%d,IL-6,%d,Baseline,0", 1:1000, 1:1000), strBreak = "\n") {
   strHeader <- "USUBJID,TEST,STRESN,VISIT,VISITNUM"
   if (isTRUE(nOpen == 0)) {
     strHeader <- "USUBJID,TEST,STRESN,\"VISIT,VISITNUM"
   } else if (!is.null(nOpen)) {
     chrRows[nOpen] <- sprintf("s%d,IL-6,%d,\"Baseline,0", nOpen, nOpen)
   }
-  strDir <- tempfile("gsm-bio-quote")
-  dir.create(strDir)
-  strFile <- file.path(strDir, "results.csv")
-  writeBin(charToRaw(paste0(paste(c(strHeader, chrRows), collapse = "\n"), if (bEnds) "\n")), strFile)
-  strFile
+  strBytes(paste0(paste(c(strHeader, chrRows), collapse = strBreak), if (bEnds) strBreak))
 }
 
-# The sentence a .csv file with a quote never closed is refused with.
-strQuoteOpen <- function(strName) {
+# A file of these bytes, or of this text, in a folder of its own.
+strBytes <- function(xHolds, strFile = "results.csv") {
+  strDir <- tempfile("gsm-bio-quote")
+  dir.create(strDir)
+  strPath <- file.path(strDir, strFile)
+  writeBin(if (is.raw(xHolds)) xHolds else charToRaw(xHolds), strPath)
+  strPath
+}
+
+# What a quote must be, as every refusal of a quote says it.
+strQuoteRule <- "A value that holds a comma, a quote or a line break is written inside quotes, and a quote inside it is written twice."
+
+# The sentence a .csv file is refused with for a quote out of its place on a
+# line, in a value in quotes that begins on an earlier line when it does.
+strQuoteOut <- function(strName, nLine, nBegins = NULL) {
   paste0(
-    strName, " was not loaded: a quote in it is never closed, so R would read it short. ",
-    "The file has an odd number of double-quote characters, and in a .csv file a quote that opens a value closes it, and a quote inside a value is written twice."
+    strName, " was not loaded: a double quote on line ", format(nLine, big.mark = ","), " of the file is out of place",
+    if (!is.null(nBegins)) paste0(", in a value in quotes that begins on line ", format(nBegins, big.mark = ",")),
+    ", and R reads a file short from such a quote. ", strQuoteRule
+  )
+}
+
+# And for a quote in its place that opens a value no quote closes.
+strQuoteOpen <- function(strName, nLine) {
+  paste0(
+    strName, " was not loaded: a double quote on line ", format(nLine, big.mark = ","),
+    " of the file opens a value that is never closed, and R reads a file short from such a quote. ", strQuoteRule
+  )
+}
+
+# The rule of a file's quotes written a second time, as plainly as it can be:
+# one byte after another. R's reader takes every quote as opening or closing a
+# quoted stretch, so the quotes are numbered: an odd one opens and must be at
+# the start of a value, or right after the even one before it; an even one
+# closes and must be at the end of a value, or right before another quote; and
+# the last must be even. `misplaced` is the line of the first quote out of
+# its place, and `opened` the line its quoted stretch began on. `records` is
+# what R makes the header and the rows of: what lies between the line breaks
+# that are outside the quoted stretches. R skips a line with nothing on it,
+# and a line that is nothing but an empty value in quotes: neither is a row.
+lQuoteReference <- function(xBytes) {
+  nBytes <- length(xBytes)
+  Is <- function(nAt, chrOf) nAt >= 1L && nAt <= nBytes && rawToChar(xBytes[nAt]) %in% chrOf
+  bBom <- nBytes >= 3L && identical(xBytes[1:3], as.raw(c(0xef, 0xbb, 0xbf)))
+  nQuotes <- 0L
+  nLine <- 1L
+  nRecords <- 0L
+  # Of the record being read: its quotes, and its other bytes.
+  nHeld <- c(quotes = 0L, others = 0L)
+  Blank <- function() nHeld[["others"]] == 0L && nHeld[["quotes"]] %in% c(0L, 2L)
+  nMisplaced <- NA_integer_
+  nOpened <- NA_integer_
+  nBegan <- NA_integer_
+  for (nAt in seq_len(nBytes)) {
+    if (Is(nAt, "\"")) {
+      nQuotes <- nQuotes + 1L
+      if (nQuotes %% 2L == 1L) {
+        bStarts <- nAt == 1L || (bBom && nAt == 4L) || Is(nAt - 1L, c(",", "\n", "\r"))
+        bInPlace <- bStarts || Is(nAt - 1L, "\"")
+        if (bStarts) nBegan <- nLine
+      } else {
+        bInPlace <- nAt == nBytes || Is(nAt + 1L, c(",", "\n", "\r", "\""))
+        if (!bInPlace && is.na(nMisplaced)) nOpened <- nBegan
+      }
+      if (!bInPlace && is.na(nMisplaced)) nMisplaced <- nLine
+      nHeld[["quotes"]] <- nHeld[["quotes"]] + 1L
+    } else if (Is(nAt, "\n") || (Is(nAt, "\r") && !Is(nAt + 1L, "\n"))) {
+      nLine <- nLine + 1L
+      if (nQuotes %% 2L == 0L) {
+        nRecords <- nRecords + !Blank()
+        nHeld[] <- 0L
+      } else {
+        nHeld[["others"]] <- nHeld[["others"]] + 1L
+      }
+    } else if (!Is(nAt, "\r") || nQuotes %% 2L == 1L) {
+      nHeld[["others"]] <- nHeld[["others"]] + 1L
+    }
+  }
+  bOpen <- nQuotes %% 2L == 1L
+  list(
+    misplaced = nMisplaced, opened = if (is.na(nMisplaced) && bOpen) nBegan else nOpened, open = bOpen,
+    ends = Is(nBytes, c("\n", "\r")), records = nRecords + !Blank()
   )
 }
 
@@ -1423,9 +1496,10 @@ test_that("a 1,000-row .csv file with a quote left open on its first, second, th
       expect_gt(lPlain$rows, 990L, label = paste("the rows R reads,", strLabel))
       expect_length(lPlain$warned, 1L)
       expect_match(lPlain$warned, "^incomplete final line found by readTableHeader", label = strLabel)
-      # The app reads no table from it, and says why.
+      # The app reads no table from it, and says where the quote is: the
+      # header is the file's first line.
       strSaid <- strRefused(strFile, "results.csv")
-      expect_identical(strSaid, strQuoteOpen("results.csv"), label = strLabel)
+      expect_identical(strSaid, strQuoteOpen("results.csv", nOpen + 1L), label = strLabel)
       ExpectNoPath(strSaid, strFile, strLabel)
     }
     # A quote left open further down, where R itself warns of it, is refused
@@ -1440,59 +1514,282 @@ test_that("a 1,000-row .csv file with a quote left open on its first, second, th
   }
 })
 
-test_that("a whole .csv file is still read in full: one with no final line ending, one with Windows line endings, and one whose quoted values hold a quote written twice, a comma and a line break (#97)", {
-  # 1,000 rows and no line ending after the last.
+test_that("a .csv file with an even number of quotes out of place is refused, naming the line of the first: two rows that each open a quote, and two values written with an inch mark, each of which R alone reads short and warns of nothing (#97)", {
+  chrRows <- sprintf("s%d,IL-6,%d,Baseline,0", 1:1000, 1:1000)
+  # Rows 2 and 3 each open a quote: R reads the two as one row.
+  chrTwo <- chrRows
+  chrTwo[2:3] <- c("s2,IL-6,2,\"Baseline,0", "s3,IL-6,3,\"Baseline,0")
+  # Rows 100 and 600 name a tube by its width in inches: R reads from one inch
+  # mark to the other as one value, 500 rows long.
+  chrInch <- chrRows
+  chrInch[c(100, 600)] <- c("s100,5\" tube,100,Baseline,0", "s600,6\" tube,600,Baseline,0")
   for (bEnds in c(TRUE, FALSE)) {
-    dfWhole <- App_ReadFile(strOpenQuote(NULL, bEnds), "results.csv")
+    strTwo <- strOpenQuote(NULL, bEnds, chrTwo)
+    expect_identical(lReadPlainly(strTwo), list(rows = 999L, warned = character(0)))
+    strSaid <- strRefused(strTwo, "results.csv")
+    # The second quote, on the file's fourth line, is where a value would have
+    # to end and does not; the value it would close begins on the third.
+    expect_identical(strSaid, strQuoteOut("results.csv", 4L, 3L))
+    expect_identical(
+      strSaid,
+      paste(
+        "results.csv was not loaded: a double quote on line 4 of the file is out of place, in a value in quotes that begins on line 3, and R reads a file short from such a quote.",
+        "A value that holds a comma, a quote or a line break is written inside quotes, and a quote inside it is written twice."
+      )
+    )
+    strInch <- strOpenQuote(NULL, bEnds, chrInch)
+    expect_identical(lReadPlainly(strInch), list(rows = 500L, warned = character(0)))
+    strSaid <- strRefused(strInch, "results.csv")
+    expect_identical(strSaid, strQuoteOut("results.csv", 101L))
+    # A sentence says where, and nothing of what the line holds.
+    expect_false(grepl("tube|s100|Baseline", strSaid))
+    ExpectNoPath(strSaid, strInch, "the sentence")
+  }
+  # A line is counted as a reader's editor counts it, whatever ends the lines,
+  # and a line break inside a value in quotes is a line of the file too.
+  for (strBreak in c("\n", "\r\n", "\r")) {
+    expect_identical(strRefused(strOpenQuote(NULL, TRUE, chrInch, strBreak), "results.csv"), strQuoteOut("results.csv", 101L), label = paste("line endings", deparse(strBreak)))
+    chrBroken <- c("s1,\"IL\n6\",1,Baseline,0", "s2,IL-6,2,Base\"line\",0", "s3,IL-6,3,Baseline,0")
+    expect_identical(strRefused(strOpenQuote(NULL, TRUE, chrBroken, strBreak), "results.csv"), strQuoteOut("results.csv", 4L), label = paste("line endings", deparse(strBreak)))
+  }
+  # In the thousands, a line's number is written as the page writes numbers.
+  chrFar <- c(chrRows, chrRows)
+  chrFar[1500] <- "s500,5\" tube\",500,Baseline,0"
+  expect_match(strRefused(strOpenQuote(NULL, TRUE, chrFar), "results.csv"), "a double quote on line 1,501 of the file is out of place, and R reads", fixed = TRUE)
+})
+
+test_that("a quote that is not at the start or the end of its value is refused though R reads the file whole: a space before the quote that opens a value, a space after the one that closes it, and a quoted piece inside a value (#97)", {
+  lOut <- list(
+    `a space before the quote that opens` = "1, \"x,y\",3",
+    `a space after the quote that closes` = "1,\"x,y\" ,3",
+    `a quoted piece inside a value` = "1,ab\"c\"d,3",
+    `a quote that closes and opens again` = "1,\"x\"\"y\"z,3",
+    `an empty pair inside a value` = "1,x\"\"y,3"
+  )
+  for (strWhat in names(lOut)) {
+    for (strBreak in c("\n", "\r\n")) {
+      strFile <- strBytes(paste0(paste(c("A,B,C", lOut[[strWhat]], "2,z,4"), collapse = strBreak), strBreak))
+      # R reads both rows, and warns of nothing: the rule is the app's.
+      expect_identical(lReadPlainly(strFile), list(rows = 2L, warned = character(0)), label = strWhat)
+      expect_identical(strRefused(strFile, "results.csv"), strQuoteOut("results.csv", 2L), label = strWhat)
+    }
+  }
+  # The same on a file's first line, its last, and its last with no line ending.
+  expect_identical(strRefused(strBytes("A,B\"x\",C\n1,2,3\n"), "results.csv"), strQuoteOut("results.csv", 1L))
+  expect_identical(strRefused(strBytes("A,B,C\n1,2,3\n4,5,6 \"x\"\n"), "results.csv"), strQuoteOut("results.csv", 3L))
+  expect_identical(strRefused(strBytes("A,B,C\n1,2,3\n4,5,\"6\" "), "results.csv"), strQuoteOut("results.csv", 3L))
+  # A quote in its place that nothing closes, on a line of its own.
+  expect_identical(strRefused(strBytes("A,B,C\n1,2,3\n4,5,\"6\n7,8,9\n10,11,12\n13,14,15\n"), "results.csv"), strQuoteOpen("results.csv", 3L))
+})
+
+test_that("a whole .csv file is still read in full and as it was written: with no quote at all, with quoted values that hold a comma, a quote written twice or a line break, with an empty quoted value, with a quote as its first or last byte, with or without a byte-order mark or a final line ending, and whatever ends its lines (#97)", {
+  # 1,000 rows and no quote, with and without a line ending after the last.
+  for (bEnds in c(TRUE, FALSE)) {
+    strFile <- strOpenQuote(NULL, bEnds)
+    expect_identical(App_CsvBytes(strFile), list(misplaced = NA_integer_, opened = NA_integer_, open = FALSE, ends = bEnds))
+    dfWhole <- App_ReadFile(strFile, "results.csv")
     expect_identical(dim(dfWhole), c(1000L, 5L), label = paste("a final line ending:", bEnds))
     expect_identical(dfWhole$USUBJID[c(1, 1000)], c("s1", "s1000"))
     expect_identical(dfWhole$STRESN, 1:1000)
   }
   # Quotes that close: around a value with a comma, around one with a quote
-  # inside it written twice, and around one with a line break.
+  # inside it written twice, around one with a line break, around nothing, and
+  # around the file's first value and its last.
   chrRows <- sprintf("s%d,IL-6,%d,Baseline,0", 1:1000, 1:1000)
-  chrRows[1] <- "s1,\"IL-6, the \"\"six\"\"\",1,\"Base\nline\",0"
-  chrRows[4] <- "\"s4\",\"IL-6\",4,\"Baseline\",0"
-  chrRows[1000] <- "s1000,\"\"\"IL-6\"\"\",1000,Baseline,0"
+  chrRows[1] <- "\"s1\",\"IL-6, the \"\"six\"\"\",1,\"Base\nline\",0"
+  chrRows[2] <- "s2,\"\"\"IL-6\"\"\",2,\"\",0"
+  chrRows[3] <- "s3,\"\"\"\",3,\"a\"\"\"\"b\",0"
+  chrRows[1000] <- "s1000,IL-6,1000,Baseline,\"0\""
   for (bEnds in c(TRUE, FALSE)) {
     strFile <- strOpenQuote(NULL, bEnds, chrRows)
     lBytes <- App_CsvBytes(strFile)
-    expect_false(lBytes$odd)
-    expect_identical(lBytes$ends, bEnds)
+    expect_identical(lBytes, list(misplaced = NA_integer_, opened = NA_integer_, open = FALSE, ends = bEnds))
     dfQuoted <- App_ReadFile(strFile, "results.csv")
     expect_identical(dim(dfQuoted), c(1000L, 5L), label = paste("a final line ending:", bEnds))
-    expect_identical(dfQuoted$TEST[c(1, 4, 1000)], c("IL-6, the \"six\"", "IL-6", "\"IL-6\""))
-    expect_identical(dfQuoted$VISIT[1:2], c("Base\nline", "Baseline"))
-    expect_identical(dfQuoted$USUBJID[c(1, 4, 1000)], c("s1", "s4", "s1000"))
+    expect_identical(dfQuoted$USUBJID, sprintf("s%d", 1:1000))
+    expect_identical(dfQuoted$TEST[c(1, 2, 3, 4, 1000)], c("IL-6, the \"six\"", "\"IL-6\"", "\"", "IL-6", "IL-6"))
+    # An empty value in quotes is an empty value: missing, as an empty one is.
+    expect_identical(dfQuoted$VISIT[1:4], c("Base\nline", NA, "a\"\"b", "Baseline"))
+    expect_identical(dfQuoted$VISITNUM, rep(0L, 1000))
   }
-  # Windows line endings, with and without the last.
-  for (bEnds in c(TRUE, FALSE)) {
-    strWindows <- tempfile(fileext = ".csv")
-    writeBin(charToRaw(paste0(paste(c("USUBJID,STRESN", sprintf("s%d,%d", 1:1000, 1:1000)), collapse = "\r\n"), if (bEnds) "\r\n")), strWindows)
-    expect_identical(App_CsvBytes(strWindows), list(odd = FALSE, ends = bEnds))
-    expect_identical(nrow(App_ReadFile(strWindows, "windows.csv")), 1000L)
+  # A quote as the file's first byte, and as its first after a byte-order mark.
+  strFirst <- "\"USUBJID\",\"VALUE, the\"\n\"s1\",\"a,b\"\n\"s2\",\"c\"\n"
+  dfFirst <- data.frame(USUBJID = c("s1", "s2"), `VALUE, the` = c("a,b", "c"), check.names = FALSE)
+  expect_identical(App_ReadFile(strBytes(strFirst), "results.csv"), dfFirst)
+  expect_identical(App_ReadFile(strBytes(c(as.raw(c(0xef, 0xbb, 0xbf)), charToRaw(strFirst))), "results.csv"), dfFirst)
+  # A byte-order mark is a file's first three bytes, and nowhere else: a
+  # quote after the same three bytes further on is not at the start of a value.
+  expect_identical(
+    App_CsvBytes(strBytes(c(charToRaw("A,B\n1,2"), as.raw(c(0xef, 0xbb, 0xbf)), charToRaw("\"x\"\n")))),
+    list(misplaced = 2L, opened = NA_integer_, open = FALSE, ends = TRUE)
+  )
+  # Windows line endings and an old Mac's, each with a value in quotes that
+  # holds a comma and a line break, with and without the last line ending.
+  # R reads a line break inside a value as a line feed, whatever it was.
+  for (strBreak in c("\r\n", "\r", "\n")) {
+    for (bEnds in c(TRUE, FALSE)) {
+      strLabel <- paste("line endings", deparse(strBreak), "the last:", bEnds)
+      chrLines <- c("USUBJID,NOTE,STRESN", sprintf("s%d,plain,%d", 1:1000, 1:1000))
+      chrLines[3] <- paste0("s2,\"one, two", strBreak, "three\",2")
+      chrLines[1001] <- "s1000,\"last, one\",1000"
+      strFile <- strBytes(paste0(paste(chrLines, collapse = strBreak), if (bEnds) strBreak))
+      expect_identical(App_CsvBytes(strFile)[c("misplaced", "open", "ends")], list(misplaced = NA_integer_, open = FALSE, ends = bEnds), label = strLabel)
+      dfRead <- App_ReadFile(strFile, "results.csv")
+      expect_identical(dim(dfRead), c(1000L, 3L), label = strLabel)
+      expect_identical(dfRead$NOTE[c(1, 2, 3, 1000)], c("plain", "one, two\nthree", "plain", "last, one"), label = strLabel)
+      expect_identical(dfRead$STRESN, 1:1000, label = strLabel)
+    }
   }
+  # What R itself writes, R reads back: a table whose text holds quotes,
+  # commas, line breaks and spaces, written by write.csv().
+  dfWritten <- data.frame(
+    USUBJID = sprintf("s%d", 1:6),
+    `NOTE, as written` = c("plain", "one, two", "she said \"no\"", "line one\nline two", " spaces round ", "\"quoted\", then, a\nbreak\""),
+    STRESN = c(1.5, 2, 3.25, 4, 5, 6), check.names = FALSE
+  )
+  strWrote <- tempfile(fileext = ".csv")
+  utils::write.csv(dfWritten, strWrote, row.names = FALSE)
+  expect_identical(App_CsvBytes(strWrote), list(misplaced = NA_integer_, opened = NA_integer_, open = FALSE, ends = TRUE))
+  expect_identical(App_ReadFile(strWrote, "written.csv"), dfWritten)
 })
 
-test_that("a file's quotes are counted and its last byte read a piece of the file at a time, to the same answer whatever the size of the piece (#97)", {
-  strOdd <- strOpenQuote(3)
-  strEven <- strOpenQuote(NULL, FALSE, c("a,\"b\"", "\"c\"\"d\",e"))
-  strNone <- tempfile(fileext = ".csv")
-  file.create(strNone)
-  for (nPiece in c(1L, 2L, 7L, 4096L, 1048576L)) {
-    expect_identical(App_CsvBytes(strOdd, nPiece), list(odd = TRUE, ends = TRUE), label = paste("pieces of", nPiece))
-    expect_identical(App_CsvBytes(strEven, nPiece), list(odd = FALSE, ends = FALSE), label = paste("pieces of", nPiece))
-    expect_identical(App_CsvBytes(strNone, nPiece), list(odd = FALSE, ends = FALSE), label = paste("pieces of", nPiece))
+test_that("a file's quotes are found a piece of the file at a time, to the same answer whatever the size of the piece: with a quote on a piece's first byte and its last, and a quote written twice split between two pieces (#97)", {
+  lFiles <- list(
+    whole = "A,B\n\"a\"\"b\",\"c,d\"\n\"\",\"e\nf\"\n",
+    `out of place` = "A,B\n\"a\"\"b\",\"c,d\"\n1,x \"y\"\n",
+    `out of place, in a value begun earlier` = "A,B\n1,\"x\n2,\"y\n3,z\n",
+    `never closed` = "A,B\n\"a\"\"b\",\"c,d\n1,2",
+    `one quote` = "\"",
+    `two quotes` = "\"\"",
+    `no quote` = "A,B\n1,2",
+    nothing = ""
+  )
+  lWant <- list(
+    whole = list(misplaced = NA_integer_, opened = NA_integer_, open = FALSE, ends = TRUE),
+    `out of place` = list(misplaced = 3L, opened = NA_integer_, open = FALSE, ends = TRUE),
+    `out of place, in a value begun earlier` = list(misplaced = 3L, opened = 2L, open = FALSE, ends = TRUE),
+    `never closed` = list(misplaced = NA_integer_, opened = 2L, open = TRUE, ends = FALSE),
+    `one quote` = list(misplaced = NA_integer_, opened = 1L, open = TRUE, ends = FALSE),
+    `two quotes` = list(misplaced = NA_integer_, opened = NA_integer_, open = FALSE, ends = FALSE),
+    `no quote` = list(misplaced = NA_integer_, opened = NA_integer_, open = FALSE, ends = FALSE),
+    nothing = list(misplaced = NA_integer_, opened = NA_integer_, open = FALSE, ends = FALSE)
+  )
+  for (strWhat in names(lFiles)) {
+    strFile <- strBytes(lFiles[[strWhat]])
+    xBytes <- charToRaw(lFiles[[strWhat]])
+    # The plain rule, one byte after another, says the same.
+    expect_identical(lQuoteReference(xBytes)[names(lWant[[strWhat]])], lWant[[strWhat]], label = paste("the plain rule of", strWhat))
+    # Pieces of one byte to twelve put every quote of the file on a piece's
+    # first byte and on its last, and split every pair of quotes.
+    for (nPiece in c(1:12, 4096L, 1048576L)) {
+      expect_identical(App_CsvBytes(strFile, nPiece), lWant[[strWhat]], label = paste(strWhat, "in pieces of", nPiece))
+    }
   }
-  # The count is of the file's bytes: the same as counting its characters.
-  for (strFile in c(strOdd, strEven)) {
-    nQuotes <- sum(readBin(strFile, "raw", file.size(strFile)) == charToRaw("\""))
-    expect_identical(App_CsvBytes(strFile)$odd, nQuotes %% 2 == 1)
+  # The pieces tried do split the file where it matters: the whole file's
+  # doubled quote is its bytes 6 and 7, and a piece of 6 ends between them.
+  expect_identical(which(charToRaw(lFiles$whole) == charToRaw("\""))[1:4], c(5L, 7L, 8L, 10L))
+  expect_identical(nAppPiece, 1048576L)
+})
+
+# A small table of text for the property below: two to four columns and one
+# to six rows, each cell drawn from text that holds commas, quotes, line
+# breaks and spaces, or is empty.
+dfRandomTable <- function() {
+  # No cell is of spaces or line breaks alone: R reads a column of such
+  # cells, and empty ones, as a column of missing values.
+  chrCells <- c("a", "b c", " lead", "trail ", "x,y", ",", "say \"hi\"", "\"", "\"\"", "a\"b", "line\nbreak", "\nb", "\"x\",\n\"y\"", "", "")
+  chrNames <- c("A", "B 1", "C,2", "D \"q\"", "E\nF")
+  nColumns <- sample(2:4, 1)
+  nRows <- sample(1:6, 1)
+  dfTable <- as.data.frame(
+    matrix(sample(chrCells, nRows * nColumns, replace = TRUE), nrow = nRows, ncol = nColumns),
+    stringsAsFactors = FALSE
+  )
+  names(dfTable) <- sample(chrNames, nColumns)
+  dfTable
+}
+
+# A table's cells as text, with an empty cell as the app reads it: missing.
+chrCellsRead <- function(dfTable) {
+  chrCells <- unlist(lapply(dfTable, as.character), use.names = FALSE)
+  chrCells[!is.na(chrCells) & !nzchar(chrCells)] <- NA_character_
+  chrCells
+}
+
+test_that("of 300 random tables written by write.csv(), every one is read back as it was written; with one quote or two added or taken away anywhere, each is refused, or else is read to exactly the rows its quotes make of it: no file the app reads is read short (#97)", {
+  set.seed(97)
+  strQuote <- charToRaw("\"")
+  nSeen <- c(written = 0L, refused = 0L, read = 0L, unreadable = 0L)
+  # What the app makes of a file's bytes: the rows it reads, or NA when it
+  # refuses the file, with whether the refusal was the quote rule's.
+  lMade <- function(xBytes) {
+    strFile <- strBytes(xBytes)
+    strSaid <- strRefused(strFile, "results.csv")
+    if (is.na(strSaid)) {
+      return(list(rows = nrow(App_ReadFile(strFile, "results.csv")), quote = FALSE))
+    }
+    list(rows = NA_integer_, quote = grepl("a double quote on line ", strSaid, fixed = TRUE), said = strSaid)
   }
-  # A file that ends with the line ending of an old Mac ends with one.
-  strMac <- tempfile(fileext = ".csv")
-  writeBin(charToRaw("A,B\r1,2\r"), strMac)
-  expect_true(App_CsvBytes(strMac)$ends)
+  # One quote added or taken away, somewhere in the file.
+  xChanged <- function(xBytes) {
+    nQuotes <- which(xBytes == strQuote)
+    if (length(nQuotes) > 0L && stats::runif(1) < 0.5) {
+      return(xBytes[-nQuotes[sample.int(length(nQuotes), 1)]])
+    }
+    nAfter <- sample.int(length(xBytes) + 1L, 1) - 1L
+    c(xBytes[seq_len(nAfter)], strQuote, xBytes[seq_len(length(xBytes) - nAfter) + nAfter])
+  }
+  for (iTable in 1:300) {
+    dfTable <- dfRandomTable()
+    strFile <- tempfile(fileext = ".csv")
+    utils::write.csv(dfTable, strFile, row.names = FALSE)
+    xBytes <- readBin(strFile, "raw", file.size(strFile))
+    # As R wrote it: every quote is in its place, and the table read is the
+    # table written.
+    lPlain <- lQuoteReference(xBytes)
+    expect_identical(lPlain[c("misplaced", "open")], list(misplaced = NA_integer_, open = FALSE), label = paste("table", iTable, "as written"))
+    expect_identical(App_CsvBytes(strFile), lPlain[c("misplaced", "opened", "open", "ends")], label = paste("table", iTable, "as written"))
+    expect_identical(lPlain$records, nrow(dfTable) + 1L, label = paste("the records of table", iTable))
+    dfRead <- App_ReadFile(strFile, "results.csv")
+    expect_identical(dim(dfRead), dim(dfTable), label = paste("table", iTable))
+    expect_identical(names(dfRead), names(dfTable), label = paste("table", iTable))
+    expect_identical(chrCellsRead(dfRead), chrCellsRead(dfTable), label = paste("table", iTable))
+    nSeen[["written"]] <- nSeen[["written"]] + 1L
+    # One quote more or fewer, then two: four files of each table.
+    lChanged <- list(xChanged(xBytes), xChanged(xChanged(xBytes)), xChanged(xChanged(xBytes)), xChanged(xChanged(xBytes)))
+    for (iChanged in seq_along(lChanged)) {
+      xNow <- lChanged[[iChanged]]
+      strLabel <- paste("table", iTable, "changed", iChanged)
+      lRule <- lQuoteReference(xNow)
+      bOut <- !is.na(lRule$misplaced) || lRule$open
+      # The app's answer is the plain rule's, to the line.
+      expect_identical(App_CsvBytes(strBytes(xNow)), lRule[c("misplaced", "opened", "open", "ends")], label = strLabel)
+      lApp <- lMade(xNow)
+      if (bOut) {
+        # A quote out of place: no table. R's own words come first where R
+        # warned or failed, and the quote's sentence otherwise.
+        expect_true(is.na(lApp$rows), label = paste(strLabel, "is refused"))
+        nSeen[["refused"]] <- nSeen[["refused"]] + 1L
+      } else if (is.na(lApp$rows)) {
+        # Every quote in its place, and refused for another reason: a row
+        # with more values than the header, or two columns of one name.
+        expect_false(lApp$quote, label = paste(strLabel, "is refused for its quotes"))
+        nSeen[["unreadable"]] <- nSeen[["unreadable"]] + 1L
+      } else {
+        # Read: to every row its quotes make of it, the header aside.
+        expect_identical(lApp$rows, lRule$records - 1L, label = paste(strLabel, "rows read"))
+        nSeen[["read"]] <- nSeen[["read"]] + 1L
+      }
+    }
+    # One quote more or fewer is an odd number of them: always refused.
+    lOne <- lQuoteReference(lChanged[[1]])
+    expect_true(!is.na(lOne$misplaced) || lOne$open, label = paste("table", iTable, "with one quote changed"))
+  }
+  # The property was tried on files of each kind, not only on refusals.
+  expect_identical(nSeen[["written"]], 300L)
+  expect_identical(sum(nSeen[c("refused", "read", "unreadable")]), 1200L)
+  expect_gt(nSeen[["refused"]], 900L)
+  expect_gt(nSeen[["read"]], 20L)
 })
 
 test_that("R's warning that a file's last line is incomplete is read through only when the file does end without a line ending: of a file that ends with one, it is a warning like any other and the file is refused (#97)", {
@@ -1519,27 +1816,35 @@ test_that("R's warning that a file's last line is incomplete is read through onl
   expect_identical(App_ReadFile(strOpen, "open.csv"), data.frame(USUBJID = c("BIO-001", "BIO-002"), STRESN = c(1.5, 2.5)))
 })
 
-test_that("in a session a .csv file with a quote left open on its first row is said in the file's place and again on the button, no column of it is asked for, and the charts are left as they were (#97)", {
+test_that("in a session a .csv file with a quote out of place is said in the file's place and again on the button, no column of it is asked for, and the charts are left as they were: a quote left open on the first row, and two rows that each open one (#97)", {
   skip_if_not_installed("shiny")
   lWas <- options(shiny.maxRequestSize = getOption("shiny.maxRequestSize"))
   on.exit(options(lWas), add = TRUE)
   Payload <- function(strJson) jsonlite::fromJSON(strJson, simplifyVector = FALSE)$x
   Html <- function(xOutput) paste(as.character(xOutput$html), collapse = "")
-  dfOpen <- dfUploaded(strOpenQuote(1))
+  chrTwo <- sprintf("s%d,IL-6,%d,Baseline,0", 1:1000, 1:1000)
+  chrTwo[2:3] <- c("s2,IL-6,2,\"Baseline,0", "s3,IL-6,3,\"Baseline,0")
+  lSent <- list(
+    list(file = dfUploaded(strOpenQuote(1)), says = strQuoteOpen("results.csv", 2L), short = "998 rows"),
+    list(file = dfUploaded(strOpenQuote(NULL, TRUE, chrTwo)), says = strQuoteOut("results.csv", 4L, 3L), short = "999 rows")
+  )
   shiny::testServer(RunApp(), {
-    session$setInputs(gsm_bio_file_results = dfOpen)
-    strPlace <- Html(output$gsm_bio_columns_results)
-    expect_match(strPlace, sprintf("<p class=\"gsm-bio-app-problem\">%s</p>", strQuoteOpen("results.csv")), fixed = TRUE)
-    # Nothing of the file is offered: no rows counted, no column to say.
-    expect_false(grepl("998 rows", strPlace, fixed = TRUE))
-    expect_false(grepl("gsm_bio_column_results_", strPlace, fixed = TRUE))
-    ExpectNoPath(strPlace, dfOpen$datapath, "the file's place")
-    session$setInputs(
-      gsm_bio_column_results_USUBJID = "USUBJID", gsm_bio_column_results_TEST = "TEST", gsm_bio_column_results_STRESN = "STRESN",
-      gsm_bio_column_results_VISIT = "VISIT", gsm_bio_column_results_VISITNUM = "VISITNUM", gsm_bio_apply = 1
-    )
-    expect_identical(Html(output$gsm_bio_data_said), sprintf("<p class=\"gsm-bio-app-problem\">%s</p>", strQuoteOpen("results.csv")))
-    expect_identical(output$gsm_bio_source, "Drawn on the synthetic study that ships with gsm.bio.")
-    expect_length(Payload(output$GroupComparison)$dfResults$USUBJID, nrow(Synthetic_Results))
+    for (iSent in seq_along(lSent)) {
+      lOne <- lSent[[iSent]]
+      session$setInputs(gsm_bio_file_results = lOne$file)
+      strPlace <- Html(output$gsm_bio_columns_results)
+      expect_match(strPlace, sprintf("<p class=\"gsm-bio-app-problem\">%s</p>", lOne$says), fixed = TRUE)
+      # Nothing of the file is offered: no rows counted, no column to say.
+      expect_false(grepl(lOne$short, strPlace, fixed = TRUE))
+      expect_false(grepl("gsm_bio_column_results_", strPlace, fixed = TRUE))
+      ExpectNoPath(strPlace, lOne$file$datapath, "the file's place")
+      session$setInputs(
+        gsm_bio_column_results_USUBJID = "USUBJID", gsm_bio_column_results_TEST = "TEST", gsm_bio_column_results_STRESN = "STRESN",
+        gsm_bio_column_results_VISIT = "VISIT", gsm_bio_column_results_VISITNUM = "VISITNUM", gsm_bio_apply = iSent
+      )
+      expect_identical(Html(output$gsm_bio_data_said), sprintf("<p class=\"gsm-bio-app-problem\">%s</p>", lOne$says))
+      expect_identical(output$gsm_bio_source, "Drawn on the synthetic study that ships with gsm.bio.")
+      expect_length(Payload(output$GroupComparison)$dfResults$USUBJID, nrow(Synthetic_Results))
+    }
   })
 })

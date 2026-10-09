@@ -124,8 +124,13 @@ test_that("the README and the article say what the page asks of Google Fonts: tw
     )) {
       expect_match(strSays, strFact, fixed = TRUE, label = paste(strText, "on", strFact))
     }
-    # A further letter set is a further font file: the texts do not say three is all there can be.
-    expect_match(strSays, "one more", fixed = TRUE, label = strText)
+    # Three is as the app opens. Some letters are in a further file, and the
+    # texts say which kind as it was measured: Polish or Czech letters asked
+    # for one, Greek and Cyrillic for none.
+    expect_match(strSays, "three requests as the app opens", fixed = TRUE, label = strText)
+    expect_match(strSays, "Polish or Czech ones for instance, are in a further file", fixed = TRUE, label = strText)
+    expect_match(strSays, "a Greek or Cyrillic one, asks for nothing", fixed = TRUE, label = strText)
+    expect_false(grepl("Western European", strSays, fixed = TRUE), label = strText)
     nSays <- grep("fonts.googleapis.com", lTexts[[strText]], fixed = TRUE)
     nNeeds <- grep("what the server needs|What the server needs", lTexts[[strText]])
     expect_length(nNeeds, 1L)
@@ -138,6 +143,9 @@ test_that("the README and the article say what the page asks of Google Fonts: tw
   expect_length(strLocale, 1L)
   expect_match(strLocale, "outside ASCII", fixed = TRUE)
   expect_match(strLocale, "refused", fixed = TRUE)
+  # And a file whose name has such a character, in the same locale.
+  expect_match(strLocale, "`C` or `POSIX` locale", fixed = TRUE)
+  expect_match(strLocale, "a file whose name has such a character is not taken at all: Shiny itself fails on the name before the app sees the file", fixed = TRUE)
   nNeeds <- which(chrArticle == "What the server needs:")
   expect_gt(grep("^- A UTF-8 locale", chrArticle), nNeeds)
   expect_lt(grep("^- A UTF-8 locale", chrArticle), grep("^Two settings on the content's Runtime tab", chrArticle))
