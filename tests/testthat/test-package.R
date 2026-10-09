@@ -22,25 +22,28 @@ test_that("the package loads and reports its version: a development version afte
   expect_identical(as.character(utils::packageVersion("gsm.bio")), "0.3.0.9000")
 })
 
-test_that("the package imports stats and survival for the statistics, htmlwidgets for the widgets, and grDevices for the RTF writer (#1, #9, #38)", {
+test_that("the package imports stats and survival for the statistics, htmlwidgets for the widgets, grDevices for the RTF writer and utils for the app's .csv files (#1, #9, #38, #73)", {
   # grDevices ships with R: Write_RTF() opens a device of its own for r2rtf to
   # measure text on, so it leaves no Rplots.pdf and the caller's device as it was.
-  expect_identical(chrDependencies("Imports"), c("grDevices", "htmlwidgets", "stats", "survival"))
+  # utils ships with R too: the app reads a reader's .csv file with read.csv() (#73).
+  expect_identical(chrDependencies("Imports"), c("grDevices", "htmlwidgets", "stats", "survival", "utils"))
   expect_identical(chrDependencies("Depends"), "R")
   expect_identical(chrDependencies("Remotes"), character(0))
 })
 
-test_that("what only a test, a static figure, the RTF writer or a Shiny page needs is suggested, not imported (#1, #9, #37, #38, #53, #71)", {
+test_that("what only a test, a static figure, the RTF writer or a Shiny page needs is suggested, not imported (#1, #9, #37, #38, #53, #71, #73)", {
   # effectsize checks the standardised difference; digest, jsonlite and
   # rmarkdown check the vendored files and read a saved page back; chromote
   # opens a saved page in a headless browser, for the tests that drive the
   # chart itself; ggplot2 draws the static figures and r2rtf writes a table to
   # RTF, and each says so when it is not installed; svglite writes a batch
   # run's SVG figures; shiny draws the widgets in a Shiny page, whose session
-  # answers their statistics (#71), and says so when it is not installed.
+  # answers their statistics (#71), and says so when it is not installed;
+  # haven reads a reader's .xpt or .sas7bdat file in the app (#73), which says
+  # so when it is not installed.
   expect_identical(
     chrDependencies("Suggests"),
-    c("chromote", "digest", "effectsize", "ggplot2", "jsonlite", "r2rtf", "rmarkdown", "shiny", "svglite", "testthat")
+    c("chromote", "digest", "effectsize", "ggplot2", "haven", "jsonlite", "r2rtf", "rmarkdown", "shiny", "svglite", "testthat")
   )
   expect_identical(utils::packageDescription("gsm.bio")[["Config/testthat/edition"]], "3")
 })

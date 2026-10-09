@@ -110,21 +110,55 @@ App_Lacks <- function(strChart, lStudy) {
 strAppStyle <- "
 .gsm-bio-app { max-width: 1400px; margin: 0 auto; padding: 0 16px 24px; }
 .gsm-bio-app h1 { font-size: 1.4rem; margin: 16px 0 4px; }
-.gsm-bio-app .gsm-bio-app-source, .gsm-bio-app .gsm-bio-app-foot { color: #52616f; font-size: .85rem; }
+.gsm-bio-app h2 { font-size: 1.1rem; margin: 20px 0 4px; }
+.gsm-bio-app .gsm-bio-app-source, .gsm-bio-app .gsm-bio-app-foot, .gsm-bio-app .gsm-bio-app-what { color: #52616f; font-size: .85rem; }
 .gsm-bio-app .gsm-bio-app-foot { margin-top: 24px; }
 .gsm-bio-app .gsm-bio-app-lacks { margin: 24px 0; }
+.gsm-bio-app .gsm-bio-app-problem { color: #a4262c; }
+.gsm-bio-app .gsm-bio-app-columns { display: flex; flex-wrap: wrap; gap: 0 16px; }
+.gsm-bio-app .gsm-bio-app-columns .form-group { min-width: 180px; }
 "
 
-App_Ui <- function(lStudy) {
+# The names of the Data view's inputs and outputs: a file, the place its
+# columns are asked for, and one select per column.
+App_Id <- function(strWhat, strTable, strColumn = NULL) {
+  paste(c("gsm_bio", strWhat, strTable, strColumn), collapse = "_")
+}
+
+App_DataView <- function() {
+  lTables <- App_Tables()
+  lParts <- lapply(names(lTables), function(strTable) {
+    lTable <- lTables[[strTable]]
+    shiny::tagList(
+      shiny::tags$h2(paste0(lTable$label, if (lTable$needed) "" else ", optional")),
+      shiny::tags$p(class = "gsm-bio-app-what", paste0(toupper(substr(lTable$what, 1L, 1L)), substring(lTable$what, 2L), ".")),
+      shiny::fileInput(App_Id("file", strTable), label = NULL, accept = chrAppFileTypes, width = "100%"),
+      shiny::uiOutput(App_Id("columns", strTable))
+    )
+  })
+  shiny::tagList(
+    shiny::tags$p(
+      "To draw the charts on a study of your own, choose its results table as a .csv, .xpt or .sas7bdat file, ",
+      "say which column is which, and press the button. The file is read by R on this server and held in memory ",
+      "for this session only."
+    ),
+    lParts,
+    shiny::actionButton("gsm_bio_apply", "Draw the charts on these files", class = "btn-primary"),
+    shiny::uiOutput("gsm_bio_data_said")
+  )
+}
+
+App_Ui <- function() {
   Tab <- function(strChart) {
-    strLacks <- App_Lacks(strChart, lStudy)
     shiny::tabPanel(
       chrAppCharts[[strChart]],
       value = strChart,
-      if (is.null(strLacks)) {
-        Widget_Output(paste0("Widget_", strChart), strChart, "100%", "auto")
+      # A chart that lacks a table it needs has a sentence in its place: the
+      # session decides which, because a reader can load other tables.
+      if (identical(strChart, "StratifiedSurvival")) {
+        shiny::uiOutput("gsm_bio_place_StratifiedSurvival")
       } else {
-        shiny::tags$p(class = "gsm-bio-app-lacks", strLacks)
+        Widget_Output(paste0("Widget_", strChart), strChart, "100%", "auto")
       }
     )
   }
@@ -135,10 +169,11 @@ App_Ui <- function(lStudy) {
     shiny::tags$div(
       class = "gsm-bio-app",
       shiny::tags$h1("Biomarker charts"),
-      shiny::tags$p(class = "gsm-bio-app-source", paste0("Drawn on ", lStudy$source, ".")),
+      shiny::tags$p(class = "gsm-bio-app-source", shiny::textOutput("gsm_bio_source", inline = TRUE)),
       # One chart is drawn at a time: Shiny draws an output when it is shown.
       shiny::navlistPanel(
-        id = "gsm_bio_chart", well = FALSE, widths = c(2, 10),
+        id = "gsm_bio_chart", well = FALSE, widths = c(2, 10), selected = names(chrAppCharts)[1],
+        shiny::tabPanel("Data", value = "Data", App_DataView()),
         Tab("GroupComparison"), Tab("AssociationScatter"), Tab("CorrelationMatrix"),
         Tab("BiomarkerScreen"), Tab("CrossTab"), Tab("StratifiedSurvival")
       ),
@@ -153,33 +188,141 @@ App_Ui <- function(lStudy) {
   )
 }
 
+# The Data view's side of the session: the files as they are read, the columns
+# asked for under each, and the button that draws the charts on them.
+App_DataServer <- function(input, output, session, rStudy) {
+  lTables <- App_Tables()
+  # Each file a reader has chosen: its name with its table, or with the
+  # sentence saying why it could not be read.
+  rFiles <- shiny::reactiveValues()
+  rSaid <- shiny::reactiveVal(NULL)
+  for (strEach in names(lTables)) {
+    local({
+      strTable <- strEach
+      lTable <- lTables[[strTable]]
+      shiny::observeEvent(input[[App_Id("file", strTable)]], {
+        lChosen <- input[[App_Id("file", strTable)]]
+        strName <- lChosen$name[1]
+        rFiles[[strTable]] <- tryCatch(
+          list(name = strName, table = App_ReadFile(lChosen$datapath[1], strName)),
+          error = function(cndError) list(name = strName, problem = conditionMessage(cndError))
+        )
+      })
+      output[[App_Id("columns", strTable)]] <- shiny::renderUI({
+        lFile <- rFiles[[strTable]]
+        if (is.null(lFile)) {
+          return(NULL)
+        }
+        if (!is.null(lFile$problem)) {
+          return(shiny::tags$p(class = "gsm-bio-app-problem", lFile$problem))
+        }
+        chrColumns <- names(lFile$table)
+        shiny::tagList(
+          shiny::tags$p(class = "gsm-bio-app-what", sprintf(
+            "%s: %s rows, %s columns. Which column is which?",
+            lFile$name, format(nrow(lFile$table), big.mark = ","), length(chrColumns)
+          )),
+          shiny::tags$div(
+            class = "gsm-bio-app-columns",
+            lapply(names(lTable$columns), function(strColumn) {
+              shiny::selectInput(
+                App_Id("column", strTable, strColumn),
+                label = lTable$columns[[strColumn]],
+                choices = c("Not said yet" = "", chrColumns),
+                selected = App_Guess(chrColumns, strColumn),
+                selectize = FALSE
+              )
+            })
+          )
+        )
+      })
+    })
+  }
+  shiny::observeEvent(input$gsm_bio_apply, {
+    lNew <- tryCatch(
+      {
+        if (is.null(rFiles$results)) {
+          App_Stop("Choose a results file first: the charts are drawn from the results table.")
+        }
+        lMapped <- list()
+        for (strTable in names(lTables)) {
+          lFile <- rFiles[[strTable]]
+          if (is.null(lFile)) next
+          if (!is.null(lFile$problem)) {
+            App_Stop(lFile$problem)
+          }
+          chrNeed <- names(lTables[[strTable]]$columns)
+          chrChosen <- vapply(chrNeed, function(strColumn) {
+            strChosen <- input[[App_Id("column", strTable, strColumn)]]
+            if (is.null(strChosen)) "" else strChosen
+          }, character(1))
+          lMapped[[strTable]] <- App_MapTable(lFile$table, chrChosen, lTables[[strTable]], lFile$name)
+        }
+        chrFiles <- vapply(names(lMapped), function(strTable) rFiles[[strTable]]$name, character(1))
+        list(
+          results = lMapped$results, participants = lMapped$participants, outcomes = lMapped$outcomes,
+          source = paste0(paste(chrFiles, collapse = ", "), ", loaded in this session")
+        )
+      },
+      error = function(cndError) conditionMessage(cndError)
+    )
+    if (is.character(lNew)) {
+      # The tables already drawn stay as they are.
+      rSaid(list(problem = TRUE, text = lNew))
+    } else {
+      rStudy(lNew)
+      rSaid(list(problem = FALSE, text = paste0("The charts are drawn on ", lNew$source, ". Choose a chart from the list.")))
+    }
+  })
+  output$gsm_bio_data_said <- shiny::renderUI({
+    lSaid <- rSaid()
+    if (is.null(lSaid)) {
+      return(NULL)
+    }
+    shiny::tags$p(class = if (lSaid$problem) "gsm-bio-app-problem" else "gsm-bio-app-what", lSaid$text)
+  })
+  invisible(NULL)
+}
+
 App_Server <- function(lStudy, lSettings) {
   function(input, output, session) {
     Serve_Statistics(session)
+    # The tables the charts are drawn on: the ones the app was started with,
+    # until a reader loads others in the Data view.
+    rStudy <- shiny::reactiveVal(lStudy)
+    App_DataServer(input, output, session, rStudy)
     Of <- function(strChart) {
       lGiven <- lSettings[[strChart]]
       if (is.null(lGiven)) list() else lGiven
     }
+    output$gsm_bio_source <- shiny::renderText(paste0("Drawn on ", rStudy()$source, "."))
     output$GroupComparison <- renderWidget_GroupComparison(
-      Widget_GroupComparison(lStudy$results, lStudy$participants, lSettings = Of("GroupComparison"))
+      Widget_GroupComparison(rStudy()$results, rStudy()$participants, lSettings = Of("GroupComparison"))
     )
     output$AssociationScatter <- renderWidget_AssociationScatter(
-      Widget_AssociationScatter(lStudy$results, lStudy$participants, lSettings = Of("AssociationScatter"))
+      Widget_AssociationScatter(rStudy()$results, rStudy()$participants, lSettings = Of("AssociationScatter"))
     )
     output$CorrelationMatrix <- renderWidget_CorrelationMatrix(
-      Widget_CorrelationMatrix(lStudy$results, lStudy$participants, lSettings = Of("CorrelationMatrix"))
+      Widget_CorrelationMatrix(rStudy()$results, rStudy()$participants, lSettings = Of("CorrelationMatrix"))
     )
     output$BiomarkerScreen <- renderWidget_BiomarkerScreen(
-      Widget_BiomarkerScreen(lStudy$results, lStudy$participants, lSettings = Of("BiomarkerScreen"), dfOutcomes = lStudy$outcomes)
+      Widget_BiomarkerScreen(rStudy()$results, rStudy()$participants, lSettings = Of("BiomarkerScreen"), dfOutcomes = rStudy()$outcomes)
     )
     output$CrossTab <- renderWidget_CrossTab(
-      Widget_CrossTab(lStudy$results, lStudy$participants, lSettings = Of("CrossTab"))
+      Widget_CrossTab(rStudy()$results, rStudy()$participants, lSettings = Of("CrossTab"))
     )
-    if (is.null(App_Lacks("StratifiedSurvival", lStudy))) {
-      output$StratifiedSurvival <- renderWidget_StratifiedSurvival(
-        Widget_StratifiedSurvival(lStudy$results, lStudy$participants, lSettings = Of("StratifiedSurvival"), dfOutcomes = lStudy$outcomes)
-      )
-    }
+    output$gsm_bio_place_StratifiedSurvival <- shiny::renderUI({
+      strLacks <- App_Lacks("StratifiedSurvival", rStudy())
+      if (is.null(strLacks)) {
+        Widget_Output("Widget_StratifiedSurvival", "StratifiedSurvival", "100%", "auto")
+      } else {
+        shiny::tags$p(class = "gsm-bio-app-lacks", strLacks)
+      }
+    })
+    output$StratifiedSurvival <- renderWidget_StratifiedSurvival({
+      shiny::req(is.null(App_Lacks("StratifiedSurvival", rStudy())))
+      Widget_StratifiedSurvival(rStudy()$results, rStudy()$participants, lSettings = Of("StratifiedSurvival"), dfOutcomes = rStudy()$outcomes)
+    })
   }
 }
 
@@ -212,6 +355,27 @@ App_Server <- function(lStudy, lSettings) {
 #' A table that lacks a column is refused with a sentence naming the column.
 #' Called with no table, the app opens on [Synthetic_Results],
 #' [Synthetic_Participants] and [Synthetic_Outcomes].
+#'
+#' @section A reader's own files:
+#' The first entry of the list is the Data view. A reader chooses a results
+#' file there, and optionally a participants and an outcomes file, each a
+#' `.csv`, `.xpt` or `.sas7bdat` file. R reads it on the server. Under each
+#' file the view asks which of its columns is each one the charts need, filled
+#' in already where a column has gsm.bio's own name. On the button the columns
+#' are renamed to gsm.bio's names and the charts are drawn on the reader's
+#' tables.
+#'
+#' Nothing is drawn on a table until every column is said: a column left
+#' unsaid, a column chosen twice, a result that is text and a file R cannot
+#' read are each answered with a sentence, and the tables already drawn stay.
+#' A column of the file that already had one of gsm.bio's names, and was not
+#' the one chosen for it, is kept with `_original` added to its name.
+#'
+#' A file is held in the session's memory and nowhere else. Nothing is written
+#' to the server beyond Shiny's own temporary copy of an upload, which goes
+#' when the session ends, and nothing is kept between sessions. A `.xpt` or
+#' `.sas7bdat` file is read with haven, which is suggested, not imported:
+#' without it the view says so and reads `.csv` files only.
 #'
 #' @section On a server:
 #' `RunApp()` returns the app and starts nothing itself, so the same call
@@ -270,7 +434,7 @@ RunApp <- function(dfResults = NULL, dfParticipants = NULL, dfOutcomes = NULL, l
   lSettings <- App_Settings(lSettings)
   nMaxUploadMB <- App_MaxUpload(nMaxUploadMB)
   shiny::shinyApp(
-    ui = App_Ui(lStudy),
+    ui = App_Ui(),
     server = App_Server(lStudy, lSettings),
     # The limit is the app's own, set when it starts and for as long as it runs.
     onStart = function() {

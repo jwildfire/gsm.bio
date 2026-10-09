@@ -28,22 +28,34 @@ test_that("RunApp() returns a Shiny app that lists the six charts, on the synthe
     c("dfResults", "dfParticipants", "dfOutcomes", "lSettings", "nMaxUploadMB")
   )
   expect_identical(formals(RunApp)$nMaxUploadMB, 100)
-  strPage <- as.character(App_Ui(App_Study(NULL, NULL, NULL)))
-  # The list, in order, each chart under its own name.
+  strPage <- as.character(App_Ui())
+  # The list, in order, each chart under its own name, after the Data view.
+  expect_lt(regexpr(">Data<", strPage, fixed = TRUE)[1], regexpr(">Group comparison<", strPage, fixed = TRUE)[1])
   nAt <- vapply(unname(chrAppCharts), function(strTitle) regexpr(paste0(">", strTitle, "<"), strPage, fixed = TRUE)[1], numeric(1))
   expect_true(all(nAt > 0))
   expect_identical(order(nAt), seq_along(nAt))
-  for (strChart in names(chrAppCharts)) {
+  # Every chart has its place in the page; the survival chart's is filled by
+  # the session, which knows whether there is an outcomes table (#73).
+  for (strChart in setdiff(names(chrAppCharts), "StratifiedSurvival")) {
     expect_match(strPage, sprintf("class=\"Widget_%s html-widget html-widget-output", strChart), fixed = TRUE)
     expect_match(strPage, sprintf(" id=\"%s\"", strChart), fixed = TRUE)
   }
-  expect_match(strPage, "Drawn on the synthetic study that ships with gsm.bio.", fixed = TRUE)
+  expect_match(strPage, "id=\"gsm_bio_place_StratifiedSurvival\"", fixed = TRUE)
+  # The chart the page opens on is the first chart, not the Data view.
+  expect_match(strPage, "<li class=\"active\">\\s*<a [^>]*data-value=\"GroupComparison\"")
   expect_match(strPage, sprintf(
     "Every statistic is computed on request by R %s on this server", paste(R.version$major, R.version$minor, sep = ".")
   ), fixed = TRUE)
-  # No control of a chart is made again as a Shiny input: the page's only
-  # input is the list of charts.
-  expect_false(grepl("<select|<input|<button", strPage))
+  # No control of a chart is made again as a Shiny input: the page's inputs
+  # are the Data view's three files and its button (#73), and nothing else.
+  chrInputs <- regmatches(strPage, gregexpr("<(input|select|button|textarea)[^>]*>", strPage))[[1]]
+  chrIds <- regmatches(chrInputs, regexpr("id=\"[^\"]*\"", chrInputs))
+  expect_identical(
+    chrIds,
+    c("id=\"gsm_bio_file_results\"", "id=\"gsm_bio_file_participants\"", "id=\"gsm_bio_file_outcomes\"", "id=\"gsm_bio_apply\"")
+  )
+  # An input with no name of its own is a file input's own line saying which file.
+  expect_true(all(grepl("readonly", chrInputs[!grepl("id=", chrInputs, fixed = TRUE)], fixed = TRUE)))
 
   # Every chart is drawn by the session on the synthetic study's tables, and is
   # one the session answers: nothing is stored with the page.
@@ -76,14 +88,24 @@ test_that("RunApp() on a results table alone draws the charts with no participan
   expect_identical(lPayloads$GroupComparison$lSettings$tile_summary, "mean")
   expect_null(lPayloads$AssociationScatter$lSettings$start_value)
   # The survival chart has no output: its place in the page is a sentence.
-  strPage <- as.character(App_Ui(App_Study(dfResults, NULL, NULL)))
-  expect_false(grepl("id=\"StratifiedSurvival\"", strPage, fixed = TRUE))
-  expect_match(strPage, "The stratified survival chart reads an outcomes table", fixed = TRUE)
-  expect_match(strPage, "Drawn on the tables this app was started with.", fixed = TRUE)
+  Said <- function(xApp) {
+    lWas <- options(shiny.maxRequestSize = getOption("shiny.maxRequestSize"))
+    on.exit(options(lWas), add = TRUE)
+    lSaid <- list()
+    shiny::testServer(xApp, {
+      lSaid$place <<- as.character(output$gsm_bio_place_StratifiedSurvival$html)
+      lSaid$source <<- output$gsm_bio_source
+    })
+    lSaid
+  }
+  lSaid <- Said(xApp)
+  expect_false(grepl("id=\"StratifiedSurvival\"", lSaid$place, fixed = TRUE))
+  expect_match(lSaid$place, "The stratified survival chart reads an outcomes table", fixed = TRUE)
+  expect_identical(lSaid$source, "Drawn on the tables this app was started with.")
   expect_error(lAppPayloads(xApp, "StratifiedSurvival"))
   # With outcomes it is drawn.
-  strWith <- as.character(App_Ui(App_Study(dfResults, NULL, Synthetic_Outcomes)))
-  expect_match(strWith, "id=\"StratifiedSurvival\"", fixed = TRUE)
+  expect_match(Said(RunApp(dfResults, dfOutcomes = Synthetic_Outcomes))$place, "id=\"StratifiedSurvival\"", fixed = TRUE)
+  expect_identical(Said(RunApp())$source, "Drawn on the synthetic study that ships with gsm.bio.")
 })
 
 test_that("a table that lacks a column the charts need is refused with a sentence naming the column, and so is anything that is no table, no chart's settings or no size (#72)", {

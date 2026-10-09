@@ -20,12 +20,14 @@ Imports:
     grDevices,
     htmlwidgets,
     stats,
-    survival
+    survival,
+    utils
 Suggests:
     chromote,
     digest,
     effectsize,
     ggplot2,
+    haven,
     jsonlite,
     r2rtf,
     rmarkdown,

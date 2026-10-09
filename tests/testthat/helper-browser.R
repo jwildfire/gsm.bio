@@ -190,6 +190,15 @@ lOpenPage <- function(strFile, nWidth = 1200L, nHeight = 900L, strAddress = NULL
       lBrowser$screenshot(strPicture, selector = "html", scale = 1, show = FALSE)
       invisible(strPicture)
     },
+    # Gives a file input of the page a file of this machine, as a reader who
+    # chose it would (#73).
+    Upload = function(strSelector, strUpload) {
+      nRoot <- lBrowser$DOM$getDocument()$root$nodeId
+      nInput <- lBrowser$DOM$querySelector(nRoot, strSelector)$nodeId
+      if (is.null(nInput) || nInput == 0) stop("the page has no file input ", strSelector, call. = FALSE)
+      lBrowser$DOM$setFileInputFiles(files = list(normalizePath(strUpload)), nodeId = nInput)
+      invisible(strUpload)
+    },
     Requests = function() chrRequests,
     Errors = function() chrErrors,
     Close = function() invisible(tryCatch(lBrowser$close(), error = function(cndError) NULL))
@@ -216,6 +225,20 @@ bWaitFor <- function(lPage, strCondition, nSeconds = 40) {
     }
     Sys.sleep(0.5)
   }
+}
+
+# The view of a page whose statistics a session answers, once every statistic
+# it asked for has its answer. A page with stored results is answered in a
+# turn of its own loop, so its view has settled when it stops changing; an
+# answer from a session takes as long as the session does, and the view can
+# stand still for a moment while it is on the way.
+lLookAnswered <- function(lPage, nSeconds = 40) {
+  bAnswered <- bWaitFor(
+    lPage,
+    "window.gsmBioPage.chart().statistics().length > 0 && window.gsmBioPage.chart().statistics().every((asked) => asked.answer)",
+    nSeconds
+  )
+  c(list(answered = bAnswered), lPage$Look())
 }
 
 # A widget saved as one self-contained file, for a browser to open.
