@@ -1,0 +1,8 @@
+rsconnect 1.5.0, R version 4.3.3 (2024-02-29)
+gsm.bio 0.3.0.9000 from github: jwildfire/gsm.bio@dev at c52f2c7
+app mode: shiny; R 4.3.3
+files: app.R
+62 packages: Matrix, R6, Rcpp, base64enc, bit, bit64, bslib, cachem, cli, clipr, commonmark, cpp11, crayon, digest, evaluate, fansi, fastmap, fontawesome, forcats, fs, glue, gsm.bio, haven, highr, hms, htmltools, htmlwidgets, httpuv, jquerylib, jsonlite, knitr, later, lattice, lifecycle, magrittr, memoise, mime, otel, pillar, pkgconfig, prettyunits, progress, promises, rappdirs, readr, rlang, rmarkdown, sass, shiny, sourcetools, survival, tibble, tidyselect, tinytex, tzdb, utf8, vctrs, vroom, withr, xfun, xtable, yaml
+gsm.bio is listed
+shiny is listed
+haven is listed

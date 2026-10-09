@@ -361,15 +361,22 @@ Widget_Create <- function(strName, dfResults, dfParticipants, lSettings, lStored
     bDebug = bDebug,
     bAutoWidth = is.null(width),
     bAutoHeight = is.null(height),
-    lStatistics = list(
-      computed_by = StoredResultsProvenance(),
-      results = lapply(lStored, function(lResult) {
-        list(
-          name = lResult$name, args = lResult$args, dataId = lResult$dataId, rows = lResult$rows,
-          value = StoredValue(lResult$value)
-        )
-      })
-    )
+    lStatistics = if (Widget_IsServed()) {
+      # Drawn in a Shiny page by a render function: the chart asks the session
+      # (R/serve.R). `lStored` is never looked at, so, R's arguments being
+      # evaluated only when used, the stored results are not computed.
+      list(computed_by = StoredResultsProvenance(), results = list(), served = TRUE)
+    } else {
+      list(
+        computed_by = StoredResultsProvenance(),
+        results = lapply(lStored, function(lResult) {
+          list(
+            name = lResult$name, args = lResult$args, dataId = lResult$dataId, rows = lResult$rows,
+            value = StoredValue(lResult$value)
+          )
+        })
+      )
+    }
   ))
   htmlwidgets::createWidget(
     name = strName,

@@ -142,8 +142,13 @@ lStartBrowser <- function(nWidth, nHeight, nTries = 3L) {
 # one move and the view after it; `Evaluate(strCode)`, an expression's value,
 # read back from JSON; `Picture(strFile)`, a screenshot of the whole page;
 # `Requests()`, the address of every request the page has made; and `Close()`.
-lOpenPage <- function(strFile, nWidth = 1200L, nHeight = 900L) {
-  strUrl <- paste0("file://", normalizePath(strFile))
+# `bPhone` opens the page as a phone of that width and height does (#84), and
+# `chrBlocked` names addresses the page cannot reach, as a server behind a
+# firewall cannot; `Press(strKey)` presses a key where the focus is.
+lOpenPage <- function(strFile, nWidth = 1200L, nHeight = 900L, strAddress = NULL, bPhone = FALSE, chrBlocked = character(0)) {
+  # A saved file is opened with the network off. A page served by a session on
+  # this machine (`strAddress`, #71) is opened with it on: its server is local.
+  strUrl <- if (is.null(strAddress)) paste0("file://", normalizePath(strFile)) else strAddress
   lBrowser <- lStartBrowser(nWidth, nHeight)
   chrRequests <- character(0)
   chrErrors <- character(0)
@@ -156,7 +161,15 @@ lOpenPage <- function(strFile, nWidth = 1200L, nHeight = 900L) {
     chrErrors <<- c(chrErrors, paste(lEvent$exceptionDetails$text, lEvent$exceptionDetails$exception$description))
   })
   # No network: a request to anywhere but the file itself fails.
-  lBrowser$Network$emulateNetworkConditions(offline = TRUE, latency = 0, downloadThroughput = 0, uploadThroughput = 0)
+  if (is.null(strAddress)) {
+    lBrowser$Network$emulateNetworkConditions(offline = TRUE, latency = 0, downloadThroughput = 0, uploadThroughput = 0)
+  }
+  if (bPhone) {
+    lBrowser$Emulation$setDeviceMetricsOverride(width = nWidth, height = nHeight, deviceScaleFactor = 2, mobile = TRUE)
+  }
+  if (length(chrBlocked) > 0L) {
+    lBrowser$Network$setBlockedURLs(urls = as.list(chrBlocked))
+  }
   lLoaded <- lBrowser$Page$loadEventFired(wait_ = FALSE, timeout_ = nBrowserPatience)
   lBrowser$Page$navigate(strUrl, wait_ = FALSE)
   lBrowser$wait_for(lLoaded)
@@ -166,6 +179,11 @@ lOpenPage <- function(strFile, nWidth = 1200L, nHeight = 900L) {
       stop("the page raised: ", lAnswer$exceptionDetails$exception$description, call. = FALSE)
     }
     lAnswer$result$value
+  }
+  # A page a session serves draws its widget when the session sends it: wait
+  # for the chart before the driver is defined on it.
+  if (!is.null(strAddress)) {
+    Evaluate("new Promise((done, fail) => { const start = Date.now(); const look = () => { const node = document.querySelector('.html-widget'); const widget = node && window.HTMLWidgets && HTMLWidgets.find('#' + node.id); if (widget && widget.chart && widget.chart()) return done(true); if (Date.now() - start > 30000) return fail(new Error('no widget was drawn in 30 seconds')); setTimeout(look, 50); }; look(); })")
   }
   Evaluate(strBrowserDriver)
   Json <- function(strCode) jsonlite::fromJSON(Evaluate(strCode), simplifyVector = FALSE)
@@ -181,10 +199,68 @@ lOpenPage <- function(strFile, nWidth = 1200L, nHeight = 900L) {
       lBrowser$screenshot(strPicture, selector = "html", scale = 1, show = FALSE)
       invisible(strPicture)
     },
+    # Gives a file input of the page a file of this machine, as a reader who
+    # chose it would (#73).
+    Upload = function(strSelector, strUpload) {
+      nRoot <- lBrowser$DOM$getDocument()$root$nodeId
+      nInput <- lBrowser$DOM$querySelector(nRoot, strSelector)$nodeId
+      if (is.null(nInput) || nInput == 0) stop("the page has no file input ", strSelector, call. = FALSE)
+      lBrowser$DOM$setFileInputFiles(files = list(normalizePath(strUpload)), nodeId = nInput)
+      invisible(strUpload)
+    },
+    # A key pressed where the focus is, as a reader at a keyboard presses it:
+    # Enter on a link follows it, an arrow walks a row of tabs (#84), and Tab
+    # goes to the next control (#97).
+    Press = function(strKey) {
+      nCode <- c(Enter = 13L, ArrowLeft = 37L, ArrowRight = 39L, Tab = 9L)[[strKey]]
+      for (strType in c("keyDown", "keyUp")) {
+        lBrowser$Input$dispatchKeyEvent(
+          type = strType, key = strKey, code = strKey, windowsVirtualKeyCode = nCode, nativeVirtualKeyCode = nCode,
+          text = if (identical(strType, "keyDown") && identical(strKey, "Enter")) "\r"
+        )
+      }
+      invisible(strKey)
+    },
     Requests = function() chrRequests,
     Errors = function() chrErrors,
     Close = function() invisible(tryCatch(lBrowser$close(), error = function(cndError) NULL))
   )
+}
+
+# The chart's own footnote, the last under it: when and by which bio.viz it was
+# drawn, and what stands behind each statistic.
+strDrawnBy <- function(lPage) {
+  lPage$Evaluate("Array.from(document.querySelectorAll('.bv-foot-line')).map((line) => line.textContent).join(' ')")
+}
+
+# Waits for something to be true of a page, asking it again and again: a
+# browser asked one question that takes many seconds to answer can drop the
+# line it is asked on. Returns whether it became true in time.
+bWaitFor <- function(lPage, strCondition, nSeconds = 40) {
+  nStart <- Sys.time()
+  repeat {
+    if (isTRUE(lPage$Evaluate(sprintf("Boolean(%s)", strCondition)))) {
+      return(TRUE)
+    }
+    if (as.numeric(difftime(Sys.time(), nStart, units = "secs")) > nSeconds) {
+      return(FALSE)
+    }
+    Sys.sleep(0.5)
+  }
+}
+
+# The view of a page whose statistics a session answers, once every statistic
+# it asked for has its answer. A page with stored results is answered in a
+# turn of its own loop, so its view has settled when it stops changing; an
+# answer from a session takes as long as the session does, and the view can
+# stand still for a moment while it is on the way.
+lLookAnswered <- function(lPage, nSeconds = 40) {
+  bAnswered <- bWaitFor(
+    lPage,
+    "window.gsmBioPage.chart().statistics().length > 0 && window.gsmBioPage.chart().statistics().every((asked) => asked.answer)",
+    nSeconds
+  )
+  c(list(answered = bAnswered), lPage$Look())
 }
 
 # A widget saved as one self-contained file, for a browser to open.
@@ -229,4 +305,76 @@ lWalkPage <- function(lPage, chrBiomarkers, chrAdjustments = character(0)) {
     if (!identical(lHome$level, "biomarkers")) stop("the trail did not lead back to the tiles")
   }
   list(asked = lAsked, views = lViews)
+}
+
+# A Shiny app run by a second R session on this machine, for a browser to open
+# (#71). `strApp` is the R code of the app: an expression whose value
+# shiny::runApp() takes, written with the package loaded from the source tree.
+# Returns the page's address and `Stop()`, which ends the session. Base R only:
+# the second session writes the port it chose and its process id to files.
+lRunApp <- function(strApp, nPatience = 90) {
+  strDir <- tempfile("gsm-bio-app")
+  dir.create(strDir)
+  strPort <- file.path(strDir, "port")
+  strPid <- file.path(strDir, "pid")
+  strScript <- file.path(strDir, "app.R")
+  writeLines(c(
+    # The second session finds its packages where this one does.
+    sprintf(".libPaths(%s)", paste(deparse(.libPaths()), collapse = "")),
+    sprintf("pkgload::load_all(%s, quiet = TRUE, export_all = FALSE, helpers = FALSE)", deparse(strSourceRoot())),
+    sprintf("writeLines(as.character(Sys.getpid()), %s)", deparse(strPid)),
+    "nPort <- httpuv::randomPort()",
+    sprintf("xApp <- local({\n%s\n})", strApp),
+    sprintf("writeLines(as.character(nPort), %s)", deparse(strPort)),
+    "shiny::runApp(xApp, port = nPort, host = '127.0.0.1', launch.browser = FALSE, quiet = TRUE)"
+  ), strScript)
+  strLog <- file.path(strDir, "log")
+  system2(file.path(R.home("bin"), "Rscript"), c("--vanilla", shQuote(strScript)), wait = FALSE, stdout = strLog, stderr = strLog)
+  Stop <- function() {
+    if (file.exists(strPid)) {
+      nPid <- suppressWarnings(as.integer(readLines(strPid, warn = FALSE)[1]))
+      if (!is.na(nPid)) tools::pskill(nPid)
+    }
+    invisible(NULL)
+  }
+  Said <- function() if (file.exists(strLog)) paste(readLines(strLog, warn = FALSE), collapse = "\n") else ""
+  nStart <- Sys.time()
+  repeat {
+    if (file.exists(strPort)) {
+      strAddress <- sprintf("http://127.0.0.1:%s/", readLines(strPort, warn = FALSE)[1])
+      bUp <- tryCatch(
+        {
+          xPage <- url(strAddress)
+          on.exit(try(close(xPage), silent = TRUE), add = TRUE)
+          length(suppressWarnings(readLines(xPage, n = 1L, warn = FALSE))) > 0L
+        },
+        error = function(cndError) FALSE
+      )
+      if (bUp) {
+        return(list(address = strAddress, Stop = Stop, Said = Said))
+      }
+    }
+    if (as.numeric(difftime(Sys.time(), nStart, units = "secs")) > nPatience) {
+      Stop()
+      stop("the app did not start in ", nPatience, " seconds: ", Said(), call. = FALSE)
+    }
+    Sys.sleep(0.25)
+  }
+}
+
+# The tests that open an app run where the saved-page tests do, and need shiny
+# as well: in the source tree a missing shiny is a failure, never a skip.
+NeedApp <- function() {
+  if (!bSourceTree()) {
+    testthat::skip("an app is run and opened in a browser from the source tree, not under R CMD check")
+  }
+  if (!requireNamespace("shiny", quietly = TRUE)) {
+    testthat::fail("shiny is not installed: the tests of the widgets in a Shiny page need it")
+    testthat::skip("shiny is not available to run an app")
+  }
+  if (!bBrowser()) {
+    testthat::fail("no headless browser was found: the chromote package and a Chrome or Chromium are needed to open the app")
+    testthat::skip("no headless browser is available to open an app")
+  }
+  invisible(TRUE)
 }

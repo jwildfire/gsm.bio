@@ -8,11 +8,31 @@ Each statistic is a thin wrapper around a function from the stats or survival pa
 
 ```r
 # install.packages("remotes")
-remotes::install_github("jwildfire/gsm.bio@v0.3.0") # the v0.3.0 release, from its tag
+remotes::install_github("jwildfire/gsm.bio@v0.4.0") # the v0.4.0 release, from its tag
 remotes::install_github("jwildfire/gsm.bio@dev")    # what is on dev, the integration branch
 ```
 
 [NEWS](https://github.com/jwildfire/gsm.bio/blob/dev/NEWS.md) lists what each release holds, and what is on `dev` for the next.
+
+## Run the app
+
+The quickest way to see your own biomarker data in the charts. You need R, and nothing else to set up.
+
+```r
+# 1. Once: install the packages. remotes installs gsm.bio from GitHub, shiny
+#    runs the app, and haven reads .xpt and .sas7bdat files.
+install.packages(c("remotes", "shiny", "haven"))
+remotes::install_github("jwildfire/gsm.bio@v0.4.0")
+
+# 2. Each time: run the app. Your browser opens on it.
+gsm.bio::RunApp()
+```
+
+3. The app opens on a made-up study, so you can look around first. Choose a chart from the row of pills at the top of the page.
+4. To load your own data, click Data and choose your results file (`.csv`, `.xpt` or `.sas7bdat`). The page asks which column of the file is which, and marks in amber the ones you have still to say. Then press "Draw the charts on these files": the page lists the charts that are ready, and each opens from that list. The list on the left of the Data page counts what is left to do, and a file chosen by mistake is taken away with the Remove button in its card. The Data page also shows the tables that are loaded.
+5. To stop the app: in RStudio, press Esc in the R console or click its stop button; in R started from a terminal, press Ctrl-C.
+
+Your file stays on your machine: the app runs in your own R session. [The app](#the-app), below, has the details, and the article [The app, and putting it on Posit Connect](https://jwildfire.github.io/gsm.bio/articles/app.html) says how to host it for other people.
 
 ## Statistics
 
@@ -137,6 +157,46 @@ It stores `Analyze_Survival()`'s answer for the curves the settings open on. A c
 
 Every widget carries two JavaScript bundles, both copied from bio.viz with the commit and a checksum per file recorded in `inst/htmlwidgets/lib/SOURCE.json`: bio.viz, as its `dev` branch stands at the recorded commit, and safety.viz v1.9.0, the first safety.viz with the kit bio.viz's charts are built from. When the copy of bio.viz is byte for byte one of its releases the record names the release. The safety.viz copy is the one bio.viz takes from safety.viz's `dev` branch at its v1.9.0 release preparation, and its commit is recorded too. gsm.safety carries an earlier safety.viz without the kit; once it carries v1.9.0, the widgets can take the bundle from there instead of carrying their own copy.
 
+## The app
+
+`RunApp()` is the six charts as one Shiny app: a row of pills in the page's header, one for each chart, over one chart drawn at a time, with every statistic computed on request by the R session behind the page.
+
+```r
+library(gsm.bio)
+
+RunApp()                                   # the synthetic study
+RunApp(dfResults, dfParticipants)          # a study's own tables
+```
+
+It reads its tables under gsm.bio's column names: `USUBJID`, `TEST`, `STRESN`, `VISIT` and `VISITNUM` in the results. Participants and outcomes are optional. It returns the app and starts nothing, so the same call is the last line of an `app.R` on a server such as Posit Connect.
+
+A reader can load a study of their own on the app's Data page: a results file, and optionally participants and outcomes, as `.csv`, `.xpt` or `.sas7bdat`. The page has a card for each table, and a rail beside the cards that counts what is left to do: the files chosen, the columns still to say, and the charts that are ready. R reads a file on the server and its card asks which column is which, filled in where a column has gsm.bio's own name and marked in amber where the reader has still to say. A file is taken away with the Remove control in its card, and before the button is pressed the page names every file it would draw. Once the charts are drawn the page lists the ones that are ready, and says which table a chart that is not ready lacks. The Data page shows what is loaded, too: the tables the charts are drawn on, ten rows at a time, and the first rows of a file just chosen, with every number written in full. The file is held in the session's memory and nowhere else. `.xpt` and `.sas7bdat` files are read with haven, which is suggested, not imported.
+
+The article [The app, and putting it on Posit Connect](https://jwildfire.github.io/gsm.bio/articles/app.html) has the `app.R` a server runs, which ships with the package at `system.file("app", "app.R", package = "gsm.bio")`, the call that deploys it, what the server needs and what was measured. No one has deployed the app to a Connect server yet, and the article says so.
+
+The server needs no route to anywhere for the page's sake. The page asks one thing of anywhere but its own server: two typefaces from Google Fonts, Instrument Sans and Instrument Serif. The reader's browser asks, not the server: three requests as the app opens, to two hosts, `fonts.googleapis.com` for a style sheet and `fonts.gstatic.com` for two font files. A request carries the app's address, and the reader's network address and browser as any request does, and nothing of the study: no table, no file's name, no statistic. Some letters, Polish or Czech ones for instance, are in a further file of the typeface, which the browser asks the second host for when the page first shows one, in a file's name or a table's value; a letter the typeface does not have, a Greek or Cyrillic one, asks for nothing. Where the requests are blocked, as behind a firewall, the app is drawn in the system's fonts and works the same.
+
+## Widgets in a Shiny page
+
+A saved page answers only the statistics stored when it was made. In a Shiny page the R session behind it answers every one: each widget has an output and a render function, and `Serve_Statistics()`, called once in the server function, answers whatever a chart asks. A reader who changes the test, the group or a filter gets R's result for that view, and the line under the chart says it was computed on this server and by which R.
+
+```r
+library(shiny)
+library(gsm.bio)
+
+shinyApp(
+  ui = fluidPage(Widget_GroupComparisonOutput("chart")),
+  server = function(input, output, session) {
+    Serve_Statistics()
+    output$chart <- renderWidget_GroupComparison(
+      Widget_GroupComparison(Synthetic_Results, Synthetic_Participants)
+    )
+  }
+)
+```
+
+The session runs the nine `Analyze_*` functions and no other; a page that asks for any other name is told so and nothing is called. The rows a chart draws are sent with each request, and nothing is kept between requests. shiny is suggested, not imported.
+
 ## Figures
 
 Each chart also has a static figure, for a report or a slide: `Visualize_GroupComparison()`, `Visualize_AssociationScatter()`, `Visualize_CorrelationMatrix()`, `Visualize_BiomarkerScreen()`, `Visualize_CrossTab()` and `Visualize_StratifiedSurvival()`. Each takes the same tables and settings as its widget and returns a `ggplot`. The statistics printed under it come from the same `Analyze_*()` call on the same rows. ggplot2 is suggested, not imported: install it to draw figures.
@@ -207,7 +267,7 @@ The package ships a made-up biomarker study, so that a test can assert an answer
 
 ## Status
 
-[Version 0.3.0](https://github.com/jwildfire/gsm.bio/releases/tag/v0.3.0) is released, the third release. It draws the group comparison at three levels, a trend tile for every biomarker, one biomarker across its visits and one visit, with R's test under each visit stored in the page. It also adds two statistics functions that answer by level in one call, and one rule for unscheduled visits in the widget, the figure and the table. [Version 0.2.0](https://github.com/jwildfire/gsm.bio/releases/tag/v0.2.0) was the second. It added widgets for the cross-tabulation and the stratified survival chart, hazard ratios in the biomarker screen, and output from R: a static figure and a statistics table for every chart, the table written to RTF, and batch runs of the specifications bio.viz's charts write. [Version 0.1.0](https://github.com/jwildfire/gsm.bio/releases/tag/v0.1.0) was the first: seven statistics functions, the synthetic study, and widgets for the group comparison, the association scatter, the correlation matrix and the biomarker screen. [NEWS.md](https://github.com/jwildfire/gsm.bio/blob/dev/NEWS.md) has the notes for each, and the reference site is at <https://jwildfire.github.io/gsm.bio/>.
+Version 0.4.0 is the fourth, and the one this page describes; the [releases page](https://github.com/jwildfire/gsm.bio/releases) lists each version that is published. It adds the app: the six charts as one Shiny app that reads a study's own files and answers every statistic from the R session behind the page. The app is written to go on Posit Connect as one file, and no one has deployed it to a Connect server yet. Each widget also runs in a Shiny page of your own. [Version 0.3.0](https://github.com/jwildfire/gsm.bio/releases/tag/v0.3.0) was the third. It drew the group comparison at three levels, a trend tile for every biomarker, one biomarker across its visits and one visit, with R's test under each visit stored in the page. It also added two statistics functions that answer by level in one call, and one rule for unscheduled visits in the widget, the figure and the table. [Version 0.2.0](https://github.com/jwildfire/gsm.bio/releases/tag/v0.2.0) was the second. It added widgets for the cross-tabulation and the stratified survival chart, hazard ratios in the biomarker screen, and output from R: a static figure and a statistics table for every chart, the table written to RTF, and batch runs of the specifications bio.viz's charts write. [Version 0.1.0](https://github.com/jwildfire/gsm.bio/releases/tag/v0.1.0) was the first: seven statistics functions, the synthetic study, and widgets for the group comparison, the association scatter, the correlation matrix and the biomarker screen. [NEWS.md](https://github.com/jwildfire/gsm.bio/blob/dev/NEWS.md) has the notes for each, and the reference site is at <https://jwildfire.github.io/gsm.bio/>.
 
 The design is on the obot roadmap: [bio.viz and gsm.bio](https://jwildfire.github.io/obot.roadmap/requirements/design/353_design.html).
 
