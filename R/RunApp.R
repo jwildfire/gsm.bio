@@ -123,7 +123,8 @@ strAppStyle <- "
 .gsm-bio-app .gsm-bio-app-table th { color: #52616f; font-weight: 600; }
 .gsm-bio-app .gsm-bio-app-table .gsm-bio-app-row { color: #7a8794; }
 .gsm-bio-app .gsm-bio-app-turn { display: flex; gap: 8px; margin: 0 0 24px; }
-.gsm-bio-app .gsm-bio-app-viewer .form-group { max-width: 260px; margin-bottom: 4px; }
+.gsm-bio-app .gsm-bio-app-viewer .nav-tabs { margin: 8px 0; }
+.gsm-bio-app .gsm-bio-app-viewer .tab-content { display: none; }
 "
 
 # The names of the Data view's inputs and outputs: a file, the place its
@@ -148,12 +149,9 @@ App_DataView <- function() {
     shiny::tags$div(
       class = "gsm-bio-app-viewer",
       shiny::tags$h2("The tables the charts are drawn on"),
-      shiny::selectInput(
-        "gsm_bio_view_table",
-        label = "Table",
-        choices = stats::setNames(names(lTables), vapply(lTables, function(lTable) lTable$label, character(1))),
-        selectize = FALSE
-      ),
+      # A tab for each table there is: the session writes them, because a
+      # reader can load other tables.
+      shiny::uiOutput("gsm_bio_view_tabs"),
       shiny::uiOutput("gsm_bio_view"),
       shiny::tags$div(
         class = "gsm-bio-app-turn",

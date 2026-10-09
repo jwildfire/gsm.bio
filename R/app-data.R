@@ -252,12 +252,24 @@ App_ViewServer <- function(input, output, session, rStudy) {
     strChosen <- input$gsm_bio_view_table
     if (length(strChosen) == 1L && strChosen %in% App_Loaded(rStudy())) strChosen else "results"
   })
-  # Other tables are drawn: the select offers the ones there are, and the
-  # viewer starts again at the results' first rows.
-  shiny::observeEvent(rStudy(), {
-    shiny::updateSelectInput(session, "gsm_bio_view_table", choices = App_Loaded(rStudy()), selected = "results")
-    rPage(1L)
+  # A tab for each table the study has, named with its rows. Other tables are
+  # drawn: the tabs are written again for the ones there are, and the viewer
+  # starts again at the results' first rows.
+  output$gsm_bio_view_tabs <- shiny::renderUI({
+    lStudy <- rStudy()
+    lTables <- App_Tables()
+    Tab <- function(strTable) {
+      if (is.null(lStudy[[strTable]])) {
+        return(NULL)
+      }
+      shiny::tabPanel(
+        sprintf("%s, %s rows", lTables[[strTable]]$label, format(nrow(lStudy[[strTable]]), big.mark = ",")),
+        value = strTable
+      )
+    }
+    shiny::tabsetPanel(id = "gsm_bio_view_table", selected = "results", Tab("results"), Tab("participants"), Tab("outcomes"))
   })
+  shiny::observeEvent(rStudy(), rPage(1L))
   shiny::observeEvent(rShown(), rPage(1L))
   Turn <- function(nBy) {
     rPage(App_ViewPage(rStudy()[[rShown()]], rPage() + nBy)$page)

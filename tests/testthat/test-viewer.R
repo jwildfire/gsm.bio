@@ -67,6 +67,18 @@ test_that("in a session the viewer shows the synthetic study's results as the ap
   utils::write.csv(dfOwn, strOwn, row.names = FALSE, na = "")
   Html <- function(xOutput) as.character(xOutput$html)
   Said <- function(strHtml) gsub("<[^>]+>", "", regmatches(strHtml, regexpr("<p class=\"gsm-bio-app-what\">.*?</p>", strHtml, perl = TRUE)))
+  # The viewer's tabs, as the session writes them: each table's value with
+  # what its tab reads, and the one chosen.
+  lTabs <- function(strHtml) {
+    strFlat <- gsub("\n\\s*", "", strHtml)
+    chrTabs <- regmatches(strFlat, gregexpr("<li[^>]*>\\s*<a [^>]*data-value=\"[^\"]*\"[^>]*>.*?</a>", strFlat, perl = TRUE))[[1]]
+    chrValues <- sub(".*data-value=\"([^\"]*)\".*", "\\1", chrTabs)
+    list(
+      tabs = stats::setNames(gsub("<[^>]+>", "", chrTabs), chrValues),
+      chosen = chrValues[grepl("^<li class=\"active\"", chrTabs)],
+      id = grepl("id=\"gsm_bio_view_table\"", strFlat, fixed = TRUE)
+    )
+  }
   Row <- function(dfTable, iRow) c(format(iRow, big.mark = ","), unname(vapply(dfTable, function(xColumn) App_Cell(xColumn)[iRow], character(1))))
 
   shiny::testServer(RunApp(), {
@@ -81,6 +93,16 @@ test_that("in a session the viewer shows the synthetic study's results as the ap
     expect_length(lShown$rows, 10L)
     expect_identical(lShown$rows[[1]], Row(Synthetic_Results, 1L))
     expect_identical(lShown$rows[[10]], Row(Synthetic_Results, 10L))
+
+    # A tab for each of the study's three tables, named with its rows, the
+    # results chosen.
+    lThree <- lTabs(Html(output$gsm_bio_view_tabs))
+    expect_true(lThree$id)
+    expect_identical(lThree$tabs, c(
+      results = "Results, 11,472 rows", participants = "Participants, 200 rows",
+      outcomes = sprintf("Outcomes, %s rows", format(nrow(Synthetic_Outcomes), big.mark = ","))
+    ))
+    expect_identical(lThree$chosen, "results")
 
     # The pages turn, and stop at the first.
     session$setInputs(gsm_bio_view_next = 1)
@@ -145,6 +167,10 @@ test_that("in a session the viewer shows the synthetic study's results as the ap
     expect_true(all(c("USUBJID", "TEST", "STRESN") %in% lShown$header))
     expect_false(any(c("SUBJ", "MARKER", "RESULT") %in% lShown$header))
     expect_identical(App_Loaded(list(results = dfOwn)), c(Results = "results"))
+    # One table is loaded now, and one tab is written.
+    lOne <- lTabs(Html(output$gsm_bio_view_tabs))
+    expect_identical(lOne$tabs, c(results = sprintf("Results, %s rows", format(nrow(dfOwn), big.mark = ","))))
+    expect_identical(lOne$chosen, "results")
   })
 })
 
@@ -178,15 +204,23 @@ test_that("in a browser the Data view shows the rows the charts are drawn on, tu
   expect_identical(unlist(lShown$header), c("Row", names(Synthetic_Results)))
   expect_length(lShown$rows, 10L)
   expect_identical(unlist(lShown$rows[[1]])[1:2], c("1", Synthetic_Results$USUBJID[1]))
-  # The table the select offers are the three the study has.
+  # A tab for each of the three tables the study has.
+  strTabs <- "Array.from(document.querySelectorAll('#gsm_bio_view_table a')).map((tab) => tab.dataset.value + ': ' + tab.textContent.trim())"
   expect_identical(
-    unlist(lPage$Evaluate("Array.from(document.querySelector('#gsm_bio_view_table').options).map((option) => option.value)")),
-    c("results", "participants", "outcomes")
+    unlist(lPage$Evaluate(strTabs)),
+    c("results: Results, 11,472 rows", "participants: Participants, 200 rows", sprintf("outcomes: Outcomes, %s rows", format(nrow(Synthetic_Outcomes), big.mark = ",")))
   )
 
   lPage$Evaluate("document.querySelector('#gsm_bio_view_next').click()")
   expect_true(bWaitFor(lPage, sprintf("(%s || '').includes('Rows 11 to 20, page 2 of 1,148.')", strSaid)), label = "the next ten rows")
   expect_identical(unlist(Shown("#gsm_bio_view")$rows[[1]])[1:2], c("11", Synthetic_Results$USUBJID[11]))
+
+  # The participants' tab: their rows, from the first.
+  lPage$Evaluate("document.querySelector('#gsm_bio_view_table a[data-value=\"participants\"]').click()")
+  expect_true(bWaitFor(lPage, sprintf("(%s || '').startsWith('Participants, from the synthetic study that ships with gsm.bio: 200 rows')", strSaid)), label = "the participants' tab")
+  expect_match(lPage$Evaluate(strSaid), "Rows 1 to 10, page 1 of 20.", fixed = TRUE)
+  expect_identical(unlist(Shown("#gsm_bio_view")$header), c("Row", names(Synthetic_Participants)))
+  expect_identical(unlist(Shown("#gsm_bio_view")$rows[[1]])[1:2], c("1", Synthetic_Participants$USUBJID[1]))
 
   # A file chosen: its first five rows, under its own names.
   lPage$Upload("#gsm_bio_file_results", strOwn)
@@ -211,10 +245,7 @@ test_that("in a browser the Data view shows the rows the charts are drawn on, tu
   )
   lShown <- Shown("#gsm_bio_view")
   expect_true(all(c("USUBJID", "TEST", "STRESN") %in% unlist(lShown$header)))
-  expect_identical(
-    unlist(lPage$Evaluate("Array.from(document.querySelector('#gsm_bio_view_table').options).map((option) => option.value)")),
-    "results"
-  )
+  expect_identical(unlist(lPage$Evaluate(strTabs)), "results: Results, 11,472 rows")
   expect_identical(lPage$Errors(), character(0))
 })
 
