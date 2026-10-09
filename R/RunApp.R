@@ -211,7 +211,8 @@ App_Ui <- function(lStudy = App_Study(NULL, NULL, NULL)) {
   )
   lTabs <- App_Tabs(lStudy, lPages)
   shiny::bootstrapPage(
-    title = "gsm.bio",
+    # The page is titled as the app is named, and says what language it is in.
+    title = "Biomarker charts", lang = "en",
     shiny::tags$head(
       App_Fonts(),
       shiny::tags$style(shiny::HTML(strAppStyle))
@@ -284,13 +285,11 @@ App_DataServer <- function(input, output, session, rStudy) {
     local({
       strTable <- strEach
       lTable <- lTables[[strTable]]
+      # A file input's value is the page's to set as well as Shiny's (#97):
+      # App_Take() reads it only when it is an upload, and returns whatever
+      # it was sent.
       shiny::observeEvent(input[[App_Id("file", strTable)]], {
-        lChosen <- input[[App_Id("file", strTable)]]
-        strName <- lChosen$name[1]
-        rFiles[[strTable]] <- tryCatch(
-          list(name = strName, table = App_ReadFile(lChosen$datapath[1], strName)),
-          error = function(cndError) list(name = strName, problem = conditionMessage(cndError))
-        )
+        rFiles[[strTable]] <- App_Take(input[[App_Id("file", strTable)]])
         Changed()
       })
       # A file is taken away with the control in its card (#85). It is not a

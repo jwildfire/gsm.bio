@@ -33,9 +33,10 @@ strWritten <- function(dfTable, strType, strStem = "results") {
   strFile
 }
 
-# What a session is told when a reader chooses a file.
+# What a session is told when a reader chooses a file: the file is put where
+# Shiny keeps an upload, as the app reads it from nowhere else (#97).
 dfChosen <- function(strFile) {
-  data.frame(name = basename(strFile), size = file.size(strFile), type = "", datapath = strFile, stringsAsFactors = FALSE)
+  dfUploaded(strFile)
 }
 
 test_that("a .csv, a .xpt and a .sas7bdat file are each read as the table that was written, in plain columns (#73)", {
@@ -474,7 +475,8 @@ test_that("in a session a .csv file R read short is said in the file's place and
     nSynthetic <- nrow(Synthetic_Results)
     nApplied <- 0L
     for (strWhich in names(lFiles)) {
-      session$setInputs(gsm_bio_file_results = dfChosen(lFiles[[strWhich]]))
+      dfShort <- dfChosen(lFiles[[strWhich]])
+      session$setInputs(gsm_bio_file_results = dfShort)
       strPlace <- Html(output$gsm_bio_columns_results)
       expect_match(strPlace, "gsm-bio-app-problem", fixed = TRUE, label = strWhich)
       expect_match(strPlace, sprintf("%s.csv was not loaded: R warned as it read the file", strWhich), fixed = TRUE, label = strWhich)
@@ -482,7 +484,9 @@ test_that("in a session a .csv file R read short is said in the file's place and
       # Nothing of the file is offered: no rows counted, no column to say.
       expect_false(grepl("50 rows", strPlace, fixed = TRUE), label = paste(strWhich, "counts the rows read"))
       expect_false(grepl("gsm_bio_column_results_", strPlace, fixed = TRUE), label = paste(strWhich, "asks for columns"))
+      # Neither the file as it was written nor where the server keeps it.
       ExpectNoPath(strPlace, lFiles[[strWhich]], strWhich)
+      ExpectNoPath(strPlace, dfShort$datapath, strWhich)
       # The columns said all the same, as a reader who had them from a file
       # before would have: the button says the problem and draws nothing.
       nApplied <- nApplied + 1L
@@ -499,12 +503,15 @@ test_that("in a session a .csv file R read short is said in the file's place and
       }
     }
     # A SAS file that cannot be read: no path of the server in either place.
-    session$setInputs(gsm_bio_file_results = transform(dfChosen(strBroken), name = "results.xpt"))
+    dfBroken <- dfUploaded(strBroken, "results.xpt")
+    expect_identical(basename(dfBroken$datapath), "0.xpt")
+    session$setInputs(gsm_bio_file_results = dfBroken)
     strPlace <- Html(output$gsm_bio_columns_results)
     expect_match(strPlace, "results.xpt could not be read as a .xpt file: Failed to parse results.xpt", fixed = TRUE)
-    ExpectNoPath(strPlace, strBroken, "the file's place")
+    ExpectNoPath(strPlace, dfBroken$datapath, "the file's place")
+    expect_false(grepl("0.xpt", strPlace, fixed = TRUE))
     session$setInputs(gsm_bio_apply = nApplied + 1L)
-    ExpectNoPath(Html(output$gsm_bio_data_said), strBroken, "the button")
+    ExpectNoPath(Html(output$gsm_bio_data_said), dfBroken$datapath, "the button")
     expect_length(Payload(output$GroupComparison)$dfResults$USUBJID, nSynthetic)
   })
 })
@@ -1078,4 +1085,461 @@ test_that("on a 390-pixel phone the Data page is one column, the rail first, and
   expect_match(lSeen$applied$saidSays, "5 of the 6 charts are ready", fixed = TRUE)
   expect_lte(lSeen$applied$said$right, lSeen$applied$room)
   expect_identical(lPage$Errors(), character(0))
+})
+
+# ---- A file input the page set itself (#97) ----------------------------------
+
+# The one sentence a file is refused with when it is not an upload.
+strNotUploaded <- "Nothing was read: a card takes one file, uploaded with its own control, and the page sent something else."
+
+# A file of the server's own, holding a line that is nowhere else, in a folder
+# of the temporary folder that is no upload's.
+strKnownLine <- "KNOWN_LINE_97"
+strServerFile <- function() {
+  strDir <- tempfile("gsm-bio-server")
+  dir.create(strDir)
+  strFile <- file.path(strDir, "server-only.csv")
+  writeLines(c(paste0(strKnownLine, ",only_on_the_server"), "row two,of a file", "row three,never uploaded"), strFile)
+  strFile
+}
+
+# A file that is not in the temporary folder at all: one the package ships.
+strShippedFile <- function() {
+  system.file("extdata", "synthetic_participants.csv", package = "gsm.bio", mustWork = TRUE)
+}
+
+# What App_Uploaded() says of a file input's value: the sentence it stops
+# with, or NA when it takes the value as an upload.
+strUploadRefused <- function(xChosen) {
+  tryCatch(
+    {
+      App_Uploaded(xChosen)
+      NA_character_
+    },
+    error = function(cndError) conditionMessage(cndError)
+  )
+}
+
+test_that("only a file directly inside a folder Shiny made for an upload, under this R process's temporary folder, is taken as an upload: a path beside it, above it, under it, through it, linked from it or on the web is refused with one sentence (#97)", {
+  dfReal <- dfUploaded(strShippedFile(), "participants.csv")
+  # An upload is taken, as the data frame Shiny sets and as a list of the same.
+  strTaken <- normalizePath(dfReal$datapath, winslash = "/")
+  expect_identical(App_Uploaded(dfReal), strTaken)
+  expect_identical(App_Uploaded(as.list(dfReal)), strTaken)
+  expect_match(basename(dirname(strTaken)), "^[0-9a-f]{24}$")
+  expect_identical(dirname(dirname(strTaken)), normalizePath(tempdir(), winslash = "/"))
+  # However the same path is written, it is the same file.
+  expect_identical(App_Uploaded(list(datapath = file.path(dirname(dfReal$datapath), ".", basename(dfReal$datapath)))), strTaken)
+
+  strOther <- strServerFile()
+  strLoose <- tempfile(fileext = ".csv")
+  writeLines("A,B", strLoose)
+  strDeep <- file.path(strUploadFolder(), "deeper", "0.csv")
+  dir.create(dirname(strDeep))
+  writeLines("A,B", strDeep)
+  Named <- function(strFolder) {
+    strFile <- file.path(tempdir(), strFolder, "0.csv")
+    unlink(dirname(strFile), recursive = TRUE)
+    dir.create(dirname(strFile))
+    writeLines("A,B", strFile)
+    strFile
+  }
+  strHex <- paste(rep("0123456789abcdef", 2), collapse = "")
+  lRefused <- list(
+    `a file outside the temporary folder` = strShippedFile(),
+    `a web address` = "http://127.0.0.1:9/server-only.csv",
+    `a secure web address` = "https://example.org/server-only.csv",
+    `a file's address` = paste0("file://", strOther),
+    `a file that is not there, in an upload's folder` = file.path(strUploadFolder(), "0.csv"),
+    `a file that is not there` = tempfile(fileext = ".csv"),
+    `a file in another folder of the temporary folder` = strOther,
+    `a file loose in the temporary folder` = strLoose,
+    `a file a folder deeper than an upload` = strDeep,
+    `an upload's folder` = dirname(dfReal$datapath),
+    `the temporary folder` = tempdir(),
+    `a path through an upload's folder and out again` = file.path(dirname(dfReal$datapath), "..", basename(dirname(strOther)), basename(strOther)),
+    `a folder of 23 digits` = Named(substr(strHex, 1, 23)),
+    `a folder of 25 digits` = Named(substr(strHex, 1, 25)),
+    `a folder of 24 letters that are not digits` = Named(strrep("g", 24)),
+    `a folder of 24 digits with a word before them` = Named(paste0("file", substr(strHex, 1, 24)))
+  )
+  # A link in an upload's folder to a file elsewhere, and a link named as an
+  # upload's folder is to a folder elsewhere: where links can be made, which
+  # is everywhere but Windows.
+  strLink <- file.path(strUploadFolder(), "0.csv")
+  strLinkedFolder <- file.path(tempdir(), strrep("ab12", 6))
+  unlink(strLinkedFolder)
+  bLinked <- isTRUE(suppressWarnings(file.symlink(strOther, strLink))) && isTRUE(suppressWarnings(file.symlink(dirname(strOther), strLinkedFolder)))
+  if (!identical(.Platform$OS.type, "windows")) {
+    expect_true(bLinked, label = "a link can be made here")
+  }
+  if (bLinked) {
+    expect_true(file.exists(strLink))
+    expect_true(file.exists(file.path(strLinkedFolder, basename(strOther))))
+    lRefused <- c(lRefused, list(
+      `a link in an upload's folder to a file elsewhere` = strLink,
+      `a file in a link named as an upload's folder is` = file.path(strLinkedFolder, basename(strOther))
+    ))
+  }
+  for (strWhat in names(lRefused)) {
+    expect_identical(strUploadRefused(list(name = "mine.csv", datapath = lRefused[[strWhat]])), strNotUploaded, label = strWhat)
+  }
+  # A value that is no file at all, or more than one.
+  dfSecond <- dfUploaded(strShippedFile(), "second.csv")
+  lShapes <- list(
+    nothing = NULL, `a number` = 7, `a text` = dfReal$datapath, `a missing value` = NA, `an empty list` = list(),
+    `a name and no path` = list(name = "mine.csv"), `a missing path` = list(datapath = NA_character_),
+    `an empty path` = list(datapath = ""), `a number for a path` = list(datapath = 3),
+    `a list for a path` = list(datapath = list(dfReal$datapath)), `no path at all` = list(datapath = character(0)),
+    `two paths` = list(name = c("mine.csv", "second.csv"), datapath = c(dfReal$datapath, dfSecond$datapath)),
+    `two uploads` = rbind(dfReal, dfSecond), `an upload of no rows` = dfReal[0, ]
+  )
+  for (strWhat in names(lShapes)) {
+    expect_identical(strUploadRefused(lShapes[[strWhat]]), strNotUploaded, label = strWhat)
+  }
+  # The sentence is one, the same for all, and has nothing of a path in it.
+  expect_identical(strAppNotUploaded, strNotUploaded)
+  expect_false(grepl("[/\\\\]", strNotUploaded))
+
+  # A file's name is whatever text the page sent, or a few words in its place.
+  expect_identical(App_ChosenName(dfReal), "participants.csv")
+  expect_identical(App_ChosenName(lShapes$`two uploads`), "participants.csv, second.csv")
+  for (xValue in list(NULL, 7, "mine.csv", list(), list(name = 5), list(name = NA_character_), list(name = ""), list(name = list("a.csv")), list(name = character(0)))) {
+    expect_identical(App_ChosenName(xValue), "A file with no name")
+  }
+})
+
+test_that("at the server a file input naming a file outside the upload folder, a web address, a path that does not exist or a file in another folder of the temporary folder is refused with the same sentence and nothing is read, and a real upload is still read (#97)", {
+  skip_if_not_installed("shiny")
+  lWas <- options(shiny.maxRequestSize = getOption("shiny.maxRequestSize"))
+  on.exit(options(lWas), add = TRUE)
+  strOther <- strServerFile()
+  lForged <- list(
+    `a file outside the upload folder` = strShippedFile(),
+    `a web address` = "http://127.0.0.1:9/server-only.csv",
+    `a file's address` = paste0("file://", strOther),
+    `a path that does not exist` = file.path(strUploadFolder(), "0.csv"),
+    `a file in another folder of the temporary folder` = strOther
+  )
+  # Every path the app's reader is handed, as it is handed it.
+  chrRead <- character(0)
+  ReadFile <- App_ReadFile
+  local_mocked_bindings(App_ReadFile = function(strPath, strName) {
+    chrRead <<- c(chrRead, strPath)
+    ReadFile(strPath, strName)
+  })
+  Html <- function(xOutput) paste(as.character(xOutput$html), collapse = "")
+  shiny::testServer(RunApp(), {
+    nPressed <- 0L
+    for (strWhat in names(lForged)) {
+      session$setInputs(gsm_bio_file_results = list(name = "mine.csv", size = 1, type = "text/csv", datapath = lForged[[strWhat]]))
+      # The card: the name the page gave, the sentence, and what to do.
+      strCard <- Html(output$gsm_bio_columns_results)
+      expect_match(strCard, sprintf("<p class=\"gsm-bio-app-problem\">%s</p>", strNotUploaded), fixed = TRUE, label = strWhat)
+      expect_identical(
+        strPageText(strCard), paste("mine.csv Remove", strNotUploaded, "Choose another results file, or remove this one."),
+        label = strWhat
+      )
+      # The button says the same and draws nothing.
+      nPressed <- nPressed + 1L
+      session$setInputs(gsm_bio_apply = nPressed)
+      expect_identical(Html(output$gsm_bio_data_said), sprintf("<p class=\"gsm-bio-app-problem\">%s</p>", strNotUploaded), label = strWhat)
+      expect_identical(output$gsm_bio_source, "Drawn on the synthetic study that ships with gsm.bio.", label = strWhat)
+      # Nothing of the file is anywhere the session writes.
+      for (strOutput in c("gsm_bio_columns_results", "gsm_bio_rail", "gsm_bio_data_files", "gsm_bio_data_said", "gsm_bio_view")) {
+        expect_false(grepl(strKnownLine, Html(output[[strOutput]]), fixed = TRUE), label = paste(strWhat, "in", strOutput))
+        expect_false(grepl(lForged[[strWhat]], Html(output[[strOutput]]), fixed = TRUE), label = paste(strWhat, "is named in", strOutput))
+      }
+    }
+    expect_identical(chrRead, character(0))
+
+    # A file where Shiny keeps an upload is read, as it was.
+    dfReal <- dfUploaded(strShippedFile(), "participants.csv")
+    session$setInputs(gsm_bio_file_participants = dfReal)
+    expect_match(Html(output$gsm_bio_columns_participants), "participants.csv: 200 rows, 6 columns. Which column is which?", fixed = TRUE)
+    expect_identical(chrRead, normalizePath(dfReal$datapath, winslash = "/"))
+  })
+})
+
+test_that("at the server a file input that is no file, a number, a text, a name with no path, two files at once, is refused with the same sentence and does not end the session, and a name the page sent is only ever text (#97)", {
+  skip_if_not_installed("shiny")
+  lWas <- options(shiny.maxRequestSize = getOption("shiny.maxRequestSize"))
+  on.exit(options(lWas), add = TRUE)
+  dfReal <- dfUploaded(strShippedFile(), "participants.csv")
+  dfSecond <- dfUploaded(strShippedFile(), "second.csv")
+  strMarkup <- "<img src=x onerror=\"window.gsmBioName=1\">.csv"
+  # What the page sent, and the name its card shows for it.
+  lSent <- list(
+    list(sent = 7, name = "A file with no name"),
+    list(sent = "mine.csv", name = "A file with no name"),
+    list(sent = list(), name = "A file with no name"),
+    list(sent = list(name = "mine.csv"), name = "mine.csv"),
+    list(sent = list(name = 5, datapath = list(a = dfReal$datapath)), name = "A file with no name"),
+    list(sent = list(name = NA, datapath = NA_character_), name = "A file with no name"),
+    list(sent = list(name = "mine.csv", datapath = 3), name = "mine.csv"),
+    list(sent = list(name = c("mine.csv", "second.csv"), datapath = c(dfReal$datapath, dfSecond$datapath)), name = "mine.csv, second.csv"),
+    list(sent = rbind(dfReal, dfSecond), name = "participants.csv, second.csv"),
+    list(sent = dfReal[0, ], name = "A file with no name"),
+    list(sent = list(name = strMarkup, datapath = strShippedFile()), name = strMarkup)
+  )
+  chrRead <- character(0)
+  ReadFile <- App_ReadFile
+  local_mocked_bindings(App_ReadFile = function(strPath, strName) {
+    chrRead <<- c(chrRead, strPath)
+    ReadFile(strPath, strName)
+  })
+  Html <- function(xOutput) paste(as.character(xOutput$html), collapse = "")
+  Text <- function(strName) gsub("\"", "&quot;", gsub(">", "&gt;", gsub("<", "&lt;", strName, fixed = TRUE), fixed = TRUE), fixed = TRUE)
+  shiny::testServer(RunApp(), {
+    for (iSent in seq_along(lSent)) {
+      lOne <- lSent[[iSent]]
+      session$setInputs(gsm_bio_file_results = lOne$sent)
+      strCard <- Html(output$gsm_bio_columns_results)
+      expect_match(strCard, sprintf("<p class=\"gsm-bio-app-problem\">%s</p>", strNotUploaded), fixed = TRUE, label = paste("value", iSent))
+      # The name is the card's text and the Remove control's, never its markup.
+      expect_match(strCard, sprintf("<span class=\"gsm-bio-app-chosen-name\">%s</span>", gsub("&quot;", "\"", Text(lOne$name), fixed = TRUE)), fixed = TRUE, label = paste("value", iSent))
+      expect_match(strCard, sprintf("aria-label=\"Remove %s\"", Text(lOne$name)), fixed = TRUE, label = paste("value", iSent))
+      expect_false(grepl("<img", strCard, fixed = TRUE), label = paste("value", iSent))
+      # The rail and the button's line name it too, and the session goes on.
+      expect_match(strPageText(Html(output$gsm_bio_rail)), "1 not read", fixed = TRUE, label = paste("value", iSent))
+      expect_false(grepl("<img", Html(output$gsm_bio_rail), fixed = TRUE))
+      expect_false(grepl("<img", Html(output$gsm_bio_data_files), fixed = TRUE))
+      session$setInputs(gsm_bio_apply = iSent)
+      expect_identical(Html(output$gsm_bio_data_said), sprintf("<p class=\"gsm-bio-app-problem\">%s</p>", strNotUploaded), label = paste("value", iSent))
+    }
+    expect_identical(chrRead, character(0))
+    # The session is still there: a real upload after them all is read.
+    session$setInputs(gsm_bio_file_results = dfUploaded(strWritten(Synthetic_Results, ".csv")))
+    expect_match(Html(output$gsm_bio_columns_results), "results.csv: 11,472 rows, 6 columns. Which column is which?", fixed = TRUE)
+    expect_length(chrRead, 1L)
+  })
+})
+
+test_that("in a browser a page that sets a file input itself, to a file on the server that holds a known line, is refused: the line is nowhere on the page, the tables and the charts are as they were, a number in a file's place does not end the session, and a file chosen with the control is still read (#97)", {
+  NeedApp()
+  strSecret <- normalizePath(strServerFile())
+  lFiles <- lLayoutFiles()
+  # The app serves the same file at an address of its own, so the page can
+  # name it as a web address too.
+  lApp <- lRunApp(sprintf("{ shiny::addResourcePath('known', %s); RunApp() }", deparse(dirname(strSecret))))
+  on.exit(lApp$Stop(), add = TRUE)
+  lPage <- lOpenPage(NULL, nWidth = 1280L, nHeight = 900L, strAddress = lApp$address, chrBlocked = c("*fonts.googleapis.com*", "*fonts.gstatic.com*"))
+  on.exit(lPage$Close(), add = TRUE)
+  Quote <- function(xValue) as.character(jsonlite::toJSON(xValue, auto_unbox = TRUE))
+  Wait <- function(strCondition, strLabel) expect_true(bWaitFor(lPage, strCondition), label = strLabel)
+  Words <- function(strSelector) lPage$Evaluate(sprintf("(document.querySelector(%s) || { textContent: '' }).textContent.replace(/\\s+/g, ' ').trim()", Quote(strSelector)))
+  # The page sets a file input, as any script in it can.
+  Send <- function(strTable, strValue) {
+    lPage$Evaluate(sprintf("(() => { Shiny.setInputValue('gsm_bio_file_%s', %s, { priority: 'event' }); return true; })()", strTable, strValue))
+  }
+  Known <- function() lPage$Evaluate(sprintf("document.documentElement.outerHTML.includes(%s) || document.body.innerText.includes(%s)", Quote(strKnownLine), Quote(strKnownLine)))
+  lPage$Evaluate("document.querySelector('#gsm_bio_chart a[data-value=\"Data\"]').click()")
+  Wait("document.querySelector('#gsm_bio_view table') && document.querySelector('#gsm_bio_rail .gsm-bio-app-step')", "the Data page is drawn")
+  # The file is served: the address the page will name has the known line.
+  strAddress <- paste0(lApp$address, "known/server-only.csv")
+  expect_match(lPage$Evaluate(sprintf("fetch(%s).then((answer) => answer.text())", Quote(strAddress))), strKnownLine, fixed = TRUE)
+  lWas <- list(viewer = Words("#gsm_bio_view"), tabs = Words("#gsm_bio_view_tabs"), source = Words("#gsm_bio_source"))
+  expect_match(lWas$viewer, "Results, from the synthetic study that ships with gsm.bio: 11,472 rows", fixed = TRUE)
+
+  # The results card is sent the server's file by its path, the participants
+  # card the same file by a web address, and the outcomes card the path again
+  # under a SAS name.
+  Send("results", Quote(list(name = "mine.csv", size = 1, type = "text/csv", datapath = strSecret)))
+  Send("participants", Quote(list(name = "mine.csv", datapath = strAddress)))
+  Send("outcomes", Quote(list(name = "mine.xpt", datapath = strSecret)))
+  for (strTable in c("results", "participants", "outcomes")) {
+    Wait(sprintf("document.querySelector('#gsm_bio_columns_%s').textContent.includes('Remove')", strTable), paste("the", strTable, "card answers"))
+  }
+  strOptional <- "Choose another file, or remove this one: the charts can be drawn without %s table."
+  expect_identical(Words("#gsm_bio_columns_results"), paste("mine.csv Remove", strNotUploaded, "Choose another results file, or remove this one."))
+  expect_identical(Words("#gsm_bio_columns_participants"), paste("mine.csv Remove", strNotUploaded, sprintf(strOptional, "a participants")))
+  expect_identical(Words("#gsm_bio_columns_outcomes"), paste("mine.xpt Remove", strNotUploaded, sprintf(strOptional, "an outcomes")))
+  expect_false(Known(), label = "the server's line is on the page")
+  # The button draws nothing and says the same.
+  lPage$Evaluate("document.querySelector('#gsm_bio_apply').click()")
+  Wait("document.querySelector('#gsm_bio_data_said .gsm-bio-app-problem')", "the button answers")
+  expect_identical(Words("#gsm_bio_data_said"), strNotUploaded)
+  expect_false(Known(), label = "the server's line is on the page after the button")
+
+  # A number where a file would be: refused, and the session is still there.
+  Send("results", "7")
+  Wait("document.querySelector('#gsm_bio_columns_results').textContent.includes('A file with no name')", "a number is answered")
+  expect_identical(Words("#gsm_bio_columns_results"), paste("A file with no name Remove", strNotUploaded, "Choose another results file, or remove this one."))
+  expect_true(lPage$Evaluate("Shiny.shinyapp.isConnected()"), label = "the session goes on")
+
+  # The tables are as they were, and so is a chart: it is drawn, on the
+  # synthetic study, with nothing of the server's file.
+  expect_identical(list(viewer = Words("#gsm_bio_view"), tabs = Words("#gsm_bio_view_tabs"), source = Words("#gsm_bio_source")), lWas)
+  lPage$Evaluate("document.querySelector('#gsm_bio_chart a[data-value=\"GroupComparison\"]').click()")
+  Wait("HTMLWidgets.find('#GroupComparison') && HTMLWidgets.find('#GroupComparison').chart() && document.querySelector('#GroupComparison .gsm-bio-chart').childElementCount > 0", "the group comparison is drawn")
+  expect_false(Known(), label = "the server's line is on a chart's page")
+  expect_identical(Words("#gsm_bio_source"), "Drawn on the synthetic study that ships with gsm.bio.")
+
+  # A file chosen with the control, which Shiny uploads, is read as it was.
+  lPage$Evaluate("document.querySelector('#gsm_bio_chart a[data-value=\"Data\"]').click()")
+  lPage$Upload("#gsm_bio_file_results", lFiles$results)
+  Wait("document.querySelector('#gsm_bio_columns_results').textContent.includes('lb.csv: 11,472 rows, 6 columns')", "a real upload is read")
+  expect_true(lPage$Evaluate("Shiny.shinyapp.isConnected()"))
+  expect_identical(lPage$Errors(), character(0))
+})
+
+# ---- A quote never closed on a file's first lines (#97) ----------------------
+
+# The third review's file, made here byte for byte: a results table of 1,000
+# rows under gsm.bio's own column names. `nOpen` is the row whose visit opens a
+# quote that is never closed, 0 for the header's; `bEnds` is whether the file
+# ends with a line ending.
+strOpenQuote <- function(nOpen = NULL, bEnds = TRUE, chrRows = sprintf("s%d,IL-6,%d,Baseline,0", 1:1000, 1:1000)) {
+  strHeader <- "USUBJID,TEST,STRESN,VISIT,VISITNUM"
+  if (isTRUE(nOpen == 0)) {
+    strHeader <- "USUBJID,TEST,STRESN,\"VISIT,VISITNUM"
+  } else if (!is.null(nOpen)) {
+    chrRows[nOpen] <- sprintf("s%d,IL-6,%d,\"Baseline,0", nOpen, nOpen)
+  }
+  strDir <- tempfile("gsm-bio-quote")
+  dir.create(strDir)
+  strFile <- file.path(strDir, "results.csv")
+  writeBin(charToRaw(paste0(paste(c(strHeader, chrRows), collapse = "\n"), if (bEnds) "\n")), strFile)
+  strFile
+}
+
+# The sentence a .csv file with a quote never closed is refused with.
+strQuoteOpen <- function(strName) {
+  paste0(
+    strName, " was not loaded: a quote in it is never closed, so R would read it short. ",
+    "The file has an odd number of double-quote characters, and in a .csv file a quote that opens a value closes it, and a quote inside a value is written twice."
+  )
+}
+
+test_that("a 1,000-row .csv file with a quote left open on its first, second, third or fourth row, or on its header, is refused and not read short, whether or not it ends with a line ending; R alone reads each short with no warning but that its last line is incomplete (#97)", {
+  for (bEnds in c(TRUE, FALSE)) {
+    for (nOpen in 0:4) {
+      strLabel <- paste(if (nOpen == 0) "the header" else paste("row", nOpen), if (bEnds) "with" else "without", "a final line ending")
+      strFile <- strOpenQuote(nOpen, bEnds)
+      # The file is what the review found: R reads it short, and its one
+      # warning is the one a short file with no last line ending gets too.
+      lPlain <- lReadPlainly(strFile)
+      expect_lt(lPlain$rows, 1000L, label = paste("the rows R reads,", strLabel))
+      expect_gt(lPlain$rows, 990L, label = paste("the rows R reads,", strLabel))
+      expect_length(lPlain$warned, 1L)
+      expect_match(lPlain$warned, "^incomplete final line found by readTableHeader", label = strLabel)
+      # The app reads no table from it, and says why.
+      strSaid <- strRefused(strFile, "results.csv")
+      expect_identical(strSaid, strQuoteOpen("results.csv"), label = strLabel)
+      ExpectNoPath(strSaid, strFile, strLabel)
+    }
+    # A quote left open further down, where R itself warns of it, is refused
+    # as it was, in R's words.
+    for (nOpen in c(5, 50, 1000)) {
+      expect_match(
+        strRefused(strOpenQuote(nOpen, bEnds), "results.csv"),
+        "^results.csv was not loaded: R warned as it read the file, .* R said: EOF within quoted string\\.",
+        label = paste("row", nOpen)
+      )
+    }
+  }
+})
+
+test_that("a whole .csv file is still read in full: one with no final line ending, one with Windows line endings, and one whose quoted values hold a quote written twice, a comma and a line break (#97)", {
+  # 1,000 rows and no line ending after the last.
+  for (bEnds in c(TRUE, FALSE)) {
+    dfWhole <- App_ReadFile(strOpenQuote(NULL, bEnds), "results.csv")
+    expect_identical(dim(dfWhole), c(1000L, 5L), label = paste("a final line ending:", bEnds))
+    expect_identical(dfWhole$USUBJID[c(1, 1000)], c("s1", "s1000"))
+    expect_identical(dfWhole$STRESN, 1:1000)
+  }
+  # Quotes that close: around a value with a comma, around one with a quote
+  # inside it written twice, and around one with a line break.
+  chrRows <- sprintf("s%d,IL-6,%d,Baseline,0", 1:1000, 1:1000)
+  chrRows[1] <- "s1,\"IL-6, the \"\"six\"\"\",1,\"Base\nline\",0"
+  chrRows[4] <- "\"s4\",\"IL-6\",4,\"Baseline\",0"
+  chrRows[1000] <- "s1000,\"\"\"IL-6\"\"\",1000,Baseline,0"
+  for (bEnds in c(TRUE, FALSE)) {
+    strFile <- strOpenQuote(NULL, bEnds, chrRows)
+    lBytes <- App_CsvBytes(strFile)
+    expect_false(lBytes$odd)
+    expect_identical(lBytes$ends, bEnds)
+    dfQuoted <- App_ReadFile(strFile, "results.csv")
+    expect_identical(dim(dfQuoted), c(1000L, 5L), label = paste("a final line ending:", bEnds))
+    expect_identical(dfQuoted$TEST[c(1, 4, 1000)], c("IL-6, the \"six\"", "IL-6", "\"IL-6\""))
+    expect_identical(dfQuoted$VISIT[1:2], c("Base\nline", "Baseline"))
+    expect_identical(dfQuoted$USUBJID[c(1, 4, 1000)], c("s1", "s4", "s1000"))
+  }
+  # Windows line endings, with and without the last.
+  for (bEnds in c(TRUE, FALSE)) {
+    strWindows <- tempfile(fileext = ".csv")
+    writeBin(charToRaw(paste0(paste(c("USUBJID,STRESN", sprintf("s%d,%d", 1:1000, 1:1000)), collapse = "\r\n"), if (bEnds) "\r\n")), strWindows)
+    expect_identical(App_CsvBytes(strWindows), list(odd = FALSE, ends = bEnds))
+    expect_identical(nrow(App_ReadFile(strWindows, "windows.csv")), 1000L)
+  }
+})
+
+test_that("a file's quotes are counted and its last byte read a piece of the file at a time, to the same answer whatever the size of the piece (#97)", {
+  strOdd <- strOpenQuote(3)
+  strEven <- strOpenQuote(NULL, FALSE, c("a,\"b\"", "\"c\"\"d\",e"))
+  strNone <- tempfile(fileext = ".csv")
+  file.create(strNone)
+  for (nPiece in c(1L, 2L, 7L, 4096L, 1048576L)) {
+    expect_identical(App_CsvBytes(strOdd, nPiece), list(odd = TRUE, ends = TRUE), label = paste("pieces of", nPiece))
+    expect_identical(App_CsvBytes(strEven, nPiece), list(odd = FALSE, ends = FALSE), label = paste("pieces of", nPiece))
+    expect_identical(App_CsvBytes(strNone, nPiece), list(odd = FALSE, ends = FALSE), label = paste("pieces of", nPiece))
+  }
+  # The count is of the file's bytes: the same as counting its characters.
+  for (strFile in c(strOdd, strEven)) {
+    nQuotes <- sum(readBin(strFile, "raw", file.size(strFile)) == charToRaw("\""))
+    expect_identical(App_CsvBytes(strFile)$odd, nQuotes %% 2 == 1)
+  }
+  # A file that ends with the line ending of an old Mac ends with one.
+  strMac <- tempfile(fileext = ".csv")
+  writeBin(charToRaw("A,B\r1,2\r"), strMac)
+  expect_true(App_CsvBytes(strMac)$ends)
+})
+
+test_that("R's warning that a file's last line is incomplete is read through only when the file does end without a line ending: of a file that ends with one, it is a warning like any other and the file is refused (#97)", {
+  # A reader that warns as R does of a short file with no last line ending,
+  # whatever the file.
+  local_mocked_bindings(App_ReadCsv = function(strPath) {
+    warning("incomplete final line found by readTableHeader on '", strPath, "'", call. = FALSE)
+    data.frame(USUBJID = c("BIO-001", "BIO-002"), STRESN = c(1.5, 2.5))
+  })
+  strEnds <- tempfile(fileext = ".csv")
+  cat("USUBJID,STRESN\nBIO-001,1.5\nBIO-002,2.5\n", file = strEnds)
+  strSaid <- strRefused(strEnds, "ends.csv")
+  expect_identical(
+    strSaid,
+    paste0(
+      "ends.csv was not loaded: R warned as it read the file, and a file R warns of may have been read short. ",
+      "R said: incomplete final line found by readTableHeader on 'ends.csv'. The app reads a .csv file as comma-separated text in UTF-8."
+    )
+  )
+  ExpectNoPath(strSaid, strEnds, "the sentence")
+  # The same warning of a file that does end without one is no reason to refuse.
+  strOpen <- tempfile(fileext = ".csv")
+  cat("USUBJID,STRESN\nBIO-001,1.5\nBIO-002,2.5", file = strOpen)
+  expect_identical(App_ReadFile(strOpen, "open.csv"), data.frame(USUBJID = c("BIO-001", "BIO-002"), STRESN = c(1.5, 2.5)))
+})
+
+test_that("in a session a .csv file with a quote left open on its first row is said in the file's place and again on the button, no column of it is asked for, and the charts are left as they were (#97)", {
+  skip_if_not_installed("shiny")
+  lWas <- options(shiny.maxRequestSize = getOption("shiny.maxRequestSize"))
+  on.exit(options(lWas), add = TRUE)
+  Payload <- function(strJson) jsonlite::fromJSON(strJson, simplifyVector = FALSE)$x
+  Html <- function(xOutput) paste(as.character(xOutput$html), collapse = "")
+  dfOpen <- dfUploaded(strOpenQuote(1))
+  shiny::testServer(RunApp(), {
+    session$setInputs(gsm_bio_file_results = dfOpen)
+    strPlace <- Html(output$gsm_bio_columns_results)
+    expect_match(strPlace, sprintf("<p class=\"gsm-bio-app-problem\">%s</p>", strQuoteOpen("results.csv")), fixed = TRUE)
+    # Nothing of the file is offered: no rows counted, no column to say.
+    expect_false(grepl("998 rows", strPlace, fixed = TRUE))
+    expect_false(grepl("gsm_bio_column_results_", strPlace, fixed = TRUE))
+    ExpectNoPath(strPlace, dfOpen$datapath, "the file's place")
+    session$setInputs(
+      gsm_bio_column_results_USUBJID = "USUBJID", gsm_bio_column_results_TEST = "TEST", gsm_bio_column_results_STRESN = "STRESN",
+      gsm_bio_column_results_VISIT = "VISIT", gsm_bio_column_results_VISITNUM = "VISITNUM", gsm_bio_apply = 1
+    )
+    expect_identical(Html(output$gsm_bio_data_said), sprintf("<p class=\"gsm-bio-app-problem\">%s</p>", strQuoteOpen("results.csv")))
+    expect_identical(output$gsm_bio_source, "Drawn on the synthetic study that ships with gsm.bio.")
+    expect_length(Payload(output$GroupComparison)$dfResults$USUBJID, nrow(Synthetic_Results))
+  })
 })

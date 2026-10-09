@@ -177,7 +177,7 @@ test_that("the study chip says what the charts are drawn on as the app opens, on
     expect_identical(strShellText(as.character(output$gsm_bio_study_said$html)), "Synthetic study 200 participants &middot; 3 tables")
     expect_match(as.character(output$gsm_bio_study_said$html), "gsm-bio-app-study-kept", fixed = TRUE)
     expect_identical(output$gsm_bio_source, "Drawn on the synthetic study that ships with gsm.bio.")
-    session$setInputs(gsm_bio_file_results = data.frame(name = "labs.csv", size = file.size(strFile), type = "", datapath = strFile, stringsAsFactors = FALSE))
+    session$setInputs(gsm_bio_file_results = dfUploaded(strFile))
     # A file chosen and not yet drawn changes nothing of the chip.
     expect_identical(strShellText(as.character(output$gsm_bio_study_said$html)), "Synthetic study 200 participants &middot; 3 tables")
     session$setInputs(
@@ -226,7 +226,7 @@ test_that("with no outcomes table the stratified survival pill is dimmed and car
       expect_identical(strShellText(Pill(strChart)), chrAppCharts[[strChart]])
       expect_false(grepl("gsm-bio-app-pill-dim", Pill(strChart), fixed = TRUE), label = strChart)
     }
-    session$setInputs(gsm_bio_file_results = data.frame(name = "labs.csv", size = file.size(strFile), type = "", datapath = strFile, stringsAsFactors = FALSE))
+    session$setInputs(gsm_bio_file_results = dfUploaded(strFile))
     session$setInputs(
       gsm_bio_column_results_USUBJID = "USUBJID", gsm_bio_column_results_TEST = "TEST", gsm_bio_column_results_STRESN = "STRESN",
       gsm_bio_column_results_VISIT = "VISIT", gsm_bio_column_results_VISITNUM = "VISITNUM"
@@ -494,5 +494,174 @@ test_that("in a browser an app with no outcomes table shows the stratified survi
   lNow <- lPage$Evaluate(strShellLook)
   expect_identical(lNow$chosen$page, "StratifiedSurvival")
   expect_lte(lNow$wide, lNow$window)
+  expect_identical(lPage$Errors(), character(0))
+})
+
+# ---- What the second release review found of the page (#97) ------------------
+
+# The outline every control of the Data page has when the keyboard is on it.
+strShellOutline <- "outline: 2px solid #1f2328; outline-offset: 1px;"
+
+# How far apart two colours are, as WCAG counts it: 1 for the same colour, 21
+# for black on white. Each is three numbers from 0 to 255.
+nShellContrast <- function(nInk, nGround) {
+  Light <- function(nColour) {
+    nPart <- nColour / 255
+    nPart <- ifelse(nPart <= 0.03928, nPart / 12.92, ((nPart + 0.055) / 1.055)^2.4)
+    sum(c(0.2126, 0.7152, 0.0722) * nPart)
+  }
+  nBoth <- sort(c(Light(nInk), Light(nGround)), decreasing = TRUE)
+  (nBoth[1] + 0.05) / (nBoth[2] + 0.05)
+}
+
+# A colour as a browser says it, `rgb(107, 93, 82)`, as its three numbers.
+nShellColour <- function(strColour) {
+  as.numeric(regmatches(strColour, gregexpr("[0-9.]+", strColour))[[1]][1:3])
+}
+
+# Every title a page's tags give it.
+chrShellTitles <- function(xTag) {
+  if (inherits(xTag, "shiny.tag")) {
+    if (identical(xTag$name, "title")) {
+      return(paste(unlist(xTag$children), collapse = ""))
+    }
+    return(unlist(lapply(xTag$children, chrShellTitles)))
+  }
+  if (is.list(xTag)) unlist(lapply(xTag, chrShellTitles))
+}
+
+test_that("the page says it is in English and is titled as the app is named, and its style gives a file control's drawn button and its name field the outline the page's other controls have, and 'No file chosen' ink a reader can read (#97)", {
+  skip_if_not_installed("shiny")
+  xPage <- App_Ui()
+  expect_identical(attr(xPage, "lang"), "en")
+  expect_identical(as.character(chrShellTitles(xPage)), "Biomarker charts")
+  # The other controls' outline, as it was, and the file control's two parts
+  # with the same: the drawn button while the real input, which is off screen,
+  # has the keyboard's focus, and the field that names the chosen file.
+  expect_match(strAppStyle, paste(".gsm-bio-app-data select:focus-visible {", strShellOutline, "}"), fixed = TRUE)
+  expect_match(strAppStyle, paste(".gsm-bio-app-file .btn-file:has(:focus-visible) {", strShellOutline, "}"), fixed = TRUE)
+  expect_match(strAppStyle, paste(".gsm-bio-app-file .input-group > .form-control:focus-visible {", strShellOutline, "}"), fixed = TRUE)
+  # No rule of the file control takes an outline away.
+  chrFileRules <- grep("^\\.gsm-bio-app-file ", strsplit(strAppStyle, "\n")[[1]], value = TRUE)
+  expect_false(any(grepl("outline: (0|none)", chrFileRules)))
+  # 'No file chosen' is written in an ink of 4.5 to 1 or better on the card's white.
+  strInk <- regmatches(strAppStyle, regexec("\\.gsm-bio-app-file \\.input-group > \\.form-control::placeholder \\{ color: #([0-9a-f]{6}); opacity: 1; \\}", strAppStyle))[[1]][2]
+  expect_false(is.na(strInk))
+  nInk <- strtoi(substring(strInk, c(1, 3, 5), c(2, 4, 6)), 16L)
+  expect_gte(nShellContrast(nInk, c(255, 255, 255)), 4.5)
+  # The measure is the one the review used: the grey it found is 2.85 to 1.
+  expect_equal(nShellContrast(c(153, 153, 153), c(255, 255, 255)), 2.85, tolerance = 0.002)
+})
+
+test_that("in a browser each of the three file controls shows where the keyboard is: with the control focused its drawn button has the outline the page's other controls have and has none when the focus is elsewhere, the name field beside it has the same, and 'No file chosen' is 4.5 to 1 or better on its card (#97)", {
+  NeedApp()
+  lApp <- lRunApp("RunApp()")
+  on.exit(lApp$Stop(), add = TRUE)
+  lPage <- lOpenPage(NULL, nWidth = 1280L, nHeight = 900L, strAddress = lApp$address, chrBlocked = chrShellFonts)
+  on.exit(lPage$Close(), add = TRUE)
+  lPage$Evaluate("document.querySelector('#gsm_bio_chart a[data-value=\"Data\"]').click()")
+  expect_true(bWaitFor(lPage, "document.querySelector('#gsm_bio_view table') && document.querySelector('#gsm_bio_file_outcomes')"), label = "the Data page is drawn")
+  # What the keyboard is on, and how each file control is drawn: its button,
+  # its name field, and where the real input and the drawn button are.
+  strLook <- "(() => {
+    const drawn = (node, part) => { const style = getComputedStyle(node, part); return [style.outlineStyle, style.outlineWidth, style.outlineColor, style.outlineOffset].join(' '); };
+    const ground = (node) => { for (let at = node; at; at = at.parentElement) { const colour = getComputedStyle(at).backgroundColor; if (!/rgba\\(.*, 0\\)$|transparent/.test(colour)) return colour; } return 'rgb(255, 255, 255)'; };
+    const seen = (node) => { const at = node.getBoundingClientRect(); return at.width > 0 && at.height > 0 && at.right > 0 && at.bottom > 0 && at.left < window.innerWidth; };
+    const active = document.activeElement;
+    const cards = {};
+    for (const table of ['results', 'participants', 'outcomes']) {
+      const card = document.querySelector('#gsm_bio_card_' + table);
+      const name = card.querySelector('input[type=\"text\"]');
+      const said = getComputedStyle(name, '::placeholder');
+      cards[table] = { button: drawn(card.querySelector('.btn-file')), name: drawn(name), buttonSeen: seen(card.querySelector('.btn-file')), fileSeen: seen(card.querySelector('input[type=\"file\"]')),
+                       placeholder: name.placeholder, ink: said.color, opacity: said.opacity, ground: ground(name) };
+    }
+    const card = active.closest('.gsm-bio-app-file');
+    return { id: active.id, type: active.type || active.tagName, card: card && card.id, keyboard: active.matches(':focus-visible'), active: drawn(active), cards };
+  })()"
+  # From the control before the first file control, the Tab key.
+  lPage$Evaluate("document.querySelector('#gsm_bio_view_next').focus()")
+  lAway <- lPage$Evaluate(strLook)
+  expect_identical(lAway$id, "gsm_bio_view_next")
+  for (strTable in names(lAway$cards)) {
+    # The real input is nowhere a reader sees; the button drawn for it is.
+    expect_false(lAway$cards[[strTable]]$fileSeen, label = paste("the", strTable, "file input is on screen"))
+    expect_true(lAway$cards[[strTable]]$buttonSeen, label = paste("the", strTable, "button is on screen"))
+    expect_match(lAway$cards[[strTable]]$button, "^none ", label = paste("the", strTable, "button has no outline away from it"))
+  }
+  lOn <- list()
+  for (strTable in names(lAway$cards)) {
+    lPage$Press("Tab")
+    lOn[[strTable]] <- list(file = lPage$Evaluate(strLook))
+    lPage$Press("Tab")
+    lOn[[strTable]]$name <- lPage$Evaluate(strLook)
+  }
+  # The next stop is the button, one of the page's other controls: its outline
+  # is the one the file controls are held to.
+  lPage$Press("Tab")
+  lButton <- lPage$Evaluate(strLook)
+  expect_identical(lButton$id, "gsm_bio_apply")
+  expect_true(lButton$keyboard)
+  strOutline <- lButton$active
+  expect_identical(strOutline, "solid 2px rgb(31, 35, 40) 1px")
+  for (strTable in names(lOn)) {
+    lFile <- lOn[[strTable]]$file
+    lName <- lOn[[strTable]]$name
+    # The Tab key reached the real input, and then the name field beside it.
+    expect_identical(lFile$id, paste0("gsm_bio_file_", strTable))
+    expect_true(lFile$keyboard, label = paste("the keyboard is on the", strTable, "file input"))
+    expect_identical(lName[c("type", "card")], list(type = "text", card = paste0("gsm_bio_card_", strTable)))
+    # With the file control focused its drawn button is outlined as the
+    # page's other controls are, which it is not when the focus is elsewhere.
+    expect_identical(lFile$cards[[strTable]]$button, strOutline, label = paste("the", strTable, "button with its control focused"))
+    expect_false(identical(lFile$cards[[strTable]]$button, lAway$cards[[strTable]]$button), label = paste("the", strTable, "button is drawn the same focused or not"))
+    expect_identical(lName$cards[[strTable]]$button, lAway$cards[[strTable]]$button, label = paste("the", strTable, "button once the focus has left it"))
+    # The name field shows the focus when it has it, and only then.
+    expect_identical(lName$cards[[strTable]]$name, strOutline, label = paste("the", strTable, "name field with the focus"))
+    expect_false(identical(lName$cards[[strTable]]$name, lAway$cards[[strTable]]$name), label = paste("the", strTable, "name field is drawn the same focused or not"))
+    # No other card's control is outlined meanwhile.
+    for (strOther in setdiff(names(lOn), strTable)) {
+      expect_identical(lFile$cards[[strOther]]$button, lAway$cards[[strOther]]$button, label = paste("the", strOther, "button while", strTable, "has the focus"))
+    }
+    # 'No file chosen', against the card it is written on.
+    expect_identical(lAway$cards[[strTable]]$placeholder, "No file chosen")
+    expect_identical(lAway$cards[[strTable]]$opacity, "1")
+    expect_gte(nShellContrast(nShellColour(lAway$cards[[strTable]]$ink), nShellColour(lAway$cards[[strTable]]$ground)), 4.5, label = paste("the contrast of 'No file chosen' in the", strTable, "card"))
+  }
+  expect_identical(lPage$Errors(), character(0))
+})
+
+test_that("in a browser the page says it is in English and is titled Biomarker charts, and a chart opened from the Data page's link takes the keyboard's focus with it, to the chart's pill, where a reader sees it (#97)", {
+  NeedApp()
+  lApp <- lRunApp("RunApp()")
+  on.exit(lApp$Stop(), add = TRUE)
+  lPage <- lOpenPage(NULL, nWidth = 1280L, nHeight = 900L, strAddress = lApp$address, chrBlocked = chrShellFonts)
+  on.exit(lPage$Close(), add = TRUE)
+  expect_identical(lPage$Evaluate("({ lang: document.documentElement.lang, title: document.title })"), list(lang = "en", title = "Biomarker charts"))
+  Chosen <- function(strPill) {
+    sprintf("(() => { const seen = %s; return seen.chosen.pill === '%s' && seen.chosen.page === '%s' && seen.chosen.input === '%s'; })()", strShellLook, strPill, strPill, strPill)
+  }
+  strFocus <- "(() => { const active = document.activeElement; const at = active.getBoundingClientRect();
+    return { tag: active.tagName, pill: active.closest('#gsm_bio_chart') ? active.dataset.value : null, seen: active.getClientRects().length > 0 && at.top >= 0 && at.bottom <= window.innerHeight,
+             keyboard: active.matches(':focus-visible'), outline: getComputedStyle(active).outlineStyle, scrolled: window.scrollY }; })()"
+  lPage$Evaluate("document.querySelector('#gsm_bio_chart a[data-value=\"Data\"]').click()")
+  expect_true(bWaitFor(lPage, Chosen("Data")))
+  expect_true(bWaitFor(lPage, "document.querySelector('#gsm_bio_rail a[data-gsm-bio-open=\"GroupComparison\"]')"), label = "the rail has its link")
+  # By the keyboard: the link has the focus, and Enter follows it.
+  lPage$Evaluate("document.querySelector('#gsm_bio_rail a[data-gsm-bio-open]').focus()")
+  expect_identical(lPage$Evaluate("document.activeElement.dataset.gsmBioOpen"), "GroupComparison")
+  lPage$Press("Enter")
+  expect_true(bWaitFor(lPage, Chosen("GroupComparison")), label = "the link opens the group comparison")
+  lAfter <- lPage$Evaluate(strFocus)
+  # The link is on a page that is now hidden. The focus is not left there, or
+  # nowhere: it is on the pill of the chart that was opened, outlined.
+  expect_identical(lAfter[c("tag", "pill", "seen")], list(tag = "A", pill = "GroupComparison", seen = TRUE))
+  expect_true(lAfter$keyboard)
+  expect_identical(lAfter$outline, "solid")
+  expect_identical(lAfter$scrolled, 0L)
+  expect_identical(lPage$Evaluate(strShellLook)$chosen$stop, list("GroupComparison"))
+  # From there the arrow keys walk the pills, as they do from any pill.
+  lPage$Press("ArrowRight")
+  expect_true(bWaitFor(lPage, Chosen("AssociationScatter")), label = "the right arrow goes on from the pill")
   expect_identical(lPage$Errors(), character(0))
 })

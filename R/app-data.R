@@ -73,8 +73,52 @@ App_SaidOf <- function(chrSaid, strPath, strName) {
 # both stop read.csv() where they are, and it returns the rows before them
 # (#86). The warning is known by R's English words, so an R that speaks
 # another language refuses such a file, which is the safe way to be wrong.
+#
+# It is read through only of a .csv file that does end without a line end
+# (#97). R says the same words, and no others, of a file with a quote left
+# open on its header or one of its first four rows, whether or not the file
+# ends with a line end: it looks at a file's first five lines before it reads
+# the rest, a quote that is never closed takes that look to the end of the
+# file, and R reads the file short from there.
 App_ReadThrough <- function(chrWarned) {
   grepl("^incomplete final line found", chrWarned)
+}
+
+# How much of a file is looked at at a time: a megabyte, so a file of the
+# largest size the app accepts is never held whole to be counted.
+nAppPiece <- 1048576L
+
+# What a .csv file's own bytes say, which R's reader does not (#97): whether
+# its double-quote characters come to an odd number, and whether it ends with
+# a line end. In a .csv file a quote that opens a value closes it, and a quote
+# inside a value is written twice, so a whole file has an even number; with an
+# odd number one is never closed, and R reads on from it to the end of the
+# file as one value. R's reader takes every quote as opening or closing one,
+# so the count says exactly whether R ends inside a quote. A quote is one byte
+# in UTF-8 and is part of no other character, so the bytes are counted as they
+# are. An even number of stray quotes is not known this way.
+App_CsvBytes <- function(strPath, nPiece = nAppPiece) {
+  xFile <- file(strPath, open = "rb")
+  on.exit(close(xFile), add = TRUE)
+  bOdd <- FALSE
+  xLast <- raw(0)
+  repeat {
+    xBytes <- readBin(xFile, what = "raw", n = nPiece)
+    if (length(xBytes) == 0L) {
+      break
+    }
+    if (sum(xBytes == as.raw(0x22)) %% 2L == 1L) {
+      bOdd <- !bOdd
+    }
+    xLast <- xBytes[length(xBytes)]
+  }
+  list(odd = bOdd, ends = length(xLast) == 1L && (xLast == as.raw(0x0a) || xLast == as.raw(0x0d)))
+}
+
+# A .csv file as the app reads it: comma-separated text in UTF-8, with or
+# without a byte-order mark, under the file's own column names.
+App_ReadCsv <- function(strPath) {
+  utils::read.csv(strPath, check.names = FALSE, stringsAsFactors = FALSE, na.strings = c("", "NA"), fileEncoding = "UTF-8-BOM")
 }
 
 #' Read a file a reader chose
@@ -85,9 +129,10 @@ App_ReadThrough <- function(chrWarned) {
 #'
 #' @return A data frame of base R columns. An error, with a sentence for the
 #'   reader, for a type the app does not read, a file R cannot read, a file R
-#'   warned of as it read it, a file with no rows or no columns, and a SAS
-#'   file when haven is not installed. A sentence names the file as the reader
-#'   does, never by its path on the server.
+#'   warned of as it read it, a `.csv` file with a quote that is never closed,
+#'   a file with no rows or no columns, and a SAS file when haven is not
+#'   installed. A sentence names the file as the reader does, never by its
+#'   path on the server.
 #'
 #' @keywords internal
 #' @noRd
@@ -107,10 +152,7 @@ App_ReadFile <- function(strPath, strName) {
   dfTable <- tryCatch(
     withCallingHandlers(
       switch(strType,
-        .csv = utils::read.csv(
-          strPath,
-          check.names = FALSE, stringsAsFactors = FALSE, na.strings = c("", "NA"), fileEncoding = "UTF-8-BOM"
-        ),
+        .csv = App_ReadCsv(strPath),
         .xpt = haven::read_xpt(strPath),
         .sas7bdat = haven::read_sas(strPath)
       ),
@@ -123,13 +165,33 @@ App_ReadFile <- function(strPath, strName) {
       App_Stop(strName, " could not be read as a ", strType, " file: ", App_SaidOf(conditionMessage(cndError), strPath, strName))
     }
   )
-  chrWarned <- chrWarned[!App_ReadThrough(chrWarned)]
-  if (length(chrWarned) > 0L) {
+  Warned <- function(chrOf) {
     App_Stop(
       strName, " was not loaded: R warned as it read the file, and a file R warns of may have been read short. ",
-      "R said: ", paste(sub("[.]$", "", App_SaidOf(unique(chrWarned), strPath, strName)), collapse = "; "), ".",
+      "R said: ", paste(sub("[.]$", "", App_SaidOf(unique(chrOf), strPath, strName)), collapse = "; "), ".",
       if (strType == ".csv") " The app reads a .csv file as comma-separated text in UTF-8."
     )
+  }
+  bLastLine <- App_ReadThrough(chrWarned)
+  if (any(!bLastLine)) {
+    Warned(chrWarned[!bLastLine])
+  }
+  if (strType == ".csv") {
+    # What R did not warn of, or warned of only as a last line with no line
+    # end: the file's own bytes say whether a quote in it is left open, and
+    # whether its last line is what R says it is (#97).
+    lBytes <- tryCatch(App_CsvBytes(strPath), error = function(cndError) {
+      App_Stop(strName, " could not be read as a .csv file: ", App_SaidOf(conditionMessage(cndError), strPath, strName))
+    })
+    if (lBytes$odd) {
+      App_Stop(
+        strName, " was not loaded: a quote in it is never closed, so R would read it short. ",
+        "The file has an odd number of double-quote characters, and in a .csv file a quote that opens a value closes it, and a quote inside a value is written twice."
+      )
+    }
+    if (any(bLastLine) && lBytes$ends) {
+      Warned(chrWarned)
+    }
   }
   # A plain data frame of plain columns: what SAS said of a column beside its
   # values (a label, a format) is not a value.
@@ -146,6 +208,96 @@ App_ReadFile <- function(strPath, strName) {
     App_Stop(strName, " has two columns of one name, or a column with no name: the app cannot tell them apart.")
   }
   dfTable
+}
+
+# ---- Whose file it is: only an upload is read (#97) --------------------------
+
+# What a card is told when what it was sent is not one uploaded file. It is
+# one sentence, the same whatever was sent, and holds nothing of what was sent.
+strAppNotUploaded <- "Nothing was read: a card takes one file, uploaded with its own control, and the page sent something else."
+
+# What a card calls a file the page gave no name for.
+strAppNoName <- "A file with no name"
+
+#' The path of an uploaded file, or a refusal
+#'
+#' A file input's value is not Shiny's alone to set. When an upload ends,
+#' Shiny's server sets it, to a data frame whose `datapath` is where the server
+#' wrote the file. But a page can set any input of its session, a file input
+#' among them, with `Shiny.setInputValue()`, and then `datapath` is whatever
+#' the page says: any path on the server, or a web address. R would read
+#' either, and the card would show its rows. So a value is taken only when its
+#' path is where Shiny writes an upload in this R process, and that is checked
+#' here before anything else touches the path.
+#'
+#' Shiny writes an upload to `tempdir()/<id>/<n><extension>`: a folder of this
+#' process's temporary folder named by twelve random bytes as 24 hexadecimal
+#' digits, and in it each file under its number (`shiny:::FileUploadContext`,
+#' `shiny:::FileUploadOperation`). The rule is that shape and no more: one
+#' path, of a file that is there and is no folder, directly inside a folder of
+#' that name, directly inside this process's temporary folder. The paths are
+#' compared as the file system resolves them, so a path with `..` in it, a
+#' link to a file elsewhere and a web address all fail. A reader cannot name
+#' another reader's upload either: its folder's name is 96 random bits that
+#' are never sent to a page.
+#'
+#' Should a later Shiny keep uploads somewhere else, every upload would be
+#' refused: the tests that choose a file in a browser fail then, and this is
+#' the rule to change.
+#'
+#' @param xChosen What a file input holds: anything a page can send.
+#'
+#' @return The file's path, as the file system resolves it. An error, with the
+#'   one sentence of `strAppNotUploaded`, for anything else.
+#'
+#' @keywords internal
+#' @noRd
+App_Uploaded <- function(xChosen) {
+  xPath <- if (is.list(xChosen)) xChosen[["datapath"]]
+  if (!is.character(xPath) || length(xPath) != 1L || is.na(xPath) || !nzchar(xPath)) {
+    App_Stop(strAppNotUploaded)
+  }
+  # Where the path leads, or nowhere: a path to nothing has no real form.
+  strReal <- tryCatch(
+    suppressWarnings(normalizePath(xPath, winslash = "/", mustWork = TRUE)),
+    error = function(cndError) NA_character_
+  )
+  strRoot <- normalizePath(tempdir(), winslash = "/", mustWork = FALSE)
+  bUploaded <- !is.na(strReal) &&
+    identical(dirname(dirname(strReal)), strRoot) &&
+    grepl("^[0-9a-f]{24}$", basename(dirname(strReal))) &&
+    isFALSE(file.info(strReal, extra_cols = FALSE)$isdir)
+  if (!bUploaded) {
+    App_Stop(strAppNotUploaded)
+  }
+  strReal
+}
+
+# A chosen file's name, as the page sent it: text, and only ever text. Two
+# files dropped on one card are named together; a value with no name that is
+# text has a few words in its place.
+App_ChosenName <- function(xChosen) {
+  xName <- if (is.list(xChosen)) xChosen[["name"]]
+  if (!is.character(xName) || length(xName) == 0L || anyNA(xName) || !all(nzchar(xName))) {
+    return(strAppNoName)
+  }
+  paste(xName, collapse = ", ")
+}
+
+# What a card holds once a file input has a value: the file's name with its
+# table, or with the sentence saying why nothing was read. Whatever the page
+# sent, this returns: no value ends the session.
+App_Take <- function(xChosen) {
+  strName <- strAppNoName
+  tryCatch(
+    {
+      strName <- App_ChosenName(xChosen)
+      # The rule comes first: nothing is read from a path it has not passed.
+      strPath <- App_Uploaded(xChosen)
+      list(name = strName, table = App_ReadFile(strPath, strName))
+    },
+    error = function(cndError) list(name = strName, problem = conditionMessage(cndError))
+  )
 }
 
 # The column of a file the app takes for one the charts need, before the

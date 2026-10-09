@@ -209,9 +209,10 @@ lOpenPage <- function(strFile, nWidth = 1200L, nHeight = 900L, strAddress = NULL
       invisible(strUpload)
     },
     # A key pressed where the focus is, as a reader at a keyboard presses it:
-    # Enter on a link follows it, and an arrow walks a row of tabs (#84).
+    # Enter on a link follows it, an arrow walks a row of tabs (#84), and Tab
+    # goes to the next control (#97).
     Press = function(strKey) {
-      nCode <- c(Enter = 13L, ArrowLeft = 37L, ArrowRight = 39L)[[strKey]]
+      nCode <- c(Enter = 13L, ArrowLeft = 37L, ArrowRight = 39L, Tab = 9L)[[strKey]]
       for (strType in c("keyDown", "keyUp")) {
         lBrowser$Input$dispatchKeyEvent(
           type = strType, key = strKey, code = strKey, windowsVirtualKeyCode = nCode, nativeVirtualKeyCode = nCode,

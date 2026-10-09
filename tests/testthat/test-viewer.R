@@ -172,7 +172,7 @@ test_that("in a session the viewer shows the synthetic study's results as the ap
 
     # A file just chosen: its first five rows under its own column names, and
     # the viewer still on what the charts are drawn on.
-    session$setInputs(gsm_bio_file_results = data.frame(name = "labs.csv", size = file.size(strOwn), type = "", datapath = strOwn, stringsAsFactors = FALSE))
+    session$setInputs(gsm_bio_file_results = dfUploaded(strOwn, "labs.csv"))
     strAsked <- Html(output$gsm_bio_columns_results)
     expect_match(strAsked, "The first 5 rows of labs.csv, as R read them:", fixed = TRUE)
     lPreview <- lShownTable(strAsked)
@@ -310,7 +310,7 @@ test_that("a chart in a Shiny page has text the size it has in a saved page: an 
   expect_identical(lPage$Evaluate("getComputedStyle(document.body).fontSize"), "14px")
 })
 
-test_that("the viewer's tabs are said to be tabs, the chosen one selected, as the session writes them; in a browser the arrow keys walk them and show each table's rows (#85)", {
+test_that("the viewer's tabs are said to be tabs, the chosen one selected, as the session writes them; in a browser the arrow keys walk them and show each table's rows, and after the Data page is left and come back to, one tab says it is chosen and it is the one shown (#85, #97)", {
   skip_if_not_installed("shiny")
   lWas <- options(shiny.maxRequestSize = getOption("shiny.maxRequestSize"))
   on.exit(options(lWas), add = TRUE)
@@ -334,6 +334,52 @@ test_that("the viewer's tabs are said to be tabs, the chosen one selected, as th
   strSaid <- "((document.querySelector('#gsm_bio_view .gsm-bio-app-what') || {}).textContent || '')"
   strChosen <- "Array.from(document.querySelectorAll('#gsm_bio_view_table a[aria-selected=\"true\"]')).map((tab) => tab.dataset.value)"
   expect_true(bWaitFor(lPage, sprintf("%s.startsWith('Results, ')", strSaid)), label = "the viewer opens on the results")
+  # The tabs as a reader who cannot see them is told of them (#97): the ones
+  # that say they are chosen, the one that is shown, the ones the Tab key
+  # stops at, and the table the viewer shows.
+  strTabs <- sprintf("(() => { const tabs = Array.from(document.querySelectorAll('#gsm_bio_view_table a')); const of = (which) => tabs.filter(which).map((tab) => tab.dataset.value);
+    return { all: tabs.length, chosen: of((tab) => tab.getAttribute('aria-selected') === 'true'), unchosen: of((tab) => tab.getAttribute('aria-selected') === 'false'),
+             shown: of((tab) => tab.parentElement.classList.contains('active')), stops: of((tab) => tab.tabIndex === 0), viewer: %s.split(',')[0] }; })()", strSaid)
+  # A page of the app left for another and come back to: by a pill, or by the
+  # study chip. Each step waits for the page to have told the session which
+  # of its parts are in view, as a reader's own steps do.
+  Go <- function(strClick, strPage) {
+    lPage$Evaluate(sprintf("document.querySelector('%s').click()", strClick))
+    expect_true(bWaitFor(lPage, sprintf(
+      "document.querySelector('.gsm-bio-app-main > .tab-content > .tab-pane.active').dataset.value === '%s' && Shiny.shinyapp.$inputValues.gsm_bio_chart === '%s' && Shiny.shinyapp.$inputValues['.clientdata_output_gsm_bio_rail_hidden'] === %s",
+      strPage, strPage, if (identical(strPage, "Data")) "false" else "true"
+    )), label = paste(strClick, "opens", strPage))
+  }
+  Told <- function(strTable, strLabel) {
+    chrOthers <- setdiff(c("results", "participants", "outcomes"), strTable)
+    expect_identical(
+      lPage$Evaluate(strTabs),
+      list(all = 3L, chosen = list(strTable), unchosen = as.list(chrOthers), shown = list(strTable), stops = list(strTable), viewer = unname(c(results = "Results", participants = "Participants", outcomes = "Outcomes")[strTable])),
+      label = strLabel
+    )
+  }
+  # As the session wrote them, on the first visit: the results' tab alone.
+  lFirst <- lPage$Evaluate(strTabs)
+  expect_identical(lFirst[c("all", "chosen", "unchosen", "shown", "viewer")], list(all = 3L, chosen = list("results"), unchosen = list("participants", "outcomes"), shown = list("results"), viewer = "Results"))
+  # Left for a chart and come back to: still the results' tab, and it alone.
+  Go("#gsm_bio_chart a[data-value=\"CrossTab\"]", "CrossTab")
+  Go("#gsm_bio_chart a[data-value=\"Data\"]", "Data")
+  Told("results", "the tabs after leaving the Data page and coming back")
+  # Another tab chosen, the page left and come back to by the chip: that tab.
+  lPage$Evaluate("document.querySelector('#gsm_bio_view_table a[data-value=\"participants\"]').click()")
+  expect_true(bWaitFor(lPage, sprintf("%s.startsWith('Participants, ')", strSaid)), label = "a click shows the participants")
+  Told("participants", "the tabs after another is chosen")
+  Go("#gsm_bio_chart a[data-value=\"BiomarkerScreen\"]", "BiomarkerScreen")
+  Go("#gsm_bio_study", "Data")
+  Told("participants", "the tabs after choosing another, leaving and coming back")
+  # And from there the next tab chosen is the one tab said to be.
+  lPage$Evaluate("document.querySelector('#gsm_bio_view_table a[data-value=\"outcomes\"]').click()")
+  expect_true(bWaitFor(lPage, sprintf("%s.startsWith('Outcomes, ')", strSaid)), label = "a click shows the outcomes")
+  Told("outcomes", "the tabs after one more is chosen")
+  lPage$Evaluate("document.querySelector('#gsm_bio_view_table a[data-value=\"results\"]').click()")
+  expect_true(bWaitFor(lPage, sprintf("%s.startsWith('Results, ')", strSaid)), label = "a click shows the results again")
+  Told("results", "the tabs back on the results")
+
   lPage$Evaluate("document.querySelector('#gsm_bio_view_table li.active > a').focus()")
   lPage$Press("ArrowRight")
   expect_true(bWaitFor(lPage, sprintf("%s.startsWith('Participants, ')", strSaid)), label = "the right arrow shows the participants")
@@ -346,5 +392,9 @@ test_that("the viewer's tabs are said to be tabs, the chosen one selected, as th
   lPage$Press("ArrowLeft")
   expect_true(bWaitFor(lPage, sprintf("%s.startsWith('Outcomes, ')", strSaid)), label = "the left arrow goes back")
   expect_identical(unlist(lPage$Evaluate(strChosen)), "outcomes")
+  # Left and come back to after the keyboard chose a tab: the same again.
+  Go("#gsm_bio_chart a[data-value=\"GroupComparison\"]", "GroupComparison")
+  Go("#gsm_bio_chart a[data-value=\"Data\"]", "Data")
+  Told("outcomes", "the tabs after the keyboard chose one and the page was left and come back to")
   expect_identical(lPage$Errors(), character(0))
 })
