@@ -96,3 +96,57 @@ test_that("the article's install line names a release and its times say what the
   expect_match(strStatus, "Posit Connect", fixed = TRUE)
   expect_match(strStatus, "no one has deployed it to a Connect server yet", fixed = TRUE)
 })
+
+# ---- What the second release review found of the texts (#97) -----------------
+
+test_that("the app.R that ships calls the Data page by the name the app gives it (#97)", {
+  chrFile <- readLines(system.file("app", "app.R", package = "gsm.bio"), warn = FALSE)
+  expect_false(any(grepl("Data view", chrFile, fixed = TRUE)))
+  expect_true(any(grepl("app's Data page", chrFile, fixed = TRUE)))
+})
+
+test_that("the README and the article say what the page asks of Google Fonts: two typefaces, by three requests to two hosts from the reader's browser, carrying the app's address and nothing of the study, and the system's fonts when they are blocked; and the article says the server's R needs a UTF-8 locale (#97)", {
+  skip_if_not(bSourceTree(), "the article and the README are in the repository, not in the built package")
+  strRoot <- strSourceRoot()
+  # The host the page's one link names is the one the texts name first.
+  expect_match(strAppFonts, "^https://fonts\\.googleapis\\.com/css2\\?family=Instrument\\+Sans[^&]*&family=Instrument\\+Serif&")
+  lTexts <- list(
+    `the README` = readLines(file.path(strRoot, "README.md"), warn = FALSE),
+    `the article` = readLines(file.path(strRoot, "vignettes", "articles", "app.Rmd"), warn = FALSE)
+  )
+  for (strText in names(lTexts)) {
+    # One paragraph says it all, and it is where the text says what a server needs.
+    strSays <- grep("fonts.googleapis.com", lTexts[[strText]], fixed = TRUE, value = TRUE)
+    expect_length(strSays, 1L)
+    for (strFact in c(
+      "Google Fonts", "Instrument Sans", "Instrument Serif", "reader's browser", "three requests", "`fonts.googleapis.com` for a style sheet",
+      "`fonts.gstatic.com` for two font files", "the app's address", "nothing of the study", "system's fonts"
+    )) {
+      expect_match(strSays, strFact, fixed = TRUE, label = paste(strText, "on", strFact))
+    }
+    # Three is as the app opens. Some letters are in a further file, and the
+    # texts say which kind as it was measured: Polish or Czech letters asked
+    # for one, Greek and Cyrillic for none.
+    expect_match(strSays, "three requests as the app opens", fixed = TRUE, label = strText)
+    expect_match(strSays, "Polish or Czech ones for instance, are in a further file", fixed = TRUE, label = strText)
+    expect_match(strSays, "a Greek or Cyrillic one, asks for nothing", fixed = TRUE, label = strText)
+    expect_false(grepl("Western European", strSays, fixed = TRUE), label = strText)
+    nSays <- grep("fonts.googleapis.com", lTexts[[strText]], fixed = TRUE)
+    nNeeds <- grep("what the server needs|What the server needs", lTexts[[strText]])
+    expect_length(nNeeds, 1L)
+    expect_gte(nSays, nNeeds)
+    expect_lte(nSays - nNeeds, 12L)
+  }
+  # The article: what the server's R must be to read a file with a letter outside ASCII.
+  chrArticle <- lTexts$`the article`
+  strLocale <- grep("^- A UTF-8 locale", chrArticle, value = TRUE)
+  expect_length(strLocale, 1L)
+  expect_match(strLocale, "outside ASCII", fixed = TRUE)
+  expect_match(strLocale, "refused", fixed = TRUE)
+  # And a file whose name has such a character, in the same locale.
+  expect_match(strLocale, "`C` or `POSIX` locale", fixed = TRUE)
+  expect_match(strLocale, "a file whose name has such a character is not taken at all: Shiny itself fails on the name before the app sees the file", fixed = TRUE)
+  nNeeds <- which(chrArticle == "What the server needs:")
+  expect_gt(grep("^- A UTF-8 locale", chrArticle), nNeeds)
+  expect_lt(grep("^- A UTF-8 locale", chrArticle), grep("^Two settings on the content's Runtime tab", chrArticle))
+})

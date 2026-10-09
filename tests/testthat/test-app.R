@@ -85,7 +85,8 @@ test_that("the inputs the session writes are a chosen file's and no others: a se
   on.exit(options(lWas), add = TRUE)
   Chosen <- function(strTable) {
     strFile <- system.file("extdata", paste0("synthetic_", strTable, ".csv"), package = "gsm.bio")
-    data.frame(name = basename(strFile), size = file.size(strFile), type = "", datapath = strFile, stringsAsFactors = FALSE)
+    # The file where Shiny keeps an upload: the app reads it from nowhere else (#97).
+    dfUploaded(strFile)
   }
   # Everything in a part of the page a reader can type in, choose from or press.
   Inputs <- function(xOutput) {

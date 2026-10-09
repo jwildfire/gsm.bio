@@ -39,6 +39,14 @@ App_Fonts <- function() {
 # the name and the chip stay whole. Every size is in pixels: Shiny's page sets the root
 # font to 10 pixels, a chart's output gives it back to the browser (#80), and
 # the shell reads neither.
+#
+# A file control is Shiny's: a real file input moved off the screen, inside a
+# button drawn for it, and a read-only field that names the chosen file. The
+# keyboard's focus goes to the real input, which no one sees, so the drawn
+# button is outlined while the input inside it has the focus, and the name
+# field when it has it, with the outline the page's other controls have (#97).
+# The button's rule stands alone: a browser that does not know `:has()` drops
+# that rule and no other, and still changes the button's border.
 strAppStyle <- "
 .gsm-bio-app { display: flex; flex-direction: column; min-height: 100vh; background: #fafaf8; color: #1f2328; }
 .gsm-bio-app-head, .gsm-bio-app-foot, .gsm-bio-app-data, .gsm-bio-app-lacks { font-family: 'Instrument Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; }
@@ -146,6 +154,10 @@ strAppStyle <- "
 .gsm-bio-app-file .input-group-btn { display: block; width: auto; }
 .gsm-bio-app-file .input-group .btn-file { border-radius: 6px; }
 .gsm-bio-app-file .input-group > .form-control { flex: 1 1 140px; float: none; width: auto; min-width: 0; height: auto; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; color: #6b5d52; font-size: 12.5px; line-height: 18px; }
+.gsm-bio-app-file .input-group > .form-control::placeholder { color: #6b5d52; opacity: 1; }
+.gsm-bio-app-file .btn-file:focus-within { border-color: #c2410c; }
+.gsm-bio-app-file .btn-file:has(:focus-visible) { outline: 2px solid #1f2328; outline-offset: 1px; }
+.gsm-bio-app-file .input-group > .form-control:focus-visible { outline: 2px solid #1f2328; outline-offset: 1px; }
 .gsm-bio-app-file .progress { height: 0; margin: 0; border-radius: 6px; background: #f5efe7; box-shadow: none; }
 .gsm-bio-app-file .progress[style*='visible'] { height: 18px; margin-top: 8px; }
 .gsm-bio-app-file .progress-bar { background-color: #ece2d7; box-shadow: none; color: #5c4f45; font-size: 11.5px; line-height: 18px; }
@@ -202,7 +214,18 @@ strAppStyle <- "
 # to a reader who cannot see it, and walks the row with the arrow keys. On the
 # Data page (#85) a link that names a chart opens it, and the control that
 # takes a file away empties the file's own control as well, which the session
-# cannot do, so the same file can be chosen again.
+# cannot do, so the same file can be chosen again. A link that opens a chart is
+# on the page it leaves, which is hidden as the chart's is shown: the focus
+# goes with the reader, to the chart's pill, and is not left on a link no one
+# can see (#97).
+#
+# The viewer's tabs are a tab set inside a page of another, and Shiny's page
+# does not expect one there: as it shows a page it marks every tab link inside
+# it as the chosen one and as a stop of the Tab key, and as it hides a page it
+# marks every one as neither. So after any tab is shown, the viewer's tabs are
+# said again from what is so: the one whose table is shown is the chosen one
+# and the row's stop, and the others are not (#97). Shiny's marks are made
+# just after it says a tab is shown, so this waits its turn.
 strAppScript <- "
 (function () {
   var $ = window.jQuery;
@@ -215,6 +238,15 @@ strAppScript <- "
       row.scrollLeft += pill.left - within.left - (within.width - pill.width) / 2;
     }
   });
+  function sayViewerTabs() {
+    $('#gsm_bio_view_table > li > a').each(function () {
+      var chosen = $(this).parent().hasClass('active');
+      $(this).attr({ 'aria-selected': chosen ? 'true' : 'false', tabindex: chosen ? '0' : '-1' });
+    });
+  }
+  $(document).on('shown.bs.tab', function () {
+    window.setTimeout(sayViewerTabs, 0);
+  });
   $(document).on('click', '#gsm_bio_study', function (event) {
     event.preventDefault();
     document.querySelector('#gsm_bio_chart a[data-value=\"Data\"]').click();
@@ -224,6 +256,7 @@ strAppScript <- "
     var pill = document.querySelector('#gsm_bio_chart a[data-value=\"' + this.getAttribute('data-gsm-bio-open') + '\"]');
     if (pill) {
       pill.click();
+      pill.focus();
       window.scrollTo(0, 0);
     }
   });
