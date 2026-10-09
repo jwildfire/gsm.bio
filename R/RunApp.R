@@ -51,7 +51,8 @@ App_CheckTable <- function(dfTable, strArg, strWhat, chrColumns) {
 
 # The tables the app opens on: the ones given, or the synthetic study when no
 # results table is. Participants and outcomes are never taken from the
-# synthetic study for a results table of the caller's own.
+# synthetic study for a results table of the caller's own. `source` is what
+# they are in a sentence, and `name` in the few words of the study chip (#84).
 App_Study <- function(dfResults, dfParticipants, dfOutcomes) {
   lColumns <- App_Columns()
   if (is.null(dfResults)) {
@@ -60,14 +61,15 @@ App_Study <- function(dfResults, dfParticipants, dfOutcomes) {
     }
     return(list(
       results = gsm.bio::Synthetic_Results, participants = gsm.bio::Synthetic_Participants,
-      outcomes = gsm.bio::Synthetic_Outcomes, source = "the synthetic study that ships with gsm.bio"
+      outcomes = gsm.bio::Synthetic_Outcomes, source = "the synthetic study that ships with gsm.bio",
+      name = "Synthetic study"
     ))
   }
   list(
     results = App_CheckTable(dfResults, "dfResults", "results", lColumns$results),
     participants = if (!is.null(dfParticipants)) App_CheckTable(dfParticipants, "dfParticipants", "participants", lColumns$participants),
     outcomes = if (!is.null(dfOutcomes)) App_CheckTable(dfOutcomes, "dfOutcomes", "outcomes", lColumns$outcomes),
-    source = "the tables this app was started with"
+    source = "the tables this app was started with", name = "This app's tables"
   )
 }
 
@@ -105,27 +107,6 @@ App_Lacks <- function(strChart, lStudy) {
   }
   NULL
 }
-
-# What the app looks like beyond its charts: a few rules, in the page.
-strAppStyle <- "
-.gsm-bio-app { max-width: 1400px; margin: 0 auto; padding: 0 16px 24px; }
-.gsm-bio-app h1 { font-size: 22px; margin: 16px 0 4px; }
-.gsm-bio-app h2 { font-size: 16px; margin: 20px 0 4px; }
-.gsm-bio-app .gsm-bio-app-source, .gsm-bio-app .gsm-bio-app-foot, .gsm-bio-app .gsm-bio-app-what { color: #52616f; font-size: 13px; }
-.gsm-bio-app .gsm-bio-app-foot { margin-top: 24px; }
-.gsm-bio-app .gsm-bio-app-lacks { margin: 24px 0; }
-.gsm-bio-app .gsm-bio-app-problem { color: #a4262c; }
-.gsm-bio-app .gsm-bio-app-columns { display: flex; flex-wrap: wrap; gap: 0 16px; }
-.gsm-bio-app .gsm-bio-app-columns .form-group { min-width: 180px; }
-.gsm-bio-app .gsm-bio-app-rows { overflow-x: auto; margin: 4px 0 8px; }
-.gsm-bio-app .gsm-bio-app-table { border-collapse: collapse; font-size: 13px; white-space: nowrap; }
-.gsm-bio-app .gsm-bio-app-table th, .gsm-bio-app .gsm-bio-app-table td { border-bottom: 1px solid #dde3ea; padding: 3px 10px 3px 0; text-align: left; }
-.gsm-bio-app .gsm-bio-app-table th { color: #52616f; font-weight: 600; }
-.gsm-bio-app .gsm-bio-app-table .gsm-bio-app-row { color: #7a8794; }
-.gsm-bio-app .gsm-bio-app-turn { display: flex; gap: 8px; margin: 0 0 24px; }
-.gsm-bio-app .gsm-bio-app-viewer .nav-tabs { margin: 8px 0; }
-.gsm-bio-app .gsm-bio-app-viewer .tab-content { display: none; }
-"
 
 # The names of the Data view's inputs and outputs: a file, the place its
 # columns are asked for, and one select per column.
@@ -171,11 +152,14 @@ App_DataView <- function() {
   )
 }
 
-App_Ui <- function() {
-  Tab <- function(strChart) {
-    shiny::tabPanel(
-      chrAppCharts[[strChart]],
-      value = strChart,
+# The page: the header band with the pills and the study chip, the page of
+# Data or of one chart under it, and the footer line (R/app-shell.R, #84). It
+# is written for the tables the app opens on, and the session writes the chip
+# and the pills again when a reader draws the charts on others.
+App_Ui <- function(lStudy = App_Study(NULL, NULL, NULL)) {
+  Chart <- function(strChart) {
+    shiny::tags$div(
+      class = "gsm-bio-app-card",
       # A chart that lacks a table it needs has a sentence in its place: the
       # session decides which, because a reader can load other tables.
       if (identical(strChart, "StratifiedSurvival")) {
@@ -185,29 +169,24 @@ App_Ui <- function() {
       }
     )
   }
-  lBy <- StoredResultsProvenance()
-  shiny::fluidPage(
+  lPages <- c(
+    list(Data = shiny::tags$div(class = "gsm-bio-app-card gsm-bio-app-data", App_DataView())),
+    stats::setNames(lapply(names(chrAppCharts), Chart), names(chrAppCharts))
+  )
+  lTabs <- App_Tabs(lStudy, lPages)
+  shiny::bootstrapPage(
     title = "gsm.bio",
-    shiny::tags$head(shiny::tags$style(shiny::HTML(strAppStyle))),
+    shiny::tags$head(
+      App_Fonts(),
+      shiny::tags$style(shiny::HTML(strAppStyle))
+    ),
     shiny::tags$div(
       class = "gsm-bio-app",
-      shiny::tags$h1("Biomarker charts"),
-      shiny::tags$p(class = "gsm-bio-app-source", shiny::textOutput("gsm_bio_source", inline = TRUE)),
-      # One chart is drawn at a time: Shiny draws an output when it is shown.
-      shiny::navlistPanel(
-        id = "gsm_bio_chart", well = FALSE, widths = c(2, 10), selected = names(chrAppCharts)[1],
-        shiny::tabPanel("Data", value = "Data", App_DataView()),
-        Tab("GroupComparison"), Tab("AssociationScatter"), Tab("CorrelationMatrix"),
-        Tab("BiomarkerScreen"), Tab("CrossTab"), Tab("StratifiedSurvival")
-      ),
-      shiny::tags$p(
-        class = "gsm-bio-app-foot",
-        paste0(
-          "gsm.bio ", lBy$gsm_bio_version, ". Every statistic is computed on request by R ", lBy$r_version,
-          " on this server, by gsm.bio's own functions."
-        )
-      )
-    )
+      App_Head(lStudy, lTabs$pills),
+      shiny::tags$main(class = "gsm-bio-app-main", lTabs$pages),
+      App_Foot()
+    ),
+    shiny::tags$script(shiny::HTML(strAppScript))
   )
 }
 
@@ -292,7 +271,9 @@ App_DataServer <- function(input, output, session, rStudy) {
         chrFiles <- vapply(names(lMapped), function(strTable) rFiles[[strTable]]$name, character(1))
         list(
           results = lMapped$results, participants = lMapped$participants, outcomes = lMapped$outcomes,
-          source = paste0(paste(chrFiles, collapse = ", "), ", loaded in this session")
+          source = paste0(paste(chrFiles, collapse = ", "), ", loaded in this session"),
+          # The files by name: what the study chip calls a reader's study (#84).
+          files = unname(chrFiles)
         )
       },
       error = function(cndError) conditionMessage(cndError)
@@ -327,7 +308,7 @@ App_Server <- function(lStudy, lSettings) {
       lGiven <- lSettings[[strChart]]
       if (is.null(lGiven)) list() else lGiven
     }
-    output$gsm_bio_source <- shiny::renderText(paste0("Drawn on ", rStudy()$source, "."))
+    App_ShellServer(output, rStudy)
     output$GroupComparison <- renderWidget_GroupComparison(
       Widget_GroupComparison(rStudy()$results, rStudy()$participants, lSettings = Of("GroupComparison"))
     )
@@ -360,16 +341,38 @@ App_Server <- function(lStudy, lSettings) {
 
 #' Run the six charts as one Shiny app
 #'
-#' A Shiny app with a list of the six bio.viz charts beside one chart drawn at
-#' a time, on the tables it is given or, given none, on the synthetic study
-#' that ships with the package. The R session behind the page answers every
-#' statistic a chart asks for ([Serve_Statistics()]), so a reader who changes a
-#' test, a group or a filter gets R's result for that view, and the line under
-#' the chart says it was computed on this server and by which R.
+#' A Shiny app of the six bio.viz charts, one drawn at a time and chosen from
+#' a row of pills in the page's header, on the tables it is given or, given
+#' none, on the synthetic study that ships with the package. The R session
+#' behind the page answers every statistic a chart asks for
+#' ([Serve_Statistics()]), so a reader who changes a test, a group or a filter
+#' gets R's result for that view, and the line under the chart says it was
+#' computed on this server and by which R.
 #'
 #' The charts are the package's widgets with the controls they have. Shiny
 #' holds the tables and answers the statistics, and does nothing else: no
 #' control of a chart is made again as a Shiny input.
+#'
+#' @section The page:
+#' A header band carries the app's name, "Biomarker charts", with the mark
+#' gsm.bio and its version beside it; a row of pills, Data first and then the
+#' six charts; and a chip that says what the charts are drawn on, on every
+#' page, and opens Data when it is pressed. The chart has the page's width
+#' under the band, and one footer line says which R computes the statistics
+#' and that a reader's files are held for the session only.
+#'
+#' - A pill is a link of Shiny's own tab set. A keyboard reaches the chosen
+#'   pill with the Tab key and walks the row with the arrow keys, and a pill
+#'   pointed at says in one line what its chart draws.
+#' - A chart that cannot be drawn on the tables there are has its pill dimmed,
+#'   with the reason as its hover text. The pill still opens the chart's page,
+#'   which holds the same sentence.
+#' - On a phone the header is two rows and the pills scroll sideways in their
+#'   own row, with the chosen one brought into view.
+#' - The page asks Google Fonts for the two fonts bio.viz's and safety.viz's
+#'   sites use, Instrument Sans and Instrument Serif, and for nothing else
+#'   outside its own server. It does not wait for them: where they cannot be
+#'   reached, as behind a firewall, the page is drawn in the system's fonts.
 #'
 #' @section The tables:
 #' The app reads its tables under gsm.bio's column names, so a table with
@@ -382,14 +385,14 @@ App_Server <- function(lStudy, lSettings) {
 #'   chart has none;
 #' - outcomes, optional: `USUBJID`, `PARAMCD`, `PARAM`, `AVAL` and `CNSR`.
 #'   Without it the stratified survival chart is replaced by a sentence saying
-#'   so.
+#'   so, and its pill is dimmed.
 #'
 #' A table that lacks a column is refused with a sentence naming the column.
 #' Called with no table, the app opens on [Synthetic_Results],
 #' [Synthetic_Participants] and [Synthetic_Outcomes].
 #'
 #' @section A reader's own files:
-#' The first entry of the list is the Data view. A reader chooses a results
+#' The first pill is the Data view. A reader chooses a results
 #' file there, and optionally a participants and an outcomes file, each a
 #' `.csv`, `.xpt` or `.sas7bdat` file. R reads it on the server. Under each
 #' file the view asks which of its columns is each one the charts need, filled
@@ -471,7 +474,7 @@ RunApp <- function(dfResults = NULL, dfParticipants = NULL, dfOutcomes = NULL, l
   lSettings <- App_Settings(lSettings)
   nMaxUploadMB <- App_MaxUpload(nMaxUploadMB)
   shiny::shinyApp(
-    ui = App_Ui(),
+    ui = App_Ui(lStudy),
     server = App_Server(lStudy, lSettings),
     # The limit is the app's own, set when it starts and for as long as it runs.
     onStart = function() {

@@ -43,8 +43,10 @@ test_that("RunApp() returns a Shiny app that lists the six charts, on the synthe
   expect_match(strPage, "id=\"gsm_bio_place_StratifiedSurvival\"", fixed = TRUE)
   # The chart the page opens on is the first chart, not the Data view.
   expect_match(strPage, "<li class=\"active\">\\s*<a [^>]*data-value=\"GroupComparison\"")
+  # The footer's line names the R and the gsm.bio behind every statistic (#84).
   expect_match(strPage, sprintf(
-    "Every statistic is computed on request by R %s on this server", paste(R.version$major, R.version$minor, sep = ".")
+    "Every statistic is computed on request by R %s with gsm.bio %s on this server", paste(R.version$major, R.version$minor, sep = "."),
+    as.character(utils::packageVersion("gsm.bio"))
   ), fixed = TRUE)
   # No control of a chart is made again as a Shiny input: the page's inputs
   # are the Data view's: the viewer's two buttons (#80), the three files and

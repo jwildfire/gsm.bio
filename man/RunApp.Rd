@@ -34,18 +34,43 @@ reader, in megabytes. Shiny's own limit is 5.}
 A Shiny app object. Printing it runs the app.
 }
 \description{
-A Shiny app with a list of the six bio.viz charts beside one chart drawn at
-a time, on the tables it is given or, given none, on the synthetic study
-that ships with the package. The R session behind the page answers every
-statistic a chart asks for (\code{\link[=Serve_Statistics]{Serve_Statistics()}}), so a reader who changes a
-test, a group or a filter gets R's result for that view, and the line under
-the chart says it was computed on this server and by which R.
+A Shiny app of the six bio.viz charts, one drawn at a time and chosen from
+a row of pills in the page's header, on the tables it is given or, given
+none, on the synthetic study that ships with the package. The R session
+behind the page answers every statistic a chart asks for
+(\code{\link[=Serve_Statistics]{Serve_Statistics()}}), so a reader who changes a test, a group or a filter
+gets R's result for that view, and the line under the chart says it was
+computed on this server and by which R.
 }
 \details{
 The charts are the package's widgets with the controls they have. Shiny
 holds the tables and answers the statistics, and does nothing else: no
 control of a chart is made again as a Shiny input.
 }
+\section{The page}{
+
+A header band carries the app's name, "Biomarker charts", with the mark
+gsm.bio and its version beside it; a row of pills, Data first and then the
+six charts; and a chip that says what the charts are drawn on, on every
+page, and opens Data when it is pressed. The chart has the page's width
+under the band, and one footer line says which R computes the statistics
+and that a reader's files are held for the session only.
+\itemize{
+\item A pill is a link of Shiny's own tab set. A keyboard reaches the chosen
+pill with the Tab key and walks the row with the arrow keys, and a pill
+pointed at says in one line what its chart draws.
+\item A chart that cannot be drawn on the tables there are has its pill dimmed,
+with the reason as its hover text. The pill still opens the chart's page,
+which holds the same sentence.
+\item On a phone the header is two rows and the pills scroll sideways in their
+own row, with the chosen one brought into view.
+\item The page asks Google Fonts for the two fonts bio.viz's and safety.viz's
+sites use, Instrument Sans and Instrument Serif, and for nothing else
+outside its own server. It does not wait for them: where they cannot be
+reached, as behind a firewall, the page is drawn in the system's fonts.
+}
+}
+
 \section{The tables}{
 
 The app reads its tables under gsm.bio's column names, so a table with
@@ -58,7 +83,7 @@ participant. With it a chart offers groups and filters; without it a
 chart has none;
 \item outcomes, optional: \code{USUBJID}, \code{PARAMCD}, \code{PARAM}, \code{AVAL} and \code{CNSR}.
 Without it the stratified survival chart is replaced by a sentence saying
-so.
+so, and its pill is dimmed.
 }
 
 A table that lacks a column is refused with a sentence naming the column.
@@ -68,7 +93,7 @@ Called with no table, the app opens on \link{Synthetic_Results},
 
 \section{A reader's own files}{
 
-The first entry of the list is the Data view. A reader chooses a results
+The first pill is the Data view. A reader chooses a results
 file there, and optionally a participants and an outcomes file, each a
 \code{.csv}, \code{.xpt} or \code{.sas7bdat} file. R reads it on the server. Under each
 file the view asks which of its columns is each one the charts need, filled
