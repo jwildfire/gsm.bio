@@ -1,6 +1,11 @@
 # Changelog
 
-## gsm.bio v0.4.0 (Upcoming)
+## gsm.bio v0.5.0 (Upcoming)
+
+The next version of gsm.bio. Its work lands on `dev` and is listed here
+as it does.
+
+## gsm.bio v0.4.0
 
 **See it move:** the [annotated v0.4.0
 demo](https://jwildfire.github.io/obot.roadmap/reports/biomarker-v0.4-demo/)
