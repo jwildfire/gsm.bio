@@ -121,6 +121,16 @@ function returns what an output is assigned.</p>
 opens sooner than a saved page is made.</p>
     </div>
     <div class="section level2">
+    <h2 id="the-size-of-a-chart-s-text">The size of a chart's text<a class="anchor" aria-label="anchor" href="#the-size-of-a-chart-s-text"></a></h2>
+
+
+<p>A chart sizes its text from the page's root font size. Shiny's default page
+sets that to 10 pixels, which would draw a chart's text far smaller than a
+saved page does, so an output function also writes one rule into the page,
+<code>html { font-size: 100%; }</code>, which gives the root back to the browser.
+Shiny's own text is sized in pixels and does not change.</p>
+    </div>
+    <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
     <div class="dont-index"><p><code><a href="Serve_Statistics.html">Serve_Statistics()</a></code></p>
 <p>Other shiny:
@@ -133,6 +143,7 @@ opens sooner than a saved page is made.</p>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/ns-load.html" class="external-link">requireNamespace</a></span><span class="op">(</span><span class="st">"shiny"</span>, quietly <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span></span>
 <span class="r-in"><span>  <span class="fu">Widget_GroupComparisonOutput</span><span class="op">(</span><span class="st">"chart"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;style&gt;html { font-size: 100%; }&lt;/style&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> &lt;div class="Widget_GroupComparison html-widget html-widget-output shiny-report-size html-fill-item" id="chart" style="width:100%;height:auto;"&gt;&lt;/div&gt;</span>
 <span class="r-in"><span></span></span>
 </code></pre></div>

@@ -22,6 +22,12 @@ as it does.
   column is said. Nothing is kept after the session.
   [obot.roadmap#399](https://github.com/jwildfire/obot.roadmap/issues/399),
   [\#73](https://github.com/jwildfire/gsm.bio/issues/73)
+- **The Data view shows what is loaded.** The tables the charts are
+  drawn on are listed there ten rows at a time, with where each came
+  from, and a file just chosen shows its first rows under its own column
+  names.
+  [obot.roadmap#399](https://github.com/jwildfire/obot.roadmap/issues/399),
+  [\#80](https://github.com/jwildfire/gsm.bio/issues/80)
 - **How to put the app on Posit Connect.** The article [The app, and
   putting it on Posit
   Connect](https://jwildfire.github.io/gsm.bio/articles/app.html) gives

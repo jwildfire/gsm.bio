@@ -53,6 +53,8 @@ each a `.csv`, `.xpt` or `.sas7bdat` file.
 
 - R reads the file on the server. `.xpt` and `.sas7bdat` files are read
   with haven.
+- The view shows the file’s first rows as R read them, under the file’s
+  own column names.
 - Under each file the view asks which column is each one the charts
   need. A column that already has gsm.bio’s name for it is filled in.
 - On the button the columns are renamed to gsm.bio’s names and the
@@ -61,6 +63,10 @@ each a `.csv`, `.xpt` or `.sas7bdat` file.
   unsaid, a column chosen twice, a result that is text and a file R
   cannot read are each answered with a sentence, and the charts stay as
   they were.
+
+Above the files the Data view shows what is loaded: the tables the
+charts are drawn on, ten rows at a time, with where each came from.
+After the button it shows the reader’s tables.
 
 The file is held in the R session’s memory and nowhere else. Nothing is
 written to the server beyond Shiny’s own temporary copy of an upload,

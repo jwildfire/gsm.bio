@@ -70,6 +70,14 @@ function returns what an output is assigned.
 The stored results are not computed for a widget drawn this way, so the
 page opens sooner than a saved page is made.
 
+## The size of a chart's text
+
+A chart sizes its text from the page's root font size. Shiny's default
+page sets that to 10 pixels, which would draw a chart's text far smaller
+than a saved page does, so an output function also writes one rule into
+the page, `html { font-size: 100%; }`, which gives the root back to the
+browser. Shiny's own text is sized in pixels and does not change.
+
 ## See also
 
 [`Serve_Statistics()`](https://jwildfire.github.io/gsm.bio/reference/Serve_Statistics.md)
@@ -84,5 +92,6 @@ Other shiny:
 if (requireNamespace("shiny", quietly = TRUE)) {
   Widget_GroupComparisonOutput("chart")
 }
+#> <style>html { font-size: 100%; }</style>
 #> <div class="Widget_GroupComparison html-widget html-widget-output shiny-report-size html-fill-item" id="chart" style="width:100%;height:auto;"></div>
 ```
