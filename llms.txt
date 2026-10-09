@@ -344,6 +344,21 @@ Connect](https://jwildfire.github.io/gsm.bio/articles/app.html) has the
 deploys it, what the server needs and what was measured. No one has
 deployed the app to a Connect server yet, and the article says so.
 
+The server needs no route to anywhere for the page’s sake. The page asks
+one thing of anywhere but its own server: two typefaces from Google
+Fonts, Instrument Sans and Instrument Serif. The reader’s browser asks,
+not the server: three requests as the app opens, to two hosts,
+`fonts.googleapis.com` for a style sheet and `fonts.gstatic.com` for two
+font files. A request carries the app’s address, and the reader’s
+network address and browser as any request does, and nothing of the
+study: no table, no file’s name, no statistic. Some letters, Polish or
+Czech ones for instance, are in a further file of the typeface, which
+the browser asks the second host for when the page first shows one, in a
+file’s name or a table’s value; a letter the typeface does not have, a
+Greek or Cyrillic one, asks for nothing. Where the requests are blocked,
+as behind a firewall, the app is drawn in the system’s fonts and works
+the same.
+
 ## Widgets in a Shiny page
 
 A saved page answers only the statistics stored when it was made. In a

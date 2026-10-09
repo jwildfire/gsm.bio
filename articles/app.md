@@ -158,6 +158,32 @@ What the server needs:
 - A version of R on the server near the one you deploy from. R’s own
   answers can differ between versions, which is why the line under each
   chart names the R that computed it.
+- A UTF-8 locale for the server’s R, which `Sys.getlocale("LC_CTYPE")`
+  names. The app reads a `.csv` file as UTF-8, and R turns it into the
+  locale’s own characters as it reads. In a locale with none of its own,
+  the `C` or `POSIX` locale a bare server or container often has, a
+  `.csv` file with any character outside ASCII, an accented name or a
+  micro sign, is refused with R’s warning. And there a file whose name
+  has such a character is not taken at all: Shiny itself fails on the
+  name before the app sees the file, the bar under the file’s control
+  says “error”, and its card stays empty. In a UTF-8 locale a `.csv`
+  file that is itself UTF-8 is read whatever characters it or its name
+  holds.
+
+The server needs no route to anywhere for the page’s sake. The page asks
+one thing of anywhere but its own server: two typefaces from Google
+Fonts, Instrument Sans and Instrument Serif. The reader’s browser asks,
+not the server: three requests as the app opens, to two hosts,
+`fonts.googleapis.com` for a style sheet and `fonts.gstatic.com` for two
+font files. A request carries the app’s address, and the reader’s
+network address and browser as any request does, and nothing of the
+study: no table, no file’s name, no statistic. Some letters, Polish or
+Czech ones for instance, are in a further file of the typeface, which
+the browser asks the second host for when the page first shows one, in a
+file’s name or a table’s value; a letter the typeface does not have, a
+Greek or Cyrillic one, asks for nothing. Where the requests are blocked,
+as behind a firewall, the app is drawn in the system’s fonts and works
+the same.
 
 Two settings on the content’s Runtime tab are worth a look:
 

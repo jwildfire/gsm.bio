@@ -75,11 +75,12 @@ v0.4.0.
   it yet. The app is tested in a browser on one machine; the first
   deployment is the check on the rest.
   [\#74](https://github.com/jwildfire/gsm.bio/issues/74)
-- **A file R warns about as it reads it is not drawn.** A `.csv` with a
-  byte outside UTF-8, or a quote never closed, would otherwise be read
-  short; the page says so in R’s words.
-  [\#86](https://github.com/jwildfire/gsm.bio/issues/86), PR
-  [\#91](https://github.com/jwildfire/gsm.bio/pull/91)
+- **A file that would be read short is not drawn.** A `.csv` with a byte
+  outside UTF-8, or a quote out of place, is refused, and the page says
+  why. [\#86](https://github.com/jwildfire/gsm.bio/issues/86),
+  [\#97](https://github.com/jwildfire/gsm.bio/issues/97), PRs
+  [\#91](https://github.com/jwildfire/gsm.bio/pull/91),
+  [\#104](https://github.com/jwildfire/gsm.bio/pull/104)
 - **Not fixed: an `.xpt` file that has been cut short is read short,**
   with no word from haven. Check the rows the Data page counts against
   your own. [\#90](https://github.com/jwildfire/gsm.bio/issues/90)
@@ -100,8 +101,8 @@ v0.4.0.
 
 ### Tests and provenance
 
-396 tests (56,376 expectations on R 4.3.3) pass from the source tree;
-`R CMD check` skips 32 of them. The app is run by a second R session and
+413 tests (61,643 expectations on R 4.3.3) pass from the source tree;
+`R CMD check` skips 36 of them. The app is run by a second R session and
 driven in a headless browser, where every answer on each of the six
 charts is held to its `Analyze_*()` function. The bundles are bio.viz
 `dev` at

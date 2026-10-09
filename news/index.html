@@ -68,7 +68,7 @@
 <strong>Not tested: the app on a Posit Connect server.</strong> No one has deployed it yet. The app is tested in a browser on one machine; the first deployment is the check on the rest. <a href="https://github.com/jwildfire/gsm.bio/issues/74" class="external-link">#74</a>
 </li>
 <li>
-<strong>A file R warns about as it reads it is not drawn.</strong> A <code>.csv</code> with a byte outside UTF-8, or a quote never closed, would otherwise be read short; the page says so in R’s words. <a href="https://github.com/jwildfire/gsm.bio/issues/86" class="external-link">#86</a>, PR <a href="https://github.com/jwildfire/gsm.bio/pull/91" class="external-link">#91</a>
+<strong>A file that would be read short is not drawn.</strong> A <code>.csv</code> with a byte outside UTF-8, or a quote out of place, is refused, and the page says why. <a href="https://github.com/jwildfire/gsm.bio/issues/86" class="external-link">#86</a>, <a href="https://github.com/jwildfire/gsm.bio/issues/97" class="external-link">#97</a>, PRs <a href="https://github.com/jwildfire/gsm.bio/pull/91" class="external-link">#91</a>, <a href="https://github.com/jwildfire/gsm.bio/pull/104" class="external-link">#104</a>
 </li>
 <li>
 <strong>Not fixed: an <code>.xpt</code> file that has been cut short is read short,</strong> with no word from haven. Check the rows the Data page counts against your own. <a href="https://github.com/jwildfire/gsm.bio/issues/90" class="external-link">#90</a>
@@ -85,7 +85,7 @@
 </ul></div>
 <div class="section level3">
 <h3 id="tests-and-provenance-0-4-0">Tests and provenance<a class="anchor" aria-label="anchor" href="#tests-and-provenance-0-4-0"></a></h3>
-<p>396 tests (56,376 expectations on R 4.3.3) pass from the source tree; <code>R CMD check</code> skips 32 of them. The app is run by a second R session and driven in a headless browser, where every answer on each of the six charts is held to its <code>Analyze_*()</code> function. The bundles are bio.viz <code>dev</code> at <a href="https://github.com/jwildfire/bio.viz/commit/066bbec7795c5fe07aa1c16d5ab4fcecb5682d5d" class="external-link">066bbec</a> and safety.viz <code>dev</code> at <a href="https://github.com/jwildfire/safety.viz/commit/096cc26d48e5d3cd1bf03eb78249658974c7a307" class="external-link">096cc26</a>.</p>
+<p>413 tests (61,643 expectations on R 4.3.3) pass from the source tree; <code>R CMD check</code> skips 36 of them. The app is run by a second R session and driven in a headless browser, where every answer on each of the six charts is held to its <code>Analyze_*()</code> function. The bundles are bio.viz <code>dev</code> at <a href="https://github.com/jwildfire/bio.viz/commit/066bbec7795c5fe07aa1c16d5ab4fcecb5682d5d" class="external-link">066bbec</a> and safety.viz <code>dev</code> at <a href="https://github.com/jwildfire/safety.viz/commit/096cc26d48e5d3cd1bf03eb78249658974c7a307" class="external-link">096cc26</a>.</p>
 </div>
 </div>
     <div class="section level2">
