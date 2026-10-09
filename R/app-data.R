@@ -5,7 +5,9 @@
 # written to the server beyond Shiny's own temporary copy of an upload, which
 # goes when the session ends. A table is drawn only when every column the
 # charts need has been named; R then renames those columns to gsm.bio's own
-# names, so every chart runs on its default column settings.
+# names, so every chart runs on its default column settings. What the page
+# says of the files as a reader goes is at the foot of this file (#85): the
+# rail's three steps, a column's tag, and the charts that are ready.
 
 # The tables a reader may load: what the Data view calls each, whether the
 # charts need it, and the columns the charts read from it, each under the
@@ -213,12 +215,33 @@ App_MapTable <- function(dfTable, chrChosen, lTable, strName) {
 nAppViewRows <- 10L
 nAppPreviewRows <- 5L
 
-# A value as the viewer shows it: as R holds it, not rounded, and a missing
-# one as NA.
+# How many digits a number is shown to: the fifteen that identify it. R holds
+# a number to between fifteen and seventeen, and the two past fifteen are how
+# 0.1 + 0.2 comes to be written 0.30000000000000004.
+nAppDigits <- 15L
+
+# A value as the viewer shows it: as R holds it, and a missing one as NA. A
+# number is written in full, each value on its own and so never padded to the
+# width of another, and never as 1e+05 (#85). The exception is a number that
+# fifteen digits cannot write out: one of a thousand million million or more,
+# whose last digits R does not hold, and one smaller than a part in that many,
+# which would be a row of zeros. Those are left in R's scientific form.
 App_Cell <- function(xValues) {
-  chrValues <- as.character(xValues)
-  chrValues[is.na(xValues)] <- "NA"
-  chrValues
+  if (!is.numeric(xValues)) {
+    chrValues <- as.character(xValues)
+    chrValues[is.na(xValues)] <- "NA"
+    return(chrValues)
+  }
+  vapply(as.numeric(xValues), function(nValue) {
+    if (is.na(nValue)) {
+      return("NA")
+    }
+    if (!is.finite(nValue)) {
+      return(as.character(nValue))
+    }
+    bInFull <- nValue == 0 || (abs(nValue) >= 1e-15 && abs(nValue) < 1e15)
+    format(nValue, digits = nAppDigits, scientific = !bInFull, trim = TRUE)
+  }, character(1), USE.NAMES = FALSE)
 }
 
 #' One page of a table's rows
@@ -307,7 +330,23 @@ App_ViewServer <- function(input, output, session, rStudy) {
         value = strTable
       )
     }
-    shiny::tabsetPanel(id = "gsm_bio_view_table", selected = "results", Tab("results"), Tab("participants"), Tab("outcomes"))
+    xSet <- shiny::tabsetPanel(id = "gsm_bio_view_table", selected = "results", Tab("results"), Tab("participants"), Tab("outcomes"))
+    # Shiny's page says which links are tabs, and which is chosen, of the tab
+    # sets it is loaded with. These are written after, so R says it (#85): the
+    # arrow keys then walk them as they walk the pills.
+    App_Change(xSet, "ul", function(xList) {
+      xList <- shiny::tagAppendAttributes(xList, role = "tablist")
+      xList$children <- App_Change(xList$children, "li", function(xItem) {
+        xItem <- shiny::tagAppendAttributes(xItem, role = "presentation")
+        # The tab chosen as the tabs are written is the results', always.
+        xItem$children <- App_Change(xItem$children, "a", function(xLink) {
+          bChosen <- identical(shiny::tagGetAttribute(xLink, "data-value"), "results")
+          shiny::tagAppendAttributes(xLink, role = "tab", `aria-selected` = if (bChosen) "true" else "false")
+        })
+        xItem
+      })
+      xList
+    })
   })
   shiny::observeEvent(rStudy(), rPage(1L))
   shiny::observeEvent(rShown(), rPage(1L))
@@ -332,4 +371,248 @@ App_ViewServer <- function(input, output, session, rStudy) {
     )
   })
   invisible(NULL)
+}
+
+# ---- The Data page: what is left to do, and what is ready (#85) --------------
+
+# A tag of a few letters beside a name: whether a table is needed, and whether
+# a column has been said.
+App_TagOf <- function(strKind, strSays) {
+  shiny::tags$span(class = paste0("gsm-bio-app-tag gsm-bio-app-tag-", strKind), strSays)
+}
+
+# The tag of one column question: the file has a column of gsm.bio's own name,
+# the reader has said which column it is, or they have still to say.
+App_Tag <- function(strChosen, strColumn) {
+  if (length(strChosen) != 1L || is.na(strChosen) || !nzchar(strChosen)) {
+    App_TagOf("need", "say which")
+  } else if (identical(strChosen, strColumn)) {
+    App_TagOf("same", "same name")
+  } else {
+    App_TagOf("said", "said")
+  }
+}
+
+# The file types the app reads, in a sentence.
+App_TypesSaid <- function() {
+  nTypes <- length(chrAppFileTypes)
+  paste(paste(chrAppFileTypes[-nTypes], collapse = ", "), "or", chrAppFileTypes[nTypes])
+}
+
+# The columns of a chosen file a reader has still to say: the ones with no
+# column chosen, or with one the file does not have.
+App_Unsaid <- function(lFile, chrChosen, lTable) {
+  chrNeed <- names(lTable$columns)
+  chrChosen <- chrChosen[chrNeed]
+  chrNeed[is.na(chrChosen) | !nzchar(chrChosen) | !chrChosen %in% names(lFile$table)]
+}
+
+#' What is left to do on the Data page
+#'
+#' @param lStudy `list` The tables the charts are drawn on now.
+#' @param lFiles `list` The files a reader has chosen, by table: each its
+#'   `name` with its `table`, or with the `problem` R had reading it.
+#' @param lChosen `list` The reader's column for each one the charts need, by
+#'   table.
+#' @param bDrawn `logical` Whether the charts are drawn on these files as they
+#'   are now.
+#'
+#' @return A list of the rail's three steps, `files`, `columns` and `charts`,
+#'   each with its `state` (`"done"`, `"next"` or `"waiting"`), what it `says`
+#'   and its `notes`; `charts` also names the chart to `open`, when one is
+#'   ready. `drawn` is what the charts are drawn on now: whether they are
+#'   `still` on it while other files are chosen, each of its `tables` in a few
+#'   words, and a `note`.
+#'
+#' @keywords internal
+#' @noRd
+App_Steps <- function(lStudy, lFiles, lChosen, bDrawn) {
+  lTables <- App_Tables()
+  chrHeld <- intersect(names(lTables), names(lFiles)[!vapply(lFiles, is.null, logical(1))])
+  bRead <- vapply(chrHeld, function(strTable) is.null(lFiles[[strTable]]$problem), logical(1))
+  chrNames <- vapply(chrHeld, function(strTable) lFiles[[strTable]]$name, character(1))
+  Step <- function(strState, strSays, chrNotes = character(0)) list(state = strState, says = strSays, notes = chrNotes)
+
+  # 1. The files.
+  if (length(chrHeld) == 0L) {
+    lFilesStep <- Step("done", "none chosen", sprintf(
+      "The charts are drawn on %s. Choose a results file to draw them on %s.",
+      lStudy$source, if (is.null(lStudy$files)) "a study of your own" else "other files"
+    ))
+  } else {
+    chrNotes <- vapply(chrHeld[!bRead], function(strTable) {
+      if (lTables[[strTable]]$needed) {
+        return(sprintf("%s was not read: choose another results file.", chrNames[[strTable]]))
+      }
+      strA <- if (identical(strTable, "outcomes")) "an" else "a"
+      sprintf(
+        "%s was not read: choose another file for the %s table, or remove it. The charts can be drawn without %s %s table.",
+        chrNames[[strTable]], strTable, strA, strTable
+      )
+    }, character(1), USE.NAMES = FALSE)
+    if (!"results" %in% chrHeld) {
+      chrNotes <- c(chrNotes, "Choose a results file: the charts are drawn from the results table.")
+    }
+    lFilesStep <- Step(
+      if (length(chrNotes) > 0L) "next" else "done",
+      paste(c(chrNames, if (any(!bRead)) paste(sum(!bRead), "not read")), collapse = ", "),
+      chrNotes
+    )
+  }
+
+  # 2. The columns of the files R read.
+  lUnsaid <- lapply(stats::setNames(chrHeld[bRead], chrHeld[bRead]), function(strTable) {
+    chrChosen <- lChosen[[strTable]]
+    App_Unsaid(lFiles[[strTable]], if (is.null(chrChosen)) character(0) else chrChosen, lTables[[strTable]])
+  })
+  nAsked <- sum(vapply(chrHeld[bRead], function(strTable) length(lTables[[strTable]]$columns), integer(1)))
+  nUnsaid <- sum(lengths(lUnsaid))
+  lColumnsStep <- if (nAsked == 0L) {
+    Step("done", "nothing to say")
+  } else if (nUnsaid == 0L) {
+    Step("done", sprintf("%d of %d columns said", nAsked, nAsked))
+  } else {
+    chrLeft <- names(lUnsaid)[lengths(lUnsaid) > 0L]
+    Step("next", sprintf("%d of %d columns still to say", nUnsaid, nAsked), vapply(chrLeft, function(strTable) {
+      sprintf("In %s: %s.", chrNames[[strTable]], paste(tolower(sub(",.*$", "", lTables[[strTable]]$columns[lUnsaid[[strTable]]])), collapse = ", "))
+    }, character(1), USE.NAMES = FALSE))
+  }
+
+  # 3. The charts: the ones drawn now, or the ones the button would draw.
+  chrCharts <- names(chrAppCharts)
+  bStill <- length(chrHeld) > 0L && !isTRUE(bDrawn)
+  if (!bStill) {
+    lLacks <- lapply(chrCharts, App_Lacks, lStudy)
+    bReady <- vapply(lLacks, is.null, logical(1))
+    lChartsStep <- Step(
+      if (isTRUE(bDrawn) || !is.null(lStudy$files)) "done" else "next",
+      sprintf("%d of %d charts ready", sum(bReady), length(chrCharts)),
+      as.character(unlist(lLacks))
+    )
+    lChartsStep$open <- if (any(bReady)) chrCharts[bReady][1]
+  } else if (lFilesStep$state != "done") {
+    lChartsStep <- Step("waiting", "waiting on step 1")
+  } else if (lColumnsStep$state != "done") {
+    lChartsStep <- Step("waiting", "waiting on step 2")
+  } else {
+    # What the button would draw: a chart lacks a table no file is chosen for.
+    lWould <- stats::setNames(lapply(names(lTables), function(strTable) if (strTable %in% chrHeld) TRUE), names(lTables))
+    bWould <- vapply(chrCharts, function(strChart) is.null(App_Lacks(strChart, lWould)), logical(1))
+    lChartsStep <- Step(
+      "next", sprintf("%d of %d charts can be drawn", sum(bWould), length(chrCharts)),
+      c("Press the button under the cards.", sprintf("%s needs an outcomes table.", chrAppCharts[chrCharts[!bWould]]))
+    )
+  }
+
+  # What the charts are drawn on now.
+  chrDrawn <- vapply(names(lTables), function(strTable) {
+    dfTable <- lStudy[[strTable]]
+    if (is.null(dfTable)) {
+      "none"
+    } else if (is.null(lStudy$files)) {
+      sprintf("%s, %s", App_Count(nrow(dfTable), "row"), App_Count(ncol(dfTable), "column"))
+    } else {
+      sprintf("%s, %s", lStudy$files[[strTable]], App_Count(nrow(dfTable), "row"))
+    }
+  }, character(1))
+  names(chrDrawn) <- vapply(lTables, function(lTable) lTable$label, character(1))
+  list(
+    files = lFilesStep, columns = lColumnsStep, charts = lChartsStep,
+    drawn = list(
+      still = bStill, tables = chrDrawn,
+      note = if (bStill) "The charts stay on these tables until the button under the cards is pressed."
+    )
+  )
+}
+
+# The rail as it is written: the three steps, each with whether it is done in
+# words a screen reader reads, and under them what the charts are drawn on.
+App_Rail <- function(lSteps) {
+  chrTitles <- c(files = "Choose files", columns = "Say which column is which", charts = "Draw the charts")
+  chrStates <- c(done = "Done: ", `next` = "Next: ", waiting = "Waiting: ")
+  Step <- function(strStep) {
+    lStep <- lSteps[[strStep]]
+    shiny::tags$li(
+      class = paste0("gsm-bio-app-step gsm-bio-app-step-", lStep$state), `data-state` = lStep$state,
+      shiny::tags$span(class = "gsm-bio-app-step-mark", `aria-hidden` = "true"),
+      shiny::tags$div(
+        class = "gsm-bio-app-step-body",
+        shiny::tags$p(
+          class = "gsm-bio-app-step-title",
+          shiny::tags$span(class = "gsm-bio-app-unseen", chrStates[[lStep$state]]), chrTitles[[strStep]]
+        ),
+        shiny::tags$p(class = "gsm-bio-app-step-says", lStep$says),
+        lapply(lStep$notes, function(strNote) shiny::tags$p(class = "gsm-bio-app-step-note", strNote)),
+        # A link the page opens the chart with, not an input.
+        if (!is.null(lStep$open)) {
+          shiny::tags$a(
+            class = "gsm-bio-app-open", href = "#", `data-gsm-bio-open` = lStep$open,
+            paste("Open", tolower(chrAppCharts[[lStep$open]]))
+          )
+        }
+      )
+    )
+  }
+  lDrawn <- lSteps$drawn
+  shiny::tagList(
+    shiny::tags$ol(class = "gsm-bio-app-steps", lapply(names(chrTitles), Step)),
+    shiny::tags$div(
+      class = "gsm-bio-app-drawn",
+      shiny::tags$p(class = "gsm-bio-app-kicker", if (lDrawn$still) "Drawn on, still" else "Drawn on"),
+      shiny::tags$ul(lapply(names(lDrawn$tables), function(strLabel) {
+        shiny::tags$li(
+          class = if (identical(lDrawn$tables[[strLabel]], "none")) "gsm-bio-app-drawn-none",
+          shiny::tags$span(class = "gsm-bio-app-dot", `aria-hidden` = "true"),
+          shiny::tags$span(class = "gsm-bio-app-drawn-name", strLabel),
+          shiny::tags$span(lDrawn$tables[[strLabel]])
+        )
+      })),
+      if (!is.null(lDrawn$note)) shiny::tags$p(class = "gsm-bio-app-step-note", lDrawn$note)
+    )
+  )
+}
+
+# The files the button would draw, in a sentence: each by its name and the
+# table it was chosen for, so a reader sees a file chosen earlier is among
+# them before they press.
+App_Will <- function(lFiles) {
+  if (length(lFiles) == 0L) {
+    return("No file is chosen: the button has nothing to draw.")
+  }
+  chrEach <- vapply(names(lFiles), function(strTable) {
+    sprintf("%s (%s%s)", lFiles[[strTable]]$name, strTable, if (is.null(lFiles[[strTable]]$problem)) "" else ", not read")
+  }, character(1))
+  paste0(
+    "These files: ", paste(chrEach, collapse = ", "), ".",
+    if (is.null(lFiles$results)) " There is no results file among them."
+  )
+}
+
+# What the page says once the charts are drawn: on which files, how many of
+# the charts are ready, and each chart with what it draws, or with the table
+# it lacks. A chart's name is a link the page opens it with.
+App_Ready <- function(lStudy) {
+  chrCharts <- names(chrAppCharts)
+  lLacks <- stats::setNames(lapply(chrCharts, App_Lacks, lStudy), chrCharts)
+  nReady <- sum(vapply(lLacks, is.null, logical(1)))
+  shiny::tags$div(
+    class = "gsm-bio-app-done",
+    shiny::tags$p(sprintf(
+      "The charts are drawn on %s. %s Open one here, or from the row of pills at the top of the page.",
+      lStudy$source,
+      if (nReady == length(chrCharts)) {
+        sprintf("All %d charts are ready.", nReady)
+      } else {
+        sprintf("%d of the %d charts are ready.", nReady, length(chrCharts))
+      }
+    )),
+    shiny::tags$ul(class = "gsm-bio-app-ready", lapply(chrCharts, function(strChart) {
+      strLacks <- lLacks[[strChart]]
+      shiny::tags$li(
+        class = if (!is.null(strLacks)) "gsm-bio-app-ready-lacks",
+        shiny::tags$a(href = "#", `data-gsm-bio-open` = strChart, chrAppCharts[[strChart]]),
+        shiny::tags$span(if (is.null(strLacks)) chrAppWhat[[strChart]] else strLacks)
+      )
+    }))
+  )
 }

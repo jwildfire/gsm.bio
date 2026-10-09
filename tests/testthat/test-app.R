@@ -51,7 +51,7 @@ test_that("RunApp() returns a Shiny app that lists the six charts, on the synthe
   # No control of a chart is made again as a Shiny input: the page's inputs
   # are the Data view's: the viewer's two buttons (#80), the three files and
   # their button (#73), and nothing else. The viewer's tabs are written by the
-  # session.
+  # session, and so are a chosen file's inputs, which the next test lists (#85).
   chrInputs <- regmatches(strPage, gregexpr("<(input|select|button|textarea)[^>]*>", strPage))[[1]]
   chrIds <- regmatches(chrInputs, regexpr("id=\"[^\"]*\"", chrInputs))
   expect_identical(
@@ -77,6 +77,44 @@ test_that("RunApp() returns a Shiny app that lists the six charts, on the synthe
   }
   expect_length(lPayloads$StratifiedSurvival$dfOutcomes$USUBJID, nrow(Synthetic_Outcomes))
   expect_length(lPayloads$BiomarkerScreen$dfOutcomes$USUBJID, nrow(Synthetic_Outcomes))
+})
+
+test_that("the inputs the session writes are a chosen file's and no others: a select for each column the charts need and the control that takes the file away; the rail, the tags, the list of charts that are ready and the viewer hold none (#85)", {
+  skip_if_not_installed("shiny")
+  lWas <- options(shiny.maxRequestSize = getOption("shiny.maxRequestSize"))
+  on.exit(options(lWas), add = TRUE)
+  Chosen <- function(strTable) {
+    strFile <- system.file("extdata", paste0("synthetic_", strTable, ".csv"), package = "gsm.bio")
+    data.frame(name = basename(strFile), size = file.size(strFile), type = "", datapath = strFile, stringsAsFactors = FALSE)
+  }
+  # Everything in a part of the page a reader can type in, choose from or press.
+  Inputs <- function(xOutput) {
+    strHtml <- paste(as.character(if (is.list(xOutput)) xOutput$html else xOutput), collapse = "")
+    chrInputs <- regmatches(strHtml, gregexpr("<(input|select|button|textarea)[^>]*>", strHtml))[[1]]
+    # No link that is a button of Shiny's, and no input of another kind.
+    expect_false(grepl("action-link|shiny-input-(?!select|container)", strHtml, perl = TRUE))
+    sub("^.*id=\"([^\"]*)\".*$", "\\1", chrInputs)
+  }
+  lTables <- App_Tables()
+  shiny::testServer(RunApp(), {
+    session$setInputs(gsm_bio_file_results = Chosen("results"), gsm_bio_file_participants = Chosen("participants"), gsm_bio_file_outcomes = Chosen("outcomes"))
+    for (strTable in names(lTables)) {
+      chrColumns <- names(lTables[[strTable]]$columns)
+      expect_identical(
+        Inputs(output[[paste0("gsm_bio_columns_", strTable)]]),
+        c(paste0("gsm_bio_remove_", strTable), paste0("gsm_bio_column_", strTable, "_", chrColumns)),
+        label = strTable
+      )
+      for (strColumn in chrColumns) {
+        expect_identical(Inputs(output[[paste("gsm_bio_tag", strTable, strColumn, sep = "_")]]), character(0), label = paste(strTable, strColumn))
+      }
+    }
+    session$setInputs(gsm_bio_apply = 1)
+    expect_match(paste(as.character(output$gsm_bio_data_said$html), collapse = ""), "All 6 charts are ready.", fixed = TRUE)
+    for (strPart in c("gsm_bio_rail", "gsm_bio_data_files", "gsm_bio_data_said", "gsm_bio_view", "gsm_bio_view_tabs", "gsm_bio_study_said", paste0("gsm_bio_pill_", c("Data", names(chrAppCharts))))) {
+      expect_identical(Inputs(output[[strPart]]), character(0), label = strPart)
+    }
+  })
 })
 
 test_that("RunApp() on a results table alone draws the charts with no participants and no filters, and a sentence in place of the stratified survival chart; a chart's settings reach its chart (#72)", {
