@@ -109,14 +109,22 @@ App_Lacks <- function(strChart, lStudy) {
 # What the app looks like beyond its charts: a few rules, in the page.
 strAppStyle <- "
 .gsm-bio-app { max-width: 1400px; margin: 0 auto; padding: 0 16px 24px; }
-.gsm-bio-app h1 { font-size: 1.4rem; margin: 16px 0 4px; }
-.gsm-bio-app h2 { font-size: 1.1rem; margin: 20px 0 4px; }
-.gsm-bio-app .gsm-bio-app-source, .gsm-bio-app .gsm-bio-app-foot, .gsm-bio-app .gsm-bio-app-what { color: #52616f; font-size: .85rem; }
+.gsm-bio-app h1 { font-size: 22px; margin: 16px 0 4px; }
+.gsm-bio-app h2 { font-size: 16px; margin: 20px 0 4px; }
+.gsm-bio-app .gsm-bio-app-source, .gsm-bio-app .gsm-bio-app-foot, .gsm-bio-app .gsm-bio-app-what { color: #52616f; font-size: 13px; }
 .gsm-bio-app .gsm-bio-app-foot { margin-top: 24px; }
 .gsm-bio-app .gsm-bio-app-lacks { margin: 24px 0; }
 .gsm-bio-app .gsm-bio-app-problem { color: #a4262c; }
 .gsm-bio-app .gsm-bio-app-columns { display: flex; flex-wrap: wrap; gap: 0 16px; }
 .gsm-bio-app .gsm-bio-app-columns .form-group { min-width: 180px; }
+.gsm-bio-app .gsm-bio-app-rows { overflow-x: auto; margin: 4px 0 8px; }
+.gsm-bio-app .gsm-bio-app-table { border-collapse: collapse; font-size: 13px; white-space: nowrap; }
+.gsm-bio-app .gsm-bio-app-table th, .gsm-bio-app .gsm-bio-app-table td { border-bottom: 1px solid #dde3ea; padding: 3px 10px 3px 0; text-align: left; }
+.gsm-bio-app .gsm-bio-app-table th { color: #52616f; font-weight: 600; }
+.gsm-bio-app .gsm-bio-app-table .gsm-bio-app-row { color: #7a8794; }
+.gsm-bio-app .gsm-bio-app-turn { display: flex; gap: 8px; margin: 0 0 24px; }
+.gsm-bio-app .gsm-bio-app-viewer .nav-tabs { margin: 8px 0; }
+.gsm-bio-app .gsm-bio-app-viewer .tab-content { display: none; }
 "
 
 # The names of the Data view's inputs and outputs: a file, the place its
@@ -137,6 +145,21 @@ App_DataView <- function() {
     )
   })
   shiny::tagList(
+    # What is loaded: the tables the charts are drawn on, ten rows at a time.
+    shiny::tags$div(
+      class = "gsm-bio-app-viewer",
+      shiny::tags$h2("The tables the charts are drawn on"),
+      # A tab for each table there is: the session writes them, because a
+      # reader can load other tables.
+      shiny::uiOutput("gsm_bio_view_tabs"),
+      shiny::uiOutput("gsm_bio_view"),
+      shiny::tags$div(
+        class = "gsm-bio-app-turn",
+        shiny::actionButton("gsm_bio_view_previous", "Previous rows"),
+        shiny::actionButton("gsm_bio_view_next", "Next rows")
+      )
+    ),
+    shiny::tags$h2("A study of your own"),
     shiny::tags$p(
       "To draw the charts on a study of your own, choose its results table as a .csv, .xpt or .sas7bdat file, ",
       "say which column is which, and press the button. The file is read by R on this server and held in memory ",
@@ -233,7 +256,15 @@ App_DataServer <- function(input, output, session, rStudy) {
                 selectize = FALSE
               )
             })
-          )
+          ),
+          # The file's first rows, under its own column names: what a reader
+          # looks at to say which column is which.
+          shiny::tags$p(class = "gsm-bio-app-what", sprintf(
+            "The first %s of %s, as R read %s:",
+            if (nrow(lFile$table) == 1L) "row" else paste(min(nAppPreviewRows, nrow(lFile$table)), "rows"),
+            lFile$name, if (nrow(lFile$table) == 1L) "it" else "them"
+          )),
+          App_RowsTable(utils::head(lFile$table, nAppPreviewRows))
         )
       })
     })
@@ -291,6 +322,7 @@ App_Server <- function(lStudy, lSettings) {
     # until a reader loads others in the Data view.
     rStudy <- shiny::reactiveVal(lStudy)
     App_DataServer(input, output, session, rStudy)
+    App_ViewServer(input, output, session, rStudy)
     Of <- function(strChart) {
       lGiven <- lSettings[[strChart]]
       if (is.null(lGiven)) list() else lGiven
@@ -370,6 +402,11 @@ App_Server <- function(lStudy, lSettings) {
 #' read are each answered with a sentence, and the tables already drawn stay.
 #' A column of the file that already had one of gsm.bio's names, and was not
 #' the one chosen for it, is kept with `_original` added to its name.
+#'
+#' The Data view also shows what is loaded: the tables the charts are drawn
+#' on, ten rows at a time, with where each came from and its rows and columns.
+#' A file just chosen shows its first rows under its own column names, so a
+#' reader can tell which column is which. Values are shown as R holds them.
 #'
 #' A file is held in the session's memory and nowhere else. Nothing is written
 #' to the server beyond Shiny's own temporary copy of an upload, which goes

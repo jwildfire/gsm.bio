@@ -166,3 +166,130 @@ App_MapTable <- function(dfTable, chrChosen, lTable, strName) {
   names(dfTable) <- make.unique(chrNames, sep = "_")
   dfTable
 }
+
+# ---- What is loaded: the tables, a page of rows at a time (#80) --------------
+
+# How many rows the viewer shows at a time, and how many of a file just chosen.
+nAppViewRows <- 10L
+nAppPreviewRows <- 5L
+
+# A value as the viewer shows it: as R holds it, not rounded, and a missing
+# one as NA.
+App_Cell <- function(xValues) {
+  chrValues <- as.character(xValues)
+  chrValues[is.na(xValues)] <- "NA"
+  chrValues
+}
+
+#' One page of a table's rows
+#'
+#' @param dfTable `data.frame` A table.
+#' @param nPage `numeric` The page asked for. One below the first is the
+#'   first, and one past the last is the last.
+#' @param nRows `numeric` The rows of a page.
+#'
+#' @return A list: `page`, the page given; `pages`, how many there are; `from`
+#'   and `to`, the first and last row of the page; and `rows`, those rows.
+#'
+#' @keywords internal
+#' @noRd
+App_ViewPage <- function(dfTable, nPage = 1L, nRows = nAppViewRows) {
+  nAll <- nrow(dfTable)
+  nPages <- max(1L, as.integer(ceiling(nAll / nRows)))
+  nPage <- if (!is.numeric(nPage) || length(nPage) != 1L || is.na(nPage)) 1L else as.integer(nPage)
+  nPage <- min(max(nPage, 1L), nPages)
+  nFrom <- if (nAll == 0L) 0L else (nPage - 1L) * nRows + 1L
+  nTo <- min(nPage * nRows, nAll)
+  list(
+    page = nPage, pages = nPages, from = nFrom, to = nTo,
+    rows = if (nAll == 0L) dfTable else dfTable[seq.int(nFrom, nTo), , drop = FALSE]
+  )
+}
+
+#' Rows of a table, as a table of the page
+#'
+#' @param dfRows `data.frame` The rows to show.
+#' @param nFirst `numeric` The number of the first of them in its table.
+#'
+#' @return A tag: the rows under the table's own column names, each with its
+#'   number. Every value is text of the page, never markup.
+#'
+#' @keywords internal
+#' @noRd
+App_RowsTable <- function(dfRows, nFirst = 1L) {
+  lCells <- lapply(dfRows, App_Cell)
+  shiny::tags$div(
+    class = "gsm-bio-app-rows",
+    shiny::tags$table(
+      class = "gsm-bio-app-table",
+      shiny::tags$thead(shiny::tags$tr(
+        shiny::tags$th("Row"),
+        lapply(names(dfRows), function(strColumn) shiny::tags$th(strColumn))
+      )),
+      shiny::tags$tbody(lapply(seq_len(nrow(dfRows)), function(iRow) {
+        shiny::tags$tr(
+          shiny::tags$td(class = "gsm-bio-app-row", format(nFirst + iRow - 1L, big.mark = ",")),
+          lapply(lCells, function(chrColumn) shiny::tags$td(chrColumn[iRow]))
+        )
+      }))
+    )
+  )
+}
+
+# The tables of a study that are there, by what the Data view calls each.
+App_Loaded <- function(lStudy) {
+  lTables <- App_Tables()
+  chrThere <- names(lTables)[vapply(names(lTables), function(strTable) !is.null(lStudy[[strTable]]), logical(1))]
+  stats::setNames(chrThere, vapply(chrThere, function(strTable) lTables[[strTable]]$label, character(1)))
+}
+
+# The viewer's side of the session: which table is shown, which page of it,
+# and the page itself.
+App_ViewServer <- function(input, output, session, rStudy) {
+  rPage <- shiny::reactiveVal(1L)
+  # The table shown: the one chosen, when the study has it; the results if not.
+  rShown <- shiny::reactive({
+    strChosen <- input$gsm_bio_view_table
+    if (length(strChosen) == 1L && strChosen %in% App_Loaded(rStudy())) strChosen else "results"
+  })
+  # A tab for each table the study has, named with its rows. Other tables are
+  # drawn: the tabs are written again for the ones there are, and the viewer
+  # starts again at the results' first rows.
+  output$gsm_bio_view_tabs <- shiny::renderUI({
+    lStudy <- rStudy()
+    lTables <- App_Tables()
+    Tab <- function(strTable) {
+      if (is.null(lStudy[[strTable]])) {
+        return(NULL)
+      }
+      shiny::tabPanel(
+        sprintf("%s, %s rows", lTables[[strTable]]$label, format(nrow(lStudy[[strTable]]), big.mark = ",")),
+        value = strTable
+      )
+    }
+    shiny::tabsetPanel(id = "gsm_bio_view_table", selected = "results", Tab("results"), Tab("participants"), Tab("outcomes"))
+  })
+  shiny::observeEvent(rStudy(), rPage(1L))
+  shiny::observeEvent(rShown(), rPage(1L))
+  Turn <- function(nBy) {
+    rPage(App_ViewPage(rStudy()[[rShown()]], rPage() + nBy)$page)
+  }
+  shiny::observeEvent(input$gsm_bio_view_previous, Turn(-1L))
+  shiny::observeEvent(input$gsm_bio_view_next, Turn(1L))
+  output$gsm_bio_view <- shiny::renderUI({
+    lStudy <- rStudy()
+    strTable <- rShown()
+    dfTable <- lStudy[[strTable]]
+    lPage <- App_ViewPage(dfTable, rPage())
+    shiny::tagList(
+      shiny::tags$p(class = "gsm-bio-app-what", sprintf(
+        "%s, from %s: %s rows, %s columns. Rows %s to %s, page %s of %s. NA is a missing value.",
+        App_Tables()[[strTable]]$label, lStudy$source, format(nrow(dfTable), big.mark = ","), ncol(dfTable),
+        format(lPage$from, big.mark = ","), format(lPage$to, big.mark = ","),
+        format(lPage$page, big.mark = ","), format(lPage$pages, big.mark = ",")
+      )),
+      App_RowsTable(lPage$rows, lPage$from)
+    )
+  })
+  invisible(NULL)
+}

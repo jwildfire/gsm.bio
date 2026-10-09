@@ -69,6 +69,15 @@ session to say it answers, says that statistics are unavailable and why.
 The stored results are not computed for a widget drawn this way, so the page
 opens sooner than a saved page is made.
 }
+\section{The size of a chart's text}{
+
+A chart sizes its text from the page's root font size. Shiny's default page
+sets that to 10 pixels, which would draw a chart's text far smaller than a
+saved page does, so an output function also writes one rule into the page,
+\verb{html \{ font-size: 100\%; \}}, which gives the root back to the browser.
+Shiny's own text is sized in pixels and does not change.
+}
+
 \examples{
 if (requireNamespace("shiny", quietly = TRUE)) {
   Widget_GroupComparisonOutput("chart")
