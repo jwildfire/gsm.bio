@@ -275,7 +275,7 @@ strShellLook <- "(() => {
               selected: Array.from(document.querySelectorAll('#gsm_bio_chart a[role=\"tab\"][aria-selected=\"true\"]')).map((link) => link.dataset.value),
               stop: Array.from(document.querySelectorAll('#gsm_bio_chart a')).filter((link) => link.tabIndex === 0).map((link) => link.dataset.value) },
     focus: document.activeElement && (document.activeElement.dataset.value || document.activeElement.id || document.activeElement.tagName),
-    window: window.innerWidth, wide: Math.max(document.documentElement.scrollWidth, document.body.scrollWidth),
+    window: window.innerWidth, room: document.documentElement.clientWidth, wide: Math.max(document.documentElement.scrollWidth, document.body.scrollWidth),
     name: box(head.querySelector('.gsm-bio-app-name')), study: box(document.querySelector('#gsm_bio_study')), row: box(row), pill: active && box(active),
     rowScrolls: row.scrollWidth - row.clientWidth, rowAt: row.scrollLeft, rowOverflow: getComputedStyle(row).overflowX,
     card: page && page.querySelector('.gsm-bio-app-card') && box(page.querySelector('.gsm-bio-app-card')),
@@ -360,7 +360,9 @@ test_that("in a browser each pill opens its page by a click and by the keyboard,
     expect_identical(lNow$chosen$stop, list(strPill), label = paste(strPill, "is the row's stop of the Tab key"))
     expect_lte(lNow$wide, lNow$window, label = paste(strPill, "reaches no wider than the window"))
     # A chart has the page's width: its card runs from one margin to the other.
-    expect_gte(lNow$card$width, lNow$window - 42, label = paste(strPill, "has the page's width"))
+    # The room is the window's less a scroll bar, which takes none of it on a
+    # Mac and fifteen pixels on the Linux of CI.
+    expect_gte(lNow$card$width, lNow$room - 42, label = paste(strPill, "has the page's width"))
   }
   # By keyboard: from the chosen pill, where the Tab key stops, the arrow keys
   # walk the row and open each page, round to the first and back to the last.
