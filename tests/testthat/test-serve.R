@@ -241,14 +241,17 @@ test_that("in a Shiny page a view the saved widget does not store is answered by
   on.exit(lPage$Close(), add = TRUE)
 
   # The view the page opens on is answered by the session, not from the page.
-  lOpened <- lPage$Look()
+  lOpened <- lLookAnswered(lPage)
+  expect_true(lOpened$answered)
   expect_true(lOpened$settled)
   expect_length(lOpened$statistics, 1L)
   expect_identical(lOpened$statistics[[1]]$answer$status, "ok")
   expect_identical(lOpened$statistics[[1]]$answer$form, "server")
 
   # The reader chooses another test: no saved widget of these settings has it.
-  lView <- lPage$Move("choose", "test", "wilcoxon")
+  lPage$Move("choose", "test", "wilcoxon")
+  lView <- lLookAnswered(lPage)
+  expect_true(lView$answered)
   expect_true(lView$settled)
   expect_length(lView$statistics, 1L)
   lAsked <- lView$statistics[[1]]
@@ -297,11 +300,13 @@ test_that("a session whose server function does not call Serve_Statistics() draw
 
   lPage <- lOpenPage(NULL, strAddress = lApp$address)
   on.exit(lPage$Close(), add = TRUE)
-  expect_identical(lPage$Look()$statistics[[1]]$answer$form, "server")
+  expect_identical(lLookAnswered(lPage)$statistics[[1]]$answer$form, "server")
   # The session ends under the page.
   lApp$Stop()
   expect_true(bWaitFor(lPage, "!window.Shiny.shinyapp.isConnected()"), label = "the page knows its session has ended")
-  lView <- lPage$Move("choose", "test", "wilcoxon")
+  lPage$Move("choose", "test", "wilcoxon")
+  lView <- lLookAnswered(lPage)
+  expect_true(lView$answered)
   expect_true(lView$settled)
   expect_identical(lView$statistics[[1]]$answer$status, "unavailable")
   expect_identical(

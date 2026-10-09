@@ -227,6 +227,20 @@ bWaitFor <- function(lPage, strCondition, nSeconds = 40) {
   }
 }
 
+# The view of a page whose statistics a session answers, once every statistic
+# it asked for has its answer. A page with stored results is answered in a
+# turn of its own loop, so its view has settled when it stops changing; an
+# answer from a session takes as long as the session does, and the view can
+# stand still for a moment while it is on the way.
+lLookAnswered <- function(lPage, nSeconds = 40) {
+  bAnswered <- bWaitFor(
+    lPage,
+    "window.gsmBioPage.chart().statistics().length > 0 && window.gsmBioPage.chart().statistics().every((asked) => asked.answer)",
+    nSeconds
+  )
+  c(list(answered = bAnswered), lPage$Look())
+}
+
 # A widget saved as one self-contained file, for a browser to open.
 strSavedFile <- function(lWidget, strName = "group-comparison") {
   strDir <- tempfile("gsm-bio-page")
