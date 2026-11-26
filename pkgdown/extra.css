@@ -1,0 +1,259 @@
+/* The gsm.bio pkgdown site in the look of rainbow-hex 1.0
+ * (https://github.com/jwildfire/rainbow-hex, colours as in its
+ * rainbow-hex-tokens.css): paper #fafaf8 · graphite ink #1f2328 · plum links
+ * #6c3270, with the seven-hue spectrum carried through the navbar and footer as
+ * a thin honeycomb strip. Instrument Serif (headings) · Instrument Sans (body)
+ * · IBM Plex Mono (code and meta).
+ *
+ * This is gsm.safety's pkgdown/extra.css at commit d3bde85, less the home-page
+ * gallery rules that are that site's own, so the two R sites read as one.
+ * Change the look there first and copy it again.
+ *
+ * The palette and the type families reach Bootstrap through the bslib
+ * variables in _pkgdown.yml, so this sheet never repeats a colour Bootstrap
+ * already knows: it reads var(--bs-*) and carries only what the variables
+ * cannot express: the bands with their strip, the meta typography, and the
+ * surfaces of code and tables.
+ */
+
+:root {
+  /* Spectrum: equal lightness and chroma (oklch 0.68 / 0.12), hue steps of ~50°. */
+  --spec-0: #d87972;
+  --spec-1: #c78a3b;
+  --spec-2: #77a95b;
+  --spec-3: #00afa9;
+  --spec-4: #519fdd;
+  --spec-5: #988bdd;
+  --spec-6: #c67bb6;
+  --spec-gradient: linear-gradient(90deg, var(--spec-0), var(--spec-1), var(--spec-2), var(--spec-3), var(--spec-4), var(--spec-5), var(--spec-6));
+
+  /* Honeycomb outline tile, used as a mask so a colour shows through the strokes. */
+  --hex-mask: url("data:image/svg+xml;utf8,%3Csvg xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg' width%3D'5.543' height%3D'9.600' viewBox%3D'0 0 5.543 9.600'%3E%3Cg fill%3D'none' stroke%3D'%23000' stroke-width%3D'0.9'%3E%3Cpolygon points%3D'2.77%2C0.00 5.54%2C1.60 5.54%2C4.80 2.77%2C6.40 -0.00%2C4.80 0.00%2C1.60'%2F%3E%3Cpolygon points%3D'0.00%2C4.80 2.77%2C6.40 2.77%2C9.60 0.00%2C11.20 -2.77%2C9.60 -2.77%2C6.40'%2F%3E%3Cpolygon points%3D'5.54%2C4.80 8.31%2C6.40 8.31%2C9.60 5.54%2C11.20 2.77%2C9.60 2.77%2C6.40'%2F%3E%3Cpolygon points%3D'2.77%2C9.60 5.54%2C11.20 5.54%2C14.40 2.77%2C16.00 -0.00%2C14.40 0.00%2C11.20'%2F%3E%3Cpolygon points%3D'0.00%2C-4.80 2.77%2C-3.20 2.77%2C-0.00 0.00%2C1.60 -2.77%2C-0.00 -2.77%2C-3.20'%2F%3E%3Cpolygon points%3D'5.54%2C-4.80 8.31%2C-3.20 8.31%2C-0.00 5.54%2C1.60 2.77%2C-0.00 2.77%2C-3.20'%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E");
+
+  /* The band the navbar and footer sit on: the rail grey of the homepage sidebar. */
+  --band-bg: #f3f4f1;
+
+  /* Ink for meta text (the version, footer, nav) that Bootstrap has no variable for. */
+  --band-ink: var(--bs-body-color);
+  --band-soft: var(--bs-secondary-color);
+
+  /* Meta text (the version, a Source line) reads in the secondary grey: the faint
+     #98a0aa Bootstrap keeps as its tertiary colour is under 3:1 on this paper. */
+  --meta-ink: var(--bs-secondary-color);
+}
+
+/* Base ----------------------------------------------------------------------- */
+
+html { overflow-x: clip; }  /* the bands bleed to the viewport edge; never a horizontal scroll */
+body { -webkit-font-smoothing: antialiased; }
+h1, h2, h3, h4, h5, h6 { letter-spacing: -0.01em; }
+/* pkgdown sizes and bolds h2 to h5 after the bslib variables; the hub's scale. */
+h2, .h2 { font-size: 1.5rem; margin-top: 2.2rem; }
+h3, .h3 { font-size: 1.2rem; font-weight: 400; margin-top: 1.5rem; }
+h4, .h4 { font-size: 1.05rem; font-weight: 400; }
+h5, .h5 { font-weight: 400; }
+a:hover { text-decoration: underline; text-underline-offset: 0.2em; }
+:focus-visible { outline: 2px solid var(--bs-primary); outline-offset: 3px; border-radius: 2px; }
+
+/* Honeycomb strip: the spectrum, seen through a band of tiny hex outlines. An
+   <hr> is one; the navbar and footer carry one along their outer edge as a
+   pseudo-element, so the text on the band is unaffected. */
+hr,
+nav.navbar::before,
+footer::before {
+  background: var(--spec-gradient);
+  -webkit-mask-image: var(--hex-mask);
+  mask-image: var(--hex-mask);
+  -webkit-mask-repeat: repeat;
+  mask-repeat: repeat;
+  -webkit-mask-size: auto 9.6px;
+  mask-size: auto 9.6px;
+  -webkit-mask-position: left top;
+  mask-position: left top;
+}
+hr {
+  border: 0;
+  height: 9px;
+  margin: 2.4rem 0;
+  opacity: 0.9;
+}
+nav.navbar::before,
+footer::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 9px;
+  opacity: 0.9;
+}
+
+/* Navbar ------------------------------------------------------------------- */
+
+nav.navbar {
+  border-bottom: 1px solid var(--bs-border-color);
+  padding-top: calc(0.5rem + 9px);  /* room for the strip above the brand; pkgdown-nav-height in _pkgdown.yml counts it */
+}
+nav.navbar::before { top: 0; }
+.navbar-brand,
+.navbar-brand:hover,
+.navbar-brand:focus {
+  font-family: var(--bs-headings-font-family, "Instrument Serif", Georgia, "Times New Roman", serif);
+  font-size: 1.35rem;
+  color: var(--band-ink);
+}
+.navbar-brand:hover { color: var(--bs-primary); }
+nav.navbar .nav-text {
+  font-family: var(--bs-font-monospace);
+  font-size: 0.78rem;
+  color: var(--meta-ink) !important;  /* over .text-muted */
+}
+nav.navbar .nav-link {
+  font-family: var(--bs-font-monospace);
+  font-size: 0.84rem;
+  color: var(--band-soft);
+}
+nav.navbar .nav-link:hover,
+nav.navbar .nav-link:focus,
+nav.navbar .nav-link.show { color: var(--bs-primary); }
+/* The current section: plum with a 2px line under it, not pkgdown's grey pill. */
+nav.navbar .nav-item.active .nav-link,
+nav.navbar .nav-link.active {
+  color: var(--bs-primary);
+  background: none;
+  border-radius: 0;
+  box-shadow: inset 0 -2px 0 var(--bs-primary);
+}
+nav.navbar .navbar-toggler {
+  border-color: var(--bs-border-color);
+  color: var(--band-ink);
+}
+nav.navbar .form-control {
+  font-family: var(--bs-font-monospace);
+  font-size: 0.84rem;
+  background: var(--bs-body-bg);
+}
+.dropdown-menu {
+  font-size: 0.92rem;
+  border-color: var(--bs-border-color);
+  box-shadow: 0 12px 30px rgba(31, 35, 40, 0.12);
+}
+
+/* Footer ------------------------------------------------------------------- */
+/* pkgdown puts the footer inside .container; the negative margins bleed it to the
+   viewport edge and the matching padding keeps its text on the container's line. */
+
+footer {
+  position: relative;
+  margin: 3rem calc(50% - 50vw) 0;
+  padding: 1.6rem calc(50vw - 50%) 2rem;
+  background: var(--band-bg);
+  border-top: 1px solid var(--bs-border-color);
+  color: var(--band-soft);
+  font-family: var(--bs-font-monospace);
+  font-size: 0.8rem;
+}
+footer::before { top: -1px; }
+footer a { color: var(--band-ink); text-decoration: none; }
+footer a:hover { color: var(--bs-primary); }
+footer p { margin-bottom: 0.4rem; }
+
+/* Page header and prose ---------------------------------------------------- */
+
+.page-header { border-bottom: 1px solid var(--bs-border-color); }
+.page-header small,
+.page-header .dont-index {
+  font-family: var(--bs-font-monospace);
+  font-size: 0.78rem;
+  color: var(--meta-ink);
+}
+blockquote {
+  border-left: 4px solid var(--bs-primary);
+  margin: 1rem 0;
+  padding: 0.25rem 1rem;
+  color: var(--bs-secondary-color);
+}
+
+/* Code --------------------------------------------------------------------- */
+
+code {
+  font-size: 0.86em;
+  background: var(--bs-tertiary-bg);
+  border: 1px solid var(--bs-border-color);
+  border-radius: 6px;
+  padding: 0.1em 0.35em;
+}
+pre {
+  background: var(--bs-tertiary-bg);
+  border: 1px solid var(--bs-border-color);
+  border-radius: 6px;
+  padding: 1rem;
+}
+pre code,
+a code,
+h1 code, h2 code, h3 code, h4 code {
+  background: none;
+  border: none;
+  padding: 0;
+}
+h1 code, h2 code, h3 code, h4 code { font-size: 0.9em; }
+
+/* Tables ------------------------------------------------------------------- */
+
+.table {
+  font-size: 0.92rem;
+  --bs-table-bg: #ffffff;
+}
+.table > :not(caption) > * > * {
+  border: 1px solid var(--bs-border-color);
+  padding: 0.45rem 0.6rem;
+  vertical-align: top;
+}
+.table > thead > tr > th {
+  background: var(--bs-tertiary-bg);
+  font-family: var(--bs-font-monospace);
+  font-size: 0.76rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--bs-secondary-color);
+}
+
+/* Reference pages ---------------------------------------------------------- */
+
+dl dt {
+  font-family: var(--bs-font-monospace);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+.section-desc { color: var(--bs-secondary-color); }
+
+/* Sidebar ------------------------------------------------------------------ */
+
+aside h2 {
+  font-family: var(--bs-font-monospace);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--bs-secondary-color);
+  margin-top: 0;
+}
+aside .nav-link,
+aside a {
+  font-family: var(--bs-font-monospace);
+  font-size: 0.8rem;
+}
+aside .nav-link { color: var(--bs-secondary-color); }
+#toc > .nav a.nav-link:hover,
+#toc > .nav a.nav-link:focus,
+#toc > .nav a.nav-link.active {
+  color: var(--bs-primary);
+  background-color: rgba(var(--bs-primary-rgb), 0.12);
+}
+/* On a phone the sidebar becomes a panel under the page: the inset grey, hairlined. */
+@media (max-width: 767.98px) {
+  .row > aside {
+    background-color: var(--bs-tertiary-bg);
+    border: 1px solid var(--bs-border-color);
+  }
+}

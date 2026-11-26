@@ -2,6 +2,47 @@ url: https://jwildfire.github.io/gsm.bio
 
 template:
   bootstrap: 5
+  # The look of rainbow-hex 1.0 (https://github.com/jwildfire/rainbow-hex): paper,
+  # graphite, plum links, Instrument Serif / Instrument Sans / IBM Plex Mono, and
+  # the seven-hue spectrum as a thin honeycomb strip. It is the theme gsm.safety's
+  # site wears, copied from its _pkgdown.yml and pkgdown/extra.css at commit
+  # d3bde85, so the two R sites read as one. The palette and fonts come in here
+  # as bslib variables; pkgdown/extra.css carries the navbar and footer bands
+  # with their strip. No colour here is a project's own.
+  bslib:
+    bg: "#fafaf8"
+    fg: "#1f2328"
+    primary: "#6c3270"
+    secondary: "#5b6470"
+    light: "#f3f4f1"
+    dark: "#1f2328"
+    body-secondary-color: "#5b6470"
+    body-tertiary-color: "#98a0aa"
+    body-secondary-bg: "#f3f4f1"
+    body-tertiary-bg: "#f3f4f1"
+    border-color: "#e4e6e3"
+    link-color: "#6c3270"
+    link-hover-color: "#522456"
+    code-color: "#1f2328"
+    pre-color: "#1f2328"
+    # pkgdown's own variables: the navbar and footer bands, and the navbar's
+    # height with the 9px honeycomb strip extra.css adds above the brand.
+    navbar-bg: "#f3f4f1"
+    pkgdown-nav-height: 68px
+    pkgdown-footer-bg: "#f3f4f1"
+    pkgdown-footer-color: "#5b6470"
+    pkgdown-footer-border-color: "#e4e6e3"
+    base_font: '"Instrument Sans", system-ui, -apple-system, "Segoe UI", sans-serif'
+    heading_font: '"Instrument Serif", Georgia, "Times New Roman", serif'
+    code_font: '"IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace'
+    headings-font-weight: 400
+    headings-line-height: 1.15
+    h1-font-size: 2rem
+  includes:
+    in_header: |
+      <link rel="preconnect" href="https://fonts.googleapis.com">
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400..700;1,400..700&family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
 
 navbar:
   structure:
