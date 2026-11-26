@@ -498,7 +498,7 @@ A specification is data: nothing in it is evaluated, and a title that
 looks like code is drawn as text. One that bio.viz would refuse is
 refused with a sentence and listed in the manifest, and the rest still
 run. Give the file, the text, or the list
-[`jsonlite::read_json()`](https://jeroen.r-universe.dev/jsonlite/reference/read_json.html)
+[`jsonlite::read_json()`](https://rdrr.io/pkg/jsonlite/man/read_json.html)
 reads (or `fromJSON(simplifyVector = FALSE)`): `fromJSON()`’s default
 simplifies the list into a data frame, which is refused with a sentence
 that says so.
