@@ -11,7 +11,7 @@ The next version of gsm.bio. Its work lands on `dev` and is listed here as it do
 
 ## What's new
 
-- **The reference site has the look gsm.safety's site has.** Paper, plum links, three typefaces and a honeycomb strip on the navbar and footer: the look published as rainbow-hex 1.0. No function, widget, figure or statistic changes. [#108](https://github.com/jwildfire/gsm.bio/issues/108)
+- **The reference site has the look gsm.safety's site has.** Paper, plum links, three typefaces and a honeycomb strip on the navbar and footer: the look published as rainbow-hex 1.0. No function, widget, figure or statistic changes. [#108](https://github.com/jwildfire/gsm.bio/issues/108), PR [#109](https://github.com/jwildfire/gsm.bio/pull/109)
 
 # gsm.bio v0.4.0
 
